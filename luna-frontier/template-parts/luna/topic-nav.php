@@ -6,8 +6,7 @@ declare( strict_types=1 );
  *
  * ヘッダーの真下に置く、主要トピックと特集への導線。
  *
- * 構成（1 列に統合）:
- *   [SPOTLIGHT] [特集ピル …]  |  [編集部おすすめ] [アイコン＋ラベルのトピック …]
+ * SPOTLIGHT は最大4特集と過去特集リンク、おすすめトピックと同じ行に表示。
  *
  * SPOTLIGHT はここへ統合したので、ホームの独立セクションは表示しない
  * （同じリンクを 1 ページに二度出さない。CSS 側で非表示にしている）。
@@ -58,13 +57,23 @@ function luna_frontier_topic_icon( string $label ): string {
 	return (string) apply_filters( 'luna_frontier_topic_icon', $icon, $label );
 }
 
-$lf_topics = array();
+$lf_topics     = array();
+$lf_gadget     = get_term_by( 'name', 'ガジェット', 'category' );
+$lf_gadget_id  = $lf_gadget instanceof WP_Term ? (int) $lf_gadget->term_id : 0;
+$lf_gadget_url = $lf_gadget_id ? get_category_link( $lf_gadget_id ) : '';
 
 if ( has_nav_menu( 'luna_topics' ) ) {
 	$lf_menu_id = (int) ( get_nav_menu_locations()['luna_topics'] ?? 0 );
 
 	foreach ( (array) wp_get_nav_menu_items( $lf_menu_id ) as $lf_item ) {
 		if ( ! $lf_item instanceof WP_Post || (int) $lf_item->menu_item_parent ) {
+			continue;
+		}
+
+		// This menu is shared with other locations; exclude only in this navigation.
+		if ( 'ガジェット' === trim( (string) $lf_item->title )
+			|| ( 'taxonomy' === $lf_item->type && 'category' === $lf_item->object && $lf_gadget_id && $lf_gadget_id === (int) $lf_item->object_id )
+			|| ( is_string( $lf_gadget_url ) && '' !== $lf_gadget_url && untrailingslashit( $lf_gadget_url ) === untrailingslashit( $lf_item->url ) ) ) {
 			continue;
 		}
 
@@ -82,7 +91,7 @@ if ( has_nav_menu( 'luna_topics' ) ) {
 			'orderby'    => 'count',
 			'order'      => 'DESC',
 			'number'     => 6,
-			'exclude'    => array( (int) get_option( 'default_category' ) ),
+			'exclude'    => array_filter( array( (int) get_option( 'default_category' ), $lf_gadget_id ) ),
 		)
 	);
 
@@ -98,40 +107,40 @@ if ( has_nav_menu( 'luna_topics' ) ) {
 $lf_spotlight = function_exists( 'node_get_spotlight_categories' ) ? node_get_spotlight_categories() : array();
 $lf_spotlight_url = function_exists( 'node_get_spotlight_url' ) ? node_get_spotlight_url() : '';
 
-if ( empty( $lf_topics ) && empty( $lf_spotlight ) ) {
+if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url ) {
 	return;
 }
 ?>
 <nav class="lf-topic-nav" aria-label="主要トピックと特集">
 	<div class="lf-topic-nav__inner">
 
-		<?php if ( ! empty( $lf_spotlight ) ) : ?>
+		<?php if ( ! empty( $lf_spotlight ) || '' !== $lf_spotlight_url ) : ?>
 			<div class="lf-topic-nav__group lf-topic-nav__group--spotlight">
-				<?php if ( '' !== $lf_spotlight_url ) : ?>
-					<a class="lf-topic-nav__pick" href="<?php echo esc_url( $lf_spotlight_url ); ?>">
-						<span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
-						SPOTLIGHT
-					</a>
-				<?php else : ?>
-					<span class="lf-topic-nav__pick lf-topic-nav__pick--static">
-						<span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
-						SPOTLIGHT
-					</span>
-				<?php endif; ?>
+				<span class="lf-topic-nav__pick">
+					<span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
+					SPOTLIGHT
+				</span>
 
+				<?php if ( ! empty( $lf_spotlight ) ) : ?>
 				<ul class="lf-topic-nav__features">
-					<?php foreach ( $lf_spotlight as $lf_feature ) : ?>
+					<?php foreach ( array_slice( $lf_spotlight, 0, 4 ) as $lf_feature ) : ?>
 						<li>
 							<a href="<?php echo esc_url( (string) $lf_feature['url'] ); ?>"><?php echo esc_html( (string) $lf_feature['name'] ); ?></a>
 						</li>
 					<?php endforeach; ?>
 				</ul>
+				<?php endif; ?>
+				<?php if ( '' !== $lf_spotlight_url ) : ?>
+					<a class="lf-topic-nav__past" href="<?php echo esc_url( $lf_spotlight_url ); ?>" aria-label="<?php esc_attr_e( 'スポットライトアーカイブ', 'luna-frontier' ); ?>" title="<?php esc_attr_e( 'スポットライトアーカイブ', 'luna-frontier' ); ?>">
+						<span aria-hidden="true">…</span>
+					</a>
+				<?php endif; ?>
 			</div>
 		<?php endif; ?>
 
 		<?php if ( ! empty( $lf_topics ) ) : ?>
 			<div class="lf-topic-nav__group lf-topic-nav__group--topics">
-				<span class="lf-topic-nav__pick lf-topic-nav__pick--editors">編集部おすすめ</span>
+				<span class="lf-topic-nav__pick lf-topic-nav__pick--editors">おすすめ</span>
 			<ul class="lf-topic-nav__list">
 				<?php foreach ( $lf_topics as $lf_topic ) : ?>
 					<li class="lf-topic-nav__item<?php echo $lf_topic['current'] ? ' is-current' : ''; ?>">

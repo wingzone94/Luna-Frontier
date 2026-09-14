@@ -520,7 +520,47 @@ function setupAsideTocProgress() {
   update();
 }
 
+function setupCalendarMonth() {
+  const form = document.querySelector('.lf-home__calendar-form');
+  if (!form) return;
+  const select = form.querySelector('select');
+  const panel = form.closest('.lf-home__calendar');
+  let request;
+  form.classList.add('is-enhanced');
+  select.addEventListener('change', async () => {
+    request?.abort();
+    const controller = new AbortController();
+    request = controller;
+    const url = new URL(form.action);
+    new FormData(form).forEach((value, key) => url.searchParams.set(key, value));
+    panel.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error('Calendar request failed');
+      const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+      for (const selector of ['#wp-calendar', '.wp-calendar-nav']) {
+        const next = doc.querySelector(selector);
+        const current = panel.querySelector(selector);
+        if (!next || !current) throw new Error('Calendar markup missing');
+        current.replaceWith(next);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') form.submit();
+    } finally {
+      if (request === controller) panel.removeAttribute('aria-busy');
+    }
+  });
+}
+
 function init() {
+  const headerSearch = document.getElementById('m3-search-input');
+  if (headerSearch) {
+    headerSearch.placeholder = 'キーワードで検索';
+    headerSearch.setAttribute('aria-label', 'キーワードで検索');
+  }
+  // The all-articles list uses the parent card typography without Luna auto-fit.
+  if (document.body.classList.contains('lf-legacy-archive')) return;
+  setupCalendarMonth();
   setupFootnoteRelocation();
   setupTitleAutoFit();
   setupHeadingTocAccess();

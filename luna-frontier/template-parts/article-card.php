@@ -10,6 +10,11 @@ declare(strict_types=1);
  * @package LunaFrontier
  */
 
+if ( luna_frontier_is_legacy_archive() ) {
+    require get_template_directory() . '/template-parts/article-card.php';
+    return;
+}
+
 $post_id             = get_the_ID();
 $card_class          = $args['card_class'] ?? '';
 $image_loading       = ($args['image_loading'] ?? 'lazy') === 'eager' ? 'eager' : 'lazy';

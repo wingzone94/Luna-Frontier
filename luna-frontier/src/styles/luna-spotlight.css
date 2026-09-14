@@ -1,0 +1,275 @@
+/* Editorial archive. Only loaded for the existing /spotlight/ route. */
+body.lf-theme:has(.lf-spotlight-archive),
+body.lf-theme:has(.lf-spotlight-archive) .m3-page-container {
+	background: var(--md-sys-color-surface-container-low);
+}
+
+body.lf-theme .lf-spotlight-archive {
+	--lf-spotlight-ink: var(--md-sys-color-on-surface);
+	--lf-spotlight-muted: var(--md-sys-color-on-surface-variant);
+	--lf-spotlight-accent: var(--md-sys-color-accent-text, #935400);
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding: 12px var(--lf-gutter) 32px;
+	color: var(--lf-spotlight-ink);
+	font-size: 16px;
+}
+
+body.lf-theme .lf-spotlight-archive__breadcrumbs {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	font-size: 13px;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__breadcrumbs a {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 48px;
+	color: inherit;
+}
+
+body.lf-theme .lf-spotlight-archive__header {
+	margin-block: 16px 20px;
+	padding-block-end: 16px;
+	border-block-end: 1px solid var(--md-sys-color-outline-variant);
+}
+
+body.lf-theme .lf-spotlight-archive__eyebrow {
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	color: var(--lf-spotlight-accent);
+}
+
+body.lf-theme .lf-spotlight-archive__header h1 {
+	margin: 0;
+	font-size: clamp(1.5rem, 2.5vw, 2rem);
+	font-weight: 800;
+	line-height: 1.45;
+	letter-spacing: -0.025em;
+	overflow-wrap: anywhere;
+}
+
+body.lf-theme .lf-spotlight-archive__intro {
+	margin: 8px 0 0;
+	font-size: 1rem;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__link {
+	display: block;
+	block-size: 100%;
+	color: inherit;
+	text-decoration: none;
+	min-inline-size: 0;
+}
+
+
+body.lf-theme .lf-spotlight-archive__media {
+	block-size: clamp(140px, 14vw, 180px);
+	overflow: hidden;
+	background: var(--md-sys-color-surface-container);
+}
+
+
+body.lf-theme .lf-spotlight-archive__media img {
+	display: block;
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: contain;
+}
+
+/* A typographic cover keeps image-less features intentional, without fake photos. */
+body.lf-theme .lf-spotlight-archive__cover {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 8px;
+	min-block-size: 100%;
+	box-sizing: border-box;
+	padding: 16px;
+	border-inline-start: 4px solid var(--lf-brand);
+	color: var(--lf-spotlight-ink);
+}
+
+body.lf-theme .lf-spotlight-archive__cover-index {
+	font-size: 1.25rem;
+	font-weight: 300;
+	color: var(--lf-spotlight-accent);
+}
+
+body.lf-theme .lf-spotlight-archive__cover-name {
+	font-size: clamp(1rem, 1.5vw, 1.25rem);
+	font-weight: 700;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+body.lf-theme .lf-spotlight-archive__cover-label {
+	font-size: 10px;
+	letter-spacing: 0.1em;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__media--cover {
+	block-size: auto;
+	min-block-size: 140px;
+}
+
+body.lf-theme .lf-spotlight-archive__text {
+	min-inline-size: 0;
+	padding-block: 12px 16px;
+	overflow-wrap: anywhere;
+}
+
+body.lf-theme .lf-spotlight-archive__kicker {
+	margin: 0 0 6px;
+	padding-inline-start: 10px;
+	border-inline-start: 3px solid var(--lf-brand);
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__text :is(h2, h3) {
+	margin: 0;
+	font-size: clamp(1.125rem, 1.6vw, 1.35rem);
+	font-weight: 750;
+	line-height: 1.55;
+}
+
+
+body.lf-theme .lf-spotlight-archive__description {
+	margin: 8px 0 0;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	color: var(--lf-spotlight-muted);
+	line-height: 1.8;
+}
+
+body.lf-theme .lf-spotlight-archive__meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	margin-block-start: 12px;
+	font-size: 13px;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__action {
+	padding-block-end: 4px;
+	border-block-end: 1px solid var(--lf-brand);
+	color: var(--lf-spotlight-ink);
+}
+
+body.lf-theme .lf-spotlight-archive__collection {
+	margin-block-start: 0;
+}
+
+body.lf-theme .lf-spotlight-archive__section-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-block-end: 16px;
+}
+
+body.lf-theme .lf-spotlight-archive__section-header h2 {
+	margin: 0;
+	font-size: clamp(1.25rem, 2vw, 1.5rem);
+}
+
+body.lf-theme .lf-spotlight-archive__section-header p {
+	margin: 0;
+	font-size: 13px;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 20px 24px;
+}
+
+body.lf-theme .lf-spotlight-archive__grid .lf-spotlight-archive__feature {
+	min-inline-size: 0;
+	border-block-end: 1px solid var(--md-sys-color-outline-variant);
+}
+
+body.lf-theme .lf-spotlight-archive__link:hover .lf-spotlight-archive__action {
+	color: var(--lf-spotlight-accent);
+	text-decoration: underline;
+}
+
+body.lf-theme .lf-spotlight-archive__link:focus-visible,
+body.lf-theme .lf-spotlight-archive__empty a:focus-visible {
+	outline: 2px solid var(--lf-spotlight-accent);
+	outline-offset: 5px;
+}
+
+body.lf-theme .lf-spotlight-archive__empty {
+	padding-block: 32px;
+	color: var(--lf-spotlight-muted);
+}
+
+body.lf-theme .lf-spotlight-archive__empty a {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 48px;
+	color: var(--lf-spotlight-accent);
+}
+
+@media (max-width: 760px) {
+	body.lf-theme .lf-spotlight-archive__grid {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
+	}
+
+
+	body.lf-theme .lf-spotlight-archive__header {
+		margin-block-start: 12px;
+	}
+
+	body.lf-theme .lf-spotlight-archive__collection {
+		margin-block-start: 0;
+	}
+
+
+	body.lf-theme .lf-spotlight-archive__grid .lf-spotlight-archive__link {
+		display: grid;
+		grid-template-columns: 88px minmax(0, 1fr);
+		align-items: start;
+		gap: 12px;
+		padding-block-end: 12px;
+	}
+
+	body.lf-theme .lf-spotlight-archive__grid .lf-spotlight-archive__media {
+		block-size: 88px;
+		min-block-size: 0;
+	}
+
+	body.lf-theme .lf-spotlight-archive__grid .lf-spotlight-archive__cover {
+		justify-content: center;
+		align-items: center;
+		block-size: 100%;
+		padding: 8px;
+	}
+
+	body.lf-theme .lf-spotlight-archive__grid :is(.lf-spotlight-archive__cover-name, .lf-spotlight-archive__cover-label) {
+		display: none;
+	}
+
+	body.lf-theme .lf-spotlight-archive__grid .lf-spotlight-archive__text {
+		padding: 0;
+	}
+}

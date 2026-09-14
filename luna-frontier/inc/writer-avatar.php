@@ -67,6 +67,9 @@ function luna_frontier_writer_avatar_svg( int $size, array $extra_classes = arra
  * @param array<string,mixed> $args        get_avatar() の引数。
  */
 function luna_frontier_writer_avatar( string $avatar, $id_or_email, int $size, string $default, string $alt, array $args = array() ): string {
+	if ( luna_frontier_is_legacy_archive() ) {
+		return $avatar;
+	}
 	if ( '' === $avatar ) {
 		return $avatar;
 	}

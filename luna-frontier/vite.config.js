@@ -14,7 +14,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         luna: resolve(__dirname, 'src/luna.js'),
-        'luna-style': resolve(__dirname, 'src/styles/luna.css')
+        'luna-style': resolve(__dirname, 'src/styles/luna.css'),
+        'luna-spotlight': resolve(__dirname, 'src/styles/luna-spotlight.css'),
+        'luna-archive': resolve(__dirname, 'src/styles/luna-archive.css')
       },
       output: {
         // ハッシュを付けず、PHP 側で filemtime によるキャッシュバスティングを行う。

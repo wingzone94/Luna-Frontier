@@ -1,0 +1,136 @@
+/* Editorial home. Its neutral surfaces do not change the header or article palette. */
+body.lf-theme .lf-home {
+	--lf-home-canvas: #f7f8fa;
+	--lf-home-paper: #fff;
+	--lf-home-ink: #151b2b;
+	--lf-home-muted: #596174;
+	--lf-home-line: #e9ebef;
+	--lf-home-accent: #b84b00;
+	--lf-home-badge: #b84b00;
+	max-width: 1440px;
+	width: 100%;
+	margin-inline: auto;
+	padding: 24px clamp(16px, 4vw, 56px) 48px;
+	background: var(--lf-home-canvas);
+	color: var(--lf-home-ink);
+}
+html[data-theme="dark"] body.lf-theme .lf-home,
+body.lf-theme[data-theme="dark"] .lf-home {
+	--lf-home-canvas: #17191e;
+	--lf-home-paper: #22252c;
+	--lf-home-ink: #f1f2f6;
+	--lf-home-muted: #b7becc;
+	--lf-home-line: #373d48;
+	--lf-home-accent: #ffb77d;
+}
+body.lf-theme .lf-home :is(h2, h3, p, ul, ol) { margin: 0; }
+body.lf-theme .lf-home :is(ul, ol) { list-style: none; padding: 0; }
+body.lf-theme .lf-home a { color: inherit; text-decoration: none; }
+body.lf-theme .lf-home a:focus-visible { outline: 3px solid var(--lf-home-accent); outline-offset: 3px; }
+body.lf-theme .lf-home a:hover h3 { color: var(--lf-home-accent); text-decoration: underline; text-underline-offset: .2em; }
+body.lf-theme .lf-home__section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+body.lf-theme .lf-home__section-head h2 { display: flex; align-items: center; gap: 10px; font-size: clamp(20px, 1.8vw, 26px); font-weight: 800; line-height: 1.4; color: var(--lf-home-ink); }
+body.lf-theme .lf-home__section-head h2 > .material-symbols-outlined { color: var(--lf-brand); font-size: 30px; }
+body.lf-theme :is(.lf-home__latest, .lf-home__panel) h2:not(:has(.material-symbols-outlined))::before { content: ''; width: 5px; height: 1.25em; border-radius: 4px; background: var(--lf-brand); }
+body.lf-theme .lf-home__intro { color: var(--lf-home-muted); font-size: 14px; }
+body.lf-theme .lf-home .lf-home__more { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; min-height: 48px; color: var(--lf-home-accent); font-size: 14px; font-weight: 700; }
+body.lf-theme .lf-home__news-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+body.lf-theme .lf-home__news { margin-bottom: 24px; }
+body.lf-theme .lf-home__columns { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(290px, 1fr); gap: 20px; align-items: start; }
+body.lf-theme :is(.lf-home__latest, .lf-home__aside) { min-width: 0; }
+body.lf-theme .lf-home__aside { display: grid; gap: 16px; }
+body.lf-theme :is(.lf-home__story-list, .lf-home__panel, .lf-home-story--news) { background: var(--lf-home-paper); border: 1px solid var(--lf-home-line); border-radius: var(--md-sys-shape-corner-small); box-shadow: 0 2px 12px rgb(0 0 0 / 3%); }
+body.lf-theme .lf-home__story-list { padding: 0 14px; }
+body.lf-theme .lf-home__filters { display: flex; flex: 1; justify-content: flex-end; gap: 16px; overflow-x: auto; max-width: 100%; font-size: 13px; }
+body.lf-theme .lf-home__filters a { display: flex; align-items: center; min-height: 48px; white-space: nowrap; border-bottom: 3px solid transparent; color: var(--lf-home-muted); }
+body.lf-theme .lf-home__filters a[aria-current] { color: var(--lf-home-accent); border-color: var(--lf-brand); font-weight: 700; }
+body.lf-theme .lf-home-story { min-width: 0; }
+body.lf-theme .lf-home-story__link { display: flex; height: 100%; gap: 18px; }
+body.lf-theme .lf-home-story__visual { position: relative; flex-shrink: 0; background: var(--lf-home-canvas); overflow: hidden; border-radius: var(--md-sys-shape-corner-small); }
+body.lf-theme .lf-home-story__visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.lf-theme .lf-home-story__placeholder { display: grid; place-items: center; width: 100%; height: 100%; min-height: inherit; color: var(--lf-home-muted); font-size: 36px; }
+body.lf-theme .lf-home-story__body { min-width: 0; flex: 1; }
+body.lf-theme .lf-home-story h3 { font-size: 17px; font-weight: 750; line-height: 1.5; overflow-wrap: anywhere; color: var(--lf-home-ink); }
+body.lf-theme .lf-home-story__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 4px; font-size: 12px; color: var(--lf-home-muted); font-variant-numeric: tabular-nums; }
+body.lf-theme .lf-home-story__category { display: inline-block; padding: 2px 10px; border-radius: var(--lf-shape-full); background: var(--lf-home-badge); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.6; overflow-wrap: anywhere; }
+body.lf-theme .lf-home-story__excerpt { color: var(--lf-home-muted); font-size: 14px; line-height: 1.6; margin-top: 4px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+body.lf-theme .lf-home-story--news .lf-home-story__link { flex-direction: column; gap: 0; }
+body.lf-theme .lf-home-story--news .lf-home-story__visual { aspect-ratio: 2.25; width: 100%; border-radius: 7px 7px 0 0; }
+body.lf-theme .lf-home-story--news .lf-home-story__body { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 18px 16px; }
+body.lf-theme .lf-home-story--news h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+body.lf-theme .lf-home-story--news .lf-home-story__category { position: static; margin-top: auto; padding-top: 2px; max-width: 100%; }
+body.lf-theme .lf-home-story--latest { padding-block: 12px; }
+body.lf-theme .lf-home-story--latest + .lf-home-story { border-top: 1px solid var(--lf-home-line); }
+body.lf-theme .lf-home-story--latest .lf-home-story__visual { width: 148px; aspect-ratio: 16 / 9; align-self: start; }
+body.lf-theme .lf-home-story--latest time { margin-left: auto; }
+body.lf-theme .lf-home-story--latest .lf-home-story__excerpt { -webkit-line-clamp: 1; }
+body.lf-theme .lf-home__panel { padding: 12px 16px; }
+body.lf-theme .lf-home__panel .lf-home__section-head { gap: 8px; margin-bottom: 8px; }
+body.lf-theme .lf-home__panel h2 { font-size: 18px; }
+body.lf-theme .lf-home__period { margin-left: auto; font-size: 12px; color: var(--lf-home-muted); }
+body.lf-theme .lf-home__ranking li + li { border-top: 1px solid var(--lf-home-line); }
+body.lf-theme .lf-home-story--popular .lf-home-story__link { align-items: center; gap: 10px; padding-block: 8px; }
+body.lf-theme .lf-home-story--popular .lf-home-story__visual { width: 76px; aspect-ratio: 16 / 10; }
+body.lf-theme .lf-home-story--popular h3 { font-size: 13px; line-height: 1.5; }
+body.lf-theme .lf-home-story__rank { display: grid; place-items: center; flex: 0 0 26px; height: 26px; border-radius: 50%; background: var(--lf-home-muted); color: var(--lf-home-paper); font-size: 14px; }
+body.lf-theme .lf-home__ranking li:nth-child(-n+3) .lf-home-story__rank { background: var(--lf-home-badge); color: #fff; }
+body.lf-theme .lf-home__empty { padding: 24px 8px; color: var(--lf-home-muted); }
+body.lf-theme .lf-home__category-form { display: flex; align-items: center; gap: 8px; }
+body.lf-theme .lf-home__category-form select { flex: 1; min-width: 0; width: 100%; min-height: 48px; padding: 8px 12px; border: 1px solid var(--lf-home-line); border-radius: var(--md-sys-shape-corner-small); background: var(--lf-home-canvas); color: var(--lf-home-ink); font: inherit; font-size: 14px; }
+body.lf-theme .lf-home__category-form button { flex-shrink: 0; min-height: 48px; padding: 8px 14px; border: 1px solid var(--lf-home-accent); border-radius: var(--md-sys-shape-corner-small); background: var(--lf-home-paper); color: var(--lf-home-accent); font: inherit; cursor: pointer; }
+body.lf-theme .lf-home__category-form :is(select, button):focus-visible { outline: 2px solid var(--lf-home-accent); outline-offset: 2px; }
+body.lf-theme .lf-home #latest { scroll-margin-top: 88px; }
+@media (max-width: 1100px) {
+	body.lf-theme .lf-home__filters { order: 3; flex-basis: 100%; justify-content: flex-start; }
+}
+@media (max-width: 1000px) {
+	body.lf-theme .lf-home__news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	body.lf-theme .lf-home__columns { grid-template-columns: minmax(0, 1fr); }
+	body.lf-theme .lf-home__aside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+@media (max-width: 600px) {
+	body.lf-theme .lf-home { padding-top: 16px; }
+	body.lf-theme .lf-home__intro { flex-basis: 100%; order: 3; font-size: 12px; }
+	body.lf-theme .lf-home__news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+	body.lf-theme .lf-home-story--news .lf-home-story__body { padding: 10px; }
+	body.lf-theme .lf-home-story--news .lf-home-story__visual { aspect-ratio: 16 / 9; }
+	body.lf-theme .lf-home-story--news h3 { font-size: 14px; }
+	body.lf-theme .lf-home-story--news .lf-home-story__excerpt { display: none; }
+	body.lf-theme .lf-home-story--news .lf-home-story__category { max-width: 100%; font-size: 10px; padding-inline: 6px; }
+	body.lf-theme .lf-home__aside { grid-template-columns: minmax(0, 1fr); }
+	body.lf-theme .lf-home-story--latest .lf-home-story__visual { width: 100px; }
+	body.lf-theme .lf-home-story--latest .lf-home-story__link { gap: 12px; }
+	body.lf-theme .lf-home-story--latest h3 { font-size: 14px; }
+	body.lf-theme .lf-home-story--latest time { margin-left: 0; }
+	body.lf-theme .lf-home-story--latest .lf-home-story__excerpt { display: none; }
+	body.lf-theme .lf-home .lf-home__more { font-size: 12px; }
+}
+@media (max-width: 359px) {
+	body.lf-theme .lf-home__news-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+body.lf-theme .lf-home-story--news .lf-home-story__category { margin-top: auto; transform: translateY(0); }
+body.lf-theme .lf-home-story--news h3 { margin-bottom: 8px; }
+body.lf-theme .lf-home-story--news .lf-home-story__excerpt { margin-bottom: 12px; }
+body.lf-theme .lf-home__calendar { border-radius: var(--md-sys-shape-corner-large, 16px); background: var(--md-sys-color-surface-container-low, var(--lf-home-paper)); padding: 20px; }
+
+body.lf-theme .lf-home__calendar-controls { display: flex; gap: 8px; margin-bottom: 12px; }
+body.lf-theme .lf-home__calendar-controls select { min-width: 0; flex: 1; height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: 0; border-radius: var(--lf-shape-full); color: var(--lf-home-ink); background: transparent; font-weight: 700; cursor: pointer; }
+body.lf-theme .lf-home__calendar-controls button { min-height: 48px; padding: 0 16px; border: 0; border-radius: var(--lf-shape-full); background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font: inherit; cursor: pointer; }
+body.lf-theme .lf-home__calendar-controls :focus-visible { outline: 2px solid var(--lf-home-accent); outline-offset: 2px; }
+body.lf-theme .lf-home__calendar table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; color: var(--lf-home-ink); }
+body.lf-theme .lf-home__calendar caption { padding: 0; height: 0; overflow: hidden; font-size: 0; }
+body.lf-theme .lf-home__calendar :is(th, td) { height: 40px; padding: 0; text-align: center; border: 0; background: transparent; }
+body.lf-theme .lf-home__calendar th { color: var(--lf-home-muted); font-size: 12px; font-weight: 500; }
+body.lf-theme .lf-home__calendar td a { display: grid; place-items: center; width: 36px; height: 36px; margin: auto; border-radius: 50%; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+body.lf-theme .lf-home__calendar #today { border-radius: 50%; outline: 1px solid var(--lf-home-accent); outline-offset: -4px; font-weight: 700; color: var(--lf-home-accent); }
+body.lf-theme .lf-home__calendar .wp-calendar-nav { display: flex; justify-content: space-between; font-size: 13px; color: var(--lf-home-accent); }
+body.lf-theme .lf-home__calendar .wp-calendar-nav a { display: inline-flex; align-items: center; min-height: 48px; padding-inline: 8px; border-radius: var(--lf-shape-full); }
+body.lf-theme .lf-home__calendar .wp-calendar-nav a:hover { background: var(--md-sys-color-secondary-container); }
+body.lf-theme .lf-home__calendar td:not(.pad):hover { border-radius: 50%; background: var(--md-sys-color-secondary-container); }
+body.lf-theme .lf-home__calendar td a:is(:hover, :focus-visible) { background: var(--lf-home-badge); color: #fff; }
+body.lf-theme .lf-home__calendar-controls select:hover { background: var(--md-sys-color-secondary-container); }
+body.lf-theme .lf-home__calendar-form.is-enhanced button { display: none; }
+body.lf-theme .lf-home__calendar[aria-busy="true"] table { opacity: .5; }
+
+@media (min-width: 601px) and (max-width: 1000px) { body.lf-theme .lf-home__calendar { grid-column: 2; } }

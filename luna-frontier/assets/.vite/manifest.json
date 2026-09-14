@@ -5,6 +5,16 @@
     "src": "src/luna.js",
     "isEntry": true
   },
+  "src/styles/luna-archive.css": {
+    "file": "css/luna-archive.css",
+    "src": "src/styles/luna-archive.css",
+    "isEntry": true
+  },
+  "src/styles/luna-spotlight.css": {
+    "file": "css/luna-spotlight.css",
+    "src": "src/styles/luna-spotlight.css",
+    "isEntry": true
+  },
   "src/styles/luna.css": {
     "file": "css/luna-style.css",
     "src": "src/styles/luna.css",

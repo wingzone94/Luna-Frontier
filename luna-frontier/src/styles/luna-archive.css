@@ -1,0 +1,42 @@
+/* /all-articles/: retain Node's card layout, typography, colors and spacing.
+ * Only Luna's shared header, topic navigation and footer are layered on top.
+ * A separate entry also excludes the Luna category-color inline stylesheet.
+ */
+@import "./_tokens.css";
+@import "./_chrome.css";
+@import "./_search.css";
+
+body.lf-theme.lf-legacy-archive {
+	--lf-text-2xs: .75rem;
+	--lf-text-xs: .8125rem;
+	--lf-text-s: .875rem;
+	--lf-text-base: 1rem;
+	--lf-text-l: 1.25rem;
+}
+body.lf-theme.lf-legacy-archive #primary {
+	--font-heading: "Manrope", "Noto Sans JP", sans-serif;
+	--category-on-color: #fff;
+	--md-sys-color-on-primary: #fff;
+	--md-sys-color-on-secondary: #fff;
+	padding-top: var(--lf-space-m);
+}
+/* Production 1.3.2 uses flat surfaces; the local parent still has elevations. */
+body.lf-theme.lf-legacy-archive #primary :is(.m3-card, .m3-archive-header, .m3-label--category) {
+	box-shadow: none;
+}
+@layer components {
+	/* Restore 1.3.2's white category text over the local parent's important rule. */
+	body.lf-theme.lf-legacy-archive #primary .m3-label--category { color: #fff !important; }
+}
+@media (max-width: 700px) {
+	body.lf-theme.lf-legacy-archive .m3-label--category-more { flex: 0 0 auto; }
+}
+@media (max-width: 600px) {
+	body.lf-theme.lf-legacy-archive .m3-card__category-container { min-inline-size: 0; }
+	body.lf-theme.lf-legacy-archive .m3-card .m3-article__category-group { min-inline-size: 0; max-inline-size: 100%; overflow: hidden; }
+}
+body.lf-theme.lf-legacy-archive .lf-system-label {
+	font: 700 .75rem var(--font-ui), sans-serif;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}

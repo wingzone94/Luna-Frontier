@@ -101,7 +101,8 @@ function luna_frontier_enqueue_assets(): void {
 	// 当初は機能ラベル用に Orbitron を追加していたが、2026-08-09 のユーザー指示で不採用。
 	// 追加ウェイトを読まないぶん、フォント読み込みは Node 1.3 と同じコストになる。
 
-	$style = luna_frontier_manifest_entry( 'src/styles/luna.css' );
+	$legacy_archive = luna_frontier_is_legacy_archive();
+	$style = luna_frontier_manifest_entry( $legacy_archive ? 'src/styles/luna-archive.css' : 'src/styles/luna.css' );
 
 	if ( null !== $style ) {
 		// CSS entry は Vite の版により 'file' 直接／'css' 配列経由のどちらにもなり得る。
@@ -109,7 +110,7 @@ function luna_frontier_enqueue_assets(): void {
 
 		if ( '.css' === substr( $style_file, -4 ) ) {
 			wp_enqueue_style(
-				'luna-frontier',
+				$legacy_archive ? 'luna-frontier-archive' : 'luna-frontier',
 				LUNA_FRONTIER_URI . '/assets/' . $style_file,
 				array(),
 				luna_frontier_asset_version( $style_file )
@@ -118,6 +119,18 @@ function luna_frontier_enqueue_assets(): void {
 	}
 
 	$script = luna_frontier_manifest_entry( 'src/luna.js' );
+	if ( get_query_var( 'node_spotlight' ) ) {
+		$spotlight_style = luna_frontier_manifest_entry( 'src/styles/luna-spotlight.css' );
+		if ( null !== $spotlight_style ) {
+			$spotlight_file = $spotlight_style['css'][0] ?? $spotlight_style['file'];
+			wp_enqueue_style(
+				'luna-frontier-spotlight',
+				LUNA_FRONTIER_URI . '/assets/' . $spotlight_file,
+				array( 'luna-frontier' ),
+				luna_frontier_asset_version( $spotlight_file )
+			);
+		}
+	}
 
 	if ( null !== $script ) {
 		wp_enqueue_script(
@@ -156,10 +169,52 @@ add_filter( 'script_loader_tag', 'luna_frontier_script_module_type', 10, 2 );
  */
 function luna_frontier_body_class( array $classes ): array {
 	$classes[] = 'lf-theme';
+	if ( luna_frontier_is_legacy_archive() ) {
+		$classes[] = 'lf-legacy-archive';
+	}
 
 	return $classes;
 }
 add_filter( 'body_class', 'luna_frontier_body_class' );
+
+/** Use Luna's archive after the parent has resolved the existing /spotlight/ route. */
+function luna_frontier_spotlight_template( string $template ): string {
+	if ( get_query_var( 'node_spotlight' ) ) {
+		return __DIR__ . '/template-parts/spotlight-archive.php';
+	}
+	return $template;
+}
+add_filter( 'template_include', 'luna_frontier_spotlight_template', 100 );
+
+/** Use a published article's cover from the same feature, never an unrelated image. */
+function luna_frontier_spotlight_image_id( array $feature ): int {
+	$term = get_term_by( 'slug', (string) ( $feature['slug'] ?? '' ), 'category' );
+	if ( ! $term instanceof WP_Term ) {
+		return 0;
+	}
+	$posts = get_posts(
+		array(
+			'category'       => $term->term_id,
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'meta_query'     => array(
+				array(
+					'key'     => '_thumbnail_id',
+					'value'   => 0,
+					'compare' => '>',
+					'type'    => 'NUMERIC',
+				),
+			),
+		)
+	);
+	return $posts ? (int) get_post_thumbnail_id( $posts[0] ) : 0;
+}
+
+/** All-articles keeps the Node 1.3.2 content presentation, including pagination. */
+function luna_frontier_is_legacy_archive(): bool {
+	return (bool) get_query_var( 'node_all_articles' );
+}
 
 /**
  * トピックナビ用のメニュー位置を追加する。
@@ -175,3 +230,9 @@ function luna_frontier_register_menus(): void {
 	);
 }
 add_action( 'after_setup_theme', 'luna_frontier_register_menus', 20 );
+
+/** Include the editorial home icons in the existing font subset. */
+function luna_frontier_home_icon_names( array $names ): array {
+	return array_merge( $names, array( 'star', 'label' ) );
+}
+add_filter( 'node_icon_font_names', 'luna_frontier_home_icon_names' );

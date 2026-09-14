@@ -143,15 +143,22 @@ declare(strict_types=1);
                             <button type="submit" class="m3-icon-button m3-search-submit" id="m3-search-submit" aria-label="検索を実行">
                                 <span class="material-symbols-outlined" aria-hidden="true">search</span>
                             </button>
+                            <?php if ( ! function_exists( 'luna_frontier_is_legacy_archive' ) ) : ?>
                             <button type="button" class="m3-icon-button m3-search-advanced-trigger" id="m3-advanced-search-trigger" aria-label="詳細検索" aria-haspopup="dialog" aria-expanded="false" aria-controls="m3-advanced-search-modal">
                                 <span class="material-symbols-outlined" aria-hidden="true">tune</span>
                             </button>
+                            <?php endif; ?>
                         </div>
                         <div id="m3-search-suggestions" class="m3-suggestions-list m3-search-suggestions" role="listbox" aria-label="検索キーワードの候補"></div>
                     </div>
                     <button type="button" class="m3-icon-button m3-search-bar__toggle m3-tooltip-target" id="search-toggle" aria-label="検索" data-tooltip="検索">
                         <span class="material-symbols-outlined">search</span>
                     </button>
+                    <?php if ( function_exists( 'luna_frontier_is_legacy_archive' ) ) : ?>
+                            <button type="button" class="m3-icon-button m3-search-advanced-trigger" id="m3-advanced-search-trigger" aria-label="詳細検索" aria-haspopup="dialog" aria-expanded="false" aria-controls="m3-advanced-search-modal">
+                                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                            </button>
+                    <?php endif; ?>
                 </form>
                 <script>
                 (function () {

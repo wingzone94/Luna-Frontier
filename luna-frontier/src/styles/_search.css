@@ -6,6 +6,49 @@
  * Paper（四角）の面に、フィールドは M3 の Outlined text field 相当。
  */
 
+/* Header search: keep the existing form, suggestions and mobile disclosure. */
+body.lf-theme .m3-header .m3-search-input-wrapper {
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+body.lf-theme .m3-header .m3-search-input-wrapper:focus-within {
+	outline: none;
+}
+body.lf-theme .m3-header #m3-search-input {
+	font-family: var(--font-ui), sans-serif;
+	color: var(--md-sys-color-on-surface);
+}
+body.lf-theme .m3-header #m3-search-input:focus-visible {
+	outline: none;
+	box-shadow: inset 0 -2px var(--lf-brand-text);
+}
+body.lf-theme .m3-header #m3-search-submit {
+	border-radius: 50%;
+	width: 48px;
+	height: 48px;
+	flex: 0 0 48px;
+}
+body.lf-theme .m3-header #m3-advanced-search-trigger { flex-shrink: 0; order: -1; margin-right: 4px; }
+/* Match the parent's components layer: layered !important beats unlayered CSS. */
+@layer components {
+	body.lf-theme .m3-header :is(#m3-search-submit, #search-toggle) {
+		background: #FF9900 !important;
+		box-shadow: 0 2px 6px rgb(0 0 0 / 22%) !important;
+		color: #fff !important;
+		border-radius: 50%;
+	}
+	body.lf-theme .m3-header :is(#m3-search-submit, #search-toggle):hover {
+		background: #FF9900 !important;
+	}
+}
+body.lf-theme .m3-header:not(.search-is-active) #m3-advanced-search-trigger { display: none; }
+body.lf-theme .m3-header:not(.search-is-active) .m3-search-input-wrapper {
+ visibility: hidden;
+}
+body.lf-theme .m3-header .m3-search-bar__input { font-size: 14px; }
+
 body.lf-theme .lf-search__header {
 	display: flex;
 	align-items: baseline;

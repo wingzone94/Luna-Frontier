@@ -2,6 +2,8 @@
  * グリッドを調整して、中途半端な最後の行を隠す
  */
 const balanceGrid = (container) => {
+    // Date archives must retain every result, including a partial final row.
+    if (container.closest('.lf-date-archive')) return;
     const cards = Array.from(container.querySelectorAll('.m3-card, .m3-elevated-nav-card, .special-features__item'));
     if (!cards.length) return;
 

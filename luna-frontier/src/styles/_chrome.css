@@ -45,229 +45,175 @@ body.lf-theme.search.m3-search-suggestions-is-active:has(.lf-topic-nav) .site-ma
 	padding-top: calc(var(--lf-space-m) + var(--m3-search-suggestions-space, 0px));
 }
 
+/* One row: desktop shelves scroll independently; narrow screens use one rail. */
 body.lf-theme .lf-topic-nav__inner {
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
-	padding-inline: var(--lf-gutter);
+	padding: var(--lf-space-2xs) var(--lf-gutter);
 	display: flex;
-	align-items: stretch;
-	gap: var(--lf-space-s);
-	/* 項目が多いときは横スクロールで逃がす。ページ全体は横に伸ばさない（§65）。 */
-	overflow-x: auto;
-	overscroll-behavior-inline: contain;
-	scrollbar-width: thin;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: var(--lf-space-s, 16px);
 }
 
-/* ---- 左: おすすめ + SPOTLIGHT 特集 -------------------------------- */
-body.lf-theme .lf-topic-nav__group--spotlight {
+body.lf-theme .lf-topic-nav__group {
 	display: flex;
 	align-items: center;
-	gap: var(--lf-space-2xs);
-	padding-inline-end: var(--lf-space-s);
-	border-inline-end: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 70%, transparent);
+	min-inline-size: 0;
+	gap: var(--lf-space-2xs, 8px);
 }
 
-/* 「おすすめ」は特集群の見出し。ここだけブランドオレンジで塗る Expressive の見せ場（§19）。 */
+body.lf-theme .lf-topic-nav__group--spotlight {
+	flex: 1 1 0;
+}
+
+body.lf-theme .lf-topic-nav__group--topics {
+	flex: 0 1 auto;
+	max-inline-size: 55%;
+}
+
+body.lf-theme .lf-topic-nav__group--topics:only-child {
+	max-inline-size: 100%;
+}
+
+body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
+	border-inline-start: 1px solid var(--lf-rule);
+	padding-inline-start: var(--lf-space-s, 16px);
+}
+
+/* Group labels are not controls. */
 body.lf-theme .lf-topic-nav__pick {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35em;
 	flex: 0 0 auto;
-	padding: 0.4em 1em;
-	border-radius: var(--lf-shape-full);
-	background: var(--lf-brand);
-	color: var(--lf-on-brand);
+	gap: var(--lf-space-2xs, 8px);
 	font-family: var(--font-ui), sans-serif;
 	font-size: var(--lf-text-2xs);
 	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-decoration: none;
+	color: var(--lc-on-surface);
 	white-space: nowrap;
 }
 
-body.lf-theme .lf-topic-nav__pick .material-symbols-outlined {
-	font-size: 1.15em;
-}
-
-body.lf-theme .lf-topic-nav__features {
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
 	display: flex;
 	align-items: center;
-	gap: var(--lf-space-3xs);
+	flex: 0 1 auto;
+	min-inline-size: 0;
+	gap: var(--lf-space-2xs, 8px);
 	list-style: none;
 	margin: 0;
-	padding: 0;
+	/* Reserve room for the focus ring inside each scroll container. */
+	padding: 4px;
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	scroll-padding-inline: 4px;
+	scrollbar-width: thin;
 }
 
-body.lf-theme .lf-topic-nav__features a {
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
+	flex: 0 0 auto;
+}
+
+/* Center native keyboard focus scrolling, including at browser zoom.
+ * Scroll padding leaves touch and wheel scrolling unconstrained. */
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list):has(a:focus-visible) {
+	scroll-padding-inline: 50%;
+}
+
+body.lf-theme .lf-topic-nav a {
 	display: inline-flex;
 	align-items: center;
-	min-block-size: 2.25rem;
-	padding: 0.3em 0.9em;
-	border: 1px solid color-mix(in srgb, var(--lf-brand) 45%, transparent);
-	border-radius: var(--lf-shape-full);
+	justify-content: center;
+	box-sizing: border-box;
+	min-block-size: 48px;
+	min-inline-size: 48px;
+	gap: var(--lf-space-2xs, 8px);
+	padding: var(--lf-space-2xs, 8px) 12px;
+	font-family: var(--font-ui), sans-serif;
 	font-size: var(--lf-text-2xs);
 	font-weight: 600;
-	color: var(--lf-brand-text);
+	line-height: 1.4;
+	color: var(--lc-on-surface);
 	text-decoration: none;
 	white-space: nowrap;
 	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
-body.lf-theme .lf-topic-nav__features a:hover {
-	background: color-mix(in srgb, var(--lf-brand) var(--lf-state-hover), transparent);
+body.lf-theme .lf-topic-nav__features a {
+	border: 1px solid var(--lf-rule);
+	border-radius: var(--lf-shape-full);
+	background: var(--md-sys-color-surface);
 }
 
-body.lf-theme .lf-topic-nav__features a:active {
-	background: color-mix(in srgb, var(--lf-brand) var(--lf-state-pressed), transparent);
+body.lf-theme .lf-topic-nav__past {
+	flex: 0 0 auto;
+	border-radius: var(--lf-shape-full);
 }
 
-/* ---- 右: おすすめ + トピック（アイコンの下にラベル） ---------------- */
-body.lf-theme .lf-topic-nav__group--topics {
-	display: flex;
-	align-items: center;
-	gap: var(--lf-space-2xs);
-}
-
-/*
- * 右側の「編集部おすすめ」はグループの見出し。
- * カテゴリチップと同じ塗りのオレンジピルにする（2026-08-09 ユーザー指示）。
- * 塗りピルの文字は --lf-on-brand。白は #FF9900 に対して 2.14:1 で AA を割るため使わない。
- */
-body.lf-theme .lf-topic-nav__pick--editors {
-	background: var(--lf-brand);
-	border: 0;
-	color: var(--lf-on-brand);
-}
-
-body.lf-theme .lf-topic-nav__list {
-	display: flex;
-	align-items: stretch;
-	gap: var(--lf-space-2xs);
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	white-space: nowrap;
-}
-
-body.lf-theme .lf-topic-nav__list > li > a {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 0.15rem;
-	min-inline-size: 4.5rem;
-	min-block-size: 3.5rem;
-	padding: 0.35rem 0.5rem;
-	font-family: var(--font-ui), sans-serif;
-	font-size: var(--lf-text-2xs);
-	font-weight: 600;
-	letter-spacing: 0.02em;
-	color: var(--lf-on-surface-secondary);
-	text-decoration: none;
+body.lf-theme .lf-topic-nav__list a {
 	border-block-end: 2px solid transparent;
-	transition: color var(--lf-motion-fast) var(--lf-easing-standard),
-		border-color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
-body.lf-theme .lf-topic-nav__icon {
-	font-size: 1.5rem;
+body.lf-theme .lf-topic-nav a:hover {
+	background: color-mix(in srgb, var(--lf-brand) 10%, transparent);
+}
+
+body.lf-theme .lf-topic-nav a:active {
+	background: color-mix(in srgb, var(--lf-brand) 18%, transparent);
+}
+
+body.lf-theme .lf-topic-nav a:focus-visible {
+	outline: 2px solid var(--lc-accent);
+	outline-offset: 2px;
+}
+
+body.lf-theme .lf-topic-nav__list a[aria-current="page"] {
+	border-block-end-color: var(--lc-accent);
+	font-weight: 700;
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-topic-nav .material-symbols-outlined {
+	font-size: 20px;
 	line-height: 1;
+	flex: 0 0 auto;
 }
 
-body.lf-theme .lf-topic-nav__label {
-	line-height: 1.2;
-}
-
-body.lf-theme .lf-topic-nav__list > li > a:hover,
-body.lf-theme .lf-topic-nav__list > li.is-current > a {
-	color: var(--lf-brand-text);
-	border-block-end-color: var(--lf-brand);
-}
-
-/* SPOTLIGHT はこの列へ統合したので、ホームの独立セクションは出さない
-   （同じリンクの二重表示を避ける）。 */
+/* The integrated links replace the duplicate home feature section. */
 body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 	display: none;
 }
 
-@media (max-width: 599px) {
-	/*
-	 * Topic Nav はモバイルでも出す。
-	 *
-	 * 2.0 の回遊導線はこの列そのものなので、トラフィックの大半を占める幅で
-	 * 丸ごと消えているのは設計として通らない。以前 display: none にしていたのは、
-	 * 消したときに固定ヘッダー（64px）の高さを引き受ける要素が居なくなり、
-	 * main がヘッダーの裏へ潜っていたため（実測: main top=0 でパンくずが不可視）。
-	 * 列を出したまま、clearance は Topic Nav 自身の margin-block-start が
-	 * 「必ず一度だけ」払う（ホームも通常ページも同じ。2026-09-03 に
-	 * モバイルの追従セクションナビを撤去したので、二重払いの相手は居ない）。
-	 * main 側は :has(.lf-topic-nav) の通常余白（--lf-space-m）のままでよい。
-	 *
-	 * 幅が狭いので、アイコン＋ラベルのチップを 1 行の横スクロールで並べる
-	 * （下の __list / __icon がその形。ページ全体は横に伸ばさない §65）。
-	 */
-
-	/*
-	 * 「編集部おすすめ」はリンクではない見出しラベル。
-	 * スクロール領域の先頭で 120px ほど占め、主役のトピックを画面外へ押し出す。
-	 * 特集ピル（__features）と同じ理由でモバイルでは畳む。
-	 */
-	body.lf-theme .lf-topic-nav__pick--editors {
-		display: none;
-	}
-
-	body.lf-theme .lf-topic-nav__group--topics {
-		min-inline-size: 0;
-	}
-
+@media (max-width: 1000px) {
 	body.lf-theme .lf-topic-nav__inner {
-		gap: var(--lf-space-2xs);
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		scroll-padding-inline: var(--lf-gutter);
+		scrollbar-width: thin;
 	}
 
-	/*
-	 * 狭い画面では特集ピル（BLEACH特集 …）が横幅を食い切ってしまい、
-	 * 主役であるトピックがスクロールの外へ追い出される。
-	 * 「おすすめ」ピル自体が特集一覧へのリンクなので、ここへ集約する。
-	 */
-	body.lf-theme .lf-topic-nav__features {
-		display: none;
+	body.lf-theme .lf-topic-nav__inner:has(a:focus-visible) {
+		scroll-padding-inline: 50%;
 	}
 
-	body.lf-theme .lf-topic-nav__group--spotlight {
-		padding-inline-end: var(--lf-space-2xs);
+	body.lf-theme .lf-topic-nav__group {
+		flex: 0 0 auto;
+		max-inline-size: none;
 	}
 
-	/*
-	 * モバイルでは SPOTLIGHT も独立した CTA ではなく、現在選択中の
-	 * トピックとして扱う。隣のナビ項目と高さ・情報構造を揃え、
-	 * ブランド色の文字と下線だけで選択状態を示す。
-	 */
-	body.lf-theme .lf-topic-nav__pick {
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.15rem;
-		min-inline-size: 6.25rem;
-		min-block-size: 3.25rem;
-		padding: 0.35rem 0.5rem;
-		border-radius: 0;
-		background: transparent;
-		color: var(--lf-brand-text);
-		border-block-end: 2px solid var(--lf-brand);
-		letter-spacing: 0.04em;
+	body.lf-theme .lf-topic-nav__group--topics:only-child {
+		max-inline-size: none;
 	}
 
-	body.lf-theme .lf-topic-nav__pick .material-symbols-outlined {
-		font-size: 1.35rem;
-		line-height: 1;
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+		flex: 0 0 auto;
+		overflow: visible;
 	}
+}
 
-	body.lf-theme .lf-topic-nav__list > li > a {
-		min-inline-size: 4rem;
-		min-block-size: 3.25rem;
-	}
-
-	body.lf-theme .lf-topic-nav__icon {
-		font-size: 1.35rem;
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme .lf-topic-nav a {
+		transition: none;
 	}
 }
 
