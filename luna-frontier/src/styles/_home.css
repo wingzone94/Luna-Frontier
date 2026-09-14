@@ -1,11 +1,11 @@
 /* Editorial home. Its neutral surfaces do not change the header or article palette. */
 body.lf-theme .lf-home {
-	--lf-home-canvas: #f7f8fa;
-	--lf-home-paper: #fff;
-	--lf-home-ink: #151b2b;
-	--lf-home-muted: #596174;
-	--lf-home-line: #e9ebef;
-	--lf-home-accent: #b84b00;
+	--lf-home-canvas: var(--md-sys-color-surface);
+	--lf-home-paper: var(--lf-paper);
+	--lf-home-ink: var(--lc-on-surface);
+	--lf-home-muted: var(--lf-on-surface-secondary);
+	--lf-home-line: var(--lf-rule);
+	--lf-home-accent: var(--lf-brand-text);
 	--lf-home-badge: #b84b00;
 	max-width: 1440px;
 	width: 100%;
@@ -16,12 +16,12 @@ body.lf-theme .lf-home {
 }
 html[data-theme="dark"] body.lf-theme .lf-home,
 body.lf-theme[data-theme="dark"] .lf-home {
-	--lf-home-canvas: #17191e;
-	--lf-home-paper: #22252c;
-	--lf-home-ink: #f1f2f6;
-	--lf-home-muted: #b7becc;
-	--lf-home-line: #373d48;
-	--lf-home-accent: #ffb77d;
+	--lf-home-canvas: var(--md-sys-color-surface);
+	--lf-home-paper: var(--lf-paper);
+	--lf-home-ink: var(--lc-on-surface);
+	--lf-home-muted: var(--lf-on-surface-secondary);
+	--lf-home-line: var(--lf-rule);
+	--lf-home-accent: var(--lf-brand-text);
 }
 body.lf-theme .lf-home :is(h2, h3, p, ul, ol) { margin: 0; }
 body.lf-theme .lf-home :is(ul, ol) { list-style: none; padding: 0; }
@@ -39,7 +39,7 @@ body.lf-theme .lf-home__news { margin-bottom: 24px; }
 body.lf-theme .lf-home__columns { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(290px, 1fr); gap: 20px; align-items: start; }
 body.lf-theme :is(.lf-home__latest, .lf-home__aside) { min-width: 0; }
 body.lf-theme .lf-home__aside { display: grid; gap: 16px; }
-body.lf-theme :is(.lf-home__story-list, .lf-home__panel, .lf-home-story--news) { background: var(--lf-home-paper); border: 1px solid var(--lf-home-line); border-radius: var(--md-sys-shape-corner-small); box-shadow: 0 2px 12px rgb(0 0 0 / 3%); }
+body.lf-theme :is(.lf-home__story-list, .lf-home__panel, .lf-home-story--news) { background: var(--lf-home-paper); border: 1px solid var(--lf-home-line); border-radius: var(--md-sys-shape-corner-small); }
 body.lf-theme .lf-home__story-list { padding: 0 14px; }
 body.lf-theme .lf-home__filters { display: flex; flex: 1; justify-content: flex-end; gap: 16px; overflow-x: auto; max-width: 100%; font-size: 13px; }
 body.lf-theme .lf-home__filters a { display: flex; align-items: center; min-height: 48px; white-space: nowrap; border-bottom: 3px solid transparent; color: var(--lf-home-muted); }
