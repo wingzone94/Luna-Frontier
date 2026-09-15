@@ -21,4 +21,4 @@ if ( 'single' === $lf_mode ) {
 	return;
 }
 
-require get_template_directory() . '/template-parts/ai-summary.php';
+require get_template_directory() . '/template-parts/legacy/ai-summary.php';

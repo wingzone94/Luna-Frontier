@@ -14,6 +14,6 @@ declare( strict_types=1 );
  * @package LunaFrontier
  */
 
-require get_template_directory() . '/header.php';
+require get_template_directory() . '/template-parts/legacy/header.php';
 
 get_template_part( 'template-parts/luna/topic-nav' );
