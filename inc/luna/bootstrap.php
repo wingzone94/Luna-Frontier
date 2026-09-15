@@ -16,21 +16,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LUNA_FRONTIER_DIR', get_stylesheet_directory() );
-define( 'LUNA_FRONTIER_URI', get_stylesheet_directory_uri() );
+define( 'LUNA_FRONTIER_DIR', get_template_directory() );
+define( 'LUNA_FRONTIER_URI', get_template_directory_uri() );
 define( 'LUNA_FRONTIER_CODENAME', 'SkyAlow' );
 
-require_once LUNA_FRONTIER_DIR . '/inc/dynamic-color.php';
-require_once LUNA_FRONTIER_DIR . '/inc/reading-aside.php';
-require_once LUNA_FRONTIER_DIR . '/inc/category-label.php';
-require_once LUNA_FRONTIER_DIR . '/inc/writer-avatar.php';
+require_once LUNA_FRONTIER_DIR . '/inc/luna/dynamic-color.php';
+require_once LUNA_FRONTIER_DIR . '/inc/luna/reading-aside.php';
+require_once LUNA_FRONTIER_DIR . '/inc/luna/category-label.php';
+require_once LUNA_FRONTIER_DIR . '/inc/luna/writer-avatar.php';
 
 /**
  * 子テーマ自身のバージョン（style.css の Version）。
  * 親のバージョンは NODE_THEME_VERSION が保持する。
  */
 function luna_frontier_version(): string {
-	$version = wp_get_theme( get_stylesheet() )->get( 'Version' );
+	$version = wp_get_theme( get_template() )->get( 'Version' );
 
 	return ( is_string( $version ) && '' !== $version ) ? $version : '0.0.0';
 }
@@ -102,7 +102,7 @@ function luna_frontier_enqueue_assets(): void {
 	// 追加ウェイトを読まないぶん、フォント読み込みは Node 1.3 と同じコストになる。
 
 	$legacy_archive = luna_frontier_is_legacy_archive();
-	$style = luna_frontier_manifest_entry( $legacy_archive ? 'src/styles/luna-archive.css' : 'src/styles/luna.css' );
+	$style = luna_frontier_manifest_entry( $legacy_archive ? 'src/luna/styles/luna-archive.css' : 'src/luna/styles/luna.css' );
 
 	if ( null !== $style ) {
 		// CSS entry は Vite の版により 'file' 直接／'css' 配列経由のどちらにもなり得る。
@@ -118,9 +118,9 @@ function luna_frontier_enqueue_assets(): void {
 		}
 	}
 
-	$script = luna_frontier_manifest_entry( 'src/luna.js' );
+	$script = luna_frontier_manifest_entry( 'src/luna/luna.js' );
 	if ( get_query_var( 'node_spotlight' ) ) {
-		$spotlight_style = luna_frontier_manifest_entry( 'src/styles/luna-spotlight.css' );
+		$spotlight_style = luna_frontier_manifest_entry( 'src/luna/styles/luna-spotlight.css' );
 		if ( null !== $spotlight_style ) {
 			$spotlight_file = $spotlight_style['css'][0] ?? $spotlight_style['file'];
 			wp_enqueue_style(
@@ -180,7 +180,7 @@ add_filter( 'body_class', 'luna_frontier_body_class' );
 /** Use Luna's archive after the parent has resolved the existing /spotlight/ route. */
 function luna_frontier_spotlight_template( string $template ): string {
 	if ( get_query_var( 'node_spotlight' ) ) {
-		return __DIR__ . '/template-parts/spotlight-archive.php';
+		return LUNA_FRONTIER_DIR . '/template-parts/spotlight-archive.php';
 	}
 	return $template;
 }
@@ -225,7 +225,7 @@ function luna_frontier_is_legacy_archive(): bool {
 function luna_frontier_register_menus(): void {
 	register_nav_menus(
 		array(
-			'luna_topics' => __( 'トピック（Luna Frontier）', 'luna-frontier' ),
+			'luna_topics' => __( 'トピック（Luna Frontier）', 'node' ),
 		)
 	);
 }

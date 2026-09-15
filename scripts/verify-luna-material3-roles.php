@@ -27,7 +27,7 @@ if (!function_exists('sanitize_hex_color')) {
     }
 }
 
-require_once __DIR__ . '/../luna-frontier/inc/dynamic-color.php';
+require_once __DIR__ . '/../inc/luna/dynamic-color.php';
 
 $seeds = [
     'brand' => '#ff9900',

@@ -14,7 +14,7 @@ $lf_requested = isset( $_GET['lf_calendar'] ) && is_string( $_GET['lf_calendar']
 $lf_month = isset( $lf_months[ $lf_requested ] ) ? $lf_requested : $lf_current_month;
 ?>
 <form class="lf-home__calendar-form" method="get" action="<?php echo esc_url( $args['home_url'] . '#lf-calendar-title' ); ?>">
- <label class="screen-reader-text" for="lf-calendar-month"><?php esc_html_e( '表示する年月', 'luna-frontier' ); ?></label>
+ <label class="screen-reader-text" for="lf-calendar-month"><?php esc_html_e( '表示する年月', 'node' ); ?></label>
  <div class="lf-home__calendar-controls">
   <select name="lf_calendar" id="lf-calendar-month">
    <?php foreach ( $lf_months as $lf_value => $lf_label ) : ?>
@@ -22,7 +22,7 @@ $lf_month = isset( $lf_months[ $lf_requested ] ) ? $lf_requested : $lf_current_m
    <?php endforeach; ?>
   </select>
   <?php if ( ! empty( $args['category'] ) ) : ?><input type="hidden" name="lf_category" value="<?php echo esc_attr( $args['category'] ); ?>"><?php endif; ?>
-  <button type="submit"><?php esc_html_e( '表示', 'luna-frontier' ); ?></button>
+  <button type="submit"><?php esc_html_e( '表示', 'node' ); ?></button>
  </div>
 </form>
 <?php

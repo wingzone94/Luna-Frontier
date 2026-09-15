@@ -46,7 +46,7 @@ function luna_frontier_writer_avatar_svg( int $size, array $extra_classes = arra
 		. '</svg>',
 		esc_attr( implode( ' ', array_unique( $classes ) ) ),
 		$size,
-		esc_attr__( '執筆者', 'luna-frontier' )
+		esc_attr__( '執筆者', 'node' )
 	);
 }
 

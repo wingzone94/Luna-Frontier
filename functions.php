@@ -1526,3 +1526,9 @@ function node_robots_noindex_404( array $robots ): array {
 	return $robots;
 }
 add_filter( 'wp_robots', 'node_robots_noindex_404' );
+
+/**
+ * Luna Frontier（旧子テーマ）の bootstrap。
+ * 子 functions.php が親の後に読まれていた順序を保つため、既存読み込みの最後で読み込む。
+ */
+require_once NODE_THEME_DIR . '/inc/luna/bootstrap.php';
