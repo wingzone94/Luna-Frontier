@@ -6,7 +6,7 @@ declare( strict_types=1 );
  *
  * ヘッダーの真下に置く、主要トピックと特集への導線。
  *
- * SPOTLIGHT は最大4特集と過去特集リンク、おすすめトピックと同じ行に表示。
+ * SPOTLIGHT は最大4特集と過去特集リンク、おすすめトピックと同じ行・同じ書式（アイコン＋ラベル）で表示。
  *
  * SPOTLIGHT はここへ統合したので、ホームの独立セクションは表示しない
  * （同じリンクを 1 ページに二度出さない。CSS 側で非表示にしている）。
@@ -116,16 +116,17 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 
 		<?php if ( ! empty( $lf_spotlight ) || '' !== $lf_spotlight_url ) : ?>
 			<div class="lf-topic-nav__group lf-topic-nav__group--spotlight">
-				<span class="lf-topic-nav__pick">
-					<span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
-					SPOTLIGHT
-				</span>
+				<span class="lf-topic-nav__pick">SPOTLIGHT</span>
 
 				<?php if ( ! empty( $lf_spotlight ) ) : ?>
 				<ul class="lf-topic-nav__features">
 					<?php foreach ( array_slice( $lf_spotlight, 0, 4 ) as $lf_feature ) : ?>
-						<li>
-							<a href="<?php echo esc_url( (string) $lf_feature['url'] ); ?>"><?php echo esc_html( (string) $lf_feature['name'] ); ?></a>
+						<?php $lf_feature_current = '' !== (string) ( $lf_feature['slug'] ?? '' ) && is_category( (string) $lf_feature['slug'] ); ?>
+						<li class="lf-topic-nav__item<?php echo $lf_feature_current ? ' is-current' : ''; ?>">
+							<a href="<?php echo esc_url( (string) $lf_feature['url'] ); ?>"<?php echo $lf_feature_current ? ' aria-current="page"' : ''; ?>>
+								<span class="material-symbols-outlined lf-topic-nav__icon" aria-hidden="true">local_fire_department</span>
+								<span class="lf-topic-nav__label"><?php echo esc_html( (string) $lf_feature['name'] ); ?></span>
+							</a>
 						</li>
 					<?php endforeach; ?>
 				</ul>

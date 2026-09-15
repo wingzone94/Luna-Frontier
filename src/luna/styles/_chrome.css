@@ -139,18 +139,14 @@ body.lf-theme .lf-topic-nav a {
 	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
-body.lf-theme .lf-topic-nav__features a {
-	border: 1px solid var(--lf-rule);
-	border-radius: var(--lf-shape-full);
-	background: var(--md-sys-color-surface);
-}
 
 body.lf-theme .lf-topic-nav__past {
 	flex: 0 0 auto;
 	border-radius: var(--lf-shape-full);
 }
 
-body.lf-theme .lf-topic-nav__list a {
+/* SPOTLIGHT and topics share one link style: icon + label, underline for the current page. */
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) a {
 	border-block-end: 2px solid transparent;
 }
 
@@ -167,7 +163,7 @@ body.lf-theme .lf-topic-nav a:focus-visible {
 	outline-offset: 2px;
 }
 
-body.lf-theme .lf-topic-nav__list a[aria-current="page"] {
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) a[aria-current="page"] {
 	border-block-end-color: var(--lc-accent);
 	font-weight: 700;
 	color: var(--lc-accent);
