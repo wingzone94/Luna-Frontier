@@ -107,7 +107,13 @@ body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
 	overflow-x: auto;
 	overscroll-behavior-inline: contain;
 	scroll-padding-inline: 4px;
-	scrollbar-width: thin;
+	/* No visible scrollbar; touch, trackpad and keyboard focus still scroll the row. */
+	scrollbar-width: none;
+}
+
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar,
+body.lf-theme .lf-topic-nav__inner::-webkit-scrollbar {
+	display: none;
 }
 
 body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
@@ -185,7 +191,7 @@ body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 		overflow-x: auto;
 		overscroll-behavior-inline: contain;
 		scroll-padding-inline: var(--lf-gutter);
-		scrollbar-width: thin;
+		scrollbar-width: none;
 	}
 
 	body.lf-theme .lf-topic-nav__inner:has(a:focus-visible) {
