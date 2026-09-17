@@ -822,3 +822,11 @@
         max-width: 280px;
     }
 }
+
+@media (min-width: 701px) and (max-width: 768px) {
+    .m3-archive-layout .m3-archive-post-grid__cards > :is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+        width: 100%;
+        max-width: none;
+        aspect-ratio: 16 / 9;
+    }
+}
