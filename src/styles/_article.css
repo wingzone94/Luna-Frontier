@@ -2817,3 +2817,25 @@ figcaption,
 .wp-caption img {
     margin-bottom: 8px;
 }
+/* ダークテーマでは仕様表の文字を一律白抜きにして、暗い背景とのコントラストを確保する。 */
+[data-theme="dark"] .m3-article__body .table-card,
+[data-theme="dark"] .m3-article__body .table-card :where(*) {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .m3-article__body .table-card {
+    background: var(--md-sys-color-surface-container-low, #221f18);
+}
+
+[data-theme="dark"] .m3-article__body .table-card > h2 {
+    background: var(--md-sys-color-primary-container, #6a3c00);
+}
+
+[data-theme="dark"] .m3-article__body .table-card th,
+[data-theme="dark"] .m3-article__body .table-card td {
+    border-bottom-color: var(--md-sys-color-outline-variant, #524437);
+}
+
+[data-theme="dark"] .m3-article__body .table-card th {
+    background: var(--md-sys-color-surface-container-high, #322e26);
+}

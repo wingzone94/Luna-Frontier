@@ -1,12 +1,12 @@
 # Node
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-1.3.2-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.3.3-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
 Material Design 3 (Expressive) の哲学を WordPress テーマに昇華させた、次世代のクリエイティブ・プラットフォーム。  
-README には `1.x.0` リリースの要点を掲載し、完全な更新履歴は `CHANGELOG.md` に収録します。
+README には最新の修正と `1.x.0` リリースの要点を掲載し、完全な更新履歴は `CHANGELOG.md` に収録します。
 
 ## 主な機能
 - **Material You 動的カラー:** アイキャッチ画像やカテゴリ設定からテーマカラーを自動生成。
@@ -18,6 +18,15 @@ README には `1.x.0` リリースの要点を掲載し、完全な更新履歴�
 - **プラットフォーム・ブランド連携:** デバイスごとの公式ブランドカラーをUIに反映（Windows, iOS, Android, Nintendo, PlayStation, Xbox）。
 - **AI 連携:** Gemini・Qwen・Ollamaを共通基盤から利用し、記事要約・ファクトチェック補助・校正を支援。
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
+
+## v1.3.3 (2026.09.18)
+カテゴリ・タグ・日付アーカイブの記事カードを改善しました。
+
+- カードをトップのLATESTと同じ四角に統一。カテゴリバッジはピル形状を維持。
+- 701px以上では画像全体を表示し、高さを最大240pxに制限。縦長画像によるカードの伸びすぎを防止。
+- 700px以下の横並び・`cover`表示、トップLATEST、検索結果の表示は維持。
+
+詳細は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
 
 ## v1.3.0 (2026.08.17)
 ホーム、記事体験、検索・SEO、ブログカード、制作基盤をまとめて刷新するメジャーアップデートです。詳細は [CHANGELOG.md](./CHANGELOG.md) を参照してください。

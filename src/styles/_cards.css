@@ -635,20 +635,40 @@
         margin-bottom: 0;
     }
 
-    /* 実際に折り返すのは内側の .m3-article__category-group。
-       ここを止めないとカテゴリの多い記事だけ行が高くなり、高さが揃わない。 */
+    /* 折り返しは内側の .m3-article__category-group で起きる。
+       ここは「折り返させない」のではなく「1段だけ見せる」。
+       段の高さはチップ 1 つぶん（padding 6px×2 + 0.75rem×1.2）。
+       2 段目は row-gap のぶん下から始まるので、この高さで切れば
+       2 段目に回ったチップは完全に消える（中途半端に頭だけ覗かない）。 */
     :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-article__category-group {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        column-gap: 6px;
+        row-gap: 10px;
+        max-block-size: calc(0.75rem * 1.2 + 14px);
         overflow: hidden;
     }
 
-    /* チップ内で文字が折り返すと、チップ自体が2行ぶんの高さになる。
-       ただし縮まないままだと行から溢れ、カード端で切れて
-       「+N」バッジまで画面外へ出てしまう（320px で実測）。
-       チップ側を縮めて省略記号に逃がし、全部を行内へ収める。 */
+    /* チップは縮めない。
+
+       以前は flex-shrink で縮めて text-overflow に逃がしていたが、
+       .m3-label--category は display: inline-flex なので省略記号が効かない
+       （text-overflow は flex コンテナを対象にしない）。結果、チップは
+       縮んだまま文字の途中で断ち切られていた（実測 375px の LATEST:
+       「Android」が必要 66px に対し 47px、「Geforce NOW」が「Geforce N」）。
+
+       縮めるのをやめれば、入らないチップは 2 段目へ回って上の
+       max-block-size で消える。残ったチップは必ず最後まで読める。
+       「+N」も 3 つ全部が収まったときだけ出るので、数と表示が食い違わない。
+
+       display: inline-block は、1 つで段より長いチップ（「Made by
+       Google（2026）」など）に省略記号を効かせるため。 */
     :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-label--category {
-        flex: 0 1 auto;
+        display: inline-block;
+        flex: 0 0 auto;
         min-width: 0;
+        max-inline-size: 100%;
+        padding-inline: 10px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -669,6 +689,54 @@
         margin-top: var(--m3-spacing-xs);
         padding-top: 0;
         border-top: 0;
+    }
+
+    /* 日付行は縮まない要素が2つ（公開日・追記日）並ぶため、行に収まらないと
+       justify-content: flex-end のぶん左へ溢れ、アイキャッチの上へ乗っていた
+       （実測 375px: 中身 236px に対し行 179px、公開日が 55px はみ出す）。
+       起点を左に戻し、それでも溢れるときは折り返して受ける。 */
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates) {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        column-gap: 8px;
+        row-gap: 2px;
+        min-inline-size: 0;
+    }
+
+    /* 追記日が並ぶときだけ、公開日から「（N時間前）」とカレンダーアイコンを外す。
+       この2つで約 86px 空き、追記日ごと1行に収まる。追記日の無いカードは
+       これまでどおり相対時間まで出す。 */
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates):has(:is(.c-card__date--modified, .m3-card__date--modified)) :is(.c-card__date-rel, .m3-card__date-rel) {
+        display: none;
+    }
+
+    /*
+     * !important は Google のアイコンフォント CSS 対策。
+     * fonts.googleapis.com が返す `.material-symbols-outlined { display: inline-block }`
+     * は @layer の外（unlayered）にあり、CSS カスケードでは unlayered が
+     * すべてのレイヤーより強い。このファイルは @layer components の中なので、
+     * どれだけ詳細度を上げても素の display: none では勝てない
+     * （本番実測: 指定は当たっているのに computed が block のままだった）。
+     */
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates):has(:is(.c-card__date--modified, .m3-card__date--modified)) :is(.c-card__date, .m3-card__date):not(.m3-card__date--modified) .material-symbols-outlined {
+        display: none !important;
+    }
+}
+
+
+/* 長いカテゴリ名がカード幅を占有しないよう、モバイルではピル幅を制限する。
+   チップ 1 つあたりの上限（旧 clamp(5rem, 26vw, 8rem)）は外した。
+   上の 700px ブロックでチップは縮まなくなり、段に入らないものは
+   2 段目へ回って消えるので、幅を切ると「入るのに省略される」チップが出る。 */
+@media (max-width: 600px) {
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__category-container, .m3-card__category-container) {
+        min-inline-size: 0;
+    }
+
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-article__category-group {
+        min-inline-size: 0;
+        max-inline-size: 100%;
+        overflow: hidden;
     }
 }
 

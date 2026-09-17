@@ -28,191 +28,16 @@
     transform: translateY(calc(-100% - var(--wp-admin-bar-offset, 0px)));
 }
 
-/* Mobile section rail: fixed header の直下を通常フローで一段拡張する。 */
-.m3-mobile-section-nav {
-    display: none;
-}
-
-.m3-mobile-section-nav[hidden] {
-	display: none;
-}
-
+/* モバイルの追従セクションナビ（SPOTLIGHT/HEADLINE/LATEST のプルダウン）は
+   2026-09-03 のユーザー指示で撤去した。ヘッダー直下の clearance は
+   _layout-fixes.css の .m3-home-layout などが自分で払う。 */
 @media (max-width: 600px) {
-    .m3-mobile-section-nav {
-		position: relative;
-        z-index: 999;
-        display: block;
-		min-block-size: 48px;
-        margin-block-start: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
-		background: transparent;
-		border-block: 0;
-		box-shadow: none;
-    }
-
-    .m3-mobile-section-nav__inner {
-		position: fixed;
-		inset-block-start: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
-		inset-inline-start: 0;
-		inline-size: fit-content;
-		max-inline-size: calc(100vw - 8px);
-		z-index: 999;
-        display: flex;
-        align-items: center;
-        min-block-size: 48px;
-		padding: 4px 6px 4px max(12px, env(safe-area-inset-left));
-		background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 94%, transparent);
-		backdrop-filter: blur(14px);
-		border-start-end-radius: 12px;
-		border-end-end-radius: 12px;
-		transform: translate3d(0, 0, 0);
-		transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
-		will-change: transform;
-    }
-
-	/* ヘッダーと同じ距離・時間で退避し、iOS Safari のツールバー伸縮時も隙間を作らない。 */
-	.m3-header.is-hidden ~ .m3-mobile-section-nav .m3-mobile-section-nav__inner {
-		transform: translate3d(
-			0,
-			calc(-64px - var(--safe-area-top) - var(--wp-admin-bar-offset, 0px)),
-			0
-		);
-	}
-
-    .m3-mobile-section-nav__menu {
-        position: relative;
-    }
-
-    .m3-mobile-section-nav__trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-		min-block-size: 40px;
-		padding-inline: 4px 6px;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-		box-shadow: none;
-        color: var(--md-sys-color-on-surface);
-        font-family: var(--font-ui, inherit);
-		font-size: 0.8125rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        line-height: 1;
-        list-style: none;
-        cursor: pointer;
-    }
-
-    .m3-mobile-section-nav__trigger::-webkit-details-marker {
-        display: none;
-    }
-
-    .m3-mobile-section-nav__current-icon {
-        color: var(--md-sys-color-primary);
-        font-size: 1.35rem;
-    }
-
-	.m3-mobile-section-nav__current-label {
-		min-inline-size: 5.75rem;
-	}
-
-    .m3-mobile-section-nav__arrow {
-        font-size: 1rem;
-        transition: transform var(--m3-motion-duration-medium, 200ms) var(--m3-motion-easing, ease);
-    }
-
-    .m3-mobile-section-nav__menu[open] .m3-mobile-section-nav__trigger {
-		border: 0;
-		background: transparent;
-		color: var(--md-sys-color-on-surface);
-    }
-
-    .m3-mobile-section-nav__menu[open] .m3-mobile-section-nav__arrow {
-        transform: rotate(180deg);
-    }
-
-    .m3-mobile-section-nav__list {
-        position: absolute;
-		inset-block-start: calc(100% + 2px);
-        inset-inline-start: 0;
-        z-index: 2;
-        inline-size: min(14rem, calc(100vw - 28px));
-        margin: 0;
-        padding: 4px;
-        list-style: none;
-        background: var(
-			--md-sys-color-surface-container-highest,
-			var(--md-sys-color-surface-container-high, var(--md-sys-color-surface, #fff))
-		);
-		border: 0;
-		border-radius: 8px;
-        box-shadow: var(--m3-elevation-2);
-    }
-
-    .m3-mobile-section-nav__list a {
-        display: flex;
-        align-items: center;
-		gap: 8px;
-        min-block-size: 48px;
-		padding-inline: 12px;
-		border: 0;
-        border-radius: calc(var(--m3-shape-medium, 12px) - 2px);
-        color: var(--md-sys-color-on-surface);
-        font-size: 0.875rem;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-decoration: none;
-    }
-
-    .m3-mobile-section-nav__list a:hover,
-    .m3-mobile-section-nav__list a:focus-visible,
-	.m3-mobile-section-nav__list a.is-current {
-        background: var(--md-sys-color-secondary-container);
-        color: var(--md-sys-color-on-secondary-container);
-    }
-
-	.m3-mobile-section-nav__item-icon {
-		flex: 0 0 auto;
-		font-size: 1.25rem;
-		color: var(--md-sys-color-primary);
-	}
-
-	.m3-mobile-section-nav__dismiss {
-		display: inline-grid;
-		place-items: center;
-		flex: 0 0 36px;
-		inline-size: 36px;
-		block-size: 36px;
-		margin-inline-start: 2px;
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: transparent;
-		color: var(--md-sys-color-on-surface-variant, var(--md-sys-color-on-surface));
-		cursor: pointer;
-	}
-
-	.m3-mobile-section-nav__dismiss:hover,
-	.m3-mobile-section-nav__dismiss:focus-visible {
-		background: var(--md-sys-color-secondary-container);
-		color: var(--md-sys-color-on-secondary-container);
-	}
-
-	.m3-mobile-section-nav__dismiss .material-symbols-outlined {
-		font-size: 1.125rem;
-	}
-
-    body:has(.m3-mobile-section-nav) :is(.site-main, .article-view) {
-        padding-top: var(--m3-spacing-m, 24px);
-    }
-
     :is(#headline, #spotlight, #categories, #latest) {
-		scroll-margin-top: calc(112px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
+        scroll-margin-top: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px) + 12px);
     }
 }
 
 @media (max-width: 600px) and (prefers-reduced-motion: reduce) {
-    .m3-mobile-section-nav__inner,
-    .m3-mobile-section-nav__arrow,
     .m3-header__progress-container {
         transition: none;
     }
@@ -1540,9 +1365,27 @@
 .m3-search-hits-text { font-size: 1.1rem; font-weight: 700; color: var(--md-sys-color-on-surface); }
 .m3-search-hits-text strong { font-size: 1.4rem; font-weight: 700; color: var(--md-sys-color-primary); margin-right: 4px; }
 /* --- Reading Progress Bar --- */
+/*
+ * 位置は「ヘッダーの実寸の下端」に合わせる（--node-gauge-top）。
+ *
+ * 以前はヘッダーと同じ計算式を書き写して並べていた
+ * （--wp-admin-bar-offset + 64px + --safe-area-top）。式が一致していれば
+ * 揃うはずだが、実際にはモバイルでゲージだけがヘッダーの数十px下に取り残され、
+ * 本文の上に浮く事象が出ていた（本番 iOS Safari で報告・実測 46px）。
+ * 式の各項がヘッダーとゲージで同じ瞬間に同じ値になる保証が無いことが原因:
+ *   - --wp-admin-bar-offset: モバイルの管理バーは position: absolute で
+ *     スクロールと共に画面外へ出る。smart-header.js はヘッダーの top を
+ *     その「見えている下端」へ動かすが、変数は 46px のまま
+ *   - --safe-area-top: iOS Safari は URL バーの伸縮で env() が変化する。
+ *     ヘッダー（height）とゲージ（top）で反映のタイミングが揃わない
+ *
+ * 式を共有するのをやめ、smart-header.js が測ったヘッダーの下端を使う。
+ * これで原因が何であってもゲージはヘッダーに付いてくる。
+ * 変数が無い場合（JS 無効時）は従来の計算式へフォールバックする。
+ */
 .m3-header__progress-container {
     position: fixed;
-    top: calc(var(--wp-admin-bar-offset, 0px) + 64px + var(--safe-area-top) - 4px);
+    top: var(--node-gauge-top, calc(var(--wp-admin-bar-offset, 0px) + 64px + var(--safe-area-top) - 4px));
     left: 0;
     width: 100%;
     height: 4px;
@@ -1550,7 +1393,20 @@
     z-index: 1002;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.3s, top 0.35s cubic-bezier(0.2, 0, 0, 1);
+    /*
+     * top をトランジションさせない。
+     *
+     * top の値が var()/env() 由来で変わったとき、トランジションが張ってあると
+     * 変更が反映されず初期値のまま残る（実測: --node-gauge-top を
+     * 60px → 153px に変えても computed は 60px のまま。transition から top を
+     * 外した瞬間に追従した）。iOS Safari は URL バーの伸縮で
+     * env(safe-area-inset-top) が変わるため、読み込み時の値でゲージが固定され、
+     * ヘッダーが縮んだあとも数十px下に取り残されていた。
+     *
+     * 引き換えにヘッダー退避時の移動がアニメーションでなくなるが、
+     * 高さ 4px の線なので、位置が正しいことを優先する。
+     */
+    transition: opacity 0.3s;
 }
 .m3-header__progress-container.is-visible { opacity: 1; }
 
@@ -1559,7 +1415,14 @@
    Dynamic Island / ステータスバーの裏）へ消え、
    「記事を読んでいるときにシークバーまで隠れる」になる。 */
 .m3-header.is-hidden ~ .m3-header__progress-container.is-visible {
-    top: calc(var(--wp-admin-bar-offset, 0px) + var(--safe-area-top, 0px));
+    /*
+     * 退避時も式ではなく実測値（--node-gauge-top-hidden）を使う。
+     * --wp-admin-bar-offset は「管理バーの高さ 46px」で固定なのに対し、
+     * モバイルの管理バーは position: absolute でスクロールと共に画面外へ出る。
+     * そのため退避時のゲージだけが本文の 46px 下に浮いていた
+     * （iOS Safari の実機録画で確認）。
+     */
+    top: var(--node-gauge-top-hidden, calc(var(--wp-admin-bar-offset, 0px) + var(--safe-area-top, 0px)));
 }
 
 .m3-header__progress-bar {

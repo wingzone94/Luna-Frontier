@@ -58,6 +58,24 @@ class Node_Mobile_Section_Nav_Test extends WP_UnitTestCase {
 			$header,
 			'動きを減らす設定では自動展開しない'
 		);
+		$css = file_get_contents( $this->theme_path( 'src/styles/_header.css' ) );
+		$this->assertNotFalse( $css );
+		$this->assertStringContainsString(
+			'- 100%),',
+			$css,
+			'ヘッダー退避時はナビ全体を画面外へ移動する'
+		);
+	}
+
+
+	public function test_mobile_category_pills_have_width_cap(): void {
+		$css = file_get_contents( $this->theme_path( 'src/styles/_cards.css' ) );
+		$this->assertNotFalse( $css );
+		$this->assertStringContainsString(
+			'max-inline-size: clamp(5rem, 26vw, 8rem);',
+			$css,
+			'長いカテゴリ名のピルをモバイル幅で制限する'
+		);
 	}
 
 	public function test_reading_progress_stays_visible_when_header_hides(): void {
