@@ -671,3 +671,56 @@
         border-top: 0;
     }
 }
+
+/* ===========================================================================
+   Node 1.3.3: カテゴリ／タグ／日付アーカイブの記事カード
+   - カードをトップの LATEST と同じ四角にする
+   - パソコン・タブレット幅ではアイキャッチ枠を画像実寸に追従させ、
+     レターボックス（上下の空き）を出さない
+   - 700px 以下のコンパクト行（object-fit: cover）は触らない
+     （トップ・検索結果のモバイル行に波及させない／アーカイブの密度も維持）
+   =========================================================================== */
+
+:where(body.category, body.tag, body.date) .m3-archive-layout {
+    --node-card-radius: 0;
+}
+
+:where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card, .m3-card) {
+    border-radius: 0;
+}
+
+@media (min-width: 701px) {
+    :where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card, .m3-card) {
+        align-items: flex-start;
+        min-height: 0;
+        height: auto;
+    }
+
+    :where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__visual, .m3-card__visual) {
+        display: block;
+        align-self: flex-start;
+        align-items: flex-start;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        line-height: 0;
+    }
+
+    :where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__image-link, .m3-card__image-link) {
+        display: block;
+        height: auto;
+        line-height: 0;
+        padding: 0;
+    }
+
+    :where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__visual, .m3-card__visual) img {
+        width: 100%;
+        height: auto;
+        /* 縦長画像でもカードを引き伸ばさず、画像全体を収める。 */
+        max-height: 240px;
+        object-fit: contain;
+        object-position: center top;
+        display: block;
+        vertical-align: top;
+    }
+}
