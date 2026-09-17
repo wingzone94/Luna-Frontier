@@ -7,6 +7,8 @@
     --m3-archive-hero-radius: 48px;
     --m3-archive-panel-radius: 28px;
     --m3-archive-accent: var(--category-color, var(--md-sys-color-primary));
+    /* 1.3.3: アーカイブの記事カードをトップの LATEST と同じ四角に揃える */
+    --node-card-radius: 0;
 
     max-width: 1200px;
     margin: 0 auto;
@@ -208,7 +210,7 @@
 }
 
 .m3-archive-post-grid__cards .m3-card {
-    border-radius: var(--m3-radius-large);
+    border-radius: 0;
     transition:
         transform 0.35s var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
         box-shadow 0.35s var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1));

@@ -739,3 +739,94 @@
         overflow: hidden;
     }
 }
+
+/* ===========================================================================
+   Node 1.3.3: カテゴリアーカイブの記事カード
+   トップの LATEST と同じく四角にし、アイキャッチは全体が見える縮尺で
+   表示枠に上下余白（レターボックス）を出さない。
+   セレクタはモバイル行の object-fit: cover（0,3,1）に勝つ詳細度。
+   トップ・検索のカードには波及しない。
+   =========================================================================== */
+
+.m3-archive-layout {
+    --node-card-radius: 0;
+}
+
+.m3-archive-layout .m3-archive-post-grid__cards :is(.c-card, .m3-card) {
+    border-radius: 0;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.m3-archive-layout .m3-archive-post-grid__cards > :is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+    display: block;
+    align-self: stretch;
+    align-items: stretch;
+    padding: 0;
+    margin: 0;
+    line-height: 0;
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 46%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+
+.m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__image-link, .m3-card__image-link) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+    padding: 0;
+}
+
+.m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__visual, .m3-card__visual) img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    vertical-align: top;
+}
+
+@media (max-width: 700px) {
+    .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card, .m3-card) {
+        align-items: stretch;
+        min-height: 0;
+    }
+
+    .m3-archive-layout .m3-archive-post-grid__cards > :is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: 46%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        align-self: stretch;
+        align-items: stretch;
+    }
+
+    .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__image-link, .m3-card__image-link) {
+        width: 100%;
+        height: 100%;
+    }
+
+    .m3-archive-layout .m3-archive-post-grid__cards :is(.c-card__visual, .m3-card__visual) img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+}
+
+@media (min-width: 701px) {
+    .m3-archive-layout .m3-archive-post-grid__cards > :is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+        max-width: 280px;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 768px) {
+    .m3-archive-layout .m3-archive-post-grid__cards > :is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+        width: 100%;
+        max-width: none;
+        aspect-ratio: 16 / 9;
+    }
+}
