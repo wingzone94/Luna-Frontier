@@ -3,6 +3,11 @@
    Hero moment / shape contrast / rich color / motion
    ========================================================================== */
 
+/* 検索結果も同じレイアウトを使うため、アーカイブ種別を限定する。 */
+:where(body.category, body.tag, body.date) .m3-archive-layout {
+    --node-card-radius: 0;
+}
+
 .m3-archive-layout {
     --m3-archive-hero-radius: 48px;
     --m3-archive-panel-radius: 28px;
@@ -205,6 +210,10 @@
 
 .m3-archive-post-grid__cards {
     gap: clamp(20px, 3vw, 28px);
+}
+
+:where(body.category, body.tag, body.date) .m3-archive-layout .m3-archive-post-grid__cards .m3-card {
+    border-radius: 0;
 }
 
 .m3-archive-post-grid__cards .m3-card {
