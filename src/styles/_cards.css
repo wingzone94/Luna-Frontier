@@ -703,23 +703,10 @@
         min-inline-size: 0;
     }
 
-    /* 追記日が並ぶときだけ、公開日から「（N時間前）」とカレンダーアイコンを外す。
-       この2つで約 86px 空き、追記日ごと1行に収まる。追記日の無いカードは
-       これまでどおり相対時間まで出す。 */
+    /* 追記日が並ぶときだけ、公開日の相対時間「（N時間前）」を外す。
+       カレンダーアイコンは投稿日を示す手がかりなので残す。 */
     :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates):has(:is(.c-card__date--modified, .m3-card__date--modified)) :is(.c-card__date-rel, .m3-card__date-rel) {
         display: none;
-    }
-
-    /*
-     * !important は Google のアイコンフォント CSS 対策。
-     * fonts.googleapis.com が返す `.material-symbols-outlined { display: inline-block }`
-     * は @layer の外（unlayered）にあり、CSS カスケードでは unlayered が
-     * すべてのレイヤーより強い。このファイルは @layer components の中なので、
-     * どれだけ詳細度を上げても素の display: none では勝てない
-     * （本番実測: 指定は当たっているのに computed が block のままだった）。
-     */
-    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates):has(:is(.c-card__date--modified, .m3-card__date--modified)) :is(.c-card__date, .m3-card__date):not(.m3-card__date--modified) .material-symbols-outlined {
-        display: none !important;
     }
 }
 
