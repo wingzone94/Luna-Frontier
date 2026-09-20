@@ -26,7 +26,7 @@ class Node_Reading_Rank_Test extends WP_UnitTestCase {
 		$long  = $this->create_published_post_with_chars( 11000 );
 
 		$this->assertSame( 'short', node_get_article_ranking_info( $short )['rank'] );
-		$this->assertSame( 20, node_get_article_ranking_info( $short )['progress'] );
+		$this->assertSame( 10, node_get_article_ranking_info( $short )['progress'] );
 		$this->assertSame( 'long', node_get_article_ranking_info( $long )['rank'] );
 		$this->assertSame( 100, node_get_article_ranking_info( $long )['progress'] );
 	}
@@ -44,9 +44,9 @@ class Node_Reading_Rank_Test extends WP_UnitTestCase {
 
 		$median_info = node_get_article_ranking_info( $post_ids[9] );
 		$p90_info    = node_get_article_ranking_info( $post_ids[17] );
-		$this->assertSame( 60, $median_info['progress'] );
+		$this->assertSame( 50, $median_info['progress'] );
 		$this->assertSame( 'standard', $median_info['rank'] );
-		$this->assertSame( 100, $p90_info['progress'] );
+		$this->assertSame( 90, $p90_info['progress'] );
 		$this->assertSame( 'long', $p90_info['rank'] );
 	}
 
@@ -79,7 +79,18 @@ class Node_Reading_Rank_Test extends WP_UnitTestCase {
 
 		$info = node_get_article_ranking_info( $target_id );
 		$this->assertSame( 'short', $info['rank'] );
-		$this->assertSame( 20, $info['progress'] );
+		$this->assertSame( 10, $info['progress'] );
+	}
+
+	public function test_gauge_progress_moves_continuously_with_article_length() {
+		$shorter_id = $this->create_published_post_with_chars( 1800 );
+		$longer_id  = $this->create_published_post_with_chars( 2600 );
+
+		$shorter = node_get_article_ranking_info( $shorter_id );
+		$longer  = node_get_article_ranking_info( $longer_id );
+
+		$this->assertGreaterThan( $shorter['progress'], $longer['progress'] );
+		$this->assertNotContains( $shorter['progress'], array( 20, 40, 60, 80, 100 ), true );
 	}
 
 	public function test_post_change_hook_invalidates_distribution_cache() {
