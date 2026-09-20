@@ -830,22 +830,27 @@ function node_get_article_ranking_info($post_id = null) {
         $badge_bg = '#FFE1DD';
     }
 
-    // ゲージの進み具合は「判定ランク」と同期させる（短い→長いで段階的に充填）。
-    // 生の文字数比ではなく判定結果に一致させることで、円ゲージ・判定カラー・
-    // ランクチップが同じ「長さの判定」を指すようにする。
-    $rank_progress_map = [
-        'short'          => 20,
-        'somewhat_short' => 40,
-        'standard'       => 60,
-        'somewhat_long'  => 80,
-        'long'           => 100,
-    ];
-    if (!$uses_relative_baseline) {
-        $progress = $rank_progress_map[$rank] ?? min(100, round(($chars / $rank_thresholds['somewhat_long']) * 100));
-    }
+    $reading_seconds = max(30, (int) $article_metrics['reading_seconds']);
+    $reading = max(1, (int) $article_metrics['reading']);
 
-    $reading_seconds = (int) $article_metrics['reading_seconds'];
-    $reading = (int) $article_metrics['reading'];
+    /*
+     * Preview 5: 円ゲージはランク固定値ではなく、実際の本文量と読了時間を反映する。
+     *
+     * 文字数は10,000字、読了時間は550字/分換算の10,000字相当（約18分11秒）を
+     * 100%の基準とし、双方を同じスケールへ正規化して平均する。
+     * これにより同じランク内でも記事ごとにヘッド位置が連続的に変化する一方、
+     * 色とラベルは従来どおりブログ分布/絶対閾値による判定を維持する。
+     */
+    $gauge_max_chars = 10000;
+    $gauge_max_seconds = (int) round(($gauge_max_chars / 550) * 60);
+    $chars_progress = min(100, max(0, ($chars / $gauge_max_chars) * 100));
+    $time_progress = min(100, max(0, ($reading_seconds / $gauge_max_seconds) * 100));
+    $progress = (int) round(($chars_progress + $time_progress) / 2);
+
+    // 200字超で表示されるバッジが完全な空円に見えないよう、最小2%だけ確保する。
+    if ($chars > 200) {
+        $progress = max(2, $progress);
+    }
 
     return [
         'chars'           => $chars,
