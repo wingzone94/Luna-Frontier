@@ -1,0 +1,17 @@
+---
+description: Front-end source, UI, CSS and Vite asset rules
+globs: ["src/**/*.js", "src/**/*.css", "assets/**/*.js", "assets/**/*.css", "vite.config.*"]
+alwaysApply: false
+---
+# Front end
+- Treat `src/` as source of truth when it exists. Rebuild with `bun x vite build`; do not directly patch generated/minified assets as the normal workflow.
+- Keep `src/main.js` focused on imports/initialization; split functionality into `src/scripts/` incrementally, one feature at a time.
+- Initialize page-specific features only where needed; use page type and DOM existence checks. Dynamic import is welcome when it clearly reduces unnecessary loading.
+- Keep CSS in the responsible partial/module instead of stacking permanent patches at the end of a global file.
+- Verify a selector is unused across PHP/JS before deleting it.
+- Do not apply `text-align:center` broadly to article content. Keep body text naturally left-aligned while media/embeds/cards fit the content width.
+- Do not cause mobile horizontal scrolling.
+- Do not use JS as a post-layout correction when CSS can solve the problem.
+- Avoid `!important` unless compatibility genuinely requires it.
+- Filled brand pills/badges/chips/FAB/series banners retain white text/icons unless the user explicitly approves a visual change.
+- Preserve initialization order when dependencies exist.
