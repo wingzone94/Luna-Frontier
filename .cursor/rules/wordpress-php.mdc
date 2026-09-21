@@ -1,0 +1,14 @@
+---
+description: WordPress/PHP and template safety rules
+globs: ["**/*.php", "theme.json"]
+alwaysApply: false
+---
+# WordPress / PHP
+- Preserve existing URLs, posts, block markup, SEO/meta output, and template behavior unless explicitly changing them.
+- Escape output and sanitize/validate input using WordPress APIs appropriate to context.
+- Preserve nonces, capability checks, and permission boundaries for state-changing/admin actions.
+- Respect WordPress alignment classes and editor-generated markup.
+- Prefer CSS-only layout fixes when PHP structure does not need to change.
+- Treat `functions.php`, global hooks, template structure, `theme.json`, plugin integration, OGP/SEO/meta output as high-impact areas: inspect callers/consumers before editing.
+- Do not change fixed-page URLs such as privacy/contact routes without explicit instruction.
+- Avoid unrelated refactors while fixing a focused PHP issue.
