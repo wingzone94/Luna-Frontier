@@ -782,3 +782,16 @@ Cursor may additionally apply the scoped project rules under `.cursor/rules/`:
 - `.cursor/rules/agent-efficiency.mdc`
 
 These files refine this document for Cursor; this `AGENTS.md` remains the cross-agent source of truth for Claude Code, Codex, and other coding agents. If a scoped Cursor rule conflicts with this file, follow `AGENTS.md` unless the user explicitly instructs otherwise.
+
+
+---
+
+## Grok Build
+
+- 日常的な実装・バグ修正・複数ファイルの変更に使用する。
+- 通常は Medium を標準とする。
+- 複雑なデバッグ、設計判断、影響範囲が広い変更では High を使用してよい。
+- xHigh は大規模な設計検討など、本当に必要な場合に限定する。
+- 軽微な CSS、文言修正、単純な差分確認では高い reasoning effort を使用しない。
+- 行き詰まった場合は同じ高コスト試行を繰り返さず、問題・試行内容・残課題を整理して上位モデルへ引き継ぐ。
+- Cursor 上で利用する場合は、タスクに該当する `.cursor/rules/*.mdc` も適用する。
