@@ -1,0 +1,15 @@
+---
+description: Build, local validation and release rules
+globs: ["package.json", "bun.lock*", "vite.config.*", "HOW_TO_RELEASE.md", "scripts/**", ".github/**"]
+alwaysApply: false
+---
+# Validation / release
+- Run `bun x vite build` after source changes when tooling is available.
+- Check `assets/.vite/manifest.json` and generated JS/CSS are consistent with the build.
+- If `cybernode.local` is accessible, test only the pages/features relevant to the change, including an appropriate mobile width.
+- For broad UI changes, include home, single post, search, archive, and affected TOC/FAB behavior as applicable.
+- Never claim remote/cloud work was tested on `cybernode.local` unless the environment was actually accessible.
+- Explicitly list checks not run and why.
+- Do not produce a release ZIP before validation.
+- Follow `HOW_TO_RELEASE.md` for packaging and exclusions; keep editor/debug/temp artifacts out of release packages.
+- Keep functional fixes and repository-cleanup work as separate tasks when practical.

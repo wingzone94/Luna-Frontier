@@ -1,7 +1,7 @@
 # AI-AGENTS.md — 本プロジェクトで利用するAIエージェント一覧
 
 Luminous Core（ブログブランド） / Node（WordPressテーマ）の開発・運用・機能で利用しているAIエージェントおよびAIモデルをまとめる。
-運用ルール・モデル使用方針の詳細は [`AGENTS.md`](./AGENTS.md) を参照すること。
+運用ルールの正本は [`AGENTS.md`](./AGENTS.md)。Claude Code / Codex / Cursor を含む共通方針は AGENTS.md に統合し、このファイルは利用ツール・モデルの参考一覧として扱う。
 
 ---
 
@@ -12,7 +12,7 @@ Luminous Core（ブログブランド） / Node（WordPressテーマ）の開発
 | **Claude Code（VS Code / Claude アプリ）** | AIコーディングエージェント | 実装・差分・テストの主力。設計判断・横断レビュー・リリース前ゲート |
 | **AntiGravity** | AIエージェント（Worktree / Local モード） | Gemini API 連携部の検証・調査・差分提案・限定的な実装 |
 | **ChatGPT** | 対話型AI | プロンプト整理・仕様整理・記事/文章の下書き |
-| **Codex（CLI / IDE）** | コーディングエージェント | **休止中**。使用制限が安定して解消された場合のみ再検討 |
+| **Codex（CLI / IDE）** | コーディングエージェント | 実装・調査・レビュー。共通ルールは `AGENTS.md` を参照 |
 
 ---
 

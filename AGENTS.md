@@ -769,3 +769,16 @@ WordPressテーマ開発・Vite/Bunビルド・バニラJS UIのエキスパー�
 5. 検証していないことを検証済みにしない
 6. ZIPはテスト後にのみ生成する
 7. Luminous Core と Node のブランド命名を混同しない
+
+
+---
+
+## Cursor scoped rules (2026-09)
+
+Cursor may additionally apply the scoped project rules under `.cursor/rules/`:
+- `.cursor/rules/wordpress-php.mdc`
+- `.cursor/rules/frontend.mdc`
+- `.cursor/rules/validation-release.mdc`
+- `.cursor/rules/agent-efficiency.mdc`
+
+These files refine this document for Cursor; this `AGENTS.md` remains the cross-agent source of truth for Claude Code, Codex, and other coding agents. If a scoped Cursor rule conflicts with this file, follow `AGENTS.md` unless the user explicitly instructs otherwise.

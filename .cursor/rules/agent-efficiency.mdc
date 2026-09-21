@@ -1,0 +1,14 @@
+---
+description: Keep agent context, exploration and premium-model usage efficient
+alwaysApply: true
+---
+# Agent efficiency
+- Start with the smallest relevant file set. Expand only when evidence requires it.
+- Do not repeatedly scan the whole repository for a focused task.
+- Prefer targeted search, symbols, diffs, and referenced files over bulk reading.
+- Do not load large historical prompt/spec files unless the task depends on them.
+- Keep a single task focused; do not silently turn a bug fix into a broad refactor.
+- Use inexpensive/fast models for mechanical edits, CSS tweaks, searches and summaries when model choice is available.
+- Escalate reasoning/model capability for ambiguous architecture, difficult debugging, security-sensitive changes, or when a cheaper attempt fails.
+- Avoid repeating the same large task across multiple premium models merely to bypass usage limits.
+- Summarize findings before expanding scope.
