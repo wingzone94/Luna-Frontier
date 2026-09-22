@@ -17,21 +17,12 @@ body.lf-theme .m3-header .m3-icon-button:not(.m3-search-clear) {
 body.lf-theme .lf-topic-nav {
 	--lc-accent: var(--md-sys-color-accent-text, #935400);
 	--lc-on-surface: var(--md-sys-color-on-surface, #2b1700);
-
 	background: var(--md-sys-color-surface-container-low, #ffffff);
 	border-block-end: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 70%, transparent);
 	border-radius: var(--lf-shape-paper);
-
-	/* 親テーマのヘッダーは position: fixed。ナビは通常フローなので、
-	   ヘッダーの高さぶんだけ自分で下がる必要がある（管理バーぶんも含む）。 */
 	margin-block-start: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
 }
 
-/* ---------------------------------------------------------------------
- * ヘッダー直下の余白は Topic Nav が担うようになったので、
- * 後続コンテンツ側の clearance を通常の余白へ戻す。
- * これをしないと「ヘッダー高さ × 2」ぶんの空白ができる。
- * --------------------------------------------------------------------- */
 body.lf-theme:has(.lf-topic-nav) :is(.m3-home-layout, .m3-archive-layout, .m3-date-archive) {
 	padding-top: var(--lf-space-m);
 }
@@ -45,174 +36,180 @@ body.lf-theme.search.m3-search-suggestions-is-active:has(.lf-topic-nav) .site-ma
 	padding-top: calc(var(--lf-space-m) + var(--m3-search-suggestions-space, 0px));
 }
 
-/* One row: desktop shelves scroll independently; narrow screens use one rail. */
 body.lf-theme .lf-topic-nav__inner {
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
 	padding: var(--lf-space-2xs) var(--lf-gutter);
 	display: flex;
-	flex-wrap: nowrap;
-	align-items: center;
-	gap: var(--lf-space-s, 16px);
-}
-
-body.lf-theme .lf-topic-nav__group {
-	display: flex;
-	align-items: center;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--lf-space-3xs);
 	min-inline-size: 0;
-	gap: var(--lf-space-2xs, 8px);
 }
 
-body.lf-theme .lf-topic-nav__group--spotlight {
-	flex: 1 1 0;
-}
-
-body.lf-theme .lf-topic-nav__group--topics {
-	flex: 0 1 auto;
-	max-inline-size: 55%;
-}
-
-body.lf-theme .lf-topic-nav__group--topics:only-child {
-	max-inline-size: 100%;
-}
-
-body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
-	border-inline-start: 1px solid var(--lf-rule);
-	padding-inline-start: var(--lf-space-s, 16px);
-}
-
-/* Group labels are not controls. */
 body.lf-theme .lf-topic-nav__pick {
 	display: inline-flex;
 	align-items: center;
+	gap: 0.35em;
 	flex: 0 0 auto;
-	gap: var(--lf-space-2xs, 8px);
+	padding: 0.4em 1em;
+	border-radius: var(--lf-shape-pill);
+	background: var(--lf-brand);
+	color: #ffffff;
 	font-family: var(--font-ui), sans-serif;
 	font-size: var(--lf-text-2xs);
 	font-weight: 700;
-	color: var(--lc-on-surface);
+	letter-spacing: 0.06em;
 	white-space: nowrap;
 }
 
-body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+body.lf-theme .lf-topic-nav__group--recommendations {
 	display: flex;
 	align-items: center;
-	flex: 0 1 auto;
+	gap: var(--lf-space-2xs);
+	inline-size: 100%;
 	min-inline-size: 0;
-	gap: var(--lf-space-2xs, 8px);
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	padding-inline: var(--lf-space-3xs);
+	border-radius: var(--lf-shape-action);
+	background: color-mix(in srgb, var(--lf-paper) 88%, transparent);
+	box-shadow: inset 0 0 0 1px var(--lf-rule);
+	scrollbar-width: none;
+}
+
+body.lf-theme .lf-topic-nav__list {
+	display: flex;
+	align-items: stretch;
+	gap: var(--lf-space-2xs);
+	flex: 1 1 auto;
+	inline-size: max-content;
+	min-inline-size: 0;
 	list-style: none;
 	margin: 0;
-	/* Reserve room for the focus ring inside each scroll container. */
 	padding: 4px;
+	white-space: normal;
 	overflow-x: auto;
 	overscroll-behavior-inline: contain;
 	scroll-padding-inline: 4px;
-	scrollbar-width: thin;
+	scrollbar-width: none;
 }
 
-body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
-	flex: 0 0 auto;
+body.lf-theme .lf-topic-nav__item {
+	flex: 0 0 5.5rem;
+	min-inline-size: 0;
 }
 
-/* Center native keyboard focus scrolling, including at browser zoom.
- * Scroll padding leaves touch and wheel scrolling unconstrained. */
-body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list):has(a:focus-visible) {
-	scroll-padding-inline: 50%;
+body.lf-theme .lf-topic-nav__item--feature {
+	flex: 0 0 12.75rem;
+	max-inline-size: 12.75rem;
 }
 
-body.lf-theme .lf-topic-nav a {
-	display: inline-flex;
+body.lf-theme .lf-topic-nav__list > li > a {
+	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	box-sizing: border-box;
-	min-block-size: 48px;
-	min-inline-size: 48px;
-	gap: var(--lf-space-2xs, 8px);
-	padding: var(--lf-space-2xs, 8px) 12px;
+	gap: 0.15rem;
+	inline-size: 100%;
+	block-size: 100%;
+	min-inline-size: 0;
+	min-block-size: 3.25rem;
+	padding: 0.35rem 0.5rem;
+	border-block-end: 2px solid transparent;
+	border-radius: var(--lf-shape-action);
 	font-family: var(--font-ui), sans-serif;
 	font-size: var(--lf-text-2xs);
 	font-weight: 600;
+	letter-spacing: 0.02em;
 	line-height: 1.4;
-	color: var(--lc-on-surface);
+	color: var(--lf-on-surface-secondary);
 	text-decoration: none;
-	white-space: nowrap;
-	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+	transition: color var(--lf-motion-fast) var(--lf-easing-standard),
+		border-color var(--lf-motion-fast) var(--lf-easing-standard),
+		background-color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
-body.lf-theme .lf-topic-nav__features a {
-	border: 1px solid var(--lf-rule);
-	border-radius: var(--lf-shape-full);
-	background: var(--md-sys-color-surface);
-}
-
-body.lf-theme .lf-topic-nav__past {
-	flex: 0 0 auto;
-	border-radius: var(--lf-shape-full);
-}
-
-body.lf-theme .lf-topic-nav__list a {
-	border-block-end: 2px solid transparent;
-}
-
-body.lf-theme .lf-topic-nav a:hover {
-	background: color-mix(in srgb, var(--lf-brand) 10%, transparent);
-}
-
-body.lf-theme .lf-topic-nav a:active {
-	background: color-mix(in srgb, var(--lf-brand) 18%, transparent);
-}
-
-body.lf-theme .lf-topic-nav a:focus-visible {
-	outline: 2px solid var(--lc-accent);
-	outline-offset: 2px;
-}
-
-body.lf-theme .lf-topic-nav__list a[aria-current="page"] {
-	border-block-end-color: var(--lc-accent);
-	font-weight: 700;
-	color: var(--lc-accent);
-}
-
-body.lf-theme .lf-topic-nav .material-symbols-outlined {
-	font-size: 20px;
+body.lf-theme .lf-topic-nav__icon {
+	font-size: 1.5rem;
 	line-height: 1;
 	flex: 0 0 auto;
 }
 
-/* The integrated links replace the duplicate home feature section. */
+body.lf-theme .lf-topic-nav__label {
+	line-height: 1.3;
+	text-align: center;
+	text-wrap: balance;
+	overflow-wrap: anywhere;
+}
+
+body.lf-theme .lf-topic-nav__list > li > a:hover,
+body.lf-theme .lf-topic-nav__list > li > a:focus-visible,
+body.lf-theme .lf-topic-nav__list > li.is-current > a {
+	color: var(--lc-accent);
+	background: color-mix(in srgb, var(--lc-accent) 10%, transparent);
+	border-block-end-color: var(--lc-accent);
+}
+
+body.lf-theme .lf-topic-nav__list > li > a:focus-visible {
+	outline: 2px solid var(--lc-accent);
+	outline-offset: 2px;
+}
+
 body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 	display: none;
 }
 
-@media (max-width: 1000px) {
-	body.lf-theme .lf-topic-nav__inner {
-		overflow-x: auto;
-		overscroll-behavior-inline: contain;
-		scroll-padding-inline: var(--lf-gutter);
-		scrollbar-width: thin;
+body.lf-theme .lf-topic-nav__categories {
+	display: flex;
+	align-items: center;
+	gap: var(--lf-space-xs);
+	min-inline-size: 0;
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	padding-block: 0.25rem;
+	scrollbar-width: none;
+}
+
+body.lf-theme .lf-topic-nav__category-heading {
+	flex: 0 0 auto;
+	font-size: var(--lf-text-2xs);
+	font-weight: 700;
+	color: var(--lf-on-surface-secondary);
+	white-space: nowrap;
+}
+
+body.lf-theme .lf-topic-nav__categories .lf-topic-nav__item {
+	flex: 0 0 auto;
+}
+
+body.lf-theme .lf-topic-nav__categories a {
+	min-block-size: 2.75rem;
+	padding-inline: 0.75rem;
+}
+
+body.lf-theme :is(.lf-topic-nav__inner, .lf-topic-nav__group--recommendations, .lf-topic-nav__list, .lf-topic-nav__categories)::-webkit-scrollbar {
+	display: none;
+}
+
+@media (max-width: 599px) {
+	body.lf-theme .lf-topic-nav__group--recommendations {
+		flex-direction: column;
+		align-items: flex-start;
+		padding-block: 0.35rem;
 	}
 
-	body.lf-theme .lf-topic-nav__inner:has(a:focus-visible) {
-		scroll-padding-inline: 50%;
+	body.lf-theme .lf-topic-nav__group--recommendations > .lf-topic-nav__list {
+		inline-size: 100%;
 	}
 
-	body.lf-theme .lf-topic-nav__group {
-		flex: 0 0 auto;
-		max-inline-size: none;
-	}
-
-	body.lf-theme .lf-topic-nav__group--topics:only-child {
-		max-inline-size: none;
-	}
-
-	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
-		flex: 0 0 auto;
-		overflow: visible;
+	body.lf-theme .lf-topic-nav__item--feature {
+		flex-basis: 10.5rem;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	body.lf-theme .lf-topic-nav a {
+	body.lf-theme .lf-topic-nav__list > li > a {
 		transition: none;
 	}
 }
