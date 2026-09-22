@@ -158,10 +158,9 @@ body.lf-theme .m3-article__body h6 {
 /*
  * H2 / H3 / H4 の共通則。
  *
- * 文字そのものは本文と同じ on-surface とし、Luminous Core の
- * オレンジは罫だけに使う。本文の H2 は太い下罫線、H3/H4 は縦線だけにして、
- * 「縦 + 下線」の二重装飾を避ける。線色と線幅の両方を H2 > H3 > H4 で
- * 段階化し、見出しレベルの差を明確にする。
+ * 本文見出しはブランドオレンジを維持する。
+ * H2 は章区切りの罫線を残し、H3 / H4 は線を重ねず、
+ * サイズ・太さ・余白で階層を示す。
  */
 body.lf-theme .m3-article__body h2,
 body.lf-theme .m3-article__body h3,
@@ -170,7 +169,7 @@ body.lf-theme .m3-article__body h4:not(.m3-blogcard__title) {
 	--lf-heading-line-h3: color-mix(in srgb, var(--lf-brand) 72%, transparent);
 	--lf-heading-line-h4: color-mix(in srgb, var(--lf-brand) 48%, transparent);
 
-	color: var(--lc-on-surface);
+	color: var(--lf-brand-text);
 	position: relative;
 }
 
@@ -214,61 +213,35 @@ body.lf-theme .m3-article__body h2 {
 
 body.lf-theme .m3-article__body h3::before,
 body.lf-theme .m3-article__body h4:not(.m3-blogcard__title)::before {
-	content: "";
-	position: absolute;
-	inset-inline-start: 0;
-	inset-block-start: 0.08em;
-	inline-size: var(--lf-heading-rail-width);
-	block-size: var(--lf-heading-rail-height);
-	background: var(--lf-heading-rail-color);
+	content: none;
 }
 
-/* H3: 中区切り。縦線だけで本文のリズムを軽く分ける。 */
+/* H3: 中区切り。サイズ・太さ・余白だけで本文のリズムを分ける。 */
 body.lf-theme .m3-article__body h3 {
-	--lf-heading-rail-width: 3px;
-	--lf-heading-rail-height: 1.55em;
-	--lf-heading-rail-color: var(--lf-heading-line-h3);
-
 	font-size: var(--md-sys-typescale-headline-medium-size);
 	font-weight: 700;
 	margin: var(--lf-space-xl) 0 var(--lf-space-s);
 	padding-block-start: 0;
-	padding-inline-start: var(--lf-space-s);
+	padding-inline-start: 0;
 	border-inline-start: 0;
 
 	&:not(:where([class*="__title"], .m3-blogcard *, .m3-product-card *, .m3-game-card *, .m3-notice *)) {
-		--lf-heading-rail-width: 0.1875rem;
-		--lf-heading-rail-height: 1.4em;
 		line-height: 1.4;
 		overflow-wrap: anywhere;
-
-		&::before {
-			inset-block-start: 0;
-		}
 	}
 }
 
-/* H4: 最小のアクセント。H3 より細く薄い縦線だけを持つ。 */
+/* H4: 小区切り。H3 より一段小さく、本文との距離を詰める。 */
 body.lf-theme .m3-article__body h4:not(.m3-blogcard__title) {
-	--lf-heading-rail-width: 2px;
-	--lf-heading-rail-height: 1.2em;
-	--lf-heading-rail-color: var(--lf-heading-line-h4);
-
 	font-size: var(--md-sys-typescale-headline-small-size);
 	font-weight: 700;
 	margin: var(--lf-space-l) 0 var(--lf-space-2xs);
-	padding-inline-start: var(--lf-space-xs);
-	color: var(--lf-on-surface-secondary);
+	padding-inline-start: 0;
+	color: var(--lf-brand-text);
 
 	&:not(:where([class*="__title"], .m3-blogcard *, .m3-product-card *, .m3-game-card *, .m3-notice *)) {
-		--lf-heading-rail-width: 0.125rem;
-		--lf-heading-rail-height: 1.4em;
 		line-height: 1.4;
 		overflow-wrap: anywhere;
-
-		&::before {
-			inset-block-start: 0;
-		}
 	}
 }
 
