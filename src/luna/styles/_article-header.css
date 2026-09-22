@@ -213,7 +213,7 @@ body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive 
 
 	padding: 0;
 	gap: var(--lf-space-2xs);
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	max-inline-size: 100%;
 }
 
@@ -221,7 +221,7 @@ body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	gap: var(--lf-space-2xs);
 	min-inline-size: 0;
 }
@@ -272,6 +272,7 @@ body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
 body.lf-theme .lf-article-header__reading .m3-reading-rank-chip__label {
 	color: inherit;
 	font-size: inherit;
+	white-space: inherit;
 }
 
 body.lf-theme .lf-article-header__reading .m3-reading-rank-chip__dot {
@@ -331,87 +332,56 @@ body.lf-theme .lf-article-header__reading .m3-reading-badge-text--desc {
 	border: 0;
 }
 
+/* 狭い画面では読了時間を主行に置き、補足を折り返して読める大きさを保つ。 */
 @media (max-width: 599px) {
 	body.lf-theme .lf-article-header__reading {
 		inline-size: 100%;
 		margin-inline: 0;
 	}
 
-	/* 狭い画面では区切りを外し、余白だけで分ける。 */
-	body.lf-theme .lf-article-header__reading .m3-reading-badge-label {
-		border-inline-start: 0;
-		padding-inline-start: 0;
-		flex: 0 0 auto;
-		inline-size: auto;
-		max-inline-size: none;
-		font-size: 0.6875rem;
-	}
-
 	body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive {
 		display: flex;
+		align-items: flex-start;
 		flex: 1 1 auto;
 		inline-size: 100%;
-		max-inline-size: none;
+		min-inline-size: 0;
 		padding: 0;
-		gap: 0.375rem;
+		gap: var(--lf-space-2xs);
 	}
 
 	body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge {
 		flex: 0 0 30px;
+		inline-size: 30px;
+		block-size: 30px;
 		margin-inline-end: 0;
 	}
 
 	body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
-		flex: 1 1 auto;
+		flex: 1 1 0;
 		inline-size: auto;
-		gap: 0.25rem;
+		gap: var(--lf-space-3xs) var(--lf-space-2xs);
 	}
 
 	body.lf-theme .lf-article-header__reading .m3-reading-badge-text--main {
-		flex: 0 0 auto;
-		font-size: clamp(0.75rem, 3.4vw, 0.8125rem);
-		letter-spacing: -0.02em;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
-		margin-inline-start: 0;
-		padding: 0;
-		font-size: 0.6875rem;
-	}
-}
-
-@media (max-width: 359px) {
-	body.lf-theme .lf-article-header__reading {
-		inline-size: calc(100% + 1rem);
-		margin-inline: -0.5rem;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive {
-		padding: 0;
-		gap: 0.125rem;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge {
-		flex-basis: 28px;
-		inline-size: 28px;
-		block-size: 28px;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
-		gap: 0.125rem;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-reading-badge-text--main {
-		font-size: 0.6875rem;
+		flex: 1 0 100%;
+		font-size: var(--lf-text-s);
+		line-height: var(--lf-leading-snug);
+		letter-spacing: normal;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 
 	body.lf-theme .lf-article-header__reading .m3-reading-badge-label,
 	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
-		font-size: 0.5625rem;
-	}
-
-	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
+		flex: 0 1 auto;
+		min-inline-size: 0;
+		max-inline-size: 100%;
+		margin-inline-start: 0;
 		padding: 0;
+		font-size: var(--lf-text-2xs);
+		line-height: 1.6;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 }
 
