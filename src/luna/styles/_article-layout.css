@@ -233,6 +233,40 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
+/* 関連記事: 縦長カードではなく、画像と見出しを横に読むカードへ整える。 */
+body.lf-theme.single-post .m3-related-posts--simple .m3-related-posts__inner {
+	max-inline-size: var(--lf-content-max);
+}
+
+body.lf-theme.single-post .m3-related-posts--simple .m3-related-grid {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+	align-items: stretch;
+}
+
+body.lf-theme.single-post .m3-related-posts--simple .m3-related-card {
+	display: grid;
+	grid-template-columns: minmax(6.5rem, 34%) minmax(0, 1fr);
+	align-items: stretch;
+	min-block-size: 7.25rem;
+}
+
+body.lf-theme.single-post .m3-related-posts--simple .m3-related-card__image {
+	block-size: 100%;
+	min-block-size: 100%;
+}
+
+body.lf-theme.single-post .m3-related-posts--simple .m3-related-card__content {
+	display: flex;
+	align-items: center;
+	min-inline-size: 0;
+}
+
+@media (max-width: 374px) {
+	body.lf-theme.single-post .m3-related-posts--simple .m3-related-card {
+		grid-template-columns: 6.25rem minmax(0, 1fr);
+	}
+}
+
 /* ---------------------------------------------------------------------
  * 脚注（Reading Aside へ移動したとき）
  * 移動は src/luna.js が行う。JS が動かない場合は本文末に残る。
