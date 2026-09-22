@@ -73,14 +73,12 @@ function setupFootnoteRelocation() {
  * 文字が中途半端に切れた見た目にはならない。
  */
 /*
- * 対象は「一覧に並ぶ記事タイトル」。ページ種別を問わず同じ処理を当てる
- * （index / archive のリスト・グリッド / 検索結果 / 関連記事 / HEADLINE）。
- * 実際に溢れている要素にしか手を入れないので、対象を広めに取っても副作用はない。
+ * 対象は省略表示を維持する HEADLINE・関連記事などのタイトル。
+ * 通常記事カード（.m3-card__title / .c-card__title）は CSS で全文を表示し、
+ * フォント読み込みやリサイズの際にも縮小・省略しない。
  * 見出し・目次・アーカイブヘッダーなど「一覧のカードではないもの」は含めない。
  */
 const TITLE_SELECTOR = [
-  '.m3-card__title',
-  '.c-card__title',
   '.c-headline-card__title',
   '.m3-headline-card__title',
   '.m3-related-card__title',
