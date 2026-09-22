@@ -225,7 +225,8 @@ function luna_frontier_is_legacy_archive(): bool {
 function luna_frontier_register_menus(): void {
 	register_nav_menus(
 		array(
-			'luna_topics' => __( 'トピック（Luna Frontier）', 'node' ),
+			'luna_topics'    => __( 'トピック（Luna Frontier）', 'node' ),
+			'luna_spotlight' => __( 'SPOTLIGHT（Luna Frontier）', 'node' ),
 		)
 	);
 }
