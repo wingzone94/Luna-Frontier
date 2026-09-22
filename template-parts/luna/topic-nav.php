@@ -114,6 +114,10 @@ if ( has_nav_menu( 'luna_spotlight' ) ) {
 	$lf_spotlight = node_get_spotlight_categories();
 }
 
+$lf_current_term = get_queried_object();
+$lf_current_url  = $lf_current_term instanceof WP_Term ? get_term_link( $lf_current_term ) : '';
+$lf_current_url  = is_wp_error( $lf_current_url ) ? '' : untrailingslashit( (string) $lf_current_url );
+
 // SPOTLIGHT を優先し、残りをトピックで補完して最大6件。
 $lf_recommendations = array();
 $lf_seen            = array();
@@ -134,7 +138,7 @@ foreach ( $lf_spotlight as $lf_feature ) {
 	$lf_recommendations[] = array(
 		'label'   => (string) ( $lf_feature['name'] ?? '' ),
 		'url'     => $lf_url,
-		'current' => false,
+		'current' => '' !== $lf_current_url && $lf_current_url === $lf_key,
 		'feature' => true,
 	);
 	++$lf_feature_count;
