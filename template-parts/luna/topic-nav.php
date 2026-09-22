@@ -4,18 +4,13 @@ declare( strict_types=1 );
 /**
  * Luna Frontier 2.0 / SkyAlow — Topic Nav
  *
- * ヘッダーの真下に置く、主要トピックと特集への導線。
+ * ヘッダー直下に、編集部おすすめと常設カテゴリの2行を表示する。
  *
- * SPOTLIGHT は最大4特集と過去特集リンク、おすすめトピックと同じ行に表示。
+ * 編集部おすすめは SPOTLIGHT を最大4件まで優先し、空き枠をトピックで補完して
+ * 合計最大6件。常設カテゴリは推薦件数に左右されず独立行で表示する。
  *
- * SPOTLIGHT はここへ統合したので、ホームの独立セクションは表示しない
- * （同じリンクを 1 ページに二度出さない。CSS 側で非表示にしている）。
- *
- * トピックの項目は管理画面（外観 → メニュー）の「トピック（Luna Frontier）」で編集できる。
- * 未設定のあいだは記事数の多い上位カテゴリで自動的に埋める。
- *
- * ブランドクロームの一部なので Dynamic Color は流し込まない（§23 / §38）。
- * リンクの羅列なので JS は使わない。
+ * SPOTLIGHT は専用メニューを優先し、未設定なら親テーマの SPOTLIGHT を使う。
+ * 同一URLは推薦棚の中で重複表示しない。
  *
  * @package LunaFrontier
  */
@@ -26,13 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * トピック名から Material Symbols のアイコン名を決める。
- *
- * スラッグは日本語がパーセントエンコードされていて鍵に使えないため、
- * 表示名のキーワードで判定する。`luna_frontier_topic_icon` で差し替え可能。
  */
 function luna_frontier_topic_icon( string $label ): string {
 	$map = array(
-		'AI'         => 'auto_awesome', // Gemini 風の 4 方向スパークル
+		'AI'         => 'auto_awesome',
 		'ゲーム'     => 'sports_esports',
 		'ガジェット' => 'devices',
 		'ニュース'   => 'newspaper',
@@ -46,7 +38,6 @@ function luna_frontier_topic_icon( string $label ): string {
 	);
 
 	$icon = 'label';
-
 	foreach ( $map as $needle => $candidate ) {
 		if ( false !== mb_stripos( $label, $needle ) ) {
 			$icon = $candidate;
@@ -104,54 +95,120 @@ if ( has_nav_menu( 'luna_topics' ) ) {
 	}
 }
 
-$lf_spotlight = function_exists( 'node_get_spotlight_categories' ) ? node_get_spotlight_categories() : array();
-$lf_spotlight_url = function_exists( 'node_get_spotlight_url' ) ? node_get_spotlight_url() : '';
+$lf_limit         = max( 1, min( 6, (int) apply_filters( 'luna_frontier_recommendation_limit', 6 ) ) );
+$lf_feature_limit = max( 0, min( 4, $lf_limit, (int) apply_filters( 'luna_frontier_spotlight_limit', 4 ) ) );
+$lf_spotlight     = array();
 
-if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url ) {
+if ( has_nav_menu( 'luna_spotlight' ) ) {
+	$lf_menu_id = (int) ( get_nav_menu_locations()['luna_spotlight'] ?? 0 );
+
+	foreach ( (array) wp_get_nav_menu_items( $lf_menu_id ) as $lf_item ) {
+		if ( $lf_item instanceof WP_Post && ! (int) $lf_item->menu_item_parent ) {
+			$lf_spotlight[] = array(
+				'name' => (string) $lf_item->title,
+				'url'  => (string) $lf_item->url,
+			);
+		}
+	}
+} elseif ( function_exists( 'node_get_spotlight_categories' ) ) {
+	$lf_spotlight = node_get_spotlight_categories();
+}
+
+// SPOTLIGHT を優先し、残りをトピックで補完して最大6件。
+$lf_recommendations = array();
+$lf_seen            = array();
+$lf_feature_count   = 0;
+
+foreach ( $lf_spotlight as $lf_feature ) {
+	if ( $lf_feature_count >= $lf_feature_limit || count( $lf_recommendations ) >= $lf_limit ) {
+		break;
+	}
+
+	$lf_url = esc_url_raw( (string) ( $lf_feature['url'] ?? '' ) );
+	$lf_key = untrailingslashit( $lf_url );
+	if ( '' === $lf_url || isset( $lf_seen[ $lf_key ] ) ) {
+		continue;
+	}
+
+	$lf_seen[ $lf_key ] = true;
+	$lf_recommendations[] = array(
+		'label'   => (string) ( $lf_feature['name'] ?? '' ),
+		'url'     => $lf_url,
+		'current' => false,
+		'feature' => true,
+	);
+	++$lf_feature_count;
+}
+
+foreach ( $lf_topics as $lf_topic ) {
+	if ( count( $lf_recommendations ) >= $lf_limit ) {
+		break;
+	}
+
+	$lf_url = esc_url_raw( (string) $lf_topic['url'] );
+	$lf_key = untrailingslashit( $lf_url );
+	if ( '' === $lf_url || isset( $lf_seen[ $lf_key ] ) ) {
+		continue;
+	}
+
+	$lf_seen[ $lf_key ] = true;
+	$lf_recommendations[] = array(
+		'label'   => (string) $lf_topic['label'],
+		'url'     => $lf_url,
+		'current' => (bool) $lf_topic['current'],
+		'feature' => false,
+	);
+}
+
+// 常設カテゴリは推薦棚とは別に全件表示する。
+$lf_categories = array();
+$lf_category_seen = array();
+foreach ( $lf_topics as $lf_topic ) {
+	$lf_url = esc_url_raw( (string) $lf_topic['url'] );
+	$lf_key = untrailingslashit( $lf_url );
+	if ( '' === $lf_url || isset( $lf_category_seen[ $lf_key ] ) ) {
+		continue;
+	}
+
+	$lf_category_seen[ $lf_key ] = true;
+	$lf_categories[] = array_merge( $lf_topic, array( 'url' => $lf_url ) );
+}
+
+if ( empty( $lf_recommendations ) && empty( $lf_categories ) ) {
 	return;
 }
 ?>
-<nav class="lf-topic-nav" aria-label="主要トピックと特集">
+<nav class="lf-topic-nav" aria-label="特集とカテゴリ">
 	<div class="lf-topic-nav__inner">
-
-		<?php if ( ! empty( $lf_spotlight ) || '' !== $lf_spotlight_url ) : ?>
-			<div class="lf-topic-nav__group lf-topic-nav__group--spotlight">
-				<span class="lf-topic-nav__pick">
-					<span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
-					SPOTLIGHT
-				</span>
-
-				<?php if ( ! empty( $lf_spotlight ) ) : ?>
-				<ul class="lf-topic-nav__features">
-					<?php foreach ( array_slice( $lf_spotlight, 0, 4 ) as $lf_feature ) : ?>
-						<li>
-							<a href="<?php echo esc_url( (string) $lf_feature['url'] ); ?>"><?php echo esc_html( (string) $lf_feature['name'] ); ?></a>
-						</li>
-					<?php endforeach; ?>
-				</ul>
-				<?php endif; ?>
-				<?php if ( '' !== $lf_spotlight_url ) : ?>
-					<a class="lf-topic-nav__past" href="<?php echo esc_url( $lf_spotlight_url ); ?>" aria-label="<?php esc_attr_e( 'スポットライトアーカイブ', 'node' ); ?>" title="<?php esc_attr_e( 'スポットライトアーカイブ', 'node' ); ?>">
-						<span aria-hidden="true">…</span>
-					</a>
-				<?php endif; ?>
-			</div>
-		<?php endif; ?>
-
-		<?php if ( ! empty( $lf_topics ) ) : ?>
-			<div class="lf-topic-nav__group lf-topic-nav__group--topics">
-				<span class="lf-topic-nav__pick lf-topic-nav__pick--editors">おすすめ</span>
+		<?php if ( ! empty( $lf_recommendations ) ) : ?>
+		<div class="lf-topic-nav__group lf-topic-nav__group--recommendations<?php echo $lf_feature_count ? ' lf-topic-nav__group--spotlight' : ''; ?>">
+			<span class="lf-topic-nav__pick lf-topic-nav__pick--editors">編集部おすすめ</span>
 			<ul class="lf-topic-nav__list">
-				<?php foreach ( $lf_topics as $lf_topic ) : ?>
-					<li class="lf-topic-nav__item<?php echo $lf_topic['current'] ? ' is-current' : ''; ?>">
-						<a href="<?php echo esc_url( $lf_topic['url'] ); ?>"<?php echo $lf_topic['current'] ? ' aria-current="page"' : ''; ?>>
-							<span class="material-symbols-outlined lf-topic-nav__icon" aria-hidden="true"><?php echo esc_html( luna_frontier_topic_icon( $lf_topic['label'] ) ); ?></span>
-							<span class="lf-topic-nav__label"><?php echo esc_html( $lf_topic['label'] ); ?></span>
+				<?php foreach ( $lf_recommendations as $lf_item ) : ?>
+					<li class="lf-topic-nav__item<?php echo $lf_item['feature'] ? ' lf-topic-nav__item--feature' : ''; ?><?php echo $lf_item['current'] ? ' is-current' : ''; ?>">
+						<a href="<?php echo esc_url( $lf_item['url'] ); ?>"<?php echo $lf_item['current'] ? ' aria-current="page"' : ''; ?>>
+							<span class="material-symbols-outlined lf-topic-nav__icon" aria-hidden="true"><?php echo esc_html( $lf_item['feature'] ? 'local_fire_department' : luna_frontier_topic_icon( $lf_item['label'] ) ); ?></span>
+							<span class="lf-topic-nav__label"><?php echo esc_html( $lf_item['label'] ); ?></span>
 						</a>
 					</li>
 				<?php endforeach; ?>
 			</ul>
-			</div>
+		</div>
+		<?php endif; ?>
+
+		<?php if ( ! empty( $lf_categories ) ) : ?>
+		<div class="lf-topic-nav__categories">
+			<span class="lf-topic-nav__category-heading">カテゴリ</span>
+			<ul class="lf-topic-nav__list">
+				<?php foreach ( $lf_categories as $lf_item ) : ?>
+					<li class="lf-topic-nav__item<?php echo $lf_item['current'] ? ' is-current' : ''; ?>">
+						<a href="<?php echo esc_url( $lf_item['url'] ); ?>"<?php echo $lf_item['current'] ? ' aria-current="page"' : ''; ?>>
+							<span class="lf-topic-nav__label"><?php echo esc_html( $lf_item['label'] ); ?></span>
+						</a>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</div>
 		<?php endif; ?>
 	</div>
 </nav>
