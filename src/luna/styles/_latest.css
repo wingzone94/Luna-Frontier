@@ -123,6 +123,137 @@ body.lf-theme .m3-section-title__sub {
 	color: var(--lf-on-surface-muted);
 }
 
+/* ---------------------------------------------------------------------
+ * HEADLINE: 大きな箱ではなく、薄い罫とカード密度でトップの入口を作る。
+ * --------------------------------------------------------------------- */
+body.lf-theme .c-headline-carousel.m3-surface {
+	background: transparent;
+	border-block: 1px solid var(--lf-rule);
+	border-inline: 0;
+	box-shadow: none;
+	padding: var(--lf-space-m) var(--lf-gutter);
+}
+
+body.lf-theme .c-headline-carousel__header {
+	margin-block-end: var(--lf-space-s);
+}
+
+body.lf-theme .c-headline-carousel__viewport {
+	margin-inline: 0;
+	padding-inline: 0;
+	padding-block: 0;
+}
+
+body.lf-theme .c-headline-carousel__track {
+	gap: var(--lf-space-xs);
+}
+
+body.lf-theme .c-headline-carousel__item {
+	flex-basis: clamp(14.75rem, 68vw, 17rem);
+}
+
+@media (min-width: 601px) {
+	body.lf-theme .c-headline-carousel__item {
+		flex-basis: clamp(15.25rem, 34vw, 17rem);
+	}
+}
+
+@media (min-width: 900px) {
+	body.lf-theme .c-headline-carousel__item {
+		flex-basis: clamp(15.5rem, 22vw, 17.5rem);
+	}
+}
+
+body.lf-theme .c-headline-card__link {
+	background: var(--lf-paper);
+	border-color: var(--lf-rule);
+	box-shadow: none;
+}
+
+body.lf-theme .c-headline-card__link:hover {
+	background: color-mix(in srgb, var(--lc-accent) 6%, var(--lf-paper));
+	border-color: color-mix(in srgb, var(--lc-accent) 58%, transparent);
+	transform: translateY(-1px);
+}
+
+body.lf-theme .c-headline-card__link:focus-visible {
+	outline: 3px solid var(--lc-accent);
+	outline-offset: 2px;
+}
+
+body.lf-theme .c-headline-card__visual {
+	background: var(--lf-paper-sunken);
+	border-block-end: 1px solid var(--lf-rule);
+}
+
+body.lf-theme .c-headline-card__body {
+	gap: var(--lf-space-2xs);
+	padding: var(--lf-space-xs);
+}
+
+body.lf-theme .c-headline-card__date,
+body.lf-theme .c-headline-card__author {
+	color: var(--lf-on-surface-muted);
+}
+
+body.lf-theme .c-headline-card__title {
+	font-family: var(--font-heading), sans-serif;
+	font-size: var(--lf-text-s);
+	font-weight: 700;
+	line-height: 1.45;
+	color: var(--lc-on-surface);
+}
+
+body.lf-theme .c-headline-carousel__views {
+	background: var(--lf-paper);
+	border-color: var(--lf-rule-strong);
+}
+
+body.lf-theme .c-headline-carousel__view {
+	color: var(--lf-on-surface-secondary);
+}
+
+body.lf-theme .c-headline-carousel__view:hover {
+	background: color-mix(in srgb, var(--lc-accent) 10%, transparent);
+	color: var(--lc-accent);
+}
+
+body.lf-theme .c-headline-carousel__view.is-active {
+	background: var(--lc-primary);
+	color: var(--lc-on-primary);
+}
+
+body.lf-theme .c-headline-carousel__button {
+	background: var(--lf-paper);
+	border-color: var(--lf-rule-strong);
+	color: var(--lc-on-surface);
+	box-shadow: 0 2px 8px color-mix(in srgb, #000000 20%, transparent);
+}
+
+body.lf-theme .c-headline-carousel__button:hover {
+	background: color-mix(in srgb, var(--lc-accent) 10%, var(--lf-paper));
+	border-color: var(--lc-accent);
+}
+
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-carousel__item,
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-carousel__item--no-image {
+	flex: 0 0 auto;
+}
+
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-card,
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-card__link {
+	block-size: auto;
+}
+
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-card__link {
+	background: var(--lf-paper);
+	min-block-size: 4.5rem;
+}
+
+body.lf-theme .c-headline-carousel[data-view="list"] .c-headline-card__visual {
+	border-block-end: 0;
+}
+
 /* 「すべて見る」は装飾を抑えたテキストリンクにして、カードの邪魔をしない。 */
 body.lf-theme .m3-latest-see-all {
 	display: inline-flex;
@@ -154,7 +285,7 @@ body.lf-theme .m3-card {
 	display: flex;
 	flex-direction: column;
 	overflow: clip;
-	block-size: auto;
+	block-size: 100%;
 }
 
 body.lf-theme .m3-hot-card,
@@ -181,7 +312,8 @@ body.lf-theme .m3-surface--latest .m3-card.m3-card--has-image {
  */
 body.lf-theme .m3-card__visual {
 	position: relative;
-	aspect-ratio: auto;
+	flex: 0 0 auto;
+	aspect-ratio: 16 / 9;
 	overflow: clip;
 	background: var(--lf-paper-sunken);
 	border-radius: 0;
@@ -189,40 +321,29 @@ body.lf-theme .m3-card__visual {
 
 body.lf-theme .m3-hot-card .m3-card__visual,
 body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card > .m3-card__visual {
-	flex: 1 1 auto;
+	flex: 0 0 auto;
 	min-block-size: 0;
 	aspect-ratio: 16 / 9;
 }
 
 body.lf-theme .m3-card__image-link {
 	display: block;
-	block-size: auto;
+	position: absolute;
+	inset: 0;
+	block-size: 100%;
 }
 
 body.lf-theme .m3-card__visual img {
 	display: block;
 	inline-size: 100%;
-	block-size: auto;
+	block-size: 100%;
 	object-fit: contain;
 	border-radius: 0;
-	transition: transform var(--lf-motion-emphasized) var(--lf-easing-emphasized);
-}
-
-body.lf-theme .m3-hot-card .m3-card__image-link,
-body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card .m3-card__image-link {
-	position: static;
-	inset: auto;
-	block-size: 100%;
-}
-
-body.lf-theme .m3-hot-card .m3-card__visual img,
-body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card > .m3-card__visual img {
-	block-size: 100%;
-	object-fit: fill;
+	transform: none;
 }
 
 body.lf-theme .m3-card:hover .m3-card__visual img {
-	transform: scale(1.04);
+	transform: none;
 }
 
 /* コンテンツは内容高で閉じ、短いタイトルの下に空洞を作らない。 */
@@ -230,8 +351,23 @@ body.lf-theme .m3-card__content {
 	display: flex;
 	flex-direction: column;
 	gap: var(--lf-space-2xs);
-	flex: 0 0 auto;
-	padding: var(--lf-space-xs) var(--lf-space-s) 0;
+	flex: 1 1 auto;
+	min-inline-size: 0;
+	padding: var(--lf-space-xs) var(--lf-space-s) var(--lf-space-s);
+}
+
+body.lf-theme :is(.m3-post-grid--list, .m3-post-grid--2col-list) .m3-card__visual {
+	inline-size: 100%;
+}
+
+body.lf-theme :is(.m3-post-grid--list, .m3-post-grid--2col-list) .m3-card__content {
+	inline-size: auto;
+}
+
+@layer components {
+	body.lf-theme .m3-post-grid--list .m3-card--no-image {
+		flex-direction: column !important;
+	}
 }
 
 body.lf-theme .m3-card__topline {
@@ -256,11 +392,12 @@ body.lf-theme .m3-card__title {
 	letter-spacing: -0.005em;
 	text-wrap: pretty;
 
-	/* 行数を揃えて、カードごとの高さのばらつきを抑える。 */
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 3;
-	overflow: hidden;
+	/* 通常カードはタイトル全文を表示する。 */
+	display: block;
+	-webkit-line-clamp: unset;
+	max-block-size: none;
+	overflow: visible;
+	overflow-wrap: anywhere;
 }
 
 body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card .m3-card__title {
@@ -273,8 +410,13 @@ body.lf-theme .m3-card__title a {
 	transition: color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
-body.lf-theme .m3-card:hover .m3-card__title a {
-	color: var(--lf-brand-text);
+body.lf-theme .m3-card:hover .m3-card__title a,
+body.lf-theme .m3-card__title a:focus-visible {
+	color: var(--lc-accent);
+}
+
+body.lf-theme .m3-card__title a:focus-visible::after {
+	outline-color: var(--lc-accent);
 }
 
 /*
@@ -290,7 +432,7 @@ body.lf-theme .m3-card--no-image::before {
 	content: "";
 	display: block;
 	flex: 0 0 auto;
-	aspect-ratio: 16 / 10;
+	aspect-ratio: 16 / 9;
 	border-block-end: 1px solid var(--lf-rule);
 	background:
 		repeating-linear-gradient(
@@ -306,7 +448,7 @@ body.lf-theme .m3-card--no-image::before {
 }
 
 body.lf-theme .m3-hot-card.m3-card--no-image::before {
-	aspect-ratio: 16 / 7;
+	aspect-ratio: 16 / 9;
 }
 
 body.lf-theme .m3-card--no-image .m3-card__content {
@@ -315,8 +457,8 @@ body.lf-theme .m3-card--no-image .m3-card__content {
 
 /* フッター: 下端に固定し、細い罫で区切る。 */
 body.lf-theme .m3-card__footer {
-	margin-block-start: 0;
-	padding: var(--lf-space-2xs) var(--lf-space-s);
+	margin-block-start: auto;
+	padding: var(--lf-space-2xs) 0;
 	border-block-start: 1px solid var(--lf-rule);
 	display: flex;
 	align-items: center;
@@ -363,13 +505,21 @@ body.lf-theme .m3-card__date {
 	font-variant-numeric: tabular-nums;
 }
 
+/* 拡大時も日付と著者名をカード内で折り返せるようにする。 */
+body.lf-theme .m3-card__writer,
+body.lf-theme .m3-card__date {
+	min-inline-size: 0;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
 /* ホバーは影ではなく罫の色で示す（Paper Design）。 */
 body.lf-theme .m3-card:hover {
-	border-color: color-mix(in srgb, var(--lf-brand) 60%, transparent);
+	border-color: color-mix(in srgb, var(--lc-accent) 60%, transparent);
 }
 
 body.lf-theme .m3-card:focus-within {
-	border-color: var(--lf-brand);
+	border-color: var(--lc-accent);
 }
 
 body.lf-theme .m3-card.lf-card-spectrum:hover,
