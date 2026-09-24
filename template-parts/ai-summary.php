@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $summary    = $args['summary'] ?? '';
 $mode       = $args['mode'] ?? 'card';
-$tone_color = '#FF9800'; // AIエリアをオレンジで統一
+$tone_color = sanitize_hex_color( (string) ( $args['tone_color'] ?? '' ) ) ?: '#FF9800';
 $keywords   = $args['keywords'] ?? [];
 
 // 空なら何も出さない
