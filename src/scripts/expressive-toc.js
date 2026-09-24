@@ -220,7 +220,7 @@ export function initExpressiveFloatingTOC() {
             if (tocTrigger) tocTrigger.style.display = 'none';
             actionStack?.classList.remove('is-has-toc');
             actionStack?.classList.add('is-visible');
-            backToTopTrigger?.setAttribute('aria-label', '最上部へ戻る');
+            backToTopTrigger?.setAttribute('aria-label', 'ページ上部へ戻る');
 
             if (!tocReadyDispatched) {
                 document.dispatchEvent(new CustomEvent('m3:toc:ready'));
@@ -243,7 +243,7 @@ export function initExpressiveFloatingTOC() {
         tocTrigger?.setAttribute('aria-label', '目次を表示');
         tocTrigger?.setAttribute('aria-controls', 'm3-sticky-toc');
         tocTrigger?.setAttribute('aria-haspopup', 'menu');
-        backToTopTrigger?.setAttribute('aria-label', '最上部へ戻る');
+        backToTopTrigger?.setAttribute('aria-label', 'ページ上部へ戻る');
         actionStack?.classList.add('is-has-toc', 'is-visible');
         bindTriggerFallback(tocTrigger);
 

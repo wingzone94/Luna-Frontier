@@ -3,8 +3,8 @@ declare(strict_types=1);
 ?>
 <div class="m3-action-stack <?php echo is_singular() ? 'is-singular' : ''; ?>">
     <!-- 1. Back to Top -->
-    <button id="m3-back-to-top" class="m3-fab m3-fab--extended m3-fab--mobile-hidden">
-        <span class="material-symbols-outlined">arrow_upward</span>
+    <button id="m3-back-to-top" class="m3-fab m3-fab--extended m3-fab--mobile-hidden" aria-label="ページ上部へ戻る">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
         <span class="m3-fab-text">TOP</span>
         <span class="m3-fab-label-top">最上部へ戻る</span>
     </button>
