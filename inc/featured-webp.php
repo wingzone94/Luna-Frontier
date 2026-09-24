@@ -64,7 +64,8 @@ function node_featured_webp_content_url_replacements( array $converted ) {
 		foreach ( array_unique( array( $source_url, $source_encoded_url ) ) as $old_url ) {
 			$new_url = $source_url === $old_url ? $target_url : $target_encoded_url;
 			foreach ( array( $old_url, set_url_scheme( $old_url, 'http' ), set_url_scheme( $old_url, 'https' ) ) as $url_variant ) {
-				$replacements[ $url_variant ] = str_replace( $old_url, $new_url, $url_variant );
+				$scheme = wp_parse_url( $url_variant, PHP_URL_SCHEME );
+				$replacements[ $url_variant ] = is_string( $scheme ) ? set_url_scheme( $new_url, $scheme ) : $new_url;
 			}
 		}
 	}

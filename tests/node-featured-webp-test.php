@@ -118,8 +118,10 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 			$size_name = key( $metadata['sizes'] );
 			$old_full_url = wp_get_attachment_url( $attachment_id );
 			$old_size_url = trailingslashit( $upload['url'] ) . $metadata['sizes'][ $size_name ]['file'];
+			$old_scheme = wp_parse_url( $old_full_url, PHP_URL_SCHEME );
+			$alternate_scheme_url = set_url_scheme( $old_full_url, 'https' === $old_scheme ? 'http' : 'https' );
 			$content = sprintf(
-				'<!-- wp:image {"id":%d,"url":"%s"} --><figure><a href="%s"><img src="%s" srcset="%s 1200w, %s %dw" class="wp-image-%d" /></a></figure><!-- /wp:image -->',
+				'<!-- wp:image {"id":%d,"url":"%s"} --><figure><a href="%s"><img src="%s" srcset="%s 1200w, %s %dw" class="wp-image-%d" /></a></figure><!-- /wp:image --><!-- alternate scheme: %s -->',
 				$attachment_id,
 				$old_full_url,
 				$old_full_url,
@@ -127,7 +129,8 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 				$old_full_url,
 				$old_size_url,
 				(int) $metadata['sizes'][ $size_name ]['width'],
-				$attachment_id
+				$attachment_id,
+				$alternate_scheme_url
 			);
 			wp_update_post( array( 'ID' => $referencing_post_id, 'post_content' => $content ) );
 
@@ -136,11 +139,14 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 			$updated_content = get_post_field( 'post_content', $referencing_post_id );
 			$new_full_url = wp_get_attachment_url( $attachment_id );
 			$new_size_url = wp_get_attachment_image_src( $attachment_id, $size_name )[0];
+			$expected_alternate_url = set_url_scheme( $new_full_url, 'https' === $old_scheme ? 'http' : 'https' );
 			$this->assertStringContainsString( '"url":"' . $new_full_url . '"', $updated_content );
 			$this->assertStringContainsString( 'href="' . $new_full_url . '"', $updated_content );
 			$this->assertStringContainsString( 'src="' . $new_full_url . '"', $updated_content );
 			$this->assertStringContainsString( $new_size_url, $updated_content );
+			$this->assertStringContainsString( $expected_alternate_url, $updated_content );
 			$this->assertStringNotContainsString( $old_full_url, $updated_content );
+			$this->assertStringNotContainsString( $alternate_scheme_url, $updated_content );
 			$this->assertStringNotContainsString( $old_size_url, $updated_content );
 			$this->assertSame( 'image/webp', get_post_mime_type( $attachment_id ) );
 			$this->assertFileDoesNotExist( $file );
