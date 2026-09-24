@@ -1,7 +1,7 @@
 # Node
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-1.3.3-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.0-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
@@ -18,6 +18,9 @@ README には最新の修正と `1.x.0` リリースの要点を掲載し、完�
 - **プラットフォーム・ブランド連携:** デバイスごとの公式ブランドカラーをUIに反映（Windows, iOS, Android, Nintendo, PlayStation, Xbox）。
 - **AI 連携:** Gemini・Qwen・Ollamaを共通基盤から利用し、記事要約・ファクトチェック補助・校正を支援。
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
+
+## v1.4.0 (2026.09.24)
+固定ヘッダーに隠れる一覧見出し、検索の解除・並び替え、公開日より前の追記表示を修正しました。Luna interactive 1.4.0をテーマに同梱し、単独版を停止した後も既存のグラフを表示できます。新しくアイキャッチに設定したJPEG・PNGは元画像を残してWebP表示用画像を自動生成します。
 
 ## v1.3.3 (2026.09.18)
 カテゴリ・タグ・日付アーカイブの記事カードを改善しました。

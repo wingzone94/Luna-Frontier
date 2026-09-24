@@ -29,15 +29,16 @@ declare(strict_types=1);
         <div class="m3-article__featured-image">
             <?php
             $thumbnail_id = get_post_thumbnail_id($current_post_id);
-            $image_data   = wp_get_attachment_image_src($thumbnail_id, 'full');
-            if ($image_data) :
-                $image_url    = $image_data[0];
+            if ($thumbnail_id) :
                 $image_alt    = get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true) ?: get_the_title();
             ?>
-                <img src="<?php echo esc_url($image_url); ?>"
-                     alt="<?php echo esc_attr($image_alt); ?>"
-                     class="m3-article__featured-img"
-                     loading="eager" fetchpriority="high" decoding="sync">
+                <?php echo wp_get_attachment_image( $thumbnail_id, 'full', false, array(
+                    'alt'           => $image_alt,
+                    'class'         => 'm3-article__featured-img',
+                    'loading'       => 'eager',
+                    'fetchpriority' => 'high',
+                    'decoding'      => 'sync',
+                ) ); ?>
             <?php endif; ?>
             <div class="m3-article__featured-gradient"></div>
         </div>

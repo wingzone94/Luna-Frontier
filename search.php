@@ -88,7 +88,7 @@ get_header(); ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
-                        <a href="<?php echo esc_url(get_search_link()); ?>?s=<?php echo urlencode(get_search_query()); ?>" class="m3-filter-chip m3-filter-chip--clear">
+                        <a href="<?php echo esc_url( node_get_all_articles_url() ); ?>" class="m3-filter-chip m3-filter-chip--clear">
                             <span class="material-symbols-outlined">clear_all</span>
                             <span class="m3-filter-chip__value">すべて解除</span>
                         </a>
@@ -109,8 +109,8 @@ get_header(); ?>
                     <?php
                     $current_sort = isset($_GET['m3_sort']) ? $_GET['m3_sort'] : 'newest';
                     $sort_options = [
-                        'newest' => ['icon' => 'arrow_downward', 'label' => '降順'],
-                        'oldest' => ['icon' => 'arrow_upward', 'label' => '昇順'],
+                        'newest' => ['icon' => 'arrow_downward', 'label' => '新しい順'],
+                        'oldest' => ['icon' => 'arrow_upward', 'label' => '古い順'],
                         'alpha'  => ['icon' => 'sort_by_alpha', 'label' => '五十音順']
                     ];
                     foreach ($sort_options as $val => $data) :
@@ -120,8 +120,8 @@ get_header(); ?>
                         <?php // 検索結果は noindex, follow なので、並び替えリンクを辿られると
                               // 同じ結果の並び違いが3件ずつクロールされる。rel="nofollow" で
                               // パラメータの増殖を止める（NODE-1.3.md §23）。 ?>
-                        <a href="<?php echo esc_url($url); ?>" rel="nofollow" class="m3-segmented-item <?php echo $active; ?> m3-tooltip-target" data-tooltip="<?php echo esc_attr($data['label']); ?>" data-tooltip-pos="bottom">
-                            <span class="material-symbols-outlined"><?php echo esc_attr($data['icon']); ?></span>
+                        <a href="<?php echo esc_url($url); ?>" rel="nofollow" class="m3-segmented-item <?php echo esc_attr($active); ?> m3-tooltip-target" aria-label="<?php echo esc_attr($data['label']); ?>" title="<?php echo esc_attr($data['label']); ?>" <?php if ($active) : ?>aria-current="true"<?php endif; ?> data-tooltip="<?php echo esc_attr($data['label']); ?>" data-tooltip-pos="bottom">
+                            <span class="material-symbols-outlined" aria-hidden="true"><?php echo esc_html($data['icon']); ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
