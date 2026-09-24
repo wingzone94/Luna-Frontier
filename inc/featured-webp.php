@@ -38,6 +38,86 @@ function node_featured_webp_save( string $source, string $target ): bool {
 }
 
 /**
+ * Build same-site URL replacements for all files converted with an attachment.
+ * Returns false when an attachment file is outside the configured uploads directory.
+ */
+function node_featured_webp_content_url_replacements( array $converted ) {
+	$uploads = wp_upload_dir();
+	if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) || empty( $uploads['baseurl'] ) ) {
+		return false;
+	}
+	$base_dir = trailingslashit( wp_normalize_path( $uploads['basedir'] ) );
+	$base_url = trailingslashit( $uploads['baseurl'] );
+	$replacements = array();
+	foreach ( $converted as $source => $target ) {
+		$source = wp_normalize_path( $source );
+		$target = wp_normalize_path( $target );
+		if ( 0 !== strpos( $source, $base_dir ) || 0 !== strpos( $target, $base_dir ) ) {
+			return false;
+		}
+		$source_path = substr( $source, strlen( $base_dir ) );
+		$target_path = substr( $target, strlen( $base_dir ) );
+		$source_url = $base_url . $source_path;
+		$target_url = $base_url . $target_path;
+		$source_encoded_url = $base_url . implode( '/', array_map( 'rawurlencode', explode( '/', $source_path ) ) );
+		$target_encoded_url = $base_url . implode( '/', array_map( 'rawurlencode', explode( '/', $target_path ) ) );
+		foreach ( array_unique( array( $source_url, $source_encoded_url ) ) as $old_url ) {
+			$new_url = $source_url === $old_url ? $target_url : $target_encoded_url;
+			foreach ( array( $old_url, set_url_scheme( $old_url, 'http' ), set_url_scheme( $old_url, 'https' ) ) as $url_variant ) {
+				$replacements[ $url_variant ] = str_replace( $old_url, $new_url, $url_variant );
+			}
+		}
+	}
+	return $replacements;
+}
+
+/**
+ * Update exact old image URLs in stored post content. Keep a rollback journal
+ * so source files remain safe if any content update fails.
+ */
+function node_featured_webp_rewrite_post_content( array $replacements ) {
+	global $wpdb;
+	if ( ! $replacements ) {
+		return array();
+	}
+	$conditions = array();
+	foreach ( array_keys( $replacements ) as $old_url ) {
+		$conditions[] = $wpdb->prepare( 'post_content LIKE %s', '%' . $wpdb->esc_like( $old_url ) . '%' );
+	}
+	$post_ids = $wpdb->get_col( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE ' . implode( ' OR ', $conditions ) );
+	$updated_posts = array();
+	foreach ( array_unique( array_map( 'intval', $post_ids ) ) as $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post instanceof WP_Post ) {
+			continue;
+		}
+		$new_content = strtr( $post->post_content, $replacements );
+		if ( $new_content === $post->post_content ) {
+			continue;
+		}
+		$result = wp_update_post( array( 'ID' => $post_id, 'post_content' => $new_content ), true );
+		$stored_content = get_post_field( 'post_content', $post_id, 'raw' );
+		if ( $stored_content !== $post->post_content ) {
+			$updated_posts[] = array( 'ID' => $post_id, 'post_content' => $post->post_content );
+		}
+		$has_old_url = false;
+		foreach ( array_keys( $replacements ) as $old_url ) {
+			if ( false !== strpos( (string) $stored_content, $old_url ) ) {
+				$has_old_url = true;
+				break;
+			}
+		}
+		if ( is_wp_error( $result ) || ! $result || $has_old_url ) {
+			foreach ( array_reverse( $updated_posts ) as $previous ) {
+				wp_update_post( array( 'ID' => $previous['ID'], 'post_content' => $previous['post_content'] ) );
+			}
+			return false;
+		}
+	}
+	return $updated_posts;
+}
+
+/**
  * Replace a newly selected JPEG/PNG featured image and its registered sizes with WebP.
  * Originals are removed only after WordPress points to every converted file.
  */
@@ -127,6 +207,13 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 			$new_metadata_backup_sizes[ $name ]['filesize'] = wp_filesize( $converted[ $source ] );
 		}
 	}
+	$content_replacements = node_featured_webp_content_url_replacements( $converted );
+	if ( false === $content_replacements ) {
+		foreach ( $created as $file ) {
+			wp_delete_file( $file );
+		}
+		return false;
+	}
 
 	$old_mime = get_post_mime_type( $attachment_id );
 	update_attached_file( $attachment_id, $converted[ $full ] );
@@ -139,6 +226,18 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 	if ( is_wp_error( $updated ) || get_attached_file( $attachment_id ) !== $converted[ $full ]
 		|| ! is_array( $stored_metadata ) || ( $stored_metadata['file'] ?? '' ) !== $new_metadata['file']
 		|| 'image/webp' !== get_post_mime_type( $attachment_id ) ) {
+		update_attached_file( $attachment_id, $full );
+		wp_update_attachment_metadata( $attachment_id, $metadata );
+		if ( is_array( $backup_sizes ) ) {
+			update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', $backup_sizes );
+		}
+		wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => $old_mime ) );
+		foreach ( $created as $file ) {
+			wp_delete_file( $file );
+		}
+		return false;
+	}
+	if ( false === node_featured_webp_rewrite_post_content( $content_replacements ) ) {
 		update_attached_file( $attachment_id, $full );
 		wp_update_attachment_metadata( $attachment_id, $metadata );
 		if ( is_array( $backup_sizes ) ) {
