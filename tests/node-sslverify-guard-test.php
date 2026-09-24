@@ -18,7 +18,6 @@ class Node_Sslverify_Guard_Test extends WP_UnitTestCase {
 	 */
 	private const ALLOWED_OCCURRENCES = [
 		'plugins-embedded/luminous-nexus/includes/shortcode-blogcard.php' => 1,
-		'plugins-embedded/node-library/node-library.php'                 => 1,
 	];
 
 	/**
