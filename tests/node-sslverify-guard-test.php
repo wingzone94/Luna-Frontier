@@ -2,7 +2,7 @@
 /**
  * sslverify 静的ガード（T-8 / F-2）。
  *
- * リポジトリ内PHPの 'sslverify' => false の出現箇所を既存許容3件に凍結し、
+ * リポジトリ内PHPの 'sslverify' => false の出現箇所を既存許容2件に凍結し、
  * 「SSL検証無効化の新規追加は禁止」の原則を機械的に強制する。
  * あわせて node_resolve_redirect() が既定（sslverify=true）でHTTPリクエストを
  * 発行することを pre_http_request フィルタの捕捉で検証する。
@@ -14,10 +14,9 @@ class Node_Sslverify_Guard_Test extends WP_UnitTestCase {
 
 	/**
 	 * 許容リスト: 相対パス => 'sslverify' => false の出現回数。
-	 * v0.3〜1.0.2由来の既存3件のみ。新規追加は禁止（AGENTS.md / STRUCTURAL-REVIEW-1.2.md F-2）。
+	 * 既存2件のみ。新規追加は禁止（AGENTS.md / STRUCTURAL-REVIEW-1.2.md F-2）。
 	 */
 	private const ALLOWED_OCCURRENCES = [
-		'inc/blogcard.php'                                              => 1, // OGP取得（node_fetch_ogp）
 		'plugins-embedded/luminous-nexus/includes/shortcode-blogcard.php' => 1,
 		'plugins-embedded/node-library/node-library.php'                 => 1,
 	];

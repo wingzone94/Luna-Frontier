@@ -95,7 +95,6 @@ function node_get_ogp_data( string $url ) {
 		$url,
 		array(
 			'timeout'    => 15,
-			'sslverify'  => false,
 			// ゲームストア（任天堂・PlayStation・Xbox 等）はボット防御下にあり、
 			// 「compatible; ...」型の自己申告ボット UA では 403 を返す。同梱の
 			// node-library と同じブラウザ UA に揃えて商品ページを取得できるようにする。
