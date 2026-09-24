@@ -35,6 +35,10 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 				foreach ( $metadata['sizes'] as $size ) {
 					$originals[] = dirname( $file ) . '/' . $size['file'];
 				}
+				$backup_file = dirname( $file ) . '/node-featured-backup.' . ( 'jpeg' === $format ? 'jpg' : 'png' );
+				copy( $file, $backup_file );
+				update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', array( 'full-orig' => array( 'file' => basename( $backup_file ), 'width' => 1200, 'height' => 600 ) ) );
+				$originals[] = $backup_file;
 
 				set_post_thumbnail( $post_id, $attachment_id );
 				$this->assertSame( 'image/webp', get_post_mime_type( $attachment_id ) );
@@ -47,10 +51,50 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 					$this->assertSame( 'image/webp', $size['mime-type'] );
 					$this->assertFileExists( dirname( $file ) . '/' . $size['file'] );
 				}
+				$backup = get_post_meta( $attachment_id, '_wp_attachment_backup_sizes', true )['full-orig'];
+				$this->assertSame( 'image/webp', getimagesize( dirname( $file ) . '/' . $backup['file'] )['mime'] );
+				$this->assertFileExists( dirname( $file ) . '/' . $backup['file'] );
 			} finally {
 				wp_delete_attachment( $attachment_id, true );
 				wp_delete_post( $post_id, true );
 			}
+		}
+	}
+
+	public function test_failed_original_deletion_is_tracked_and_retried(): void {
+		if ( ! function_exists( 'imagecreatetruecolor' ) || ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
+			$this->markTestSkipped( 'GD or WebP support is unavailable.' );
+		}
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$upload = wp_upload_dir();
+		$file = trailingslashit( $upload['path'] ) . wp_unique_filename( $upload['path'], 'node-featured-delete-retry.jpg' );
+		$image = imagecreatetruecolor( 800, 400 );
+		imagejpeg( $image, $file );
+		imagedestroy( $image );
+		$post_id = self::factory()->post->create();
+		$attachment_id = wp_insert_attachment( array( 'post_mime_type' => 'image/jpeg' ), $file, $post_id );
+		$block_jpeg_delete = static function ( $path ) {
+			return '.jpg' === substr( (string) $path, -4 ) ? null : $path;
+		};
+		try {
+			$metadata = wp_generate_attachment_metadata( $attachment_id, $file );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+			add_filter( 'wp_delete_file', $block_jpeg_delete );
+			set_post_thumbnail( $post_id, $attachment_id );
+			$this->assertSame( 'image/webp', get_post_mime_type( $attachment_id ) );
+			$this->assertFileExists( $file );
+			$this->assertCount( count( $metadata['sizes'] ) + 1, get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true ) );
+			remove_filter( 'wp_delete_file', $block_jpeg_delete );
+			node_featured_webp_retry_delete( $attachment_id );
+			$this->assertFileDoesNotExist( $file );
+			foreach ( $metadata['sizes'] as $size ) {
+				$this->assertFileDoesNotExist( dirname( $file ) . '/' . $size['file'] );
+			}
+			$this->assertEmpty( get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true ) );
+		} finally {
+			remove_filter( 'wp_delete_file', $block_jpeg_delete );
+			wp_delete_attachment( $attachment_id, true );
+			wp_delete_post( $post_id, true );
 		}
 	}
 

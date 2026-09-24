@@ -66,6 +66,15 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 			$sources[] = $directory . '/' . wp_basename( $metadata[ $field ] );
 		}
 	}
+	$backup_sizes = get_post_meta( $attachment_id, '_wp_attachment_backup_sizes', true );
+	if ( is_array( $backup_sizes ) ) {
+		foreach ( $backup_sizes as $backup ) {
+			if ( ! is_array( $backup ) || empty( $backup['file'] ) || ! is_string( $backup['file'] ) ) {
+				return false;
+			}
+			$sources[] = $directory . '/' . wp_basename( $backup['file'] );
+		}
+	}
 
 	$converted = array();
 	$created   = array();
@@ -110,10 +119,21 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 			$new_metadata[ $field ] = wp_basename( $converted[ $source ] );
 		}
 	}
+	if ( is_array( $backup_sizes ) ) {
+		foreach ( $backup_sizes as $name => $backup ) {
+			$source = $directory . '/' . wp_basename( $backup['file'] );
+			$new_metadata_backup_sizes[ $name ] = $backup;
+			$new_metadata_backup_sizes[ $name ]['file'] = wp_basename( $converted[ $source ] );
+			$new_metadata_backup_sizes[ $name ]['filesize'] = wp_filesize( $converted[ $source ] );
+		}
+	}
 
 	$old_mime = get_post_mime_type( $attachment_id );
 	update_attached_file( $attachment_id, $converted[ $full ] );
 	wp_update_attachment_metadata( $attachment_id, $new_metadata );
+	if ( is_array( $backup_sizes ) ) {
+		update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', $new_metadata_backup_sizes );
+	}
 	$updated = wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => 'image/webp' ), true );
 	$stored_metadata = wp_get_attachment_metadata( $attachment_id );
 	if ( is_wp_error( $updated ) || get_attached_file( $attachment_id ) !== $converted[ $full ]
@@ -121,6 +141,9 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 		|| 'image/webp' !== get_post_mime_type( $attachment_id ) ) {
 		update_attached_file( $attachment_id, $full );
 		wp_update_attachment_metadata( $attachment_id, $metadata );
+		if ( is_array( $backup_sizes ) ) {
+			update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', $backup_sizes );
+		}
 		wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => $old_mime ) );
 		foreach ( $created as $file ) {
 			wp_delete_file( $file );
@@ -128,13 +151,103 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 		return false;
 	}
 
+	$pending = array();
 	foreach ( array_keys( $converted ) as $source ) {
 		wp_delete_file( $source );
+		if ( is_file( $source ) ) {
+			$pending[] = wp_basename( $source );
+		}
+	}
+	if ( $pending ) {
+		update_post_meta( $attachment_id, '_node_featured_webp_pending_delete', array_values( array_unique( $pending ) ) );
+		update_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', 0 );
+		node_featured_webp_schedule_delete_retry( $attachment_id );
+	} else {
+		delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
+		delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
 	}
 	delete_post_meta( $attachment_id, '_node_featured_webp_map' );
 	delete_post_meta( $attachment_id, '_node_featured_webp_requested' );
 	return true;
 }
+
+function node_featured_webp_schedule_delete_retry( int $attachment_id ): void {
+	if ( ! wp_next_scheduled( 'node_featured_webp_retry_delete', array( $attachment_id ) ) ) {
+		wp_schedule_single_event( time() + 300, 'node_featured_webp_retry_delete', array( $attachment_id ) );
+	}
+}
+
+function node_featured_webp_retry_delete( int $attachment_id ): void {
+	$pending = get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true );
+	$full = get_attached_file( $attachment_id );
+	if ( ! is_array( $pending ) || ! $pending || ! is_string( $full ) ) {
+		return;
+	}
+	$directory = dirname( $full );
+	$remaining = array();
+	foreach ( $pending as $filename ) {
+		if ( ! is_string( $filename ) || wp_basename( $filename ) !== $filename ) {
+			continue;
+		}
+		$path = $directory . '/' . $filename;
+		if ( is_file( $path ) ) {
+			wp_delete_file( $path );
+		}
+		if ( is_file( $path ) ) {
+			$remaining[] = $filename;
+		}
+	}
+	if ( ! $remaining ) {
+		delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
+		delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
+		return;
+	}
+	$attempts = (int) get_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', true ) + 1;
+	update_post_meta( $attachment_id, '_node_featured_webp_pending_delete', $remaining );
+	update_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', $attempts );
+	if ( $attempts < 5 ) {
+		node_featured_webp_schedule_delete_retry( $attachment_id );
+	}
+}
+add_action( 'node_featured_webp_retry_delete', 'node_featured_webp_retry_delete' );
+
+function node_featured_webp_delete_pending_files( int $attachment_id ): void {
+	$pending = get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true );
+	$full = get_attached_file( $attachment_id );
+	if ( ! is_array( $pending ) || ! is_string( $full ) ) {
+		return;
+	}
+	foreach ( $pending as $filename ) {
+		if ( is_string( $filename ) && wp_basename( $filename ) === $filename ) {
+			wp_delete_file( dirname( $full ) . '/' . $filename );
+		}
+	}
+}
+add_action( 'delete_attachment', 'node_featured_webp_delete_pending_files' );
+
+function node_featured_webp_admin_notice(): void {
+	if ( ! current_user_can( 'upload_files' ) ) {
+		return;
+	}
+	$attachments = get_posts( array(
+		'post_type'      => 'attachment',
+		'post_status'    => 'inherit',
+		'posts_per_page' => 20,
+		'fields'         => 'ids',
+		'meta_query'     => array(
+			array(
+				'key'     => '_node_featured_webp_delete_attempts',
+				'value'   => 5,
+				'compare' => '>=',
+				'type'    => 'NUMERIC',
+			),
+		),
+	) );
+	if ( $attachments ) {
+		echo '<div class="notice notice-error"><p>' . esc_html__( '一部のアイキャッチ画像をWebPへ置き換えましたが、元画像を削除できません。メディアライブラリで対象ファイルを確認してください。', 'node' ) . '</p></div>';
+	}
+}
+add_action( 'admin_notices', 'node_featured_webp_admin_notice' );
 
 function node_featured_webp_on_thumbnail( int $meta_id, int $post_id, string $key, $value ): void {
 	if ( '_thumbnail_id' === $key && (int) $value > 0 ) {
