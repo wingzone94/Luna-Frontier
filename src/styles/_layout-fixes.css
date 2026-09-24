@@ -65,7 +65,9 @@ body.admin-bar .m3-header {
 /* ===== Fixed Header Content Offset ===== */
 .m3-home-layout,
 .m3-archive-layout,
-.m3-date-archive {
+.m3-date-archive,
+.m3-all-articles-layout,
+.m3-spotlight-archive-layout {
     padding-top: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px) + 12px);
 }
 
@@ -76,7 +78,9 @@ body.search.m3-search-suggestions-is-active .site-main.m3-archive-layout.m3-sear
 @media screen and (max-width: 600px) {
     .m3-home-layout,
     .m3-archive-layout,
-    .m3-date-archive {
+    .m3-date-archive,
+    .m3-all-articles-layout,
+    .m3-spotlight-archive-layout {
         padding-top: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px) + 12px);
     }
 }

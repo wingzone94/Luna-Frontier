@@ -14,6 +14,19 @@ export function initFloatingActions() {
     const tocTrigger = document.getElementById('m3-toc-trigger');
     const tocPanel = document.getElementById('m3-sticky-toc');
 
+    const lunaCharts = document.querySelectorAll('.luna-chart');
+    if (lunaCharts.length && 'IntersectionObserver' in window) {
+        const visibleCharts = new Set();
+        const chartObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) visibleCharts.add(entry.target);
+                else visibleCharts.delete(entry.target);
+            });
+            document.body.classList.toggle('is-luna-chart-visible', visibleCharts.size > 0);
+        });
+        lunaCharts.forEach((chart) => chartObserver.observe(chart));
+    }
+
     backToTop?.addEventListener('click', (event) => {
         event.preventDefault();
         window.scrollTo({ top: 0, behavior: 'smooth' });

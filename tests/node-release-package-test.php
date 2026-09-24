@@ -30,6 +30,10 @@ class Node_Release_Package_Test extends WP_UnitTestCase {
 		'build.json',
 		'index.php',
 		'assets/css/style.css',
+		'inc/featured-webp.php',
+		'plugins-embedded/luna-interactive/luna-interactive.php',
+		'plugins-embedded/luna-interactive/assets/vendor/chart.umd.min.js',
+		'plugins-embedded/luna-interactive/assets/vendor/xlsx.full.min.js',
 	];
 
 	/**
@@ -45,6 +49,7 @@ class Node_Release_Package_Test extends WP_UnitTestCase {
 		'src/scripts/',
 		'.git/',
 		'.claude/',
+		'luna-interactive/',
 	];
 
 	private function repo_dir(): string {

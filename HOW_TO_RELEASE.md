@@ -102,12 +102,13 @@ rsync -a \
   --exclude='.agents/' \
   --exclude='scratch/' \
   --exclude='production_plugins/' \
+  --exclude='/luna-interactive/' \
   --exclude='luna-frontier/' \
   --exclude='src/styles/' \
   --exclude='src/scripts/' \
   --exclude='src/fonts/' \
   --exclude='src/*.js' \
-  --exclude='vendor/' \
+  --exclude='/vendor/' \
   --exclude='tests/' \
   --exclude='test-results/' \
   --exclude='composer.json' \

@@ -84,6 +84,7 @@ require_once NODE_THEME_DIR . '/inc/archive-helpers.php';
 require_once NODE_THEME_DIR . '/inc/icon-font.php';
 require_once NODE_THEME_DIR . '/inc/search-suggest.php';
 require_once NODE_THEME_DIR . '/inc/media.php';
+require_once NODE_THEME_DIR . '/inc/featured-webp.php';
 require_once NODE_THEME_DIR . '/inc/utilities.php';
 require_once NODE_THEME_DIR . '/inc/gemini-helper.php';
 require_once NODE_THEME_DIR . '/inc/gemini-models.php';
@@ -136,6 +137,17 @@ foreach ( $embedded_plugins as $plugin_file => $init_func ) {
 		if ( function_exists( $init_func ) ) {
 			$init_func();
 		}
+	}
+}
+
+// Luna interactive は単独版が有効ならそちらを優先する。テーマ同梱版は
+// init フックでブロックを登録するため、上の即時初期化ループには入れない。
+if ( ! function_exists( 'luna_interactive_register_block' )
+	&& ! in_array( 'luna-interactive/luna-interactive.php', $node_active_plugins, true ) ) {
+	$luna_embedded = NODE_THEME_DIR . '/plugins-embedded/luna-interactive/luna-interactive.php';
+	if ( is_file( $luna_embedded ) ) {
+		define( 'LUNA_INTERACTIVE_EMBEDDED', true );
+		require_once $luna_embedded;
 	}
 }
 

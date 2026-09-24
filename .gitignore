@@ -9,7 +9,7 @@ color_script*.js
 .gemini/
 dist/
 test-results/
-vendor/
+/vendor/
 .phpunit.result.cache
 .claude/
 .codex/
