@@ -50,6 +50,16 @@
     }
 }
 
+@media (max-width: 1000px) {
+    body.is-luna-chart-visible .m3-action-stack.is-singular #m3-back-to-top,
+    body.is-luna-chart-visible .m3-action-stack.is-singular #m3-toc-trigger {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transform: scale(.8) !important;
+    }
+}
+
 body.is-active-toc .m3-action-stack .m3-fab:not(#m3-toc-trigger) {
     opacity: 0 !important;
     visibility: hidden !important;
