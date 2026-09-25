@@ -87,6 +87,7 @@ final class Image_Generator {
 	private function __construct() {
 		add_action( 'save_post', array( $this, 'generate_on_save' ), 10, 2 );
 		add_action( 'template_redirect', array( $this, 'maybe_regenerate_stale' ) );
+		add_action( 'node_seo_regenerate_stale_ogp', array( $this, 'regenerate_stale_in_background' ) );
 	}
 
 	/**
@@ -106,6 +107,23 @@ final class Image_Generator {
 			return;
 		}
 
+		if ( self::GENERATOR_VERSION === get_post_meta( $post_id, self::META_GENERATOR_VERSION, true ) ) {
+			return;
+		}
+
+		$args = array( $post_id );
+		if ( ! wp_next_scheduled( 'node_seo_regenerate_stale_ogp', $args ) ) {
+			wp_schedule_single_event( time() + 30, 'node_seo_regenerate_stale_ogp', $args );
+		}
+	}
+
+	/**
+	 * 再生成直前に条件を確認し、保存時生成済みの画像を重複して描画しない。
+	 */
+	public function regenerate_stale_in_background( int $post_id ): void {
+		if ( ! get_option( 'node_ogp_enabled' ) || 'publish' !== get_post_status( $post_id ) ) {
+			return;
+		}
 		if ( self::GENERATOR_VERSION === get_post_meta( $post_id, self::META_GENERATOR_VERSION, true ) ) {
 			return;
 		}

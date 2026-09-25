@@ -94,6 +94,7 @@ require_once NODE_THEME_DIR . '/inc/blogcard-store.php';
 require_once NODE_THEME_DIR . '/inc/blogcard.php';
 require_once NODE_THEME_DIR . '/inc/maintenance.php';
 require_once NODE_THEME_DIR . '/inc/print.php';
+require_once NODE_THEME_DIR . '/inc/hero-slider.php';
 require_once NODE_THEME_DIR . '/inc/icon-font.php';
 
 /**
@@ -134,6 +135,18 @@ foreach ( $embedded_plugins as $plugin_file => $init_func ) {
 		if ( function_exists( $init_func ) ) {
 			$init_func();
 		}
+	}
+}
+
+// Luna Interactive は単独版を優先し、未導入時だけ同梱版を読み込む。
+if (
+	! function_exists( 'luna_interactive_register_block' )
+	&& ! in_array( 'luna-interactive/luna-interactive.php', $node_active_plugins, true )
+) {
+	$luna_embedded = NODE_THEME_DIR . '/plugins-embedded/luna-interactive/luna-interactive.php';
+	if ( is_file( $luna_embedded ) ) {
+		define( 'LUNA_INTERACTIVE_EMBEDDED', true );
+		require_once $luna_embedded;
 	}
 }
 
@@ -1526,3 +1539,9 @@ function node_robots_noindex_404( array $robots ): array {
 	return $robots;
 }
 add_filter( 'wp_robots', 'node_robots_noindex_404' );
+
+/**
+ * Luna Frontier（旧子テーマ）の bootstrap。
+ * 子 functions.php が親の後に読まれていた順序を保つため、既存読み込みの最後で読み込む。
+ */
+require_once NODE_THEME_DIR . '/inc/luna/bootstrap.php';

@@ -26,11 +26,23 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'src/main.js'),
         style: resolve(__dirname, 'src/styles/style.css'),
-        editor: resolve(__dirname, 'src/editor.js')
+        editor: resolve(__dirname, 'src/editor.js'),
+        luna: resolve(__dirname, 'src/luna/luna.js'),
+        'luna-style': resolve(__dirname, 'src/luna/styles/luna.css'),
+        'luna-spotlight': resolve(__dirname, 'src/luna/styles/luna-spotlight.css'),
+        'luna-archive': resolve(__dirname, 'src/luna/styles/luna-archive.css')
       },
       output: {
-        entryFileNames: `js/[name].[hash].js`,
-        chunkFileNames: `js/[name].[hash].js`,
+        entryFileNames: (chunkInfo) => (
+          chunkInfo.name && String(chunkInfo.name).startsWith('luna')
+            ? 'js/[name].js'
+            : 'js/[name].[hash].js'
+        ),
+        chunkFileNames: (chunkInfo) => (
+          chunkInfo.name && String(chunkInfo.name).startsWith('luna')
+            ? 'js/[name].js'
+            : 'js/[name].[hash].js'
+        ),
         assetFileNames: (assetInfo) => {
           if (assetInfo.name.endsWith('.css')) {
             return 'css/[name].[ext]';

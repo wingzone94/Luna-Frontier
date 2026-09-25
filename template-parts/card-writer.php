@@ -6,9 +6,7 @@ declare(strict_types=1);
  */
 $author_id = get_the_author_meta('ID');
 $description = get_the_author_meta('description');
-if (empty($description)) {
-    $description = 'このライターはまだ自己紹介を記載していません。';
-}
+$has_description = '' !== trim(wp_strip_all_tags((string) $description));
 
 // サポート対象サービスのブランドアイコン（インラインSVG・simple-icons 24x24パス）
 $brand_icons = [
@@ -56,7 +54,7 @@ $brand_icons = [
     ],
 ];
 
-// URLのホストから既知サービスを推定（カスタムリンク用）
+// 登録欄に依存せず、URLのホストからサービスを判定する。
 $detect_brand = static function ( string $url ) : ?string {
     $host = wp_parse_url( $url, PHP_URL_HOST );
     if ( ! is_string( $host ) || '' === $host ) {
@@ -77,7 +75,13 @@ $detect_brand = static function ( string $url ) : ?string {
         'discord.gg'    => 'discord',
         'discordapp.com' => 'discord',
     ];
-    return $map[ $host ] ?? null;
+    foreach ( $map as $domain => $brand ) {
+        // ドメイン境界を確認し、youtube.com.example.org 等を誤認しない。
+        if ( $host === $domain || substr( $host, -strlen( '.' . $domain ) ) === '.' . $domain ) {
+            return $brand;
+        }
+    }
+    return null;
 };
 
 // SNS・Webサービスリンクをピル表示用に収集
@@ -101,9 +105,7 @@ foreach ( $sns_keys as $key => $brand ) {
     if ( ! $val ) {
         continue;
     }
-    if ( null === $brand ) {
-        $brand = $detect_brand( $val );
-    }
+    $brand = $detect_brand( $val );
     if ( $brand && isset( $brand_icons[ $brand ] ) ) {
         $label = $brand_icons[ $brand ]['label'];
     } else {
@@ -122,7 +124,7 @@ $author_post_count = (int) count_user_posts( $author_id, 'post', true );
 $author_archive_url = get_author_posts_url( $author_id );
 ?>
 
-<section id="m3-writer-card" class="m3-writer-card m3-reveal">
+<section id="m3-writer-card" class="m3-writer-card m3-reveal" aria-label="著者情報">
     <div class="m3-writer-card__header">
         <span class="m3-writer-card__label">WRITER INFO</span>
     </div>
@@ -132,7 +134,7 @@ $author_archive_url = get_author_posts_url( $author_id );
         </div>
         <div class="m3-writer-card__info">
             <div class="m3-writer-card__name-row">
-                <h3 class="m3-writer-card__name"><?php the_author(); ?></h3>
+                <h3 class="m3-writer-card__name"><?php echo esc_html(get_the_author()); ?></h3>
                 <?php if ($author_post_count > 0) : ?>
                     <a href="<?php echo esc_url($author_archive_url); ?>"
                        class="m3-writer-card__archive-link m3-ripple-host"
@@ -143,11 +145,14 @@ $author_archive_url = get_author_posts_url( $author_id );
                     </a>
                 <?php endif; ?>
             </div>
+            <?php if ($has_description) : ?>
             <div class="m3-writer-card__bio">
                 <?php echo wp_kses_post(wpautop($description)); ?>
             </div>
-            
-            <?php if (!empty($sns_links)) : ?>
+            <?php endif; ?>
+        </div>
+        <?php if (!empty($sns_links)) : ?>
+        <div class="m3-writer-card__actions">
                 <div class="m3-writer-card__sns">
                     <?php foreach ($sns_links as $sns) :
                         $pill_brand = $sns['brand'] && isset($brand_icons[$sns['brand']]) ? $brand_icons[$sns['brand']] : null;
@@ -156,12 +161,13 @@ $author_archive_url = get_author_posts_url( $author_id );
                             : '';
                     ?>
                         <a href="<?php echo esc_url($sns['url']); ?>"
-                           class="m3-writer-pill m3-ripple-host<?php echo $pill_brand ? ' m3-writer-pill--brand' : ''; ?>"
+                           class="m3-writer-pill m3-ripple-host"
                            <?php if ($pill_style) : ?>style="<?php echo esc_attr($pill_style); ?>"<?php endif; ?>
                            target="_blank"
                            rel="noopener"
                            title="<?php echo esc_attr($sns['label']); ?>"
                            aria-label="<?php echo esc_attr($sns['label']); ?>">
+                            <span class="lf-writer-pill__mark" aria-hidden="true">
                             <?php if ($sns['brand'] && isset($brand_icons[$sns['brand']])) : ?>
                                 <svg class="m3-writer-pill__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                     <path d="<?php echo esc_attr($brand_icons[$sns['brand']]['path']); ?>" />
@@ -169,11 +175,12 @@ $author_archive_url = get_author_posts_url( $author_id );
                             <?php else : ?>
                                 <span class="material-symbols-outlined m3-writer-pill__symbol" aria-hidden="true">link</span>
                             <?php endif; ?>
-                            <span class="m3-writer-pill__label"><?php echo esc_html($sns['label']); ?></span>
+                            </span>
+                            <span class="m3-writer-pill__label"><?php echo esc_html($sns['brand'] === 'x' ? 'X' : $sns['label']); ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
         </div>
+        <?php endif; ?>
     </div>
 </section>

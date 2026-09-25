@@ -1,0 +1,388 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — Brand Chrome（Topic Nav / Footer）
+ *
+ * ヘッダーとフッターは Luminous Core の額縁。
+ * Dynamic Color は流し込まず、親のブランドトークンで固定する（§23 / §38）。
+ * Paper Design なので四角。階層は面と罫で出す。
+ */
+
+/* 本番 Node 1.3.2 のアイコン色。Luna の補助文字色トークンを持ち込まない。 */
+body.lf-theme .m3-header .m3-icon-button:not(.m3-search-clear) {
+	color: var(--md-sys-color-on-surface);
+}
+
+/* ---------------------------------------------------------------------
+ * Topic Nav — ヘッダーの真下。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-topic-nav {
+	--lc-accent: var(--md-sys-color-accent-text, #935400);
+	--lc-on-surface: var(--md-sys-color-on-surface, #2b1700);
+
+	background: var(--md-sys-color-surface-container-low, #ffffff);
+	border-block-end: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 70%, transparent);
+	border-radius: var(--lf-shape-paper);
+
+	/* 親テーマのヘッダーは position: fixed。ナビは通常フローなので、
+	   ヘッダーの高さぶんだけ自分で下がる必要がある（管理バーぶんも含む）。 */
+	margin-block-start: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
+}
+
+/* ---------------------------------------------------------------------
+ * ヘッダー直下の余白は Topic Nav が担うようになったので、
+ * 後続コンテンツ側の clearance を通常の余白へ戻す。
+ * これをしないと「ヘッダー高さ × 2」ぶんの空白ができる。
+ * --------------------------------------------------------------------- */
+body.lf-theme:has(.lf-topic-nav) :is(.m3-home-layout, .m3-archive-layout, .m3-date-archive) {
+	padding-top: var(--lf-space-m);
+}
+
+body.lf-theme:has(.lf-topic-nav) .article-view,
+body.lf-theme:has(.lf-topic-nav) .site-main.m3-search-layout {
+	padding-top: var(--lf-space-m);
+}
+
+body.lf-theme.search.m3-search-suggestions-is-active:has(.lf-topic-nav) .site-main.m3-archive-layout.m3-search-layout {
+	padding-top: calc(var(--lf-space-m) + var(--m3-search-suggestions-space, 0px));
+}
+
+/* One row: desktop shelves scroll independently; narrow screens use one rail. */
+body.lf-theme .lf-topic-nav__inner {
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding: var(--lf-space-2xs) var(--lf-gutter);
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: var(--lf-space-s, 16px);
+}
+
+body.lf-theme .lf-topic-nav__group {
+	display: flex;
+	align-items: center;
+	min-inline-size: 0;
+	gap: var(--lf-space-2xs, 8px);
+}
+
+body.lf-theme .lf-topic-nav__group--spotlight {
+	flex: 1 1 0;
+}
+
+body.lf-theme .lf-topic-nav__group--topics {
+	flex: 0 1 auto;
+	max-inline-size: 55%;
+}
+
+body.lf-theme .lf-topic-nav__group--topics:only-child {
+	max-inline-size: 100%;
+}
+
+body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
+	border-inline-start: 1px solid var(--lf-rule);
+	padding-inline-start: var(--lf-space-s, 16px);
+}
+
+/* Group labels are not controls. */
+body.lf-theme .lf-topic-nav__pick {
+	display: inline-flex;
+	align-items: center;
+	flex: 0 0 auto;
+	gap: var(--lf-space-2xs, 8px);
+	font-family: var(--font-ui), sans-serif;
+	font-size: var(--lf-text-2xs);
+	font-weight: 700;
+	color: var(--lc-on-surface);
+	white-space: nowrap;
+}
+
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+	display: flex;
+	align-items: center;
+	flex: 0 1 auto;
+	min-inline-size: 0;
+	gap: var(--lf-space-2xs, 8px);
+	list-style: none;
+	margin: 0;
+	/* Reserve room for the focus ring inside each scroll container. */
+	padding: 4px;
+	overflow-x: auto;
+	overscroll-behavior-inline: contain;
+	scroll-padding-inline: 4px;
+	/* No visible scrollbar; touch, trackpad and keyboard focus still scroll the row. */
+	scrollbar-width: none;
+}
+
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar,
+body.lf-theme .lf-topic-nav__inner::-webkit-scrollbar {
+	display: none;
+}
+
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
+	flex: 0 0 auto;
+}
+
+/* Center native keyboard focus scrolling, including at browser zoom.
+ * Scroll padding leaves touch and wheel scrolling unconstrained. */
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list):has(a:focus-visible) {
+	scroll-padding-inline: 50%;
+}
+
+body.lf-theme .lf-topic-nav a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-block-size: 48px;
+	min-inline-size: 48px;
+	gap: var(--lf-space-2xs, 8px);
+	padding: var(--lf-space-2xs, 8px) 12px;
+	font-family: var(--font-ui), sans-serif;
+	font-size: var(--lf-text-2xs);
+	font-weight: 600;
+	line-height: 1.4;
+	color: var(--lc-on-surface);
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+
+body.lf-theme .lf-topic-nav__past {
+	flex: 0 0 auto;
+	border-radius: var(--lf-shape-full);
+}
+
+/* SPOTLIGHT and topics share one link style: icon + label, underline for the current page. */
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) a {
+	border-block-end: 2px solid transparent;
+}
+
+body.lf-theme .lf-topic-nav a:hover {
+	background: color-mix(in srgb, var(--lf-brand) 10%, transparent);
+}
+
+body.lf-theme .lf-topic-nav a:active {
+	background: color-mix(in srgb, var(--lf-brand) 18%, transparent);
+}
+
+body.lf-theme .lf-topic-nav a:focus-visible {
+	outline: 2px solid var(--lc-accent);
+	outline-offset: 2px;
+}
+
+body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) a[aria-current="page"] {
+	border-block-end-color: var(--lc-accent);
+	font-weight: 700;
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-topic-nav .material-symbols-outlined {
+	font-size: 20px;
+	line-height: 1;
+	flex: 0 0 auto;
+}
+
+/* The integrated links replace the duplicate home feature section. */
+body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
+	display: none;
+}
+
+@media (max-width: 1000px) {
+	body.lf-theme .lf-topic-nav__inner {
+		overflow-x: auto;
+		overscroll-behavior-inline: contain;
+		scroll-padding-inline: var(--lf-gutter);
+		scrollbar-width: none;
+	}
+
+	body.lf-theme .lf-topic-nav__inner:has(a:focus-visible) {
+		scroll-padding-inline: 50%;
+	}
+
+	body.lf-theme .lf-topic-nav__group {
+		flex: 0 0 auto;
+		max-inline-size: none;
+	}
+
+	body.lf-theme .lf-topic-nav__group--topics:only-child {
+		max-inline-size: none;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+		flex: 0 0 auto;
+		overflow: visible;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme .lf-topic-nav a {
+		transition: none;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * Footer
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-footer {
+	--lc-accent: var(--md-sys-color-accent-text, #935400);
+	--lc-on-surface: var(--md-sys-color-on-surface, #2b1700);
+	--lf-rule: color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 60%, transparent);
+
+	border-radius: var(--lf-shape-paper);
+}
+
+body.lf-theme .lf-footer__main {
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding: var(--lf-space-xl) var(--lf-gutter) var(--lf-space-m);
+}
+
+body.lf-theme .lf-footer__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+	gap: var(--lf-space-l) var(--lf-space-xl);
+	align-items: start;
+}
+
+body.lf-theme .lf-footer__tagline {
+	margin: var(--lf-space-2xs) 0 var(--lf-space-m);
+	font-size: var(--lf-text-s);
+	color: var(--lf-on-surface-secondary);
+	max-inline-size: 34ch;
+}
+
+body.lf-theme .lf-footer__label {
+	margin: 0 0 var(--lf-space-2xs);
+	color: var(--lf-on-surface-muted);
+}
+
+body.lf-theme .lf-footer__social {
+	display: flex;
+	gap: var(--lf-space-2xs);
+}
+
+/* アイコンボタンなので丸を維持する（§22）。 */
+body.lf-theme .lf-footer__social-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 2.75rem;
+	block-size: 2.75rem;
+	border: 1px solid var(--lf-rule);
+	border-radius: var(--lf-shape-full);
+	color: var(--lf-on-surface-secondary);
+	transition: color var(--lf-motion-fast) var(--lf-easing-standard),
+		border-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-footer__social-link:hover {
+	color: var(--lc-accent);
+	border-color: var(--lc-accent);
+}
+
+body.lf-theme .lf-footer__links {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+body.lf-theme .lf-footer__links a {
+	display: block;
+	padding: 0.4rem 0;
+	font-size: var(--lf-text-s);
+	color: var(--lf-on-surface-secondary);
+	text-decoration: none;
+}
+
+body.lf-theme .lf-footer__links a:hover {
+	color: var(--lc-accent);
+	text-decoration: underline;
+}
+
+/* ---- 最下部: 著作権 + Feed ---------------------------------------- */
+body.lf-theme .lf-footer__bottom {
+	border-block-start: 1px solid var(--lf-rule);
+}
+
+body.lf-theme .lf-footer__bottom-inner {
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding: var(--lf-space-s) var(--lf-gutter);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--lf-space-2xs) var(--lf-space-s);
+}
+
+body.lf-theme .lf-footer__copyright {
+	margin: 0;
+	font-size: var(--lf-text-xs);
+	color: var(--lf-on-surface-secondary);
+}
+
+/* パンくずは控えめな一体型のナビゲーションとして表示する。 */
+body.lf-theme .m3-breadcrumbs__list {
+	box-sizing: border-box;
+	max-inline-size: 100%;
+	min-block-size: 40px;
+	gap: 10px;
+	padding: 4px 14px;
+	border: 1px solid color-mix(in srgb, var(--lf-brand) 70%, var(--lf-paper));
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--lf-brand) 30%, var(--lf-paper));
+	box-shadow: none;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+body.lf-theme .m3-breadcrumbs__item a {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 30px;
+	color: var(--lf-brand-text);
+	text-decoration: none;
+}
+
+body.lf-theme .m3-breadcrumbs__item a:hover {
+	color: var(--lf-brand-text);
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+body.lf-theme .m3-breadcrumbs__item a:focus-visible {
+	outline: 2px solid var(--lf-brand-text);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+body.lf-theme .m3-breadcrumbs__separator::before {
+	content: "";
+	inline-size: 5px;
+	block-size: 5px;
+	border-block-start: 1px solid var(--lf-brand-text);
+	border-inline-end: 1px solid var(--lf-brand-text);
+	transform: rotate(45deg);
+}
+
+body.lf-theme .m3-breadcrumbs__item--current {
+	max-inline-size: 32rem;
+	color: var(--lf-brand-text);
+	font-weight: 600;
+}
+
+@media (max-width: 700px) {
+	body.lf-theme .m3-breadcrumbs__list {
+		gap: 8px;
+		padding-inline: 10px;
+	}
+}
+
+body.lf-theme .lf-footer__version {
+	font-family: var(--font-system), sans-serif;
+	font-size: var(--lf-text-2xs);
+	letter-spacing: 0.08em;
+	color: var(--lf-on-surface-muted);
+	margin-inline-start: var(--lf-space-2xs);
+}
