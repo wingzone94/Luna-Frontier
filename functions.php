@@ -117,6 +117,7 @@ $embedded_plugins = [
 	'node-seo-tools/node-seo-tools.php'     => 'node_seo_tools_init',
 	'node-series/node-series.php'           => 'node_series_init',
 	'node-connect/node-connect.php'         => 'node_connect_init',
+	'node-image-compressor/node-image-compressor.php' => 'node_image_compressor_init',
 ];
 
 // 単体プラグインとして導入済みのものは、そちらを優先して同梱版を読み込まない。

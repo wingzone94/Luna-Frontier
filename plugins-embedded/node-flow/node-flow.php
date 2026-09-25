@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Node Flow
+ * Plugin Name: Luna Flow
  * Plugin URI: https://github.com/wingzone94/Node
  * Description: フロントエンドUXと動的ルーティングを担当するプラグイン。
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Luminous Core Teams
  * Text Domain: node-flow
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-define( 'NODE_FLOW_VERSION', '1.3.0' );
+define( 'NODE_FLOW_VERSION', '1.4.0' );
 define( 'NODE_FLOW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_flow_embedded_dir = get_template_directory() . '/plugins-embedded/node-flow/';
