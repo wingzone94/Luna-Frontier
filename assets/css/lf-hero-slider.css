@@ -1,0 +1,485 @@
+/* lf-hero-slider — isolated from header / nav / existing sections.
+   Reuses Luna Frontier tokens when present; falls back to Material 3 defaults. */
+
+.lf-hero-slider {
+	--lf-hero-radius: var(--node-hero-card-radius, var(--m3-radius-large, 28px));
+	--lf-hero-shadow: 0 8px 28px rgb(27 24 18 / 0.08);
+	--lf-hero-border: color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 80%, transparent);
+	--lf-hero-scrim: linear-gradient(
+		90deg,
+		rgb(18 24 38 / 0.82) 0%,
+		rgb(18 24 38 / 0.62) 38%,
+		rgb(18 24 38 / 0.18) 68%,
+		rgb(18 24 38 / 0.04) 100%
+	);
+	--lf-hero-scrim-mobile: linear-gradient(
+		180deg,
+		rgb(18 24 38 / 0.08) 28%,
+		rgb(18 24 38 / 0.72) 100%
+	);
+	box-sizing: border-box;
+	width: min(100%, var(--node-content-wide-max, 1080px));
+	margin-inline: auto;
+	margin-bottom: var(--m3-spacing-xl, 32px);
+	padding-inline: var(--node-gutter-inline, clamp(12px, 3.5vw, 16px));
+	padding-block-start: var(--m3-spacing-s, 8px);
+}
+
+.lf-hero-slider *,
+.lf-hero-slider *::before,
+.lf-hero-slider *::after {
+	box-sizing: border-box;
+}
+
+.lf-hero-slider__stage {
+	position: relative;
+}
+
+.lf-hero-slider__viewport {
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x mandatory;
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior-x: contain;
+	border-radius: var(--lf-hero-radius);
+	outline: none;
+}
+
+.lf-hero-slider__viewport::-webkit-scrollbar {
+	display: none;
+}
+
+.lf-hero-slider__viewport:focus-visible {
+	outline: 2px solid #FF9900;
+	outline-offset: 3px;
+}
+
+.lf-hero-slider__track {
+	display: flex;
+	align-items: stretch;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	gap: 12px;
+}
+
+.lf-hero-slide {
+	flex: 0 0 100%;
+	min-width: 0;
+	scroll-snap-align: start;
+	scroll-snap-stop: always;
+}
+
+.lf-hero-slide__card {
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	min-height: clamp(280px, 38vw, 420px);
+	border-radius: var(--lf-hero-radius);
+	border: 1px solid var(--lf-hero-border);
+	background: var(--md-sys-color-surface-container, #ffe8d1);
+	box-shadow: var(--lf-hero-shadow);
+}
+
+.lf-hero-slide__media {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.lf-hero-slide__image,
+.lf-hero-slide__fallback {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: 72% center;
+	display: block;
+}
+
+.lf-hero-slide__fallback,
+.lf-hero-slide--no-image .lf-hero-slide__media {
+	background:
+		radial-gradient(120% 80% at 80% 30%, rgb(255 153 0 / 0.28), transparent 55%),
+		linear-gradient(135deg, #1b2434 0%, #31405a 100%);
+}
+
+.lf-hero-slide__overlay {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: stretch;
+	min-height: inherit;
+	background: var(--lf-hero-scrim);
+}
+
+.lf-hero-slide__copy {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 14px;
+	width: min(100%, 520px);
+	padding: clamp(22px, 4vw, 44px);
+	padding-inline: 72px;
+	padding-bottom: 64px;
+	color: #fff;
+}
+
+.lf-hero-slide__category {
+	display: inline-flex;
+	align-self: flex-start;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: var(--category-color, #5b7cff);
+	color: var(--category-on-color, #fff);
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.4;
+}
+
+.lf-hero-slide__title {
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	margin: 0;
+	font-family: var(--font-heading, "Manrope", "Noto Sans JP", sans-serif);
+	font-size: clamp(1.35rem, 2.4vw, 2.15rem);
+	font-weight: 800;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+	color: #fff;
+}
+
+.lf-hero-slide__title-link {
+	color: inherit;
+	text-decoration: none;
+}
+
+.lf-hero-slide__title-link:hover,
+.lf-hero-slide__title-link:focus-visible {
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+
+.lf-hero-slide__meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-family: var(--font-main, "Inter", "Noto Sans JP", sans-serif);
+	font-size: 0.78rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: rgb(255 255 255 / 0.72);
+}
+
+.lf-hero-slide__cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	align-self: flex-start;
+	margin-top: 6px;
+	padding: 10px 18px;
+	border: 1px solid rgb(255 255 255 / 0.42);
+	border-radius: 999px;
+	background: #FF9900;
+	color: #fff;
+	font-family: var(--font-main, "Inter", "Noto Sans JP", sans-serif);
+	font-size: 0.88rem;
+	font-weight: 700;
+	text-decoration: none;
+	backdrop-filter: blur(8px);
+	transition: background-color 200ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
+		border-color 200ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.lf-hero-slide__cta:hover {
+	background: #FF9900;
+	border-color: rgb(255 255 255 / 0.7);
+}
+
+.lf-hero-slide__cta:focus-visible,
+.lf-hero-slider__nav:focus-visible,
+.lf-hero-slider__dot:focus-visible,
+.lf-hero-thumb:focus-visible {
+	outline: 2px solid #FF9900;
+	outline-offset: 3px;
+}
+
+.lf-hero-slide__cta .lf-hero-icon {
+	font-size: 18px;
+}
+
+.lf-hero-slider__nav {
+	position: absolute;
+	top: 50%;
+	bottom: auto;
+	transform: translateY(-50%);
+	z-index: 3;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	border: 1px solid rgb(255 255 255 / 0.28);
+	border-radius: 50%;
+	background: #FF9900;
+	color: #fff;
+	box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+	backdrop-filter: blur(10px);
+	cursor: pointer;
+
+	transition: background-color 200ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
+		opacity 200ms ease;
+}
+
+.lf-hero-slider__nav--prev {
+	inset-inline-start: 12px;
+}
+
+.lf-hero-slider__nav--next {
+	inset-inline-end: 12px;
+}
+
+.lf-hero-slider__nav:hover {
+	background: #FF9900;
+}
+
+.lf-hero-slider__nav:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.lf-hero-slider__nav .lf-hero-icon {
+	font-size: 24px;
+}
+
+.lf-hero-slider__pagination {
+	position: absolute;
+	z-index: 3;
+	left: 50%;
+	bottom: 16px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	border-radius: 999px;
+	background: rgb(16 18 24 / 0.28);
+	backdrop-filter: blur(8px);
+	transform: translateX(-50%);
+}
+
+.lf-hero-slider__playback {
+	flex: none;
+	min-width: 64px;
+	min-height: 48px;
+	padding: 6px 10px;
+	border: 0;
+	border-radius: 999px;
+	background: #FF9900;
+	color: #fff;
+	font: inherit;
+	font-size: 0.75rem;
+	font-weight: 700;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.lf-hero-slider__playback:focus-visible {
+	outline: 2px solid #FF9900;
+	outline-offset: 3px;
+}
+
+.lf-hero-slider__playback:disabled { cursor: default; }
+
+.lf-hero-slider__counter {
+	flex: none;
+	margin-inline-start: 4px;
+	color: #FF9900;
+	font-size: 0.8rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.lf-hero-slider__dot {
+	width: 8px;
+	height: 8px;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: #FF9900;
+	cursor: pointer;
+	transition: width 220ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
+		background-color 220ms ease;
+}
+
+.lf-hero-slider__dot.lf-hero-is-active {
+	width: 22px;
+	background: #FF9900;
+}
+
+.lf-hero-slider__thumbs {
+	display: flex;
+	gap: 12px;
+	margin-top: 14px;
+	padding-bottom: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.lf-hero-slider__thumbs::-webkit-scrollbar {
+	display: none;
+}
+
+.lf-hero-thumb {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 132px;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 18px;
+	background: transparent;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 200ms ease, transform 200ms ease;
+}
+
+.lf-hero-thumb__media {
+	display: block;
+	overflow: hidden;
+	aspect-ratio: 16 / 10;
+	border-radius: 16px;
+	border: 1px solid var(--lf-hero-border);
+	background: var(--md-sys-color-surface-container, #ffe8d1);
+}
+
+.lf-hero-thumb__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.lf-hero-thumb__label {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	padding-inline: 4px;
+	font-family: var(--font-main, "Inter", "Noto Sans JP", sans-serif);
+	font-size: 0.78rem;
+	font-weight: 700;
+	line-height: 1.4;
+	color: var(--md-sys-color-on-surface, #2b1700);
+}
+
+.lf-hero-thumb.lf-hero-is-active {
+	border-color: #FF9900;
+}
+
+.lf-hero-thumb.lf-hero-is-active .lf-hero-thumb__media {
+	box-shadow: 0 0 0 2px #FF9900;
+}
+
+.lf-hero-thumb:hover {
+	transform: translateY(-1px);
+}
+
+@media (max-width: 1199px) {
+	.lf-hero-slide__card {
+		min-height: clamp(260px, 46vw, 380px);
+	}
+}
+
+@media (max-width: 767px) {
+	.lf-hero-slider {
+		padding-inline: 12px;
+	}
+
+	.lf-hero-slide {
+		flex-basis: calc(100% - 28px);
+	}
+
+	.lf-hero-slide__card {
+		min-height: 420px;
+	}
+
+	.lf-hero-slide__image {
+		object-position: center 30%;
+	}
+
+	.lf-hero-slide__overlay {
+		align-items: flex-end;
+		background: var(--lf-hero-scrim-mobile);
+	}
+
+	.lf-hero-slide__copy {
+		width: 100%;
+		gap: 10px;
+		padding: 22px 64px 64px;
+	}
+
+
+	.lf-hero-slide__title {
+		font-size: 1.28rem;
+	}
+
+	.lf-hero-slider__nav {
+		width: 48px;
+		height: 48px;
+	}
+
+	.lf-hero-slider__nav--prev {
+		inset-inline-start: 8px;
+	}
+
+	.lf-hero-slider__nav--next {
+		inset-inline-end: 8px;
+	}
+
+	.lf-hero-slider__thumbs {
+		gap: 10px;
+	}
+
+	.lf-hero-thumb {
+		flex: 0 0 148px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lf-hero-slider__viewport {
+		scroll-behavior: auto;
+	}
+
+	.lf-hero-slider__dot,
+	.lf-hero-slider__nav,
+	.lf-hero-slide__cta,
+	.lf-hero-thumb {
+		transition: none;
+	}
+}
+
+[data-theme="dark"] .lf-hero-slider {
+	--lf-hero-shadow: 0 10px 28px rgb(0 0 0 / 0.28);
+}
+
+[data-theme="dark"] .lf-hero-thumb__label {
+	color: var(--md-sys-color-on-surface, #f5efeb);
+}
+
+.lf-hero-slider [hidden] { display: none; }
+.lf-hero-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.lf-hero-icon { font-family: sans-serif; line-height: 1; }
+.lf-hero-slider__dot { position: relative; }
+.lf-hero-slider__dot::after { content: ""; position: absolute; inset: -18px -4px; }

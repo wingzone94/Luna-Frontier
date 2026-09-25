@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Interactivity
+ * Plugin Name:  Luna Interactivity
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  スポイラー（目隠し）、CERO Z 年齢確認ダイアログ。Node テーマと連携。
- * Version:      1.2.0
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LUMINOUS_INTER_VERSION', '1.2.0' );
+define( 'LUMINOUS_INTER_VERSION', '1.4.0' );
 define( 'LUMINOUS_INTER_DIR', plugin_dir_path( __FILE__ ) );
 
 $luminous_inter_embedded_dir = get_template_directory() . '/plugins-embedded/luminous-interactivity/';

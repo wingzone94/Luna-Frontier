@@ -162,6 +162,14 @@ class Node_Release_Package_Test extends WP_UnitTestCase {
 
 		$repo_build = json_decode( (string) file_get_contents( $this->repo_dir() . '/build.json' ), true );
 		$this->assertIsArray( $repo_build );
+		$repo_style = (string) file_get_contents( $this->repo_dir() . '/style.css' );
+		if ( 1 === preg_match( '/^Theme Name:\s*Luna Frontier\s*$/m', $repo_style ) ) {
+			// Previewブランチではnode.zipは独立配布するNode安定版の正本。
+			// Previewテーマ自身の版・build_idはluna-frontier.zipで照合する。
+			$this->assertSame( '1.4.0', $zip_version, 'node.zip はNode 1.4.0でなければなりません' );
+			$this->assertSame( $zip_version, (string) ( $build['version'] ?? '' ), 'Node安定ZIP内のstyle.cssとbuild.jsonが不一致' );
+			return;
+		}
 		$this->assertSame(
 			(string) ( $repo_build['build_id'] ?? '' ),
 			(string) ( $build['build_id'] ?? '' ),

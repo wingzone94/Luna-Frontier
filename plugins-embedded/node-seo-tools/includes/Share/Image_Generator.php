@@ -91,8 +91,8 @@ final class Image_Generator {
 	}
 
 	/**
-	 * 旧ロジックで生成済みのOGP画像の再生成を予約する。
-	 * 画像生成そのものは記事表示中に実行しない。
+	 * 旧ロジックで生成済みのOGP画像を、記事閲覧時に1回だけ作り直す。
+	 * 世代メタが現行と一致していれば何もしない。
 	 */
 	public function maybe_regenerate_stale(): void {
 		if ( is_admin() || wp_doing_ajax() || ! is_singular( 'post' ) ) {
@@ -118,7 +118,7 @@ final class Image_Generator {
 	}
 
 	/**
-	 * 再生成直前に条件を確認する。保存時生成で更新済みなら重複して描画しない。
+	 * 再生成直前に条件を確認し、保存時生成済みの画像を重複して描画しない。
 	 */
 	public function regenerate_stale_in_background( int $post_id ): void {
 		if ( ! get_option( 'node_ogp_enabled' ) || 'publish' !== get_post_status( $post_id ) ) {

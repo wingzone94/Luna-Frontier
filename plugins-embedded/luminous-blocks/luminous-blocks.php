@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Blocks
+ * Plugin Name:  Luna Blocks
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  Gutenberg カスタムブロック（Smart Sort Table, Voting）および外部サービス埋め込み（Apple Music, Spotify, Google Maps）。
- * Version:      1.2.0
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LUMINOUS_BLOCKS_VERSION', '1.2.0' );
+define( 'LUMINOUS_BLOCKS_VERSION', '1.4.0' );
 define( 'LUMINOUS_BLOCKS_DIR', plugin_dir_path( __FILE__ ) );
 
 $luminous_blocks_embedded_dir = get_template_directory() . '/plugins-embedded/luminous-blocks/';

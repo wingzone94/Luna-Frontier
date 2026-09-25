@@ -138,6 +138,18 @@ foreach ( $embedded_plugins as $plugin_file => $init_func ) {
 	}
 }
 
+// Luna Interactive は単独版を優先し、未導入時だけ同梱版を読み込む。
+if (
+	! function_exists( 'luna_interactive_register_block' )
+	&& ! in_array( 'luna-interactive/luna-interactive.php', $node_active_plugins, true )
+) {
+	$luna_embedded = NODE_THEME_DIR . '/plugins-embedded/luna-interactive/luna-interactive.php';
+	if ( is_file( $luna_embedded ) ) {
+		define( 'LUNA_INTERACTIVE_EMBEDDED', true );
+		require_once $luna_embedded;
+	}
+}
+
 /**
  * 全記事一覧ページ（上限付き）のURLを返す。
  */
