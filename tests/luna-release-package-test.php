@@ -26,6 +26,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 
 	public function test_preview_zip_has_expected_root_and_metadata(): void {
 		$this->assertFileExists( $this->theme_zip() );
+		$this->assertLessThan( 10 * 1024 * 1024, filesize( $this->theme_zip() ), 'Preview ZIPは重複フォントを避けて10MiB未満に保ちます' );
 		$zip = new ZipArchive();
 		$this->assertTrue( true === $zip->open( $this->theme_zip() ) );
 		$entries = [];
@@ -37,6 +38,11 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 			$this->assertStringStartsWith( self::THEME_ROOT, $entry, 'テーマZIPのルートが不正: ' . $entry );
 			$this->assertDoesNotMatchRegularExpression( '#^luna-frontier/(vendor|tests|node_modules|\.git)/#', $entry );
 		}
+		$this->assertNotContains(
+			'luna-frontier/plugins-embedded/node-seo-tools/assets/share/fonts/NotoSansJP-VF.ttf',
+			$entries,
+			'埋め込みSEO Toolsはテーマ内のNotoSansJP-VF.ttfを参照するため、フォントを重複収録しません'
+		);
 
 		$style = $this->contents( $this->theme_zip(), self::THEME_ROOT . 'style.css' );
 		$this->assertSame( 1, preg_match( '/^Version:\s*(\S+)/m', $style, $version_match ) );

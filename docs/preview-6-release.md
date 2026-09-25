@@ -8,16 +8,18 @@ Previewの単一記事要約はLuna固有のテンプレートで表示されま
 
 ## 配布物と導入
 
-- `node.zip`: Node 1.4.0の親テーマビルド。
+- `node.zip`: Node 1.4.0の親テーマビルド（Build ID `20260925T075504Z-8a77b46`）。
 - `luna-frontier.zip`: Luna Frontier `2.0.0-preview.6`。ZIP内ルートは `luna-frontier/`。
 - `production_plugins/*.zip`: 既存の独立配布プラグイン10本。プラグインslugを保ったままLuna表示名・1.4.0に同期。
+- テーマZIPではSEO Tools内の重複フォントを除外し、テーマ側の `assets/ttf/NotoSansJP-VF.ttf` を参照。
 - 配布先候補は `luna-frontier-2.0-skyalow`、タグ候補は `luna-frontier-v2.0.0-preview.6`。レビューと採用後に公開します。
 - Preview版はNode安定版の `master` 更新チャンネルと分離。
 
 ## 検証
 
 - `bun run build` 成功。`bun run verify:icon-subset` は未登録アイコン0件。
-- 対象PHPUnitは43テスト・168アサーション成功（AI権限、Geminiモデル、Library、テーマ更新、配布関連）。
+- 全PHPUnitは465テスト・2,299アサーション成功。別途AJAX権限グループは2テスト・8アサーション成功。
+- LocalWPのNode Library回帰チェックは116項目すべて成功。固定フィクスチャ以外の投稿は操作していない。
 - LocalWPでPreview候補を実際に有効化し、Preview 6のCSS URLを確認。ホーム、記事、検索、SPOTLIGHTは390px / 1440pxでHTTP 200。
 - 画面レイアウト検査は記事・検索・SPOTLIGHTで問題なし。ホームはスクリーンリーダー専用見出しとARIAラベルのみを幅超過として報告した。画面上の横はみ出しはなく、スクリーンショットでも表示崩れは見つからなかった。
 - LocalWPルート検査は11/11成功。
