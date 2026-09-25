@@ -70,7 +70,7 @@ printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\
 ```
 
 - `build_id` は「UTC時刻 + ZIP生成時点の HEAD 短縮SHA」。SHAはリリースコミット自体ではなく**生成時点のHEAD**を指す（識別子としての一意性はタイムスタンプが担保）。
-- `build.json` は配布ZIPに含め、**コミットにも含めます**（更新チェックが raw URL `https://raw.githubusercontent.com/wingzone94/Node/master/build.json` を参照するため）。
+- `build.json` は配布ZIPに含め、**コミットにも含めます**（更新チェックが raw URL `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/build.json` を参照するため）。
 
 ### 4-b. ZIP生成
 プロジェクトルートディレクトリから、必要なファイルのみを含めたZIPファイルを作成します。以下のコマンドで `node.zip` を出力します。
@@ -183,16 +183,16 @@ git push origin master
 ## 6. Luminous Settings 更新確認との整合
 テーマ管理画面の Luminous Settings は、GitHub Release やPRではなく、テーマ内の `inc/ajax.php` で指定している以下の `master` 固定URLを参照します。
 
-- バージョン確認: `https://raw.githubusercontent.com/wingzone94/Node/master/style.css`
-- ZIP取得: `https://github.com/wingzone94/Node/raw/master/node.zip`
+- バージョン確認: `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/style.css`
+- ZIP取得: `https://github.com/wingzone94/Luna-Frontier/raw/master/node.zip`
 
 そのため、PRブランチや `v1.1.x` タグを作成しただけでは、Luminous Settings には最新バージョンとして表示されません。リリース時は必ず `master` 上の `style.css` と `node.zip` を更新してください。
 
 確認コマンド:
 
 ```bash
-curl -L -s https://raw.githubusercontent.com/wingzone94/Node/master/style.css | sed -n '1,12p'
-curl -L -s -o /tmp/node-remote.zip https://github.com/wingzone94/Node/raw/master/node.zip
+curl -L -s https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/style.css | sed -n '1,12p'
+curl -L -s -o /tmp/node-remote.zip https://github.com/wingzone94/Luna-Frontier/raw/master/node.zip
 unzip -p /tmp/node-remote.zip Node/style.css | sed -n '1,12p'
 zipinfo -1 /tmp/node-remote.zip | head
 ```
