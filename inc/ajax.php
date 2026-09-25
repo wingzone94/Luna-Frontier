@@ -19,7 +19,7 @@ add_action(
 		}
 
 		$local_version = node_get_theme_version();
-		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Node/refs/heads/master/style.css';
+		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/master/style.css';
 
 		$response = wp_remote_get( $remote_url );
 		if ( is_wp_error( $response ) ) {
@@ -40,7 +40,7 @@ add_action(
 		$local_build      = $local_build_info['build_id'] ?? null;
 
 		$remote_build   = null;
-		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Node/refs/heads/master/build.json?cb=' . time() );
+		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/master/build.json?cb=' . time() );
 		if ( ! is_wp_error( $build_response ) && 200 === wp_remote_retrieve_response_code( $build_response ) ) {
 			$build_data = json_decode( wp_remote_retrieve_body( $build_response ), true );
 			if ( is_array( $build_data ) && ! empty( $build_data['build_id'] ) ) {
@@ -76,7 +76,7 @@ add_action(
 			wp_send_json_error( 'Permission denied' );
 		}
 
-		$zip_url = 'https://github.com/wingzone94/Node/raw/refs/heads/master/node.zip';
+		$zip_url = 'https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/master/node.zip';
 
 		error_log( 'Luminous Update: Starting update from ' . $zip_url );
 
@@ -90,6 +90,7 @@ add_action(
 		WP_Filesystem();
 		global $wp_filesystem;
 		if ( ! $wp_filesystem ) {
+			unlink( $temp_file );
 			error_log( 'Luminous Update: Filesystem API failed' );
 			wp_send_json_error( 'Filesystem API failed' );
 		}
@@ -102,12 +103,13 @@ add_action(
 		}
 
 		$unzipped = unzip_file( $temp_file, $temp_extract_dir );
-		unlink( $temp_file );
-
 		if ( is_wp_error( $unzipped ) ) {
+			unlink( $temp_file );
+			$wp_filesystem->delete( $temp_extract_dir, true );
 			error_log( 'Luminous Update: Extraction failed - ' . $unzipped->get_error_message() );
 			wp_send_json_error( 'Extraction failed: ' . $unzipped->get_error_message() );
 		}
+		unlink( $temp_file );
 
 		$source_dir = node_resolve_theme_update_source_dir( $temp_extract_dir );
 		if ( null === $source_dir ) {
@@ -116,14 +118,21 @@ add_action(
 			wp_send_json_error( 'ZIP 内に Node テーマフォルダが見つかりませんでした。' );
 		}
 
-		error_log( 'Luminous Update: Copying from ' . $source_dir . ' to ' . $theme_dir );
-		$copy_result = copy_dir( $source_dir, $theme_dir );
+		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;
+		$package_info     = node_validate_theme_update_package( $source_dir, node_get_theme_version(), $local_build_info['build_id'] ?? null );
+		if ( is_wp_error( $package_info ) ) {
+			$wp_filesystem->delete( $temp_extract_dir, true );
+			wp_send_json_error( $package_info->get_error_message() );
+		}
+
+		error_log( 'Luminous Update: Switching to build ' . $package_info['build_id'] );
+		$copy_result = node_swap_theme_update_directory( $wp_filesystem, $source_dir, $theme_dir );
 
 		$wp_filesystem->delete( $temp_extract_dir, true );
 
 		if ( is_wp_error( $copy_result ) ) {
-			error_log( 'Luminous Update: Copy failed - ' . $copy_result->get_error_message() );
-			wp_send_json_error( 'Copy failed: ' . $copy_result->get_error_message() );
+			error_log( 'Luminous Update: Switch failed - ' . $copy_result->get_error_message() );
+			wp_send_json_error( 'Update failed: ' . $copy_result->get_error_message() );
 		}
 
 		if ( function_exists( 'wp_clean_themes_cache' ) ) {
