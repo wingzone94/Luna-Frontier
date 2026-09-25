@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Image Compressor
+ * Plugin Name:  Luna Image Compressor
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  アイキャッチ画像を自動で WebP に置き換え、転送量と LCP を改善する。元ファイルを残す設定にすれば復元もできる。
- * Version:      1.0.0
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_IC_VERSION', '1.0.0' );
+define( 'NODE_IC_VERSION', '1.4.0' );
 define( 'NODE_IC_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_ic_embedded_dir = get_template_directory() . '/plugins-embedded/node-image-compressor/';

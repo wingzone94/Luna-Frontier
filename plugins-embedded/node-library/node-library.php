@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Library
+ * Plugin Name:  Luna Library
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  ゲーム・アプリ情報の管理と表示。カスタム投稿タイプによるリスト管理と、記事への紐付け機能を提供。
- * Version:      1.3.11
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * License:      MIT
  * Text Domain:  node-library
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_LIBRARY_VERSION', '1.3.11' );
+define( 'NODE_LIBRARY_VERSION', '1.4.0' );
 define( 'NODE_LIBRARY_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NODE_LIBRARY_BADGE_BASE_URL', 'https://luminous-core.net/wp-content/themes/Node/plugins-embedded/node-library/assets/images/' );
 
