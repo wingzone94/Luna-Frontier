@@ -94,6 +94,7 @@ require_once NODE_THEME_DIR . '/inc/blogcard-store.php';
 require_once NODE_THEME_DIR . '/inc/blogcard.php';
 require_once NODE_THEME_DIR . '/inc/maintenance.php';
 require_once NODE_THEME_DIR . '/inc/print.php';
+require_once NODE_THEME_DIR . '/inc/hero-slider.php';
 require_once NODE_THEME_DIR . '/inc/icon-font.php';
 
 /**

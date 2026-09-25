@@ -128,6 +128,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'travel_explore',
 			'tune',
 			'undo',
+			'unfold_less',
 			'unfold_more',
 			'update',
 			'verified',

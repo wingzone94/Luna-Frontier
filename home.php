@@ -41,6 +41,7 @@ get_header();
 ?>
 <main id="primary" class="site-main lf-home">
 	<h1 class="screen-reader-text"><?php echo esc_html( get_bloginfo( 'name' ) ); ?></h1>
+	<?php get_template_part( 'template-parts/hero-slider' ); ?>
 	<section class="lf-home__news" aria-labelledby="lf-news-title">
 		<div class="lf-home__section-head">
 			<h2 id="lf-news-title"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><?php esc_html_e( '速報', 'node' ); ?></h2>
