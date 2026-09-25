@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Luna interactive
+ * Plugin Name: Luna Interactive
  * Description: データ編集・絞り込み・動的／静的切り替えに対応する「グラフ」ブロック。
  * Version: 1.4.0
  * Requires at least: 6.4

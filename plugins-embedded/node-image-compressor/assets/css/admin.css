@@ -1,0 +1,870 @@
+/*
+ * Node Image Compressor — Material 3 管理 UI
+ *
+ * Node で最初の Material 3 管理画面。トークンはフロントの src/styles/_variables.css と
+ * 同じ値を .node-ic-app にスコープして再宣言している（管理画面ではフロントの
+ * ビルド済み CSS を読み込めないため）。トークンが増えたらこのブロックだけ同期する。
+ * すべてのセレクタを .node-ic-app 配下に閉じ、他の管理画面へ漏らさない。
+ */
+
+.node-ic-app {
+	/* --- Material 3 Palette (Light) --- */
+	--md-sys-color-primary: #FF9900;
+	--md-sys-color-on-primary: #ffffff;
+	--md-sys-color-accent-text: #935400;
+	--md-sys-color-primary-container: #fedcbe;
+	--md-sys-color-on-primary-container: #2b1700;
+	--md-sys-color-surface: #FFF4E5;
+	--md-sys-color-on-surface: #2b1700;
+	--md-sys-color-on-surface-variant: #6b5847;
+	--md-sys-color-surface-container-low: #ffffff;
+	--md-sys-color-surface-container: #ffe8d1;
+	--md-sys-color-outline-variant: #d6c2b1;
+	--md-sys-color-error: #BA1A1A;
+	--md-sys-color-error-container: #FFDAD6;
+	--md-sys-color-on-error-container: #410002;
+	--md-sys-color-success: #1B6C3A;
+	--md-sys-color-success-container: #B6F2C6;
+	--md-sys-color-on-success-container: #06210F;
+
+	/* --- Shape / Spacing / Motion --- */
+	--m3-radius-small: 12px;
+	--m3-radius-medium: 16px;
+	--m3-radius-large: 28px;
+	--m3-radius-full: 1000px;
+	--m3-spacing-xs: 4px;
+	--m3-spacing-s: 8px;
+	--m3-spacing-m: 16px;
+	--m3-spacing-l: 24px;
+	--m3-spacing-xl: 32px;
+	--m3-motion-duration: 200ms;
+	--m3-motion-easing: cubic-bezier(0.2, 0, 0, 1);
+
+	/* タップターゲットの下限。M3 の最小 48dp に合わせる */
+	--node-ic-touch: 48px;
+
+	box-sizing: border-box;
+	max-width: 1080px;
+	margin-inline: auto;
+	padding-block: var(--m3-spacing-m) var(--m3-spacing-xl);
+	padding-inline: 0;
+	color: var(--md-sys-color-on-surface);
+	font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+	font-size: 15px;
+	line-height: 1.7;
+}
+
+/*
+ * ダークパレットは意図的に置いていない。wp-admin のコンテンツ領域は OS の
+ * prefers-color-scheme に追従せず常に明色なので、そこだけ暗くすると
+ * 管理画面の中で浮いた黒い島になってしまう。WordPress 側が本当に暗い管理画面を
+ * 持つようになったら、そのシグナルを条件にして差し替える。
+ */
+
+.node-ic-app *,
+.node-ic-app *::before,
+.node-ic-app *::after {
+	box-sizing: border-box;
+}
+
+/* display を持つコンポーネントが [hidden] を上書きしてしまうのを防ぐ */
+.node-ic-app [hidden] {
+	display: none !important;
+}
+
+.node-ic-app .material-symbols-outlined {
+	font-family: "Material Symbols Outlined", sans-serif;
+	font-weight: normal;
+	font-style: normal;
+	font-size: 20px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+	flex: none;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.node-ic-header {
+	margin-block-end: var(--m3-spacing-l);
+}
+
+.node-ic-app .node-ic-title {
+	display: flex;
+	align-items: center;
+	gap: var(--m3-spacing-s);
+	margin: 0 0 var(--m3-spacing-xs);
+	padding: 0;
+	font-family: "Manrope", "Noto Sans JP", sans-serif;
+	font-size: clamp(1.4rem, 1.2rem + 1vw, 1.85rem);
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--md-sys-color-on-surface);
+}
+
+.node-ic-title .material-symbols-outlined {
+	font-size: 1.1em;
+	color: var(--md-sys-color-accent-text);
+}
+
+.node-ic-subtitle {
+	margin: 0;
+	max-width: 60ch;
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   Banner
+   ========================================================================== */
+
+.node-ic-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--m3-spacing-s);
+	margin-block-end: var(--m3-spacing-l);
+	padding: var(--m3-spacing-m);
+	border-radius: var(--m3-radius-medium);
+	background: var(--md-sys-color-error-container);
+	color: var(--md-sys-color-on-error-container);
+}
+
+.node-ic-banner--warn {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.node-ic-banner p {
+	margin: var(--m3-spacing-xs) 0 0;
+	font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Stat cards (M3 filled card)
+   ========================================================================== */
+
+.node-ic-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: var(--m3-spacing-m);
+	margin-block-end: var(--m3-spacing-l);
+}
+
+.node-ic-stat {
+	display: flex;
+	flex-direction: column;
+	gap: var(--m3-spacing-xs);
+	padding: var(--m3-spacing-m) var(--m3-spacing-l);
+	border-radius: var(--m3-radius-large);
+	background: var(--md-sys-color-surface-container);
+}
+
+.node-ic-stat--accent {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.node-ic-stat__value {
+	font-family: "Manrope", "Noto Sans JP", sans-serif;
+	font-size: 2rem;
+	font-weight: 700;
+	line-height: 1.15;
+	font-variant-numeric: tabular-nums;
+}
+
+.node-ic-stat__label {
+	font-size: 0.8rem;
+	color: var(--md-sys-color-on-surface-variant);
+}
+
+.node-ic-stat--accent .node-ic-stat__label {
+	color: inherit;
+	opacity: 0.85;
+}
+
+/* ==========================================================================
+   Card
+   ========================================================================== */
+
+.node-ic-card {
+	margin-block-end: var(--m3-spacing-l);
+	padding: var(--m3-spacing-l);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--m3-radius-large);
+	background: var(--md-sys-color-surface-container-low);
+}
+
+.node-ic-app .node-ic-card__title {
+	margin: 0 0 var(--m3-spacing-xs);
+	padding: 0;
+	font-family: "Manrope", "Noto Sans JP", sans-serif;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--md-sys-color-on-surface);
+}
+
+.node-ic-card__desc {
+	margin: 0;
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.9rem;
+}
+
+.node-ic-empty {
+	margin: var(--m3-spacing-m) 0 0;
+	color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ==========================================================================
+   Buttons (M3 filled / tonal / text)
+   ========================================================================== */
+
+.node-ic-app .node-ic-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--m3-spacing-s);
+	min-height: 40px;
+	padding: var(--m3-spacing-s) var(--m3-spacing-l);
+	border: none;
+	border-radius: var(--m3-radius-full);
+	background: transparent;
+	color: var(--md-sys-color-accent-text);
+	font-family: inherit;
+	font-size: 0.9rem;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	cursor: pointer;
+	overflow: hidden;
+	transition: box-shadow var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+/* state layer */
+.node-ic-app .node-ic-btn::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: currentColor;
+	opacity: 0;
+	transition: opacity var(--m3-motion-duration) var(--m3-motion-easing);
+	pointer-events: none;
+}
+
+.node-ic-app .node-ic-btn:hover:not(:disabled)::before { opacity: 0.08; }
+.node-ic-app .node-ic-btn:active:not(:disabled)::before { opacity: 0.12; }
+
+.node-ic-app .node-ic-btn:focus-visible {
+	outline: 3px solid var(--md-sys-color-primary);
+	outline-offset: 2px;
+}
+
+.node-ic-app .node-ic-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.38;
+}
+
+.node-ic-app .node-ic-btn--filled {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+}
+
+.node-ic-app .node-ic-btn--tonal {
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.node-ic-btn__text {
+	white-space: nowrap;
+}
+
+.node-ic-bulk__head {
+	margin-block-end: var(--m3-spacing-m);
+}
+
+.node-ic-bulk__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--m3-spacing-s);
+}
+
+/* ==========================================================================
+   Linear progress indicator
+   ========================================================================== */
+
+.node-ic-progress {
+	margin-block-end: var(--m3-spacing-m);
+}
+
+.node-ic-progress__bar {
+	height: 4px;
+	border-radius: var(--m3-radius-full);
+	background: var(--md-sys-color-primary-container);
+	overflow: hidden;
+}
+
+.node-ic-progress__fill {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--md-sys-color-primary);
+	transition: width var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+.node-ic-progress__text {
+	margin: var(--m3-spacing-s) 0 0;
+	font-size: 0.85rem;
+	color: var(--md-sys-color-on-surface-variant);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   List
+   ========================================================================== */
+
+.node-ic-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--m3-spacing-s);
+	margin: var(--m3-spacing-m) 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.node-ic-item {
+	display: grid;
+	grid-template-columns: 72px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--m3-spacing-m);
+	margin: 0;
+	padding: var(--m3-spacing-s) var(--m3-spacing-m);
+	border-radius: var(--m3-radius-medium);
+	background: var(--md-sys-color-surface-container);
+	transition: opacity var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+.node-ic-item.is-busy {
+	opacity: 0.55;
+}
+
+.node-ic-item__thumb {
+	display: grid;
+	place-items: center;
+	width: 72px;
+	height: 72px;
+	border-radius: var(--m3-radius-small);
+	background: var(--md-sys-color-surface-container-low);
+	overflow: hidden;
+}
+
+.node-ic-item__thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.node-ic-item__body {
+	min-width: 0;
+}
+
+.node-ic-item__name {
+	margin: 0;
+	font-weight: 600;
+	font-size: 0.92rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.node-ic-item__posts {
+	margin: 2px 0 0;
+	font-size: 0.82rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.node-ic-app .node-ic-item__posts a {
+	color: var(--md-sys-color-accent-text);
+}
+
+.node-ic-app .node-ic-item__posts a:not(:last-child)::after {
+	content: "、";
+	color: var(--md-sys-color-on-surface-variant);
+}
+
+.node-ic-item__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--m3-spacing-s);
+	margin: var(--m3-spacing-xs) 0 0;
+}
+
+.node-ic-item__size {
+	font-size: 0.82rem;
+	color: var(--md-sys-color-on-surface-variant);
+	font-variant-numeric: tabular-nums;
+}
+
+.node-ic-item__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--m3-spacing-xs);
+	justify-content: flex-end;
+}
+
+/* ==========================================================================
+   Assist chip
+   ========================================================================== */
+
+.node-ic-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--m3-spacing-xs);
+	padding: 2px var(--m3-spacing-s);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--m3-radius-full);
+	background: var(--md-sys-color-surface-container-low);
+	font-size: 0.78rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.node-ic-chip .material-symbols-outlined {
+	font-size: 16px;
+}
+
+.node-ic-chip--converted {
+	border-color: transparent;
+	background: var(--md-sys-color-success-container);
+	color: var(--md-sys-color-on-success-container);
+}
+
+.node-ic-chip--pending {
+	border-color: transparent;
+	background: var(--md-sys-color-primary-container);
+	color: var(--md-sys-color-on-primary-container);
+}
+
+.node-ic-chip--failed {
+	border-color: transparent;
+	background: var(--md-sys-color-error-container);
+	color: var(--md-sys-color-on-error-container);
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.node-ic-pagination {
+	display: flex;
+	justify-content: center;
+	margin-block-start: var(--m3-spacing-m);
+}
+
+.node-ic-app .node-ic-pagination .page-numbers {
+	display: inline-grid;
+	place-items: center;
+	min-width: var(--node-ic-touch);
+	min-height: var(--node-ic-touch);
+	margin-inline: 2px;
+	border-radius: var(--m3-radius-full);
+	color: var(--md-sys-color-on-surface);
+	text-decoration: none;
+	font-weight: 600;
+}
+
+.node-ic-app .node-ic-pagination .page-numbers.current {
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+}
+
+/* ==========================================================================
+   Form / Switch / Slider
+   ========================================================================== */
+
+.node-ic-form {
+	margin-block-start: var(--m3-spacing-m);
+}
+
+.node-ic-field {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--m3-spacing-m);
+	padding-block: var(--m3-spacing-m);
+	border-block-end: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.node-ic-field__text {
+	flex: 1 1 260px;
+	min-width: 0;
+}
+
+.node-ic-field__label {
+	display: block;
+	font-weight: 600;
+	font-size: 0.95rem;
+}
+
+.node-ic-field__desc {
+	margin: 2px 0 0;
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.85rem;
+}
+
+.node-ic-switch {
+	display: inline-grid;
+	place-items: center;
+	width: var(--node-ic-touch);
+	height: var(--node-ic-touch);
+	flex: none;
+	cursor: pointer;
+}
+
+.node-ic-app .node-ic-switch input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	overflow: hidden;
+}
+
+.node-ic-switch__track {
+	display: block;
+	width: 52px;
+	height: 32px;
+	border: 2px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--m3-radius-full);
+	background: var(--md-sys-color-surface-container);
+	transition: background var(--m3-motion-duration) var(--m3-motion-easing),
+		border-color var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+.node-ic-switch__thumb {
+	display: block;
+	width: 16px;
+	height: 16px;
+	margin: 6px;
+	border-radius: var(--m3-radius-full);
+	background: var(--md-sys-color-on-surface-variant);
+	transition: transform var(--m3-motion-duration) var(--m3-motion-easing),
+		width var(--m3-motion-duration) var(--m3-motion-easing),
+		height var(--m3-motion-duration) var(--m3-motion-easing),
+		margin var(--m3-motion-duration) var(--m3-motion-easing),
+		background var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+.node-ic-switch input:checked + .node-ic-switch__track {
+	border-color: var(--md-sys-color-primary);
+	background: var(--md-sys-color-primary);
+}
+
+.node-ic-switch input:checked + .node-ic-switch__track .node-ic-switch__thumb {
+	width: 24px;
+	height: 24px;
+	margin: 2px;
+	transform: translateX(20px);
+	background: var(--md-sys-color-on-primary);
+}
+
+.node-ic-switch input:focus-visible + .node-ic-switch__track {
+	outline: 3px solid var(--md-sys-color-primary);
+	outline-offset: 3px;
+}
+
+.node-ic-slider {
+	display: flex;
+	align-items: center;
+	gap: var(--m3-spacing-m);
+	flex: 1 1 260px;
+}
+
+.node-ic-app .node-ic-slider input[type="range"] {
+	flex: 1 1 auto;
+	min-width: 120px;
+	height: var(--node-ic-touch);
+	accent-color: var(--md-sys-color-primary);
+	cursor: pointer;
+}
+
+.node-ic-app .node-ic-input {
+	min-height: var(--node-ic-touch);
+	padding: var(--m3-spacing-s) var(--m3-spacing-m);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--m3-radius-small);
+	background: var(--md-sys-color-surface-container-low);
+	color: var(--md-sys-color-on-surface);
+	/* iOS Safari の自動ズームを避けるため 16px を下回らせない */
+	font-size: 16px;
+	font-family: inherit;
+	box-shadow: none;
+}
+
+.node-ic-app .node-ic-input:focus {
+	border-color: var(--md-sys-color-primary);
+	outline: 2px solid var(--md-sys-color-primary);
+	outline-offset: 0;
+	box-shadow: none;
+}
+
+.node-ic-app .node-ic-input--number {
+	width: 7em;
+	flex: none;
+	font-variant-numeric: tabular-nums;
+}
+
+.node-ic-app .node-ic-select {
+	flex: 0 0 auto;
+	min-width: 12em;
+	cursor: pointer;
+}
+
+.node-ic-form__actions {
+	margin-block-start: var(--m3-spacing-l);
+}
+
+/* ==========================================================================
+   Snackbar
+   ========================================================================== */
+
+.node-ic-snackbar {
+	position: fixed;
+	left: 50%;
+	bottom: var(--m3-spacing-l);
+	z-index: 100000;
+	max-width: min(560px, calc(100vw - 32px));
+	padding: var(--m3-spacing-m) var(--m3-spacing-l);
+	border-radius: var(--m3-radius-small);
+	background: #322f35;
+	color: #f5eff7;
+	font-size: 0.88rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+	transform: translate(-50%, 8px);
+	opacity: 0;
+	transition: opacity var(--m3-motion-duration) var(--m3-motion-easing),
+		transform var(--m3-motion-duration) var(--m3-motion-easing);
+}
+
+.node-ic-snackbar.is-visible {
+	transform: translate(-50%, 0);
+	opacity: 1;
+}
+
+/* ==========================================================================
+   Mobile — WP 管理画面はここでサイドバーが畳まれる
+   ========================================================================== */
+
+@media (max-width: 782px) {
+	.node-ic-app {
+		padding-inline: 0;
+		font-size: 16px;
+	}
+
+	.node-ic-stats {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--m3-spacing-s);
+	}
+
+	.node-ic-stat {
+		padding: var(--m3-spacing-m);
+	}
+
+	.node-ic-stat__value {
+		font-size: 1.6rem;
+	}
+
+	.node-ic-card {
+		padding: var(--m3-spacing-m);
+		border-radius: var(--m3-radius-medium);
+	}
+
+	/* 一覧はテーブル的な横並びをやめてカードとして縦に積む。
+	   横スクロールは指で扱いづらいので発生させない */
+	.node-ic-item {
+		grid-template-columns: 56px minmax(0, 1fr);
+		grid-template-areas:
+			"thumb body"
+			"actions actions";
+		padding: var(--m3-spacing-m);
+		row-gap: var(--m3-spacing-s);
+	}
+
+	.node-ic-item__thumb {
+		grid-area: thumb;
+		width: 56px;
+		height: 56px;
+	}
+
+	.node-ic-item__body {
+		grid-area: body;
+	}
+
+	.node-ic-item__name {
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.node-ic-item__posts {
+		white-space: normal;
+	}
+
+	.node-ic-item__actions {
+		grid-area: actions;
+		justify-content: flex-start;
+		gap: var(--m3-spacing-s);
+	}
+
+	/* タップターゲットは 48px を下回らせない */
+	.node-ic-app .node-ic-btn {
+		min-height: var(--node-ic-touch);
+		flex: 1 1 auto;
+	}
+
+	.node-ic-field {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	/* 縦積みに変わると flex-basis が「高さ」として効いてしまい、
+	   ラベルと入力の間に 260px の空白が生まれる。主軸が変わる行では basis を外す */
+	.node-ic-field:not(.node-ic-field--switch) > .node-ic-field__text,
+	.node-ic-field:not(.node-ic-field--switch) > .node-ic-slider {
+		flex: 0 0 auto;
+	}
+
+	.node-ic-field--switch {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	/* スライダーと数値入力を横並びのままにすると、幅 100% の数値入力が
+	   range の最小幅を押し出して横あふれする。狭幅では 2 段に分ける */
+	.node-ic-slider {
+		width: 100%;
+		flex-wrap: wrap;
+		gap: var(--m3-spacing-s);
+	}
+
+	.node-ic-app .node-ic-slider input[type="range"] {
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+
+	.node-ic-app .node-ic-input--number,
+	.node-ic-app .node-ic-select {
+		width: 100%;
+		min-width: 0;
+	}
+
+	/* 長い一覧をスクロールしても一括変換に手が届くよう、画面下部へ固定する */
+	.node-ic-bulk__actions {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 99999;
+		gap: var(--m3-spacing-s);
+		padding: var(--m3-spacing-s) var(--m3-spacing-m)
+			calc(var(--m3-spacing-s) + env(safe-area-inset-bottom, 0px));
+		border-block-start: 1px solid var(--md-sys-color-outline-variant);
+		background: var(--md-sys-color-surface-container-low);
+	}
+
+	/* 固定バーが最後の要素を隠さないよう底上げする */
+	.node-ic-app {
+		padding-block-end: calc(var(--node-ic-touch) + var(--m3-spacing-xl));
+	}
+
+	.node-ic-snackbar {
+		bottom: calc(var(--node-ic-touch) + var(--m3-spacing-l));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.node-ic-app *,
+	.node-ic-app *::before,
+	.node-ic-app *::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+	}
+}
+
+/* ==========================================================================
+   Meta box — 投稿編集画面のサイドバー（常に狭いので幅に関係なく縦積み）
+   ========================================================================== */
+
+.node-ic-app--metabox {
+	max-width: none;
+	margin: 0;
+	padding: 0;
+	font-size: 13px;
+}
+
+.node-ic-app--metabox .node-ic-item {
+	grid-template-columns: 56px minmax(0, 1fr);
+	grid-template-areas:
+		"thumb body"
+		"actions actions";
+	padding: var(--m3-spacing-m);
+	row-gap: var(--m3-spacing-s);
+	background: var(--md-sys-color-surface-container);
+}
+
+.node-ic-app--metabox .node-ic-item__thumb {
+	grid-area: thumb;
+	width: 56px;
+	height: 56px;
+}
+
+.node-ic-app--metabox .node-ic-item__body {
+	grid-area: body;
+}
+
+.node-ic-app--metabox .node-ic-item__name {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	font-size: 0.85rem;
+}
+
+.node-ic-app--metabox .node-ic-item__actions {
+	grid-area: actions;
+	justify-content: flex-start;
+}
+
+/* サイドバー内でも押しやすいよう 48px を確保する */
+.node-ic-app--metabox .node-ic-btn {
+	min-height: var(--node-ic-touch);
+	flex: 1 1 auto;
+	padding-inline: var(--m3-spacing-m);
+}
+
+.node-ic-metabox__hint {
+	margin: var(--m3-spacing-s) 0 0;
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.8rem;
+	line-height: 1.6;
+}
+
+.node-ic-metabox__link {
+	margin: var(--m3-spacing-s) 0 0;
+	font-size: 0.8rem;
+}
+
+.node-ic-app--metabox .node-ic-metabox__link a {
+	color: var(--md-sys-color-accent-text);
+}

@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Connect
+ * Plugin Name:  Luna Connect
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  外部サービス連携基盤（ベータ版）。記事の公開・更新などのイベントを Webhook（Discord）へ通知する。Node テーマと連携。
- * Version:      1.3.7
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -36,7 +36,7 @@ if ( defined( 'NODE_CONNECT_VERSION' ) ) {
 	return;
 }
 
-define( 'NODE_CONNECT_VERSION', '1.3.7' );
+define( 'NODE_CONNECT_VERSION', '1.4.0' );
 define( 'NODE_CONNECT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NODE_CONNECT_MAX_WEBHOOKS', 3 );
 

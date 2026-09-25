@@ -405,11 +405,12 @@ function node_fetch_gemini_models_from_api( string $api_key, bool $force_refresh
 		'https://generativelanguage.googleapis.com/v1beta/models'
 	);
 
-	for ( $page = 0; $page < 20; $page++ ) {
+	// 管理画面の同期リクエストを最大30秒に抑える（1ページ100件）。
+	for ( $page = 0; $page < 3; $page++ ) {
 		$response = wp_remote_get(
 			$page_url,
 			array(
-				'timeout' => 20,
+				'timeout' => 10,
 				'headers' => array( 'Accept' => 'application/json' ),
 			)
 		);
