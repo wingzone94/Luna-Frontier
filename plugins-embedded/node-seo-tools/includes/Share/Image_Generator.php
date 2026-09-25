@@ -87,11 +87,12 @@ final class Image_Generator {
 	private function __construct() {
 		add_action( 'save_post', array( $this, 'generate_on_save' ), 10, 2 );
 		add_action( 'template_redirect', array( $this, 'maybe_regenerate_stale' ) );
+		add_action( 'node_seo_regenerate_stale_ogp', array( $this, 'regenerate_stale_in_background' ) );
 	}
 
 	/**
-	 * 旧ロジックで生成済みのOGP画像を、記事閲覧時に1回だけ作り直す。
-	 * 世代メタが現行と一致していれば何もしない。
+	 * 旧ロジックで生成済みのOGP画像の再生成を予約する。
+	 * 画像生成そのものは記事表示中に実行しない。
 	 */
 	public function maybe_regenerate_stale(): void {
 		if ( is_admin() || wp_doing_ajax() || ! is_singular( 'post' ) ) {
@@ -106,6 +107,23 @@ final class Image_Generator {
 			return;
 		}
 
+		if ( self::GENERATOR_VERSION === get_post_meta( $post_id, self::META_GENERATOR_VERSION, true ) ) {
+			return;
+		}
+
+		$args = array( $post_id );
+		if ( ! wp_next_scheduled( 'node_seo_regenerate_stale_ogp', $args ) ) {
+			wp_schedule_single_event( time() + 30, 'node_seo_regenerate_stale_ogp', $args );
+		}
+	}
+
+	/**
+	 * 再生成直前に条件を確認する。保存時生成で更新済みなら重複して描画しない。
+	 */
+	public function regenerate_stale_in_background( int $post_id ): void {
+		if ( ! get_option( 'node_ogp_enabled' ) || 'publish' !== get_post_status( $post_id ) ) {
+			return;
+		}
 		if ( self::GENERATOR_VERSION === get_post_meta( $post_id, self::META_GENERATOR_VERSION, true ) ) {
 			return;
 		}
