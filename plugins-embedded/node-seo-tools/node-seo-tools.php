@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Luna SEO Tools
  * Description: X / Discord 向けシェア画像（OGP）の自動生成とメタタグ出力。公式素材をベースに合成します。
- * Version: 1.4.0
+ * Version: 1.4.1
  * Author: Luminous Core Teams
  * Text Domain: node-seo-tools
  * Requires PHP: 8.0
@@ -14,13 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_SEO_TOOLS_VERSION', '1.4.0' );
+define( 'NODE_SEO_TOOLS_VERSION', '1.4.1' );
 define( 'NODE_SEO_TOOLS_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_seo_embedded_dir = get_template_directory() . '/plugins-embedded/node-seo-tools/';
 define(
 	'NODE_SEO_TOOLS_URL',
-	is_dir( $node_seo_embedded_dir )
+	is_dir( $node_seo_embedded_dir ) && realpath( $node_seo_embedded_dir ) === realpath( NODE_SEO_TOOLS_DIR )
 		? get_template_directory_uri() . '/plugins-embedded/node-seo-tools/'
 		: content_url( '/plugins/node-seo-tools/' )
 );
