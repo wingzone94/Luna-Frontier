@@ -282,7 +282,8 @@ function node_nintendo_store_lookup( string $url ): array {
 	$saved = node_store_saved_title( 'nintendo:' . $id );
 	$empty['title'] = $saved;
 
-	$transient_key = 'node_nintendo_soft_' . md5( $id );
+	// 旧検索方式の失敗キャッシュが残っていても、ID 照合の検索を実行する。
+	$transient_key = 'node_nintendo_soft_v2_' . md5( $id );
 	$cached        = get_transient( $transient_key );
 	if ( is_array( $cached ) ) {
 		node_store_save_title( 'nintendo:' . $id, (string) ( $cached['title'] ?? '' ) );
@@ -434,7 +435,7 @@ function node_microsoft_store_title( string $url ): string {
 	}
 
 	$id            = strtoupper( $matches[1] );
-	$transient_key = 'node_microsoft_product_' . md5( $id );
+	$transient_key = 'node_microsoft_product_v2_' . md5( $id );
 	$saved         = node_store_saved_title( 'microsoft:' . $id );
 	$cached        = get_transient( $transient_key );
 	if ( is_string( $cached ) && '' !== $cached ) {
@@ -490,7 +491,7 @@ function node_playstation_store_title( string $url ): string {
 	$locale        = strtolower( $matches[1] );
 	$type          = strtolower( $matches[2] );
 	$id            = strtoupper( $matches[3] );
-	$transient_key = 'node_playstation_' . $type . '_' . md5( $locale . ':' . $id );
+	$transient_key = 'node_playstation_v2_' . $type . '_' . md5( $locale . ':' . $id );
 	$saved         = node_store_saved_title( 'playstation:' . $locale . ':' . $type . ':' . $id );
 	$cached        = get_transient( $transient_key );
 	if ( is_string( $cached ) && '' !== $cached ) {

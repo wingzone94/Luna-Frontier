@@ -500,7 +500,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$calls    = 0;
 		$callback = $this->mock_blocked_response( $calls );
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 
 		$html = node_render_blogcard_block(
 			array(
@@ -517,7 +517,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'm3-blogcard--store-nintendo', $html );
 
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 	}
 
 	public function test_legacy_node_library_block_renders_identically(): void {
@@ -717,10 +717,10 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 			);
 		};
 		add_filter( 'pre_http_request', $callback, 10, 3 );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000027618' ) );
-		delete_transient( 'node_playstation_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ) );
-		delete_transient( 'node_playstation_concept_' . md5( 'ja-jp:10002684' ) );
-		delete_transient( 'node_microsoft_product_' . md5( '9NKX70BBCDRN' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000027618' ) );
+		delete_transient( 'node_playstation_v2_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ) );
+		delete_transient( 'node_playstation_v2_concept_' . md5( 'ja-jp:10002684' ) );
+		delete_transient( 'node_microsoft_product_v2_' . md5( '9NKX70BBCDRN' ) );
 
 		$this->assertSame( 'あつまれ どうぶつの森', node_nintendo_store_lookup( 'https://store-jp.nintendo.com/item/software/D70010000027618' )['title'] );
 		$this->assertSame( 'Minecraft', node_playstation_store_title( 'https://store.playstation.com/ja-jp/product/JP0127-CUSA00283_00-JAPAN00000000001' ) );
@@ -730,17 +730,17 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$this->assertCount( 4, $requests );
 
 		remove_filter( 'pre_http_request', $callback, 10 );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000027618' ) );
-		delete_transient( 'node_playstation_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ) );
-		delete_transient( 'node_playstation_concept_' . md5( 'ja-jp:10002684' ) );
-		delete_transient( 'node_microsoft_product_' . md5( '9NKX70BBCDRN' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000027618' ) );
+		delete_transient( 'node_playstation_v2_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ) );
+		delete_transient( 'node_playstation_v2_concept_' . md5( 'ja-jp:10002684' ) );
+		delete_transient( 'node_microsoft_product_v2_' . md5( '9NKX70BBCDRN' ) );
 	}
 
 	public function test_verified_store_titles_survive_temporary_catalog_failures(): void {
 		$cases = array(
-			array( 'nintendo:D70010000027618', 'node_nintendo_soft_' . md5( 'D70010000027618' ), 'あつまれ どうぶつの森' ),
-			array( 'playstation:ja-jp:product:JP0127-CUSA00283_00-JAPAN00000000001', 'node_playstation_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ), 'Minecraft' ),
-			array( 'microsoft:9NKX70BBCDRN', 'node_microsoft_product_' . md5( '9NKX70BBCDRN' ), 'Forza Horizon 5 標準版' ),
+			array( 'nintendo:D70010000027618', 'node_nintendo_soft_v2_' . md5( 'D70010000027618' ), 'あつまれ どうぶつの森' ),
+			array( 'playstation:ja-jp:product:JP0127-CUSA00283_00-JAPAN00000000001', 'node_playstation_v2_product_' . md5( 'ja-jp:JP0127-CUSA00283_00-JAPAN00000000001' ), 'Minecraft' ),
+			array( 'microsoft:9NKX70BBCDRN', 'node_microsoft_product_v2_' . md5( '9NKX70BBCDRN' ), 'Forza Horizon 5 標準版' ),
 		);
 		foreach ( $cases as list( $key, $transient, $title ) ) {
 			update_option( 'node_store_title_' . md5( $key ), $title, false );
@@ -774,7 +774,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 			);
 		};
 		delete_option( 'node_store_title_' . md5( 'microsoft:' . $id ) );
-		delete_transient( 'node_microsoft_product_' . md5( $id ) );
+		delete_transient( 'node_microsoft_product_v2_' . md5( $id ) );
 		add_filter( 'pre_http_request', $callback, 10, 3 );
 
 		$this->assertSame( 'Forza Horizon 5', node_microsoft_store_title( 'https://apps.microsoft.com/detail/' . $id ) );
@@ -782,7 +782,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 
 		remove_filter( 'pre_http_request', $callback, 10 );
 		delete_option( 'node_store_title_' . md5( 'microsoft:' . $id ) );
-		delete_transient( 'node_microsoft_product_' . md5( $id ) );
+		delete_transient( 'node_microsoft_product_v2_' . md5( $id ) );
 	}
 
 	public function test_nintendo_product_id_url_uses_search_lookup_for_title(): void {
@@ -803,7 +803,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 
 		$callback = $this->mock_nintendo_search( $payload, $calls );
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 
 		$html = node_render_blogcard( $url );
 
@@ -819,7 +819,32 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$this->assertSame( 1, $calls );
 
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
+	}
+
+	public function test_nintendo_lookup_ignores_old_failure_cache(): void {
+		$id      = 'D70010000027618';
+		$url     = 'https://store-jp.nintendo.com/item/software/' . $id;
+		$calls   = 0;
+		$payload = array(
+			'result' => array(
+				'items' => array(
+					array( 'id' => '70010000027618', 'title' => 'あつまれ どうぶつの森' ),
+				),
+			),
+		);
+		set_transient( 'node_nintendo_soft_' . md5( $id ), node_blogcard_fetch_failure_marker(), 6 * HOUR_IN_SECONDS );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( $id ) );
+		$callback = $this->mock_nintendo_search( $payload, $calls );
+
+		$result = node_nintendo_store_lookup( $url );
+
+		remove_filter( 'pre_http_request', $callback, 10 );
+		$this->assertSame( 'あつまれ どうぶつの森', $result['title'] );
+		$this->assertSame( 1, $calls );
+		delete_transient( 'node_nintendo_soft_' . md5( $id ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( $id ) );
+		delete_option( 'node_store_title_' . md5( 'nintendo:' . $id ) );
 	}
 
 	public function test_nintendo_lookup_ignores_items_with_different_id(): void {
@@ -839,7 +864,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 
 		$callback = $this->mock_nintendo_search( $payload, $calls );
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 
 		$html = node_render_blogcard( $url );
 
@@ -850,7 +875,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'm3-blogcard--store-nintendo', $html );
 
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 	}
 
 	public function test_nintendo_lookup_survives_unexpected_payload(): void {
@@ -858,7 +883,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$calls    = 0;
 		$callback = $this->mock_nintendo_search( array( 'unexpected' => 'shape' ), $calls );
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 
 		$html = node_render_blogcard( $url );
 
@@ -870,7 +895,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'm3-blogcard__fallback', $html );
 
 		delete_transient( 'node_ogp_' . md5( $url ) );
-		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
+		delete_transient( 'node_nintendo_soft_v2_' . md5( 'D70010000000964' ) );
 	}
 
 	public function test_nintendo_lookup_is_skipped_when_title_comes_from_url(): void {
