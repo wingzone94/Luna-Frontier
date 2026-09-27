@@ -1,6 +1,6 @@
 <?php
 /**
- * Node SEO Tools bootstrap.
+ * Luna SEO Tools bootstrap.
  *
  * @package Node_SEO_Tools
  */

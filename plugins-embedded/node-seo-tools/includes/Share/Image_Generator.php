@@ -131,7 +131,7 @@ final class Image_Generator {
 		try {
 			$this->generate_ogp( $post_id );
 		} catch ( \Exception $e ) {
-			error_log( 'Node SEO Tools OGP regenerate error: ' . $e->getMessage() );
+			error_log( 'Luna SEO Tools OGP regenerate error: ' . $e->getMessage() );
 		}
 	}
 
@@ -152,13 +152,13 @@ final class Image_Generator {
 		try {
 			$this->generate_ogp( $post_id );
 		} catch ( \Exception $e ) {
-			error_log( 'Node SEO Tools OGP error: ' . $e->getMessage() );
+			error_log( 'Luna SEO Tools OGP error: ' . $e->getMessage() );
 		}
 	}
 
 	public function generate_ogp( int $post_id ): void {
 		if ( ! function_exists( 'imagecreatetruecolor' ) ) {
-			error_log( 'Node SEO Tools: GD is not available. OGP generation skipped.' );
+			error_log( 'Luna SEO Tools: GD is not available. OGP generation skipped.' );
 			return;
 		}
 
@@ -295,7 +295,7 @@ final class Image_Generator {
 	 */
 	private function apply_title( $image, string $title, string $font_jp, string $font_latin, int $width, int $height ): bool {
 		if ( '' === $font_jp || ! Asset_Syncer::is_valid_font( $font_jp ) ) {
-			error_log( 'Node SEO Tools: no valid Japanese font resolved. Title skipped.' );
+			error_log( 'Luna SEO Tools: no valid Japanese font resolved. Title skipped.' );
 			return false;
 		}
 		if ( '' === $font_latin || ! Asset_Syncer::is_valid_font( $font_latin ) ) {
@@ -304,7 +304,7 @@ final class Image_Generator {
 		}
 
 		if ( ! function_exists( 'imagettftext' ) ) {
-			error_log( 'Node SEO Tools: FreeType is not available. Title skipped.' );
+			error_log( 'Luna SEO Tools: FreeType is not available. Title skipped.' );
 			return false;
 		}
 
@@ -359,7 +359,7 @@ final class Image_Generator {
 
 		$inter = Asset_Syncer::resolve_inter_font();
 		if ( '' === $inter ) {
-			error_log( 'Node SEO Tools: Inter font unavailable for brand fallback.' );
+			error_log( 'Luna SEO Tools: Inter font unavailable for brand fallback.' );
 			return;
 		}
 

@@ -143,7 +143,7 @@ final class Asset_Syncer {
 			return $cached;
 		}
 
-		error_log( 'Node SEO Tools: no valid font available for ' . basename( $cached ) . '.' );
+		error_log( 'Luna SEO Tools: no valid font available for ' . basename( $cached ) . '.' );
 		return '';
 	}
 
@@ -162,13 +162,13 @@ final class Asset_Syncer {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'Node SEO Tools: download failed for ' . $url . ' — ' . $response->get_error_message() );
+			error_log( 'Luna SEO Tools: download failed for ' . $url . ' — ' . $response->get_error_message() );
 			return false;
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $code < 200 || $code >= 300 ) {
-			error_log( 'Node SEO Tools: download HTTP ' . $code . ' for ' . $url );
+			error_log( 'Luna SEO Tools: download HTTP ' . $code . ' for ' . $url );
 			return false;
 		}
 
@@ -178,7 +178,7 @@ final class Asset_Syncer {
 		}
 
 		if ( self::looks_like_html( $body ) ) {
-			error_log( 'Node SEO Tools: rejected HTML response for ' . $url );
+			error_log( 'Luna SEO Tools: rejected HTML response for ' . $url );
 			return false;
 		}
 
