@@ -722,6 +722,18 @@ function node_render_blogcard( string $url, bool $brand_override = false, array 
 		} else {
 			$ogp['store']     = $store['slug'];
 			$ogp['site_name'] = $store['name'];
+			// 商品 ID と一致したストアの題名を OGP より優先する。
+			$verified_title = '';
+			if ( 'nintendo' === $store['slug'] ) {
+				$verified_title = node_nintendo_store_lookup( $url )['title'];
+			} elseif ( 'playstation' === $store['slug'] ) {
+				$verified_title = node_playstation_store_title( $url );
+			} elseif ( 'xbox' === $store['slug'] ) {
+				$verified_title = node_microsoft_store_title( $url );
+			}
+			if ( '' !== $verified_title ) {
+				$ogp['title'] = $verified_title;
+			}
 		}
 	}
 
