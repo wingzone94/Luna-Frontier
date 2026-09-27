@@ -93,6 +93,29 @@ function node_store_host_matches( string $host, array $domains ): bool {
 }
 
 /**
+ * 公式照会が一時的に失敗したとき、過去に ID 照合済みの題名を使う。
+ *
+ * @param string $key ストアと商品 ID を含むキー。
+ * @return string
+ */
+function node_store_saved_title( string $key ): string {
+	return trim( (string) get_option( 'node_store_title_' . md5( $key ), '' ) );
+}
+
+/**
+ * ID 照合済みの商品名を障害時用に保存する。
+ *
+ * @param string $key   ストアと商品 ID を含むキー。
+ * @param string $title 商品名。
+ * @return void
+ */
+function node_store_save_title( string $key, string $title ): void {
+	if ( '' !== trim( $title ) ) {
+		update_option( 'node_store_title_' . md5( $key ), $title, false );
+	}
+}
+
+/**
  * ストア URL のスラッグから題名を組み立てる（メタ取得に失敗したときのフォールバック）。
  *
  * 例: /ja-JP/games/store/forza-horizon-5/9NKX70BBCDRN → Forza Horizon 5
@@ -256,10 +279,14 @@ function node_nintendo_store_lookup( string $url ): array {
 	if ( '' === $id ) {
 		return $empty;
 	}
+	$saved = node_store_saved_title( 'nintendo:' . $id );
+	$empty['title'] = $saved;
 
-	$transient_key = 'node_nintendo_soft_' . md5( $id );
+	// 旧検索方式の失敗キャッシュが残っていても、ID 照合の検索を実行する。
+	$transient_key = 'node_nintendo_soft_v2_' . md5( $id );
 	$cached        = get_transient( $transient_key );
 	if ( is_array( $cached ) ) {
+		node_store_save_title( 'nintendo:' . $id, (string) ( $cached['title'] ?? '' ) );
 		return $cached;
 	}
 	if ( node_blogcard_fetch_failure_marker() === $cached ) {
@@ -269,7 +296,9 @@ function node_nintendo_store_lookup( string $url ): array {
 	$response = wp_safe_remote_get(
 		add_query_arg(
 			array(
-				'q'     => $id,
+				// q は商品 ID を検索対象に含めない。id フィルターで正確に照合する。
+				'q'     => '',
+				'fq'    => 'id:' . ltrim( $id, 'D' ),
 				'limit' => 5,
 			),
 			'https://search.nintendo.jp/nintendo_soft/search.json'
@@ -294,8 +323,11 @@ function node_nintendo_store_lookup( string $url ): array {
 
 	$result = node_nintendo_pick_item( $data, $id );
 	set_transient( $transient_key, '' !== $result['title'] ? $result : node_blogcard_fetch_failure_marker(), '' !== $result['title'] ? WEEK_IN_SECONDS : 6 * HOUR_IN_SECONDS );
+	if ( '' !== $result['title'] ) {
+		node_store_save_title( 'nintendo:' . $id, $result['title'] );
+	}
 
-	return $result;
+	return '' !== $result['title'] ? $result : $empty;
 }
 
 /**
@@ -391,6 +423,126 @@ function node_nintendo_item_image( array $item ): string {
 }
 
 /**
+ * Microsoft の公開商品カタログから、URL 内の Store ID に一致する題名を取得する。
+ *
+ * @param string $url Xbox / Microsoft Store の商品 URL。
+ * @return string 題名。取得できなければ空文字。
+ */
+function node_microsoft_store_title( string $url ): string {
+	$path = (string) parse_url( $url, PHP_URL_PATH );
+	if ( ! preg_match( '#/(9[A-Z0-9]{11})(?:/|$)#i', $path, $matches ) ) {
+		return '';
+	}
+
+	$id            = strtoupper( $matches[1] );
+	$transient_key = 'node_microsoft_product_v2_' . md5( $id );
+	$saved         = node_store_saved_title( 'microsoft:' . $id );
+	$cached        = get_transient( $transient_key );
+	if ( is_string( $cached ) && '' !== $cached ) {
+		if ( node_blogcard_fetch_failure_marker() === $cached ) {
+			return $saved;
+		}
+		node_store_save_title( 'microsoft:' . $id, $cached );
+		return $cached;
+	}
+
+	// 日本で未配信の商品は JP カタログに無いことがあるため、US も照会する。
+	foreach ( array( array( 'JP', 'ja-JP' ), array( 'US', 'en-US' ) ) as list( $market, $language ) ) {
+		$response = wp_safe_remote_get(
+			'https://displaycatalog.mp.microsoft.com/v7.0/products/' . rawurlencode( $id ) . '?fieldsTemplate=Details&market=' . $market . '&languages=' . $language,
+			array( 'timeout' => 8 )
+		);
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			continue;
+		}
+
+		$data    = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$product = is_array( $data ) ? ( $data['Product'] ?? array() ) : array();
+		if ( ! is_array( $product ) || $id !== strtoupper( (string) ( $product['ProductId'] ?? '' ) ) ) {
+			continue;
+		}
+
+		foreach ( $product['LocalizedProperties'] ?? array() as $properties ) {
+			$title = is_array( $properties ) ? trim( (string) ( $properties['ProductTitle'] ?? '' ) ) : '';
+			if ( '' !== $title ) {
+				set_transient( $transient_key, $title, WEEK_IN_SECONDS );
+				node_store_save_title( 'microsoft:' . $id, $title );
+				return $title;
+			}
+		}
+	}
+
+	set_transient( $transient_key, node_blogcard_fetch_failure_marker(), 6 * HOUR_IN_SECONDS );
+	return $saved;
+}
+
+/**
+ * PlayStation の公開ストア照会から、商品 ID に一致する題名を取得する。
+ *
+ * @param string $url PlayStation Store の商品 URL。
+ * @return string 題名。取得できなければ空文字。
+ */
+function node_playstation_store_title( string $url ): string {
+	$path = (string) parse_url( $url, PHP_URL_PATH );
+	if ( ! preg_match( '#^/([a-z]{2}-[a-z]{2})/(product|concept)/([A-Z0-9_-]+)(?:/|$)#i', $path, $matches ) ) {
+		return '';
+	}
+
+	$locale        = strtolower( $matches[1] );
+	$type          = strtolower( $matches[2] );
+	$id            = strtoupper( $matches[3] );
+	$transient_key = 'node_playstation_v2_' . $type . '_' . md5( $locale . ':' . $id );
+	$saved         = node_store_saved_title( 'playstation:' . $locale . ':' . $type . ':' . $id );
+	$cached        = get_transient( $transient_key );
+	if ( is_string( $cached ) && '' !== $cached ) {
+		if ( node_blogcard_fetch_failure_marker() === $cached ) {
+			return $saved;
+		}
+		node_store_save_title( 'playstation:' . $locale . ':' . $type . ':' . $id, $cached );
+		return $cached;
+	}
+
+	$query = array(
+		'operationName' => 'concept' === $type ? 'metGetConceptById' : 'metGetProductById',
+		'variables'     => wp_json_encode( array( 'concept' === $type ? 'conceptId' : 'productId' => $id ) ),
+		'extensions'    => wp_json_encode(
+			array(
+				'persistedQuery' => array(
+					'version'    => 1,
+					'sha256Hash' => 'concept' === $type
+						? 'cc90404ac049d935afbd9968aef523da2b6723abfb9d586e5f77ebf7c5289006'
+						: 'a128042177bd93dd831164103d53b73ef790d56f51dae647064cb8f9d9fc9d1a',
+				),
+			)
+		),
+	);
+	$response = wp_safe_remote_get(
+		add_query_arg( $query, 'https://web.np.playstation.com/api/graphql/v1/op' ),
+		array(
+			'timeout' => 8,
+			'headers' => array(
+				'x-psn-store-locale-override' => $locale,
+				'content-type'                => 'application/json',
+			),
+		)
+	);
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( $transient_key, node_blogcard_fetch_failure_marker(), 6 * HOUR_IN_SECONDS );
+		return $saved;
+	}
+
+	$data    = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+	$product = is_array( $data ) ? ( $data['data'][ 'concept' === $type ? 'conceptRetrieve' : 'productRetrieve' ] ?? array() ) : array();
+	$title   = is_array( $product ) && $id === strtoupper( (string) ( $product['id'] ?? '' ) )
+		? trim( (string) ( $product['name'] ?? '' ) ) : '';
+	set_transient( $transient_key, '' !== $title ? $title : node_blogcard_fetch_failure_marker(), '' !== $title ? WEEK_IN_SECONDS : 6 * HOUR_IN_SECONDS );
+	if ( '' !== $title ) {
+		node_store_save_title( 'playstation:' . $locale . ':' . $type . ':' . $id, $title );
+	}
+	return '' !== $title ? $title : $saved;
+}
+
+/**
  * ストア URL 用のフォールバック OGP 情報を組み立てる。
  *
  * @param string                                          $url      ストア URL。
@@ -407,8 +559,22 @@ function node_store_fallback_ogp( string $url, array $provider ): array {
 		$title  = $lookup['title'];
 		$image  = $lookup['image'];
 	}
+	if ( 'xbox' === $provider['slug'] ) {
+		$catalog_title = node_microsoft_store_title( $url );
+		if ( '' !== $catalog_title ) {
+			$title = $catalog_title;
+		}
+	}
+	if ( 'playstation' === $provider['slug'] ) {
+		$api_title = node_playstation_store_title( $url );
+		if ( '' !== $api_title ) {
+			$title = $api_title;
+		}
+	}
 
 	return array(
+		// 商品名を復元できない商品 ID だけの URL（store-jp.nintendo.com/item/software/<ID> 等）でも
+		// 店名を題名にしてカードを出す。1.2.6 の表示に合わせる。
 		'title'       => '' !== $title ? $title : $provider['name'],
 		'description' => '',
 		'image'       => $image,
