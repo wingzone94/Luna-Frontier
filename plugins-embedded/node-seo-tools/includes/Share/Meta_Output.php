@@ -89,6 +89,7 @@ final class Meta_Output {
 		}
 
 		$title          = get_the_title( $post_id );
+		$image_alt      = has_post_thumbnail( $post_id ) ? $title : 'Luminous Core';
 		$desc           = $this->build_share_description( $post_id );
 		$url            = get_permalink( $post_id );
 		$twitter_site   = (string) apply_filters( 'node_seo_twitter_site', '@Luminous_Core_' );
@@ -112,7 +113,7 @@ final class Meta_Output {
 		echo '<meta property="og:image:width" content="' . esc_attr( (string) $image['width'] ) . '" />' . "\n";
 		echo '<meta property="og:image:height" content="' . esc_attr( (string) $image['height'] ) . '" />' . "\n";
 		echo '<meta property="og:image:type" content="' . esc_attr( $image['type'] ) . '" />' . "\n";
-		echo '<meta property="og:image:alt" content="' . esc_attr( $title ) . '" />' . "\n";
+		echo '<meta property="og:image:alt" content="' . esc_attr( $image_alt ) . '" />' . "\n";
 		echo '<meta name="twitter:card" content="' . esc_attr( $card_type ) . '" />' . "\n";
 		echo '<meta property="twitter:card" content="' . esc_attr( $card_type ) . '" />' . "\n";
 		if ( '' !== $twitter_site ) {
@@ -127,7 +128,7 @@ final class Meta_Output {
 		}
 		echo '<meta name="twitter:image" content="' . esc_url( $ogp_url ) . '" />' . "\n";
 		echo '<meta name="twitter:image:src" content="' . esc_url( $ogp_url ) . '" />' . "\n";
-		echo '<meta name="twitter:image:alt" content="' . esc_attr( $title ) . '" />' . "\n";
+		echo '<meta name="twitter:image:alt" content="' . esc_attr( $image_alt ) . '" />' . "\n";
 	}
 
 	/**
