@@ -39,6 +39,8 @@ class Node_SEO_OGP_Featured_Test extends WP_UnitTestCase {
 		$html = $this->render_meta();
 		$this->assertStringContainsString( 'content="https://example.org/ogp/generated.png"', $html );
 		$this->assertStringContainsString( 'property="og:image:type" content="image/png"', $html );
+		$this->assertStringContainsString( 'property="og:image:alt" content="Luminous Core"', $html );
+		$this->assertStringContainsString( 'property="og:title" content="', $html );
 	}
 
 	public function test_toggle_on_uses_featured_image_dimensions_and_type(): void {

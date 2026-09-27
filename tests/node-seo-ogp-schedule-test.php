@@ -17,7 +17,21 @@ class Node_SEO_OGP_Schedule_Test extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		wp_clear_scheduled_hook( 'node_seo_regenerate_stale_ogp', array( $this->post_id ) );
+		$uploads = wp_upload_dir();
+		$generated = trailingslashit( $uploads['basedir'] ) . 'ogp/ogp-' . $this->post_id . '.png';
+		if ( is_file( $generated ) ) {
+			unlink( $generated );
+		}
 		parent::tear_down();
+	}
+
+	public function test_post_without_featured_image_uses_brand_only_fallback(): void {
+		if ( ! function_exists( 'imagecreatetruecolor' ) ) {
+			$this->markTestSkipped( 'GD is unavailable' );
+		}
+		\Node\SEO\Tools\Share\Image_Generator::instance()->generate_ogp( $this->post_id );
+		$this->assertSame( '1', get_post_meta( $this->post_id, '_node_ogp_brand_fallback', true ) );
+		$this->assertSame( \Node\SEO\Tools\Share\Image_Generator::GENERATOR_VERSION, get_post_meta( $this->post_id, '_node_ogp_generator_version', true ) );
 	}
 
 	public function test_article_request_schedules_one_regeneration_without_updating_meta(): void {
