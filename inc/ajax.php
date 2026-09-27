@@ -19,7 +19,7 @@ add_action(
 		}
 
 		$local_version = node_get_theme_version();
-		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/master/style.css';
+		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/luna-frontier-2.0-skyalow/style.css';
 
 		$response = wp_remote_get( $remote_url );
 		if ( is_wp_error( $response ) ) {
@@ -27,20 +27,20 @@ add_action(
 		}
 
 		$body = wp_remote_retrieve_body( $response );
-		preg_match( '/Version:\s*([\d\.]+)/i', $body, $matches );
+		preg_match( '/^Version:\s*(\S+)/mi', $body, $matches );
 		$remote_version = isset( $matches[1] ) ? $matches[1] : '0.0.0';
 
 		$update_available = version_compare( $remote_version, $local_version, '>' );
 		$install_available = version_compare( $remote_version, $local_version, '>=' );
 
-		// 同日リリースはバージョン据え置きで node.zip だけ更新されるため、
+		// 同じPreview版でも luna.zip のビルドが更新されるため、
 		// バージョンとは独立に build.json のビルド識別子も比較する。
 		// ?cb= は raw URL の CDN キャッシュ回避。
 		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;
 		$local_build      = $local_build_info['build_id'] ?? null;
 
 		$remote_build   = null;
-		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/master/build.json?cb=' . time() );
+		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/luna-frontier-2.0-skyalow/build.json?cb=' . time() );
 		if ( ! is_wp_error( $build_response ) && 200 === wp_remote_retrieve_response_code( $build_response ) ) {
 			$build_data = json_decode( wp_remote_retrieve_body( $build_response ), true );
 			if ( is_array( $build_data ) && ! empty( $build_data['build_id'] ) ) {
@@ -76,7 +76,7 @@ add_action(
 			wp_send_json_error( 'Permission denied' );
 		}
 
-		$zip_url = 'https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/master/node.zip';
+		$zip_url = 'https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/luna-frontier-2.0-skyalow/luna.zip';
 
 		error_log( 'Luminous Update: Starting update from ' . $zip_url );
 
@@ -114,8 +114,8 @@ add_action(
 		$source_dir = node_resolve_theme_update_source_dir( $temp_extract_dir );
 		if ( null === $source_dir ) {
 			$wp_filesystem->delete( $temp_extract_dir, true );
-			error_log( 'Luminous Update: Could not locate Node theme folder inside ZIP' );
-			wp_send_json_error( 'ZIP 内に Node テーマフォルダが見つかりませんでした。' );
+			error_log( 'Luminous Update: Could not locate Luna Frontier theme folder inside ZIP' );
+			wp_send_json_error( 'ZIP 内に Luna Frontier テーマフォルダが見つかりませんでした。' );
 		}
 
 		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;

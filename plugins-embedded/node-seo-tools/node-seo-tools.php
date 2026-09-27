@@ -20,7 +20,7 @@ define( 'NODE_SEO_TOOLS_DIR', plugin_dir_path( __FILE__ ) );
 $node_seo_embedded_dir = get_template_directory() . '/plugins-embedded/node-seo-tools/';
 define(
 	'NODE_SEO_TOOLS_URL',
-	is_dir( $node_seo_embedded_dir )
+	is_dir( $node_seo_embedded_dir ) && realpath( $node_seo_embedded_dir ) === realpath( NODE_SEO_TOOLS_DIR )
 		? get_template_directory_uri() . '/plugins-embedded/node-seo-tools/'
 		: content_url( '/plugins/node-seo-tools/' )
 );

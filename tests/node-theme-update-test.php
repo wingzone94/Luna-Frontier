@@ -40,7 +40,7 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 	private function create_package( string $version, string $build_id ): string {
 		$source = $this->root . '/package';
 		wp_mkdir_p( $source );
-		file_put_contents( $source . '/style.css', "/*\nTheme Name: Node\nVersion: {$version}\n*/\n" );
+		file_put_contents( $source . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: {$version}\n*/\n" );
 		file_put_contents( $source . '/index.php', '<?php' );
 		file_put_contents( $source . '/functions.php', '<?php' );
 		file_put_contents( $source . '/build.json', wp_json_encode( array( 'version' => $version, 'build_id' => $build_id ) ) );
@@ -48,14 +48,22 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 	}
 
 	public function test_package_validation_rejects_older_and_same_build(): void {
-		$source = $this->create_package( '1.4.0', 'new-build' );
-		$this->assertWPError( node_validate_theme_update_package( $source, '1.4.1', 'old-build' ) );
-		$this->assertWPError( node_validate_theme_update_package( $source, '1.4.0', 'new-build' ) );
-		$this->assertSame( 'new-build', node_validate_theme_update_package( $source, '1.4.0', 'old-build' )['build_id'] );
+		$source = $this->create_package( '2.0.0-preview.6', 'new-build' );
+		$this->assertWPError( node_validate_theme_update_package( $source, '2.0.0-preview.7', 'old-build' ) );
+		$this->assertWPError( node_validate_theme_update_package( $source, '2.0.0-preview.6', 'new-build' ) );
+		$this->assertSame( 'new-build', node_validate_theme_update_package( $source, '2.0.0-preview.6', 'old-build' )['build_id'] );
+	}
+
+	public function test_luna_zip_root_is_resolved(): void {
+		$package = $this->create_package( '2.0.0-preview.6', 'preview-build' );
+		$archive = $this->root . '/archive';
+		wp_mkdir_p( $archive );
+		$this->assertTrue( rename( $package, $archive . '/luna-frontier' ) );
+		$this->assertSame( trailingslashit( $archive . '/luna-frontier' ), node_resolve_theme_update_source_dir( $archive ) );
 	}
 
 	public function test_swap_removes_obsolete_files_after_success(): void {
-		$source = $this->create_package( '1.4.1', 'new-build' );
+		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
 		$theme  = $this->root . '/Node';
 		wp_mkdir_p( $theme );
 		file_put_contents( $theme . '/obsolete.php', '<?php' );
@@ -67,7 +75,7 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 	}
 
 	public function test_failed_switch_restores_original_theme(): void {
-		$source = $this->create_package( '1.4.1', 'new-build' );
+		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
 		$theme  = $this->root . '/Node';
 		wp_mkdir_p( $theme );
 		file_put_contents( $theme . '/original.php', '<?php' );

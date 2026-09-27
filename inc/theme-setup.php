@@ -62,13 +62,14 @@ function node_is_tablet_ua(): bool {
 }
 
 /**
- * node.zip 展開後のコピー元ディレクトリを解決する
+ * luna.zip 展開後のコピー元ディレクトリを解決する
  *
  * @param string $temp_extract_dir 一時展開先。
  * @return string|null 末尾スラッシュ付きパス。見つからない場合は null。
  */
 function node_resolve_theme_update_source_dir( string $temp_extract_dir ): ?string {
 	$candidates = array(
+		$temp_extract_dir . '/luna-frontier',
 		$temp_extract_dir . '/Node',
 		$temp_extract_dir . '/node',
 		$temp_extract_dir . '/node-theme-production',
@@ -102,7 +103,7 @@ function node_resolve_theme_update_source_dir( string $temp_extract_dir ): ?stri
 }
 
 /**
- * テーマ更新のコピー元として style.css が Node テーマか検証
+ * テーマ更新のコピー元として style.css が Luna Frontier テーマか検証
  *
  * @param string $dir 検査対象ディレクトリ。
  */
@@ -120,7 +121,7 @@ function node_is_valid_theme_update_source( string $dir ): bool {
 		)
 	);
 
-	return isset( $data['Theme Name'] ) && 'Node' === $data['Theme Name'];
+	return isset( $data['Theme Name'] ) && 'Luna Frontier' === $data['Theme Name'];
 }
 
 /**
@@ -130,7 +131,7 @@ function node_is_valid_theme_update_source( string $dir ): bool {
  */
 function node_validate_theme_update_package( string $source_dir, string $local_version, ?string $local_build ): array|WP_Error {
 	if ( ! node_is_valid_theme_update_source( $source_dir ) || ! is_file( $source_dir . '/build.json' ) ) {
-		return new WP_Error( 'invalid_theme_package', 'Node テーマの必須ファイルがZIPにありません。' );
+		return new WP_Error( 'invalid_theme_package', 'Luna Frontier テーマの必須ファイルがZIPにありません。' );
 	}
 
 	$headers = get_file_data( $source_dir . '/style.css', array( 'Version' => 'Version' ) );

@@ -366,13 +366,13 @@ function node_render_settings_page() {
                 <h2 style="margin-top: 0; color: #FF9900; display: flex; align-items: center; gap: 10px;">
                     <span class="dashicons dashicons-update"></span> テーマのアップデート
                 </h2>
-                <p class="description">GitHub から最新の `node.zip` を取得して自動インストールします。</p>
+                <p class="description">Luna Frontier の配布ブランチから最新の <code>luna.zip</code> を取得して自動インストールします。</p>
                 
                 <div id="luminous-update-info" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <p>現在のバージョン: <strong>v<?php echo esc_html( node_get_theme_version() ); ?></strong></p>
                     <?php $node_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null; ?>
                     <p>現在のビルド: <strong><?php echo esc_html( $node_build_info['build_id'] ?? '不明（build.json なし）' ); ?></strong></p>
-                    <p class="description">フッター表示（v<?php echo esc_html( node_get_theme_version() ); ?>）と同じ style.css の Version を参照しています。同一バージョンのまま node.zip が更新された場合はビルド識別子で検知します。</p>
+                    <p class="description">フッター表示（v<?php echo esc_html( node_get_theme_version() ); ?>）と同じ style.css の Version を参照しています。同一バージョンのまま luna.zip が更新された場合はビルド識別子で検知します。</p>
                     <div id="update-check-result"></div>
                 </div>
 

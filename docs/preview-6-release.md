@@ -9,11 +9,11 @@ Previewの単一記事要約はLuna固有のテンプレートで表示されま
 ## 配布物と導入
 
 - `node.zip`: Node 1.4.0の親テーマビルド（Build ID `20260925T075504Z-8a77b46`）。
-- `luna-frontier.zip`: Luna Frontier `2.0.0-preview.6`。ZIP内ルートは `luna-frontier/`。
-- `production_plugins/*.zip`: 既存の独立配布プラグイン10本。プラグインslugを保ったままLuna表示名・1.4.0に同期。
+- `luna.zip`: Luna Frontier `2.0.0-preview.6`。ZIP内ルートは `luna-frontier/`。
+- `production_plugins/*.zip`: 独立配布プラグイン11本。SEO Toolsの単体ZIPを追加し、プラグインslugを保ったままLuna表示名・1.4.0に同期。
 - テーマZIPではSEO Tools内の重複フォントを除外し、テーマ側の `assets/ttf/NotoSansJP-VF.ttf` を参照。
 - 配布先候補は `luna-frontier-2.0-skyalow`、タグ候補は `luna-frontier-v2.0.0-preview.6`。レビューと採用後に公開します。
-- Preview版はNode安定版の `master` 更新チャンネルと分離。
+- Preview版はNode安定版の `master` 更新チャンネルと分離。Preview 6以降の設定画面は `luna-frontier-2.0-skyalow` の `style.css` と `build.json` で更新を判定し、同ブランチの `luna.zip` を取得する。
 
 ## 検証
 

@@ -13,7 +13,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 	}
 
 	private function theme_zip(): string {
-		return $this->repo_dir() . '/luna-frontier.zip';
+		return $this->repo_dir() . '/luna.zip';
 	}
 
 	private function contents( string $archive, string $path ): string {
@@ -77,7 +77,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 
 	public function test_standalone_plugin_archives_keep_slug_and_luna_140_header(): void {
 		$archives = glob( $this->repo_dir() . '/production_plugins/*.zip' ) ?: [];
-		$this->assertCount( 10, $archives );
+		$this->assertCount( 11, $archives );
 		foreach ( $archives as $archive ) {
 			$zip = new ZipArchive();
 			$this->assertTrue( true === $zip->open( $archive ), 'ZIPを開けません: ' . basename( $archive ) );
