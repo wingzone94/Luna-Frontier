@@ -3,12 +3,13 @@ Theme Name: Luna Frontier
 Theme URI: https://luminous-core.net/
 Author: Luminous Core Teams
 Author URI: https://luminous-core.net/
-Description: Luna Frontier — Preview 6 for Luminous Core
+Description: Luna Frontier for Luminous Core. Independent theme descended from Node 1.x. Not a child theme.
 Version: 2.0.0-preview.6
 Text Domain: node
 */
 
-/* 
-  Vite/SCSS compiled styles are imported in the theme's enqueue functions, 
+/*
+  Vite/SCSS compiled styles are imported in the theme's enqueue functions,
   but WordPress still requires this style.css for theme metadata.
+  Do not add a Template header. Luna Frontier does not use a parent theme.
 */

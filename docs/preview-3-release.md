@@ -1,6 +1,8 @@
 # Luna Frontier 2.0 Preview 3
 
-Preview 3は、Luna Frontierのデザイン更新と、それを動かすNode本体・同梱プラグインの変更をまとめたテスト向け配布です。
+> **記録:** この文書は Preview 3 当時の配布記録です。現行の Luna Frontier は独立テーマであり、`Template: node` は使いません。
+
+Preview 3は、Luna Frontierのデザイン更新と、それを動かすテーマ本体・同梱プラグインの変更をまとめたテスト向け配布です。
 
 ## 主な変更
 
@@ -16,7 +18,7 @@ Preview 3は、Luna Frontierのデザイン更新と、それを動かすNode本
 - `production_plugins/node-ai-tools.zip`: Node AI Tools単体配布。
 - `production_plugins/node-image-compressor.zip`: Node Image Compressor単体配布。
 
-Lunaは現時点では `Template: node` に依存します。スタンドアロン化はこの版に含みません。Nodeのファイルは `wp-content/themes/node/`、Lunaは `wp-content/themes/luna-frontier/` に配置してください。大文字小文字を区別する環境では、Node ZIPの展開先を小文字の `node` に合わせる必要があります。
+当時の Preview 3 は `Template: node` に依存する子テーマとして配布していました。その構成は廃止済みです。現行版は Luna Frontier 単体で有効化します。
 
 同梱プラグインと単体プラグインの二重配置には既存のロード制御が適用されます。画像圧縮は既定で元画像を削除するため、復元を必要とする運用では、実行前に「元ファイルを残す」を有効にしてください。
 

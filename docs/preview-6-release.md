@@ -2,13 +2,15 @@
 
 2026年9月25日、Luna Frontier Preview 6の候補を作成します。
 
-Preview 6は、Node 1.4.0を親テーマとして組み合わせ、Qwenレビューで確認・採用した修正を含みます。AI要約とファクトチェックの投稿編集権限確認、OGP画像再生成のバックグラウンド化、更新パッケージの検証とロールバック、Node LibraryのTLS証明書検証を反映しました。Luna Interactiveを同梱し、同梱プラグインの表示名とバージョンをLuna / 1.4.0に揃えています。
+> **2026.09.30:** Luna Frontier は独立テーマです。以下の「親テーマ」という当時の組み合わせ方は現行方針ではありません。Node テーマのインストールは不要で、`Template: node` は使いません。`node.zip` は同梱されていた Node 1.4.0 の別配布物です。
+
+Preview 6は、Node 1.4.0 由来の修正をこのテーマへ取り込み、Qwenレビューで確認・採用した修正を含みます。AI要約とファクトチェックの投稿編集権限確認、OGP画像再生成のバックグラウンド化、更新パッケージの検証とロールバック、Node LibraryのTLS証明書検証を反映しました。Luna Interactiveを同梱し、同梱プラグインの表示名とバージョンをLuna / 1.4.0に揃えています。
 
 Previewの単一記事要約はLuna固有のテンプレートで表示されます。Nodeの要約色設定を上書きする処理は現行経路にないため、色変更は加えていません。計測対象としたNode Libraryのクエリは、今回の結果では最適化を正当化する負荷を示さず、検索データ移行やチャンク分割も含めていません。
 
 ## 配布物と導入
 
-- `node.zip`: Node 1.4.0の親テーマビルド（Build ID `20260925T075504Z-8a77b46`）。
+- `node.zip`: 当時同梱した Node 1.4.0 の別配布物（Build ID `20260925T075504Z-8a77b46`）。Luna Frontier の動作には不要。
 - `luna.zip`: Luna Frontier `2.0.0-preview.6`。ZIP内ルートは `luna-frontier/`。
 - `production_plugins/*.zip`: 独立配布プラグイン11本。SEO Toolsの単体ZIPを追加し、プラグインslugを保ったままLuna表示名・1.4.0に同期。
 - テーマZIPではSEO Tools内の重複フォントを除外し、テーマ側の `assets/ttf/NotoSansJP-VF.ttf` を参照。

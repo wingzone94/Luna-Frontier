@@ -96,23 +96,24 @@ Decision: keep the current OKLCH role tones. The visual gap is a product
 constraint difference, not a Material role mapping bug, and the contrast verifier
 continues to pass all tracked roles.
 
-## Phase 4: Parent Token Debt
+## Phase 4: Base Token Debt
 
 Completed for Luna scope.
 
-Debt to retire in the parent theme, not inside Luna-specific CSS:
+Debt that stays in the Node 1.x-derived base stylesheet, not inside Luna-specific CSS:
 
 - Direct `box-shadow` declarations that bypass `--m3-elevation-*`.
 - Direct `filter: brightness()` state changes that bypass state layers.
 - Direct radius values that bypass M3 shape aliases.
 - Custom color roles under `--md-sys-*` that are not actual M3 roles.
 
-Rule: only move parent declarations to tokens when the computed value is
-unchanged for Node, or isolate the change to Luna.
+Rule: only move those base declarations to tokens when the computed value is
+unchanged, or isolate the change to Luna.
 
-Luna decision: parent debt remains outside this child-theme phase set. Luna
-isolates its Paper surfaces, dynamic roles, shapes, and state layers without
-rewriting the parent theme's stable-line token architecture.
+Luna decision: this debt stays out of the Luna-specific phase set. Luna
+isolates its Paper surfaces, dynamic roles, shapes, and state layers inside
+the same theme, without a parent theme and without rewriting the inherited
+token architecture in the same change.
 
 ## Phase 5: Spectrum Cards
 
@@ -120,7 +121,7 @@ Completed with a conservative implementation.
 
 Implemented:
 
-- Luna child template `template-parts/article-card.php` adds per-post spectrum
+- Luna template `template-parts/article-card.php` adds per-post spectrum
   tokens to the card root.
 - Tokens are generated from the same seed resolution path as single articles.
 - CSS consumes the card seed only for border/focus and weak media/no-image
@@ -187,7 +188,7 @@ Implemented:
 - `m3-notice--alert` now maps to Material 3 error roles.
 - Info, warning, and memo notices remain custom semantic colors because Material
   3 does not define first-class roles for those statuses.
-- Notice blocks use Luna Paper shape, so they no longer keep the parent theme's
+- Notice blocks use Luna Paper shape, so they no longer keep the Node-derived
   rounded card shape inside article paper.
 - Light / dark alert contrast was checked against AA thresholds before adoption.
 

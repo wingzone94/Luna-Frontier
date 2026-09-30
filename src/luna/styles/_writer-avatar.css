@@ -3,7 +3,7 @@
  *
  * inc/writer-avatar.php が get_avatar() の代わりに出す inline SVG の見た目。
  *
- * 親テーマのアバター指定は `.c-card__writer img` / `.m3-writer-card__avatar img`
+ * Node 由来のアバター指定は `.c-card__writer img` / `.m3-writer-card__avatar img`
  * のように img へ閉じているため、SVG には一切届かない。寸法・丸み・輪郭は
  * ここで持つ。色は currentColor なので、置かれた場所の文字色に追従する。
  */

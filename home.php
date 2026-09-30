@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( is_paged() ) {
-	require get_template_directory() . '/index.php';
+	require get_stylesheet_directory() . '/index.php';
 	return;
 }
 

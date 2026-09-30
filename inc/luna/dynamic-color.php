@@ -9,15 +9,15 @@ declare( strict_types=1 );
  * 設計:
  * - seed は「記事の人格」。Featured Image 由来を第一とする。
  * - Category Color は Wayfinding（分類）なので seed で上書きしない（§39）。
- *   親テーマは「カテゴリ色 → 画像色」の順で seed を決めるが、Luna Frontier では
+ *   Node 由来の配色は「カテゴリ色 → 画像色」の順で seed を決めるが、Luna Frontier では
  *   Dynamic Color と Category Color を役割として分離し、画像を優先する。
  * - 生 RGB を全 Surface へ直貼りしない（§37）。M3 の HCT / tonal palette の思想に
  *   寄せ、Web/PHP 実装では OKLCH の知覚明度を使って Light / Dark の role tone を選ぶ。
  * - 表示は PHP が <head> にインライン出力するため、初回描画から正しい色になる（§41）。
  *   JS は meta 未保存記事のフォールバックに降格させる（このプロトタイプでは
  *   PHP 側が毎回算出できるため JS 経路は不要 = 通常経路に JS を置かない）。
- * - 既存メタは rename しない。新規に _lc_seed_color を「追加」するだけで、
- *   Node 1.3 へ戻しても無視されるだけ（不可逆 migration をしない。§61）。
+ * - 既存メタは rename しない。新規に _lc_seed_color を追加するだけにする。
+ *   未対応の読み手は無視できる追加メタであり、既存キーの移行はしない。
  *
  * @package LunaFrontier
  */
@@ -301,7 +301,7 @@ function luna_frontier_oklch_tone_meeting_contrast( float $hue, float $chroma, f
  * 優先順位:
  *   1. 保存済み _lc_seed_color（Luna Frontier が保存したもの）
  *   2. 投稿個別カラー _m3_primary_color（既存メタ。編集者の明示指定を尊重）
- *   3. Featured Image 由来（親の node_get_image_seed_color。attachment meta にキャッシュ）
+ *   3. Featured Image 由来（既存の node_get_image_seed_color。attachment meta にキャッシュ）
  *   4. ブランドオレンジ（フォールバック）
  *
  * カテゴリ色は使わない。Category Color は分類として別に生き続ける（§39）。
@@ -475,7 +475,7 @@ function luna_frontier_build_roles( string $seed ): array {
  *
  * ヘッダー / フッターへは流し込まない（§23 / §38）。
  * body.lf-theme スコープに閉じるため、header / footer 内の要素も継承はするが、
- * ブランドクロームは親テーマの --md-sys-color-* を使い続けるので影響しない。
+ * ブランドクロームは既存の --md-sys-color-* を使い続けるので影響しない。
  */
 function luna_frontier_print_dynamic_color(): void {
 	$resolved = luna_frontier_resolve_seed();
@@ -489,11 +489,11 @@ function luna_frontier_print_dynamic_color(): void {
 		return $out;
 	};
 
-	// 子テーマの静的トークン（body.lf-theme）より必ず後で勝つよう、
+	// Luna の静的トークン（body.lf-theme）より必ず後で勝つよう、
 	// 属性セレクタ 1 つぶん specificity を上げる。
 	/*
 	 * ダークは body だけでなく html に data-theme が付いた場合も拾う。
-	 * 親の <head> スクリプトは document.body がまだ存在しない段階で走るため、
+	 * ベースの <head> スクリプトは document.body がまだ存在しない段階で走るため、
 	 * 初回描画では <html> にしか付かない。body 限定にすると、その間だけ
 	 * ライトのトークンが残って「白い紙に明るい文字」になる。
 	 *
@@ -509,13 +509,13 @@ function luna_frontier_print_dynamic_color(): void {
 		esc_html( $to_css( $roles['dark'] ) )
 	);
 }
-// 親の node_generate_m3_colors（優先度 10）より後に出す。
+// 既存の node_generate_m3_colors（優先度 10）より後に出す。
 add_action( 'wp_head', 'luna_frontier_print_dynamic_color', 20 );
 
 /**
  * M3 の primary ロールをブランドカラーへ固定する。
  *
- * 親テーマ（inc/utilities.php / node_generate_m3_colors）は、記事の
+ * 既存の node_generate_m3_colors（inc/utilities.php）は、記事の
  * プライマリカテゴリの色を seed にして --md-sys-color-primary を出している
  * （投稿個別カラー → カテゴリカラー → アイキャッチ の順）。この結果、
  * ボタン・リンク・フォーカスなど primary を参照する UI が、その記事の
@@ -526,16 +526,17 @@ add_action( 'wp_head', 'luna_frontier_print_dynamic_color', 20 );
  * 分類のための Wayfinding（§39）としてチップの中だけに置き、UI の色は
  * ブランドオレンジで一定にする。
  *
- * 親テーマは書き換えない（本番稼働中）。親のインラインより後に同じ
- * :root を出して上書きする。値は親のフォールバックと同じ式で作るので、
- * 「カテゴリ色が設定されていない記事」と同じ見え方に揃う。
+ * node_generate_m3_colors 自体は Node 由来の既存経路なので、この差分では
+ * 書き換えず、そのインラインより後に同じ :root を出して上書きする。
+ * 値は既存フォールバックと同じ式で作るので、「カテゴリ色が設定されていない記事」
+ * と同じ見え方に揃う。
  */
 function luna_frontier_pin_brand_primary(): void {
 	if ( ! function_exists( 'node_mix_hex_color' ) || ! function_exists( 'node_get_readable_text_color' ) ) {
 		return;
 	}
 
-	// 親の $default_primary / $default_primary_dark と同じ値。
+	// 既存の $default_primary / $default_primary_dark と同じ値。
 	$brand      = '#FF9900';
 	$brand_dark = '#ffb85d';
 
@@ -568,7 +569,7 @@ function luna_frontier_pin_brand_primary(): void {
 		esc_html( $to_css( $dark ) )
 	);
 }
-// 親の node_generate_m3_colors（優先度 10）より後、かつ同じ :root で上書きする。
+// 既存の node_generate_m3_colors（優先度 10）より後、かつ同じ :root で上書きする。
 add_action( 'wp_head', 'luna_frontier_pin_brand_primary', 15 );
 
 /**

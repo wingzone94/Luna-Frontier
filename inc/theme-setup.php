@@ -10,10 +10,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Node テーマのバージョン（親テーマ style.css の Version ヘッダー）
+ * このテーマ（Luna Frontier）の style.css Version。
+ * 関数名は Node 1.x 由来の既存呼び出しとの互換のため維持する。別テーマの Version は読まない。
  */
 function node_get_theme_version(): string {
-	$theme   = wp_get_theme( get_template() );
+	$theme   = wp_get_theme();
 	$version = $theme->get( 'Version' );
 
 	return ( is_string( $version ) && '' !== $version ) ? $version : '0.0.0';

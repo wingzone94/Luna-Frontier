@@ -6,7 +6,7 @@
  * - モバイルは 1 カラム。本文優先。Floating UI で読書を覆わない。
  * - Sticky にするのは原則 TOC だけ。
  *
- * 親 single.php をコピーせずに済ませるため、Aside は本文の「前」に DOM 出力し、
+ * single.php を複製せずに済ませるため、Aside は本文の「前」に DOM 出力し、
  * grid-auto-flow: row dense で本文の右隣へ回り込ませる。
  * 未知の子要素（プラグイン出力等）は全幅にフォールバックする。
  */
@@ -209,7 +209,7 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
-/* PC で Reading Aside に TOC が出ている間は、親テーマの TOC FAB を重複表示しない。
+/* PC で Reading Aside に TOC が出ている間は、既存の TOC FAB を重複表示しない。
    モバイルでは Aside が本文下へ回るため FAB は残す（§28: 読書を覆う UI を増やさない）。 */
 @media (min-width: 1024px) {
 	body.lf-theme.single-post:has(.lf-aside-block--toc) #m3-toc-trigger {

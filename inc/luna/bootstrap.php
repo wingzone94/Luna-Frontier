@@ -1,13 +1,13 @@
 <?php
 /**
- * Luna Frontier 2.0 / SkyAlow Prototype — bootstrap
+ * Luna Frontier 2.0 bootstrap
  *
- * 親テーマ: Node 1.3（Template: node）
+ * Luna Frontier は Node の子テーマではない。Node 1.x を起点に発展した独立テーマ。
+ * Template ヘッダーは置かない。Node テーマのインストールは不要。
  *
  * 原則:
- * - 親テーマのファイル・assets を書き換えない。差分だけをここから足す。
- * - 親の内部データ（_node_* / node_* / lc_* 等）は rename しない。互換のまま読む。
- * - Node 1.3 へ不可逆な DB migration を行わない（管理画面で戻すだけで復帰できること）。
+ * - このテーマ自身のファイルと assets を読む。別テーマの実体は参照しない。
+ * - 既存サイトの _node_* / node_* / lc_* 等は rename しない。親テーマ互換ではなく、公開済みデータとの後方互換。
  *
  * @package LunaFrontier
  */
@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LUNA_FRONTIER_DIR', get_template_directory() );
-define( 'LUNA_FRONTIER_URI', get_template_directory_uri() );
+define( 'LUNA_FRONTIER_DIR', get_stylesheet_directory() );
+define( 'LUNA_FRONTIER_URI', get_stylesheet_directory_uri() );
 define( 'LUNA_FRONTIER_CODENAME', 'SkyAlow' );
 
 require_once LUNA_FRONTIER_DIR . '/inc/luna/dynamic-color.php';
@@ -26,11 +26,10 @@ require_once LUNA_FRONTIER_DIR . '/inc/luna/category-label.php';
 require_once LUNA_FRONTIER_DIR . '/inc/luna/writer-avatar.php';
 
 /**
- * 子テーマ自身のバージョン（style.css の Version）。
- * 親のバージョンは NODE_THEME_VERSION が保持する。
+ * このテーマのバージョン（style.css の Version）。
  */
 function luna_frontier_version(): string {
-	$version = wp_get_theme( get_template() )->get( 'Version' );
+	$version = wp_get_theme()->get( 'Version' );
 
 	return ( is_string( $version ) && '' !== $version ) ? $version : '0.0.0';
 }
@@ -93,13 +92,12 @@ function luna_frontier_asset_version( string $relative_file ): string {
 /**
  * 2.0 固有アセットの読み込み。
  *
- * 親テーマは NodeTheme\Setup\ThemeSupport::enqueueAssets() を優先度 10 で登録するため、
- * こちらは 20 で走らせて必ず親の後に載せる（= 低い specificity でも上書きが効く）。
+ * Node 由来の ThemeSupport::enqueueAssets() が優先度 10 でベース資産を登録する。
+ * こちらは 20 で後から載せ、差分 CSS がベースの後に来るようにする。
  */
 function luna_frontier_enqueue_assets(): void {
-	// フォントは親 header.php が読み込む Manrope / Inter / Noto Sans JP だけを使う。
+	// フォントは header が読み込む Manrope / Inter / Noto Sans JP だけを使う。
 	// 当初は機能ラベル用に Orbitron を追加していたが、2026-08-09 のユーザー指示で不採用。
-	// 追加ウェイトを読まないぶん、フォント読み込みは Node 1.3 と同じコストになる。
 
 	$legacy_archive = luna_frontier_is_legacy_archive();
 	$style = luna_frontier_manifest_entry( $legacy_archive ? 'src/luna/styles/luna-archive.css' : 'src/luna/styles/luna.css' );
@@ -145,7 +143,7 @@ function luna_frontier_enqueue_assets(): void {
 add_action( 'wp_enqueue_scripts', 'luna_frontier_enqueue_assets', 20 );
 
 /**
- * 子テーマの script を type="module" で配信する（Vite 出力は ESM）。
+ * Luna Frontier の script を type="module" で配信する（Vite 出力は ESM）。
  */
 function luna_frontier_script_module_type( string $tag, string $handle ): string {
 	if ( 'luna-frontier' !== $handle ) {
@@ -162,7 +160,7 @@ add_filter( 'script_loader_tag', 'luna_frontier_script_module_type', 10, 2 );
 
 /**
  * body_class に Luna Frontier の識別子を足す。
- * 親テーマ由来のクラスは一切外さない。
+ * Node 由来の既存クラスは外さない。テンプレートと CSS が依存している。
  *
  * @param string[] $classes body class 一覧。
  * @return string[]
@@ -177,7 +175,7 @@ function luna_frontier_body_class( array $classes ): array {
 }
 add_filter( 'body_class', 'luna_frontier_body_class' );
 
-/** Use Luna's archive after the parent has resolved the existing /spotlight/ route. */
+/** /spotlight/ の既存ルートを解決したあと、Luna のアーカイブテンプレートを使う。 */
 function luna_frontier_spotlight_template( string $template ): string {
 	if ( get_query_var( 'node_spotlight' ) ) {
 		return LUNA_FRONTIER_DIR . '/template-parts/spotlight-archive.php';
@@ -219,7 +217,7 @@ function luna_frontier_is_legacy_archive(): bool {
 /**
  * トピックナビ用のメニュー位置を追加する。
  *
- * 親テーマの primary / footer には手を触れない。未設定のあいだは
+ * 既存の primary / footer は残す。未設定のあいだは
  * template-parts/luna/topic-nav.php が上位カテゴリで自動的に埋める。
  */
 function luna_frontier_register_menus(): void {

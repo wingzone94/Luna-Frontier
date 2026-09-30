@@ -1,7 +1,7 @@
 /**
  * Luna Frontier 2.0 / SkyAlow — Notice を M3 の役割体系へ（Phase 8）
  *
- * 親テーマの注記ブロックは --m3-notice-accent / -title / -bg / -border という
+ * Node 由来の注記ブロックは --m3-notice-accent / -title / -bg / -border という
  * 独自トークンで info / warning / alert / memo の 4 色を持ち、値は全て
  * ハードコードされていた。M3 の役割トークンとは無関係の並行系統になっている。
  *
@@ -32,7 +32,7 @@ body.lf-theme .m3-article__body .m3-notice--alert {
 	--m3-notice-border: color-mix(in srgb, var(--md-sys-color-error) 45%, transparent);
 }
 
-/* dark も同じ role を見るので、親の [data-theme="dark"] 側の値を上書きして戻す。
+/* dark も同じ role を見るので、ベースの [data-theme="dark"] 側の値を上書きして戻す。
    role の中身は _tokens.css がスキームごとに持っている。 */
 body.lf-theme[data-theme="dark"] .m3-notice--alert,
 [data-theme="dark"] body.lf-theme .m3-notice--alert {

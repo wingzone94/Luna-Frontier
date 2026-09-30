@@ -10,8 +10,8 @@ declare( strict_types=1 );
  * カテゴリは Article Header に出ているため Aside では繰り返さない。
  * Sticky にするのは原則 TOC だけ。
  *
- * DOM への差し込みは親テーマの luminous_after_article_header アクションを使う
- * （親 single.php を子でコピーせずに済ませるため）。配置は CSS Grid が担当する。
+ * DOM への差し込みは既存の luminous_after_article_header アクションを使う。
+ * single.php を複製せずに足すため。配置は CSS Grid が担当する。
  *
  * @package LunaFrontier
  */
@@ -40,7 +40,7 @@ function luna_frontier_render_reading_aside( int $post_id ): void {
 	// （同じ情報を 1 ページに二度出さない）。
 
 	/*
-	 * 脚注は the_content フィルタ（親テーマ・優先度 999）で本文末に生成されるため、
+	 * 脚注は the_content フィルタ（Node 由来・優先度 999）で本文末に生成されるため、
 	 * この時点ではまだ HTML が存在しない。移動先の受け皿が必要なので、
 	 * 「脚注を持つ記事か」だけを投稿データから判定して Aside を出す。
 	 * 実際の移動は src/luna.js が描画後に行う。

@@ -11,15 +11,15 @@
  * Elevation を「面の段」へ翻訳する（§21）。
  *
  * Paper Design の階層は影ではなく面と罫で出す。これまではコンポーネント
- * ごとに box-shadow: none を書いて漏れを塞いでいたが、それは「親に新しい
- * カードが増えるたび影が漏れる」構造だった。親テーマが elevation token 経由で
+ * ごとに box-shadow: none を書いて漏れを塞いでいたが、それは「ベースに新しい
+ * カードが増えるたび影が漏れる」構造だった。ベース CSS が elevation token 経由で
  * 出している影は、ここで token を無効化すれば以後の追加も自動で従う。
  *
  * 影を消すだけで階層が消えるわけではない。M3 では面の段（tonal elevation）も
  * 正規の表現で、Luna は --lf-paper-sunken / --lf-paper / --lf-meta-fill の
  * 3 段を既に持っている。役割を影から面へ移す宣言がこれ。
  *
- * 注意: 親テーマの影の大半は token を通さない手書きなので、これだけでは
+ * 注意: ベース CSS の影の大半は token を通さない手書きなので、これだけでは
  * 全部は止まらない。残りは下の「個別に打ち消す」節が受け持つ。
  * --------------------------------------------------------------------- */
 body.lf-theme {
@@ -58,9 +58,9 @@ body.lf-theme .m3-article__body :is(img, figure, iframe, video, table) {
 }
 
 /* ---------------------------------------------------------------------
- * 親テーマが手書きで出している影のうち、コンテンツ領域に残るものを面へ移す。
+ * ベース CSS が手書きで出している影のうち、コンテンツ領域に残るものを面へ移す。
  *
- * 上のトークン無効化は token 経由の影にしか効かない。親テーマの影は 221 宣言中
+ * 上のトークン無効化は token 経由の影にしか効かない。ベース CSS の影は 221 宣言中
  * 35 しか token を通しておらず、残りは値を直接書いている（例: _navigation.css の
  * .m3-elevated-nav-card は --m3-elevation-1 と同じ値を手書きしているので、
  * token を none にしても届かない）。
@@ -76,7 +76,7 @@ body.lf-theme .m3-article__body :is(img, figure, iframe, video, table) {
 
 /*
  * カテゴリピルも Paper の一部として面と枠だけで表現する。
- * 親テーマや hover 状態の elevation を子テーマ内で確実に打ち消す。
+ * ベース CSS や hover 状態の elevation を Luna の差分内で確実に打ち消す。
  */
 body.lf-theme :is(.m3-label--category, .m3-label--category:hover) {
 	box-shadow: none;
