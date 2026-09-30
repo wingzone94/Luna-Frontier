@@ -2,7 +2,7 @@
  * Luna Frontier 2.0 / SkyAlow — Brand Chrome（Topic Nav / Footer）
  *
  * ヘッダーとフッターは Luminous Core の額縁。
- * Dynamic Color は流し込まず、親のブランドトークンで固定する（§23 / §38）。
+ * Dynamic Color は流し込まず、既存のブランドトークンで固定する（§23 / §38）。
  * Paper Design なので四角。階層は面と罫で出す。
  */
 
@@ -22,7 +22,7 @@ body.lf-theme .lf-topic-nav {
 	border-block-end: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 70%, transparent);
 	border-radius: var(--lf-shape-paper);
 
-	/* 親テーマのヘッダーは position: fixed。ナビは通常フローなので、
+	/* 既存ヘッダーは position: fixed。ナビは通常フローなので、
 	   ヘッダーの高さぶんだけ自分で下がる必要がある（管理バーぶんも含む）。 */
 	margin-block-start: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px));
 }

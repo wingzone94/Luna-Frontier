@@ -5,10 +5,10 @@ declare( strict_types=1 );
  * Luna Frontier 2.0 / SkyAlow — AI Summary の二重表示ガード（Phase 4）
  *
  * single モードの Intelligence Summary は Article Header の Paper へ統合済み
- * （template-parts/single/hero.php）。親 single.php はヒーローの後に改めて
+ * （template-parts/single/hero.php）。single.php はヒーローの後に改めて
  * この template part を呼ぶため、ここで single モードだけを止める。
  *
- * card モード等は親テンプレートへそのまま委譲する（挙動を変えない）。
+ * card モード等は Node 1.x 由来のテンプレートへそのまま委譲する（挙動を変えない）。
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,4 +21,4 @@ if ( 'single' === $lf_mode ) {
 	return;
 }
 
-require get_template_directory() . '/template-parts/legacy/ai-summary.php';
+require get_stylesheet_directory() . '/template-parts/legacy/ai-summary.php';

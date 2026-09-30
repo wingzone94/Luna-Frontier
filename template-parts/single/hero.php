@@ -4,14 +4,14 @@ declare( strict_types=1 );
 /**
  * Luna Frontier 2.0 / SkyAlow — Article Header（Phase 4）
  *
- * 親テーマ Node 1.3 の template-parts/single/hero.php を子テーマ側で置き換える。
+ * Node 1.x 由来の記事ヒーローを、このテーマの Article Header に置き換える。
  *
  * 指示書 §30 / §31:
  * - 情報を同じ視覚強度で並べない。優先順位は
  *     Category → Title → Published / Updated → 最小限のメタ → Intelligence Summary。
  * - Intelligence Summary は独立ブロックにせず、この Header の Paper に統合する。
  * - Summary が無いときは空の Surface / 罫 / 不自然な gap を作らない。
- * - Multipage では 1 ページ目だけに出す（親 single.php と同じ条件）。
+ * - Multipage では 1 ページ目だけに出す（single.php と同じ条件）。
  *
  * 既存メタ（_node_ai_summary / _node_ai_tone_color / _node_ai_keywords /
  * _node_linked_library_id 等）はそのまま読む。rename しない。
@@ -24,13 +24,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 $lf_post_id   = get_the_ID();
 $lf_has_thumb = has_post_thumbnail( $lf_post_id );
 
-// 親 single.php と同じ Multipage 判定。
+// single.php と同じ Multipage 判定。
 $lf_is_primary_page = ( 1 === max( 1, (int) get_query_var( 'page' ) ) );
 
 $lf_summary = (string) get_post_meta( $lf_post_id, '_node_ai_summary', true );
 $lf_show_summary = ( '' !== trim( $lf_summary ) ) && $lf_is_primary_page;
 
-// Header 内で描画したことを、子の template-parts/ai-summary.php へ伝える（二重表示防止）。
+// Header 内で描画したことを、template-parts/ai-summary.php へ伝える（二重表示防止）。
 if ( $lf_show_summary ) {
 	$GLOBALS['luna_frontier_summary_rendered'] = true;
 }

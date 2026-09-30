@@ -1,13 +1,15 @@
-# Node Theme リリース手順
+# リリース手順
 
-このドキュメントでは、テーマ編集後に本番用のZIPファイル (`node.zip`) を生成し、GitHubにプッシュするまでの手順を説明します。
+## 現行方針（Luna Frontier 2.0）
+
+Luna Frontier は Node の子テーマではない。`style.css` の Theme Name は **Luna Frontier** とし、`Template:` ヘッダーは置かない。Node テーマのインストールは不要。
+
+テーマ自身の更新パッケージは `luna.zip` で、更新チェックは `luna-frontier-2.0-skyalow` の `style.css` と `build.json` を見る。リポジトリに残る `node.zip` は、別に同梱している Node 安定版の配布物であり、Luna Frontier の親テーマではない。
 
 ## 0. 命名・ブランド
 - ブログ / サイトのブランド名は **Luminous Core** です。
-- WordPress テーマ名は **Node** です。
-- 配布ZIPのファイル名は **node.zip**、ZIP内のテーマルートディレクトリは **Node/** に統一します。
-- ConoHa WING 本番環境は Linux のため、既存テーマURL `/wp-content/themes/Node/` と同じ大文字小文字を維持します。
-- `style.css` の `Theme Name` は **Node** のまま維持します。
+- このブランチの WordPress テーマ名は **Luna Frontier** です。Theme Name を Node に戻さないでください。
+- `node_*` / `NODE_*` / `_node_*` は既存データと公開 API の後方互換として残します。親子テーマに戻すための名前ではありません。
 
 ## 1. アセットのビルド
 テーマ内のCSSやJavaScriptを変更した場合は、必ずビルドを実行して最新のアセットを生成します。

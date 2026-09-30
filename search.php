@@ -10,8 +10,8 @@ declare( strict_types=1 );
  * - 展開は <details> なので JS 無しで開閉でき、Esc / Tab / aria-expanded の
  *   面倒を自前実装せずにブラウザ標準へ委ねられる。
  * - フォームは素の GET。JS が動かなくても検索できる。
- * - 親テーマ header.php の詳細検索ダイアログ（Expressive の見せ場）は
- *   そのまま残す。ここはその「JS 無しでも届く」正面入口。
+ * - header の詳細検索ダイアログ（Expressive の見せ場）はそのまま残す。
+ *   ここはその「JS 無しでも届く」正面入口。
  *
  * GET パラメータ名は既存実装（Luminous Core Engine → Luna Engine）に合わせる。
  * 名称変更を理由に s / m3_* を rename しない（§58）。

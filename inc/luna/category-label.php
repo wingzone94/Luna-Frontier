@@ -5,25 +5,25 @@ declare( strict_types=1 );
  * Luna Frontier 2.0 / SkyAlow — カテゴリラベルの on-color
  *
  * ■ 何が壊れていたか
- * 親テーマの node_get_category_label_props()（inc/utilities.php）は文字色を
+ * 既存の node_get_category_label_props()（inc/utilities.php）は文字色を
  * '#ffffff' にハードコードし、色が未設定のカテゴリでは面を '#FF9900' へ
  * フォールバックする。実測（cybernode.local, 60 カテゴリ）:
  *
  *   色未設定 52 件 → #FF9900 に白文字 = 2.14:1   （記事数上位 10 件は全部これ）
  *   設定済み  8 件 → うち 5 件が白文字で AA 未達（最悪 #eeee22 の 1.24:1）
  *
- * さらに親の src/styles/_cards.css に
+ * さらに Node 由来の src/styles/_cards.css に
  *   .m3-label--category, :visited, :hover, :focus-visible { color: #ffffff !important }
  * があり、PHP が style 属性で出す --category-on-color は既に死んでいる。
  * つまり「変数を直す」だけでは文字色は動かない。
  *
  * ■ 直し方
- * 親には該当箇所にフィルタが無く pluggable でもないので PHP からは介入できない。
+ * 該当箇所にフィルタが無く pluggable でもないので、関数の中からは介入できない。
  * 出力バッファ置換は style 属性という壊れやすい足場を舐めることになるので採らない。
- * そこで **PHP でカテゴリ色を読んで CSS を生成し**、子スタイルシートの直後へ
+ * そこで **PHP でカテゴリ色を読んで CSS を生成し**、Luna のスタイルシートの直後へ
  * wp_add_inline_style で載せる。出すルールは 3 種類だけ:
  *
- *   1. 変数を復活させる 1 行（親の白ベタ !important を無効化）
+ *   1. 変数を復活させる 1 行（既存の白ベタ !important を無効化）
  *   2. 色未設定（data-color 属性が付かない）→ --lf-on-brand
  *   3. 設定済み → [data-color="..."] ごとに算出した on-color
  *
@@ -33,7 +33,7 @@ declare( strict_types=1 );
  * ■ on-color の決め方
  * 「白が AA を満たすならそのまま。満たさないなら同色相の暗インクへ落とす」の
  * 1 規則だけ。既に AA を満たしている赤・青・紫系は見た目が変わらない。
- * 算出には子テーマが既に持つ luna_frontier_oklch_on_color() を使う。
+ * 算出にはこのテーマの luna_frontier_oklch_on_color() を使う。
  *
  * @package LunaFrontier
  */
@@ -84,8 +84,8 @@ function luna_frontier_category_on_color( string $face ): string {
  * 単一記事では主カテゴリの色（_node_primary_category メタ → 無ければ最初の
  * カテゴリ）。それ以外の画面と、色が未設定のカテゴリではブランドオレンジ。
  *
- * 親の node_get_category_label_props() を通すのは、term description に hex を
- * 書くレガシー経路も親が拾うため。チップと 1 ピクセルもずれないようにする。
+ * 既存の node_get_category_label_props() を通すのは、term description に hex を
+ * 書くレガシー経路も既存関数が拾うため。チップと 1 ピクセルもずれないようにする。
  */
 function luna_frontier_primary_category_face(): string {
 	if ( ! is_singular( array( 'post' ) ) || ! function_exists( 'node_get_category_label_props' ) ) {
@@ -112,32 +112,31 @@ function luna_frontier_primary_category_face(): string {
 
 	$props = node_get_category_label_props( $term );
 
-	// data_color が空 = 親がデフォルト扱い = ブランドオレンジ。
+	// data_color が空 = 既存関数がデフォルト扱い = ブランドオレンジ。
 	return '' === $props['data_color'] ? LUNA_FRONTIER_BRAND_FACE : $props['color'];
 }
 
 /**
  * カードのカテゴリチップを描画する（主カテゴリだけ塗り、以降は枠線）。
  *
- * 親の node_the_category_labels() は、シングルでは
+ * 既存の node_the_category_labels() は、シングルでは
  *   「先頭（＝主カテゴリ）のみ塗り、以降は .is-secondary で枠線」
  * という出し分けを既に持っているが、カード（$is_card）ではそれを無効にして
  * 全部を塗りにしている。その結果、色付きカテゴリを設定するとカード 1 枚に
  * 塗りチップが 2〜3 個並び、どれが主カテゴリか読めなくなった。
  *
- * NODE-2.0.md のガードレール「カードの二次的なタグチップは数を絞る／彩度を
- * 落とす。カテゴリ固有色を主役に」に沿って、カードでもシングルと同じ
- * 出し分けにする。親は触れないので、子のカードテンプレートから
- * こちらを呼ぶ（2026-08-25 ユーザー指示）。
+ * カードの二次的なタグチップは数を絞り彩度を落とす、という既存のガードレールに
+ * 沿って、カードでもシングルと同じ出し分けにする。カード描画は
+ * Luna のカードテンプレートからこちらを呼ぶ（2026-08-25 ユーザー指示）。
  *
- * 並び順は親の node_get_post_categories_for_display() が主カテゴリを
+ * 並び順は既存の node_get_post_categories_for_display() が主カテゴリを
  * 先頭へ寄せてくれるので、index 0 が主カテゴリになる。
  *
  * @param int|null $post_id 投稿 ID。
  */
 function luna_frontier_the_card_category_labels( ?int $post_id = null ): void {
 	if ( ! function_exists( 'node_get_post_categories_for_display' ) || ! function_exists( 'node_render_category_label' ) ) {
-		// 親の関数が無い環境では、親の実装にそのまま任せる。
+		// 表示用の Node 由来関数が欠けている場合は、既存のラベル出力へ委譲する。
 		if ( function_exists( 'node_the_category_labels' ) ) {
 			node_the_category_labels( $post_id );
 		}
@@ -151,7 +150,7 @@ function luna_frontier_the_card_category_labels( ?int $post_id = null ): void {
 		return;
 	}
 
-	// 親のカードと同じく 3 つまで。超過は +N バッジ。
+	// 既存のカードと同じく 3 つまで。超過は +N バッジ。
 	$limit   = 3;
 	$count   = count( $categories );
 	$display = array_slice( $categories, 0, $limit );
@@ -165,7 +164,7 @@ function luna_frontier_the_card_category_labels( ?int $post_id = null ): void {
 			$class .= ' is-secondary';
 		}
 
-		echo node_render_category_label( $category, array( 'class' => $class ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 親のレンダラがエスケープ済み。
+		echo node_render_category_label( $category, array( 'class' => $class ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 既存レンダラがエスケープ済み。
 	}
 
 	if ( $count > $limit ) {
@@ -182,8 +181,8 @@ function luna_frontier_the_card_category_labels( ?int $post_id = null ): void {
 /**
  * カテゴリラベル用の CSS を組み立てる。
  *
- * 親と同じ結果を得るため、色の取得は必ず node_get_category_label_props() 経由に
- * する（term description 内の hex というレガシー経路も親側が拾うため）。
+ * 既存関数と同じ結果を得るため、色の取得は必ず node_get_category_label_props() 経由に
+ * する（term description 内の hex というレガシー経路もそちらが拾うため）。
  */
 function luna_frontier_build_category_css(): string {
 	if ( ! function_exists( 'node_get_category_label_props' ) ) {
@@ -208,7 +207,7 @@ function luna_frontier_build_category_css(): string {
 		$props = node_get_category_label_props( $term );
 		$face  = $props['data_color'];
 
-		// data_color が空 = 親がデフォルト（#FF9900）と判定した = 属性が出ない。
+		// data_color が空 = 既存関数がデフォルト（#FF9900）と判定した = 属性が出ない。
 		// その一群は :not([data-color]) 側でまとめて拾うのでここでは扱わない。
 		if ( '' === $face ) {
 			continue;
@@ -221,7 +220,7 @@ function luna_frontier_build_category_css(): string {
 
 	/*
 	 * 1) 変数の復活。
-	 * 親は .m3-label--category と :visited / :hover / :focus-visible を列挙して
+	 * 既存 CSS は .m3-label--category と :visited / :hover / :focus-visible を列挙して
 	 * color:#ffffff!important を当てている（最大 (0,2,0)）。
 	 * body.lf-theme を前置した :is() は (0,2,0) 同士で並ぶが、疑似クラス側も
 	 * 明示して (0,3,0) にしておけば順序に頼らずに勝てる。
@@ -230,9 +229,9 @@ function luna_frontier_build_category_css(): string {
 	 */
 	/*
 	 * .is-secondary（記事ヘッダーの枠線タイプ）は除外する。
-	 * こちらは面が白で、親が color-mix(--category-color 72%, black) で文字色を
+	 * こちらは面が白で、既存 CSS が color-mix(--category-color 72%, black) で文字色を
 	 * 導出している。ここに白を強制すると白地に白文字（1.00:1）になって消える。
-	 * --category-color は下で深いオレンジに差し替えるので、親の導出結果も
+	 * --category-color は下で深いオレンジに差し替えるので、既存の導出結果も
 	 * 自動的にそれに追従する（枠線・文字ともコントラストが上がる）。
 	 */
 	$labels = ':is(.m3-label--category,.m3-label--ai,.m3-label--ai-summary,.m3-article__ai-disclosure-expressive):not(.is-secondary)';
@@ -264,7 +263,7 @@ function luna_frontier_build_category_css(): string {
 	);
 
 	/*
-	 * 3) 設定済み。属性値は親が出力する文字列そのもの。大文字小文字の揺れに
+	 * 3) 設定済み。属性値は既存出力の文字列そのもの。大文字小文字の揺れに
 	 * 備えて i フラグを付ける。
 	 */
 	foreach ( $by_color as $face ) {
@@ -280,7 +279,7 @@ function luna_frontier_build_category_css(): string {
 	/*
 	 * 3-b) 枠線タイプ（.is-secondary）の文字色。
 	 *
-	 * 親は color-mix(in srgb, var(--category-color) 72%, black) で導出しており、
+	 * 既存 CSS は color-mix(in srgb, var(--category-color) 72%, black) で導出しており、
 	 * --category-color がブランドオレンジのときは #b86e00 = 白地に 3.99:1 で
 	 * AA を割る（面を #bc5b00 にしていた間は 7.47 で足りていた）。
 	 * こちらは塗りではなく白地の上の文字なので、既存の --lf-brand-text
@@ -292,7 +291,7 @@ function luna_frontier_build_category_css(): string {
 	/*
 	 * 3-c) カードの副カテゴリを枠線チップにする。
 	 *
-	 * 親の枠線スタイルは .m3-article__category-group:not(.is-card) に限定されて
+	 * 既存の枠線スタイルは .m3-article__category-group:not(.is-card) に限定されて
 	 * いてカードには効かないので、同じレシピをカード側へも用意する
 		 * （border は面色 54% + 黒、文字は 58% + 黒。明るいオレンジでも
 		 * 白地で AA を満たす）。
@@ -322,7 +321,7 @@ function luna_frontier_build_category_css(): string {
 	/*
 	 * 4) 塗りボタンと FAB を「プライマリカテゴリラベルの色」へ同期させる。
 	 *
-	 * 親の _buttons.css は
+	 * 既存の _buttons.css は
 	 *   background: color-mix(in srgb, var(--md-sys-color-primary) 74%, #ffd35c 26%)
 	 * で塗っている。この --md-sys-color-primary は記事ページでは **アイキャッチ由来の
 	 * seed 色**なので、実測すると「送信する」ボタンが #e7d9c4（ベージュ）になっていた。
@@ -332,7 +331,7 @@ function luna_frontier_build_category_css(): string {
 		 * 2026-08-30 の設計ゲートでは、本文内の追従 FAB は neutral surface +
 		 * article accent に戻す。ここでは通常の塗りボタンだけを同期する。
 	 *
-	 * 親と同じく !important + @layer reset が要る（親の宣言が
+	 * 既存 CSS と同じく !important + @layer reset が要る（その宣言が
 	 * @layer components の !important なので、非レイヤーでは詳細度に関係なく負ける）。
 	 */
 		$face = luna_frontier_primary_category_face();
@@ -373,22 +372,22 @@ function luna_frontier_build_category_css(): string {
 	/*
 	 * @layer reset に入れる必要がある。
 	 *
-	 * 親テーマは @layer reset, base, components, utilities を使っており、
+	 * ベース CSS は @layer reset, base, components, utilities を使っており、
 	 * 白ベタを出している _cards.css は components レイヤー。
 	 * **important 宣言ではレイヤー順が反転し、非レイヤーが最弱になる**ため、
 	 * 非レイヤーで出すと詳細度で勝っていても負ける（地色の canvas で実際に
 	 * 起きた。_surface.css の冒頭コメント参照）。
-	 * reset は 1 番目なので important では最強になる。レイヤー順は親の
+	 * reset は 1 番目なので important では最強になる。レイヤー順はベースの
 	 * style.css が先に宣言済みなので、ここは既存レイヤーへの合流であって
 	 * 新しい順序は作らない。
 	 *
-	 * 親の _print.css は文字を黒へ強制するので、画面表示にだけ効かせる。
+	 * 既存の _print.css は文字を黒へ強制するので、画面表示にだけ効かせる。
 	 */
 	return "@layer reset{\n@media screen{\n" . implode( "\n", $rules ) . "\n}\n}";
 }
 
 /**
- * 生成した CSS を子スタイルシートの直後へ載せる。
+ * 生成した CSS を Luna のスタイルシートの直後へ載せる。
  *
  * 優先度 21 = luna_frontier_enqueue_assets()（20）の直後。
  * manifest 欠損時は handle 自体が無いので wp_style_is で守る。

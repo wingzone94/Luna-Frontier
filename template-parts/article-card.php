@@ -4,14 +4,14 @@ declare(strict_types=1);
 /**
  * Luna Frontier article card.
  *
- * Parent markup is preserved, with only Spectrum accent tokens added to the
- * card root. The tokens are consumed by Luna CSS and ignored by Node.
+ * Node 1.x 由来のカードマークアップを土台に、Spectrum accent トークンだけを足す。
+ * トークンは Luna CSS が消費する。
  *
  * @package LunaFrontier
  */
 
 if ( luna_frontier_is_legacy_archive() ) {
-    require get_template_directory() . '/template-parts/legacy/article-card.php';
+    require get_stylesheet_directory() . '/template-parts/legacy/article-card.php';
     return;
 }
 
@@ -83,7 +83,7 @@ $has_topline_labels = ('' !== $badges_html) || ('' !== $series_banner_html);
                 <?php if ($has_category) : ?>
                     <div class="m3-card__category-container c-card__category-container">
                         <?php
-                        // 主カテゴリだけ塗り、以降は枠線（親のカード実装は全部塗りになる）。
+                        // 主カテゴリだけ塗り、以降は枠線（Node 由来のカード実装は全部塗りになる）。
                         if ( function_exists( 'luna_frontier_the_card_category_labels' ) ) {
                             luna_frontier_the_card_category_labels( $post_id );
                         } else {

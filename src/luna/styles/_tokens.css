@@ -4,11 +4,11 @@
  * Material 3 を既定のデザイン言語とし、Expressive は見せ場に限定する（指示書 §17〜§19）。
  * このファイルはトークンを「定義するだけ」で、まだどこにも適用しない。
  *
- * 定義先は body.lf-theme。親テーマ Node の :root トークンは一切書き換えず、
+ * 定義先は body.lf-theme。Node 由来の :root トークンはここでは書き換えず、
  * その値を初期値として引き継ぐ（= Phase 2 時点では見た目が変わらない）。
- * ダークは親と同じ [data-theme="dark"] に追従する。
+ * ダークは既存と同じ [data-theme="dark"] に追従する。
  *
- * 重要: 親テーマの <head> 内スクリプトは documentElement と body の両方へ
+ * 重要: 既存の <head> 内スクリプトは documentElement と body の両方へ
  * data-theme を付けようとするが、<head> 実行時点で document.body は null のため、
  * 初回描画では <html> にしか付かない（body へは後から color-mode.js が付ける）。
  * body[data-theme] だけを見ていると、その間ライトのトークンが残って
@@ -40,7 +40,7 @@ body.lf-theme {
 	 * Paper は四角、Action は必要に応じて丸い。
 	 *
 	 * 2.0 専用の M3 shape scale を body.lf-theme に閉じて定義する。
-	 * 親テーマ Node 1.3 へは流さない（2026-08-23 ユーザー指示: 2.0 のみに絞る）。
+	 * body.lf-theme の外へは流さない（2026-08-23 ユーザー指示: 2.0 のみに絞る）。
 	 *
 	 * 旧 --lf-shape-chip / --lf-shape-pill は同じ 1000px の二重定義だった。
 	 * 片方だけ変えると不整合になるので --lf-shape-full へ一本化した。
@@ -64,8 +64,8 @@ body.lf-theme {
 	 * Spacing scale
 	 * rem 基準。ブラウザの文字サイズ設定と 200% zoom に素直に追従させる。
 	 *
-	 * 親テーマの --m3-spacing-* は px のまま残す。Luna 2.0 ではここで
-	 * 同名トークンを rem へ上書きし、親 CSS が子テーマ画面で使う余白だけを
+	 * ベースの --m3-spacing-* は px のまま残す。Luna 2.0 ではここで
+	 * 同名トークンを rem へ上書きし、ベース CSS がこの画面で使う余白だけを
 	 * 文字サイズ設定へ追従させる。ルート 16px では計算値が完全一致するので
 	 * 既定表示は 1px も動かない。
 	 * --------------------------------------------------------------- */
@@ -100,7 +100,7 @@ body.lf-theme {
 
 	/* ---------------------------------------------------------------
 	 * Dynamic Color role tokens（指示書 §36）
-	 * seed 未取得時はブランドオレンジ（＝親テーマの現行値）へフォールバックする。
+	 * seed 未取得時はブランドオレンジ（＝Node 由来の現行値）へフォールバックする。
 	 * Phase 7 で記事ごとの seed から上書きする。
 	 * Header / Footer には流し込まない。
 	 * --------------------------------------------------------------- */
@@ -162,7 +162,7 @@ body.lf-theme {
 	/* ---------------------------------------------------------------
 	 * 未定義だった M3 role を埋める
 	 *
-	 * 親テーマは M3 の 35 role のうち 18 しか定義していないが、CSS 側は
+	 * Node 由来の定義は M3 の 35 role のうち 18 しかないが、CSS 側は
 	 * 未定義の role を fallback 無しで 25 箇所参照している。CSS 変数が
 	 * 未定義だと var() は invalid at computed-value time になり、その宣言
 	 * ごと落ちる（--m3-elevation-* や --md-sys-color-on-surface-variant で
@@ -173,8 +173,8 @@ body.lf-theme {
 	 *   なっていた（--md-sys-color-tertiary-container が未定義のため
 	 *   color-mix() が無効化され、background ショートハンドごと落ちる）。
 	 *
-	 * 親テーマで直すと Node 1.3（本番稼働中）の見た目が広範に変わるため、
-	 * ここでは body.lf-theme に閉じて定義する。親テーマ側は別タスク。
+	 * :root で直すと Node 由来画面の見た目が広範に変わるため、
+	 * ここでは body.lf-theme に閉じて定義する。
 	 *
 	 * 値は brand の色相 H=64.6 を基準に OKLCH でトーンを取り、
 	 * tertiary は M3 の作法どおり +60°（H=124.6）へ回した。
@@ -203,7 +203,7 @@ body.lf-theme {
 	 * State layer（M3 system token の別名）
 	 *
 	 * M3 の hover / focus / pressed / dragged の不透明度を Luna 2.0 の
-	 * スコープに閉じて定義する。親テーマ Node 1.3 には追加しない。
+	 * スコープに閉じて定義する。:root には追加しない。
 	 * 統一前は 12% / 12% / 10% / filter: brightness(1.06) と 4 通りに
 	 * 分かれていて、同じ「hover」でも手応えが揃っていなかった。
 	 *
@@ -233,7 +233,7 @@ body.lf-theme {
 
 /**
  * Dark。単純な反転はせず、面と on-color のトーンを個別に選ぶ（指示書 §42）。
- * 親テーマの dark トークンを土台にする。
+ * Node 由来の dark トークンを土台にする。
  */
 body.lf-theme[data-theme="dark"],
 [data-theme="dark"] body.lf-theme {

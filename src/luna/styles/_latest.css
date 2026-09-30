@@ -401,7 +401,7 @@ body.lf-theme .m3-card.lf-card-spectrum:focus-within {
  * カードタイトルの収まり
  *
  * Chromium は display: -webkit-box を blockify するため、HEADLINE カードでは
- * 親テーマの -webkit-line-clamp が効かず、overflow: hidden だけが残って
+ * Node 由来の -webkit-line-clamp が効かず、overflow: hidden だけが残って
  * 文字の途中で切れていた。
  *
  * ここでは JS 無しの受け皿として「3 行ぶんの高さ + 下端のぼかし」を用意する。
@@ -411,14 +411,14 @@ body.lf-theme .m3-card.lf-card-spectrum:focus-within {
 /*
  * 行数ぶんちょうどの高さで切る。lh 単位は 1 行分の高さなので、
  * 切れ目が必ず行の境目に来て文字の途中で切られない。
- * 行数は親テーマ側の -webkit-line-clamp の指定に合わせる。
+ * 行数は Node 由来の -webkit-line-clamp の指定に合わせる。
  */
 body.lf-theme .c-headline-card__title {
 	overflow: hidden;
 	max-block-size: 3lh;
 }
 
-/* JS が段階的に詰めるときの縮尺。1em は親の文字サイズ基準。 */
+/* JS が段階的に詰めるときの縮尺。1em は要素の文字サイズ基準。 */
 body.lf-theme .lf-title-fit {
 	font-size: calc(1em * var(--lf-title-fit, 1));
 	letter-spacing: var(--lf-title-tracking, -0.005em);
@@ -446,14 +446,14 @@ body.lf-theme :is(
  */
 
 /* ---------------------------------------------------------------------
- * モバイルの一覧は親テーマ（Node 1.3.1）の「横並びの行」に従う。
+ * モバイルの一覧は Node 1.3.1 由来の「横並びの行」に従う。
  *
  * 上の `body.lf-theme .m3-card { flex-direction: column }` は詳細度 (0,3,0) で
- * 親の行レイアウト（同じ (0,3,0)）と並び、子テーマが後から読まれるぶんだけ
+ * ベースの行レイアウト（同じ (0,3,0)）と並び、Luna の CSS が後から読まれるぶんだけ
  * 勝ってしまう。結果、行になるはずの一覧が縦積みのまま残っていた
  * （実測 375×812: LATEST 6件で 1,938px / カード 266px）。
  *
- * 700px は親が行へ切り替える幅。ここでは向きだけを譲り、Paper の面・罫・
+ * 700px はベースが行へ切り替える幅。ここでは向きだけを譲り、Paper の面・罫・
  * タイポグラフィはそのまま 2.0 のものを使う。
  * --------------------------------------------------------------------- */
 @media (max-width: 700px) {
@@ -475,7 +475,7 @@ body.lf-theme :is(
 	 * 2.0 のカードは aspect-ratio: 16/10 固定だが、これは縦積み前提の指定で、
 	 * 行に入れると画像が行より低くなり、上下に余白が残る
 	 * （実測 375px: 行 149px に対し画像 96px で、画像の上に 24px の空きができていた）。
-	 * 親（Node 1.3.1）の行レイアウトと同じく、比率を解いて stretch に任せる。
+	 * Node 1.3.1 由来の行レイアウトと同じく、比率を解いて stretch に任せる。
 	 */
 	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card > .m3-card__visual {
 		aspect-ratio: auto;
@@ -489,17 +489,17 @@ body.lf-theme :is(
 }
 
 /* ---------------------------------------------------------------------
- * リスト表示（著者アーカイブなど）も親テーマの横並びに従う。
+ * リスト表示（著者アーカイブなど）も Node 由来の横並びに従う。
  *
- * 親は `--list` のカードを flex-direction: row（サムネイル 280px を左、
+ * ベース CSS は `--list` のカードを flex-direction: row（サムネイル 280px を左、
  * 本文を右）にしているが、詳細度は (0,3,0) で上の
- * `body.lf-theme .m3-card { flex-direction: column }` と並ぶ。子テーマが
+ * `body.lf-theme .m3-card { flex-direction: column }` と並ぶ。Luna の CSS が
  * 後から読まれるぶんだけ勝ってしまい、リスト表示が縦積みに戻っていた。
  * 実測 1280px の著者アーカイブ: カード 800×307 の左上に 280×175 の画像が
  * 載り、その右 520px が空白のまま本文が画像の下から始まっていた。
  *
  * 700px 以下は上のブロックが行として引き取るので、ここは 701px 以上だけ。
- * 701〜768px は親が意図的に縦積みへ戻す帯なので、そこも避ける。
+ * 701〜768px はベースが意図的に縦積みへ戻す帯なので、そこも避ける。
  * --------------------------------------------------------------------- */
 @media (min-width: 769px) {
 	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(.l-card-grid--list, .m3-post-grid--list) > .m3-card {
@@ -514,8 +514,8 @@ body.lf-theme :is(
 }
 
 /*
- * リスト表示のアイキャッチは、親の設計どおり「自然な比率で縦中央」にする。
- * 2.0 の 16/10 固定を解かないと、親が縦積みへ戻す 701〜768px の帯で
+ * リスト表示のアイキャッチは、Node 由来の設計どおり「自然な比率で縦中央」にする。
+ * 2.0 の 16/10 固定を解かないと、ベースが縦積みへ戻す 701〜768px の帯で
  * 画像が横幅いっぱい × 16:10 になり、1 件のカードが 589px になる
  * （実測 768px: 画像 734×459）。向きが変わらないこの帯にも効かせたいので、
  * 上のブロックとは別の下限にしてある。
@@ -524,7 +524,7 @@ body.lf-theme :is(
 	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(.l-card-grid--list, .m3-post-grid--list) > .m3-card > .m3-card__visual {
 		aspect-ratio: auto;
 		/*
-		 * 親は align-items: center で画像を行の縦中央に置くが、行のほうが
+		 * ベース CSS は align-items: center で画像を行の縦中央に置くが、行のほうが
 		 * 高いときはアイキャッチの上に余白が残る（実測 1440px の著者アーカイブで
 		 * 8 件すべてに発生）。カードの他の要素と同じく上端に揃える。
 		 */

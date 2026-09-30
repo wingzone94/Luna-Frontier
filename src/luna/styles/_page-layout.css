@@ -43,7 +43,7 @@ body.lf-theme .lf-page-header__title {
 	letter-spacing: -0.01em;
 	color: var(--lc-on-surface);
 	text-wrap: balance;
-	/* 親 page.php の中央寄せインラインスタイルは子テンプレートで撤去済み。 */
+	/* Node 由来 page.php の中央寄せインラインスタイルは Luna のテンプレートで撤去済み。 */
 	text-align: start;
 }
 

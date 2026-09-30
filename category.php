@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 $topic = get_queried_object();
 if ( ! $topic instanceof WP_Term || ! in_array( rawurldecode( $topic->slug ), array( 'ai生成', 'ゲーム', 'ガジェット', 'ニュース' ), true ) ) {
-	require get_template_directory() . '/archive.php';
+	require get_stylesheet_directory() . '/archive.php';
 	return;
 }
 
