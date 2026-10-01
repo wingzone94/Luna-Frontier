@@ -134,11 +134,16 @@ export function initSearchBar() {
             const isCategorySuggestion = document.body.classList.contains('lf-theme')
                 && suggestionSources.includes('category');
             if (isCategorySuggestion) {
-                icon.className = 'm3-search-suggestion__mark';
-                icon.textContent = '📁';
-            } else {
                 icon.className = 'material-symbols-outlined';
-                icon.textContent = item.icon || 'search';
+                icon.textContent = 'folder';
+            } else {
+                const suggestionEmoji = {
+                    sports_esports: '🎮',
+                    smartphone: '📱',
+                    search: '🔍',
+                };
+                icon.className = 'm3-search-suggestion__mark';
+                icon.textContent = suggestionEmoji[item.icon] || suggestionEmoji.search;
             }
 
             label.className = 'm3-search-suggestion__label';

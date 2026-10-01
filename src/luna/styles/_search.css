@@ -49,7 +49,7 @@ body.lf-theme .m3-header:not(.search-is-active) .m3-search-input-wrapper {
 }
 body.lf-theme .m3-header .m3-search-bar__input { font-size: 14px; }
 
-/* Category rows use a literal emoji. Do not inherit Material Symbols. */
+/* Non-category suggestion marks are emoji. Do not inherit Material Symbols. */
 body.lf-theme .m3-search-suggestion__mark {
 	display: inline-flex;
 	align-items: center;
