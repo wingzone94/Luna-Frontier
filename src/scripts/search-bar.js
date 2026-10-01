@@ -129,9 +129,17 @@ export function initSearchBar() {
             option.setAttribute('role', 'option');
             option.setAttribute('aria-selected', 'false');
 
-            icon.className = 'material-symbols-outlined';
             icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = item.icon || 'search';
+            const suggestionSources = String(item.source || '').split('+').filter(Boolean);
+            const isCategorySuggestion = document.body.classList.contains('lf-theme')
+                && suggestionSources.includes('category');
+            if (isCategorySuggestion) {
+                icon.className = 'm3-search-suggestion__mark';
+                icon.textContent = '📁';
+            } else {
+                icon.className = 'material-symbols-outlined';
+                icon.textContent = item.icon || 'search';
+            }
 
             label.className = 'm3-search-suggestion__label';
             label.textContent = item.keyword;
