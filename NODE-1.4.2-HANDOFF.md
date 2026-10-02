@@ -1,4 +1,6 @@
-# Node 1.4.2 image repair — work in progress
+# Node 1.4.2 image repair — original handoff
+
+> Historical checkpoint. Current implementation and verification: [IMAGE-REPAIR-REPORT.md](IMAGE-REPAIR-REPORT.md).
 
 2026-10-02. User requested a handoff before implementation/release completion.
 

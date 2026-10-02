@@ -49,7 +49,7 @@ class Node_Image_Repair_Test extends WP_UnitTestCase {
 		$this->assertSame( 1024, Node_Image_Repair::image( $f['missing'] )[0] );
 		$this->assertSame( 'image/png', Node_Image_Repair::image( $f['missing'] )['mime'] );
 		$this->assertSame( 'already_ok', Node_Image_Repair::repair( $row, $key )['state'] );
-		$this->assertSame( 'restored', Node_Image_Repair::restore( $key )['state'] );
+		$this->assertSame( 'retained', Node_Image_Repair::restore( $key )['state'] );
 		$this->assertFileExists( Node_Image_Repair::path( $f['missing'] ) );
 	}
 	public function test_metadata_only_missing_size_and_scaled_only_source(): void {
@@ -103,4 +103,46 @@ class Node_Image_Repair_Test extends WP_UnitTestCase {
 		$this->assertSame( '判定不能', $this->row( $f, $crop )['status'] );
 		$this->assertSame( $hash, hash_file( 'sha256', $f['file'] ) );
 	}
+	public function test_interrupted_publication_reconciles_journal_and_shared_reference_is_retained(): void {
+		$f = $this->fixture(); $row = $this->row( $f ); $key = $this->repair( $row );
+		$journal = get_option( $key ); $journal['state'] = 'prepared';
+		update_option( $key, $journal, false );
+		$this->assertSame( 'done', Node_Image_Repair::repair( $row, $key )['state'] );
+		$this->assertSame( 'done', get_option( $key )['state'] );
+		self::factory()->post->create( array( 'post_content' => '<img src="' . $row['url'] . '">' ) );
+		Node_Image_Repair::restore( $key );
+		$this->assertTrue( get_option( $key )['retained_file'] );
+		$this->assertFileExists( Node_Image_Repair::path( $f['missing'] ) );
+	}
+
+	public function test_prepared_journal_without_publication_can_be_retried(): void {
+		$f = $this->fixture(); $row = $this->row( $f ); $key = $this->repair( $row );
+		$journal = get_option( $key ); $journal['state'] = 'prepared';
+		update_option( $key, $journal, false ); unlink( Node_Image_Repair::path( $f['missing'] ) );
+		$this->assertSame( 'not_published', Node_Image_Repair::restore( $key )['state'] );
+		$this->assertSame( 'done', Node_Image_Repair::repair( $row, $key )['state'] );
+		$this->assertNotNull( Node_Image_Repair::image( $f['missing'] ) );
+	}
+
+	public function test_old_original_is_not_used_for_same_ratio_edited_attachment(): void {
+		$f = $this->fixture();
+		update_post_meta( $f['id'], '_node_image_original_metadata', wp_get_attachment_metadata( $f['id'] ) );
+		$edited = dirname( $f['relative'] ) . '/edited-e123456.png';
+		$path = Node_Image_Repair::path( $edited ); copy( $f['scaled'], $path ); $this->files[] = $path;
+		update_attached_file( $f['id'], $path );
+		wp_update_attachment_metadata( $f['id'], array( 'file' => $edited, 'width' => 2000, 'height' => 1250, 'sizes' => array() ) );
+		$row = $this->row( $f, str_replace( '.png', '-1024x640.png', $edited ) );
+		$this->assertSame( $edited, $row['source'] );
+		unlink( $path );
+		$this->assertSame( '復元元が必要', $this->row( $f, str_replace( '.png', '-1024x640.png', $edited ) )['status'] );
+	}
+
+	public function test_featured_reference_and_own_theme_loader_are_registered(): void {
+		$f = $this->fixture(); set_post_thumbnail( $f['post'], $f['id'] );
+		$refs = Node_Image_Repair::references( get_post( $f['post'] ) );
+		$this->assertContains( 'attachment', array_column( $refs, 'context' ) );
+		$this->assertNotFalse( has_action( 'wp_ajax_' . Node_Image_Repair::ACTION, 'node_image_repair_ajax' ) );
+		$this->assertSame( realpath( dirname( __DIR__ ) . '/inc/image-repair.php' ), realpath( ( new ReflectionClass( 'Node_Image_Repair' ) )->getFileName() ) );
+	}
+
 }

@@ -120,9 +120,17 @@ function node_featured_webp_rewrite_post_content( array $replacements ) {
 
 /**
  * Replace a newly selected JPEG/PNG featured image and its registered sizes with WebP.
- * Originals are removed only after WordPress points to every converted file.
+ * Original URLs are retained; saved article content is never rewritten.
  */
 function node_featured_webp_replace( int $attachment_id ): bool {
+	global $wpdb;
+	$lock = 'image-repair-' . md5( DB_NAME . ':' . $wpdb->prefix );
+	if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) ) ) { return false; }
+	try { return node_featured_webp_replace_locked( $attachment_id ); }
+	finally { $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) ); }
+}
+
+function node_featured_webp_replace_locked( int $attachment_id ): bool {
 	if ( ! in_array( get_post_mime_type( $attachment_id ), array( 'image/jpeg', 'image/png' ), true )
 		|| ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
 		return false;
@@ -160,6 +168,9 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 	$converted = array();
 	$created   = array();
 	foreach ( array_unique( $sources ) as $source ) {
+		$root = realpath( wp_get_upload_dir()['basedir'] );
+		$real = realpath( $source );
+		if ( ! $root || ! $real || is_link( $source ) || 0 !== strpos( $real, $root . '/' ) ) { break; }
 		if ( ! is_file( $source ) || ! in_array( wp_check_filetype( $source )['type'], array( 'image/jpeg', 'image/png' ), true ) ) {
 			break;
 		}

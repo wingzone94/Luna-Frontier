@@ -258,9 +258,7 @@ final class Node_IC_Converter {
 	/**
 	 * アイキャッチ 1 件を WebP に置き換える。
 	 *
-	 * 元の JPEG/PNG フルサイズは「元ファイルを残す」設定が有効なときだけ残る。
-	 * 既定では削除して本当に置き換える。
-	 * 削除するのは置き換え前の中間サイズだけ。
+	 * 元画像と旧中間サイズは保存済みURLを保護するため常に保持する。
 	 *
 	 * @return array{ok:bool,before:int,after:int,message:string}
 	 */
@@ -272,12 +270,11 @@ final class Node_IC_Converter {
 			return self::result( false, 0, 0, $reason );
 		}
 
-		// 同一アタッチメントへの二重実行を防ぐ（cron と管理画面の一括置き換えが重なるケース）
-		$lock_key = 'node_ic_lock_' . $attachment_id;
-		if ( get_transient( $lock_key ) ) {
-			return self::result( false, 0, 0, '置き換え処理が進行中です。' );
+		global $wpdb;
+		$lock_key = 'image-repair-' . md5( DB_NAME . ':' . $wpdb->prefix );
+		if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock_key ) ) ) {
+			return self::result( false, 0, 0, '画像処理が進行中です。終了後に再試行してください。' );
 		}
-		set_transient( $lock_key, 1, 60 );
 
 		try {
 			$source_path = (string) get_attached_file( $attachment_id );
@@ -337,6 +334,7 @@ final class Node_IC_Converter {
 			$original_file = _wp_relative_upload_path( $source_path );
 
 			add_post_meta( $attachment_id, '_node_image_original_metadata', $original_metadata, true );
+			update_post_meta( $attachment_id, '_node_ic_original_metadata', $original_metadata );
 			update_attached_file( $attachment_id, $webp_path );
 			wp_update_post(
 				array(
@@ -375,6 +373,7 @@ final class Node_IC_Converter {
 			update_post_meta( $attachment_id, self::META_CONVERTED_AT, current_time( 'mysql' ) );
 			delete_post_meta( $attachment_id, self::META_SKIP );
 
+			update_post_meta( $attachment_id, '_node_ic_converted_snapshot', array( 'file' => $webp_path, 'metadata' => $metadata, 'hash' => hash_file( 'sha256', $webp_path ), 'original_hash' => hash_file( 'sha256', $source_path ) ) );
 			node_ic_flush_target_cache();
 
 			return self::result(
@@ -389,7 +388,7 @@ final class Node_IC_Converter {
 				)
 			);
 		} finally {
-			delete_transient( $lock_key );
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_key ) );
 		}
 	}
 
@@ -399,6 +398,16 @@ final class Node_IC_Converter {
 	 * @return array{ok:bool,before:int,after:int,message:string}
 	 */
 	public static function restore( int $attachment_id ): array {
+		global $wpdb;
+		$lock_key = 'image-repair-' . md5( DB_NAME . ':' . $wpdb->prefix );
+		if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock_key ) ) ) {
+			return self::result( false, 0, 0, '画像処理が進行中です。終了後に再試行してください。' );
+		}
+		try { return self::restore_locked( $attachment_id ); }
+		finally { $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_key ) ); }
+	}
+
+	private static function restore_locked( int $attachment_id ): array {
 		$attachment_id = (int) $attachment_id;
 
 		if ( ! self::is_owned_by_current_user( $attachment_id ) ) {
@@ -425,6 +434,16 @@ final class Node_IC_Converter {
 			return self::result( false, 0, 0, '元ファイルが見つかりません: ' . $relative );
 		}
 
+		$root = realpath( $uploads['basedir'] );
+		$real = realpath( $original_path );
+		if ( ! $root || ! $real || is_link( $original_path ) || 0 !== strpos( $real, $root . '/' ) || ! @getimagesize( $original_path ) ) {
+			return self::result( false, 0, 0, '安全な元画像を確認できません。' );
+		}
+		$metadata = get_post_meta( $attachment_id, '_node_ic_original_metadata', true );
+		if ( ! is_array( $metadata ) || ( $metadata['file'] ?? '' ) !== $relative ) {
+			return self::result( false, 0, 0, '元の添付メタデータがないため、安全に復元できません。画像ファイルは保持しました。' );
+		}
+
 		$original_mime = (string) get_post_meta( $attachment_id, self::META_ORIGINAL_MIME, true );
 		if ( '' === $original_mime ) {
 			$original_mime = 'image/jpeg';
@@ -434,6 +453,11 @@ final class Node_IC_Converter {
 		$webp_path  = (string) get_attached_file( $attachment_id );
 		$webp_sizes = self::intermediate_paths( $attachment_id );
 
+		$snapshot = get_post_meta( $attachment_id, '_node_ic_converted_snapshot', true );
+		if ( ! is_array( $snapshot ) || $snapshot['file'] !== $webp_path || $snapshot['metadata'] !== wp_get_attachment_metadata( $attachment_id ) || ! is_file( $webp_path ) || $snapshot['hash'] !== hash_file( 'sha256', $webp_path ) || $snapshot['original_hash'] !== hash_file( 'sha256', $original_path ) ) {
+			return self::result( false, 0, 0, '競合: 変換後の編集または確認できない旧版の履歴を保持しました。' );
+		}
+
 		update_attached_file( $attachment_id, $original_path );
 		wp_update_post(
 			array(
@@ -442,10 +466,9 @@ final class Node_IC_Converter {
 			)
 		);
 
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		$metadata = wp_generate_attachment_metadata( $attachment_id, $original_path );
-		if ( is_array( $metadata ) ) {
-			wp_update_attachment_metadata( $attachment_id, $metadata );
+		wp_update_attachment_metadata( $attachment_id, $metadata );
+		if ( get_attached_file( $attachment_id ) !== $original_path || wp_get_attachment_metadata( $attachment_id ) !== $metadata ) {
+			return self::result( false, 0, 0, '添付情報の復元を確認できません。記録と画像を保持しました。' );
 		}
 
 		// Retain WebP files too: articles saved after conversion may reference them.
