@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Destructive featured-image conversion must leave a complete WebP attachment.
+ * Featured-image conversion retains every original URL and complete WebP metadata.
  */
 class Node_Featured_Webp_Test extends WP_UnitTestCase {
 	public function test_new_featured_images_replace_every_registered_file(): void {
@@ -45,7 +45,7 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 				$this->assertFileExists( get_attached_file( $attachment_id ) );
 				$this->assertSame( 'image/webp', getimagesize( get_attached_file( $attachment_id ) )['mime'] );
 				foreach ( $originals as $original ) {
-					$this->assertFileDoesNotExist( $original );
+					$this->assertFileExists( $original );
 				}
 				foreach ( wp_get_attachment_metadata( $attachment_id )['sizes'] as $size ) {
 					$this->assertSame( 'image/webp', $size['mime-type'] );
@@ -61,7 +61,7 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_failed_original_deletion_is_tracked_and_retried(): void {
+	public function test_old_deletion_retry_does_not_delete_originals(): void {
 		if ( ! function_exists( 'imagecreatetruecolor' ) || ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
 			$this->markTestSkipped( 'GD or WebP support is unavailable.' );
 		}
@@ -83,12 +83,13 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 			set_post_thumbnail( $post_id, $attachment_id );
 			$this->assertSame( 'image/webp', get_post_mime_type( $attachment_id ) );
 			$this->assertFileExists( $file );
-			$this->assertCount( count( $metadata['sizes'] ) + 1, get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true ) );
+			$this->assertEmpty( get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true ) );
+			update_post_meta( $attachment_id, '_node_featured_webp_pending_delete', array( wp_basename( $file ) ) );
 			remove_filter( 'wp_delete_file', $block_jpeg_delete );
 			node_featured_webp_retry_delete( $attachment_id );
-			$this->assertFileDoesNotExist( $file );
+			$this->assertFileExists( $file );
 			foreach ( $metadata['sizes'] as $size ) {
-				$this->assertFileDoesNotExist( dirname( $file ) . '/' . $size['file'] );
+				$this->assertFileExists( dirname( $file ) . '/' . $size['file'] );
 			}
 			$this->assertEmpty( get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true ) );
 		} finally {
@@ -98,7 +99,7 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_existing_post_image_urls_are_rewritten_before_originals_are_deleted(): void {
+	public function test_existing_post_image_urls_and_originals_are_preserved(): void {
 		if ( ! function_exists( 'imagecreatetruecolor' ) || ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
 			$this->markTestSkipped( 'GD or WebP support is unavailable.' );
 		}
@@ -140,16 +141,9 @@ class Node_Featured_Webp_Test extends WP_UnitTestCase {
 			$new_full_url = wp_get_attachment_url( $attachment_id );
 			$new_size_url = wp_get_attachment_image_src( $attachment_id, $size_name )[0];
 			$expected_alternate_url = set_url_scheme( $new_full_url, 'https' === $old_scheme ? 'http' : 'https' );
-			$this->assertStringContainsString( '"url":"' . $new_full_url . '"', $updated_content );
-			$this->assertStringContainsString( 'href="' . $new_full_url . '"', $updated_content );
-			$this->assertStringContainsString( 'src="' . $new_full_url . '"', $updated_content );
-			$this->assertStringContainsString( $new_size_url, $updated_content );
-			$this->assertStringContainsString( $expected_alternate_url, $updated_content );
-			$this->assertStringNotContainsString( $old_full_url, $updated_content );
-			$this->assertStringNotContainsString( $alternate_scheme_url, $updated_content );
-			$this->assertStringNotContainsString( $old_size_url, $updated_content );
+			$this->assertSame( $content, $updated_content );
 			$this->assertSame( 'image/webp', get_post_mime_type( $attachment_id ) );
-			$this->assertFileDoesNotExist( $file );
+			$this->assertFileExists( $file );
 			$this->assertFileExists( get_attached_file( $attachment_id ) );
 		} finally {
 			wp_delete_attachment( $attachment_id, true );

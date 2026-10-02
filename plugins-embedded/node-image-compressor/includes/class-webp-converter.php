@@ -117,10 +117,11 @@ final class Node_IC_Converter {
 
 	/**
 	 * 置き換え後に元の JPEG/PNG を残すか。
-	 * 既定は残さない（＝本当に置き換える）。
+	 * Node 1.4.2 以降は常に保持する。
 	 */
 	public static function keeps_original(): bool {
-		return '1' === (string) get_option( 'node_ic_keep_original', '0' );
+		// Stored articles, revisions and external links may still use these files.
+		return true;
 	}
 
 	/**
@@ -281,9 +282,15 @@ final class Node_IC_Converter {
 		try {
 			$source_path = (string) get_attached_file( $attachment_id );
 			$before      = (int) filesize( $source_path );
+			$original_metadata = wp_get_attachment_metadata( $attachment_id );
+			$uploads_root = realpath( wp_get_upload_dir()['basedir'] );
+			$source_real = realpath( $source_path );
+			if ( ! $uploads_root || ! $source_real || 0 !== strpos( $source_real, $uploads_root . '/' ) ) {
+				return self::result( false, 0, 0, 'uploads 外のファイルは処理しません。' );
+			}
 			$source_mime = (string) get_post_mime_type( $attachment_id );
 
-			$webp_path = self::webp_path_for( $source_path );
+			$webp_path = dirname( $source_path ) . '/' . wp_unique_filename( dirname( $source_path ), wp_basename( self::webp_path_for( $source_path ) ) );
 			$target    = (int) floor( $before * self::AUTO_TARGET_RATIO );
 			$after     = 0;
 			$quality   = 0;
@@ -329,6 +336,7 @@ final class Node_IC_Converter {
 
 			$original_file = _wp_relative_upload_path( $source_path );
 
+			add_post_meta( $attachment_id, '_node_image_original_metadata', $original_metadata, true );
 			update_attached_file( $attachment_id, $webp_path );
 			wp_update_post(
 				array(
@@ -339,24 +347,22 @@ final class Node_IC_Converter {
 
 			require_once ABSPATH . 'wp-admin/includes/image.php';
 			$metadata = wp_generate_attachment_metadata( $attachment_id, $webp_path );
-			if ( is_array( $metadata ) ) {
-				wp_update_attachment_metadata( $attachment_id, $metadata );
+			if ( ! is_array( $metadata ) || empty( $metadata['file'] ) || ! @getimagesize( $webp_path ) ) {
+				update_attached_file( $attachment_id, $source_path );
+				wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => $source_mime ) );
+				wp_update_attachment_metadata( $attachment_id, $original_metadata );
+				return self::result( false, $before, 0, '変換後のメタデータが不完全です。元画像を保持しました。' );
+			}
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+			if ( get_attached_file( $attachment_id ) !== $webp_path || wp_get_attachment_metadata( $attachment_id ) !== $metadata || 'image/webp' !== get_post_mime_type( $attachment_id ) ) {
+				update_attached_file( $attachment_id, $source_path );
+				wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => $source_mime ) );
+				wp_update_attachment_metadata( $attachment_id, $original_metadata );
+				return self::result( false, $before, 0, '添付情報を保存できません。元画像を保持しました。' );
 			}
 
-			// 旧中間サイズは常に削除する（新しい WebP のサイズが作り直されているため）
-			foreach ( $old_size_paths as $old_path ) {
-				if ( $old_path !== $source_path && file_exists( $old_path ) ) {
-					wp_delete_file( $old_path );
-				}
-			}
-
-			// 元のフルサイズは設定次第。残せば復元でき、消せばディスクを使わない。
-			// 消した場合は旧 URL への直リンクが 404 になるため、復元も不可になる
+			// Never remove source or old intermediate files: stored URLs are not rewritten.
 			$removed_original = false;
-			if ( ! self::keeps_original() && file_exists( $source_path ) ) {
-				wp_delete_file( $source_path );
-				$removed_original = ! file_exists( $source_path );
-			}
 
 			update_post_meta( $attachment_id, self::META_ORIGINAL_REMOVED, $removed_original ? '1' : '0' );
 			// 旧 URL からの転送に使う。元を残す設定でも、あとで消えたときに効くよう常に残す
@@ -442,14 +448,7 @@ final class Node_IC_Converter {
 			wp_update_attachment_metadata( $attachment_id, $metadata );
 		}
 
-		foreach ( $webp_sizes as $path ) {
-			if ( file_exists( $path ) ) {
-				wp_delete_file( $path );
-			}
-		}
-		if ( $webp_path !== $original_path && file_exists( $webp_path ) ) {
-			wp_delete_file( $webp_path );
-		}
+		// Retain WebP files too: articles saved after conversion may reference them.
 
 		delete_post_meta( $attachment_id, self::META_ORIGINAL_FILE );
 		delete_post_meta( $attachment_id, self::META_ORIGINAL_MIME );
