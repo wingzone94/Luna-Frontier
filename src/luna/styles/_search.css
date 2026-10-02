@@ -49,7 +49,7 @@ body.lf-theme .m3-header:not(.search-is-active) .m3-search-input-wrapper {
 }
 body.lf-theme .m3-header .m3-search-bar__input { font-size: 14px; }
 
-/* Non-category suggestion marks are emoji. Do not inherit Material Symbols. */
+/* Category marks use the folder emoji. Do not apply Material Symbols. */
 body.lf-theme .m3-search-suggestion__mark {
 	display: inline-flex;
 	align-items: center;
@@ -69,11 +69,51 @@ body.lf-theme .m3-search-suggestion__mark {
 }
 
 /*
- * Desktop open search stays left of the existing action cluster.
- * Button hiding is !important inside @layer components, so the same layer
- * and a higher specificity are required. Unlayered !important would lose.
+ * Desktop search shares the header row with the logo and the action cluster.
+ * The middle column is the free space, so the field tracks the real logo width
+ * and the real button count. It stays capped at 460px and flush with the buttons.
+ * Opening it does not change the button column. Button hiding is !important
+ * inside @layer components, so the same layer and a higher specificity are required.
  * Below 1024px the existing disclosure is left unchanged.
  */
+@media (max-width: 1023.98px) {
+	body.lf-theme .m3-header:not(.search-is-active) .m3-header__search-slot {
+		position: absolute;
+		width: 0;
+		height: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	body.lf-theme .m3-header.search-is-active .m3-header__search-slot {
+		position: static;
+		display: flex;
+		flex: 1 1 auto;
+		align-items: center;
+		width: auto;
+		height: auto;
+		min-width: 0;
+		overflow: visible;
+		pointer-events: auto;
+	}
+
+	body.lf-theme .m3-header.search-is-active .m3-header__actions {
+		flex: 0 0 0;
+		width: 0;
+		min-width: 0;
+		margin: 0;
+		gap: 0;
+		overflow: hidden;
+	}
+
+	body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-container,
+	body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-bar {
+		flex: 1 1 auto;
+		width: 100%;
+		min-width: 0;
+	}
+}
+
 @media (min-width: 1024px) {
 	@layer components {
 		body.lf-theme .m3-header.search-is-active .m3-header__actions > .m3-rss-button,
@@ -99,38 +139,98 @@ body.lf-theme .m3-search-suggestion__mark {
 		}
 	}
 
-	body.lf-theme .m3-header.search-is-active .m3-header__actions {
-		position: relative;
-		flex: 0 0 auto;
-		width: auto;
+	body.lf-theme .m3-header__inner {
+		display: grid;
+		grid-template-columns: minmax(0, max-content) minmax(9rem, 1fr) max-content;
+		align-items: center;
+		column-gap: 12px;
 	}
 
-	body.lf-theme .m3-header.search-is-active .m3-search-container,
-	body.lf-theme .m3-header.search-is-active .m3-search-bar {
+	body.lf-theme .m3-header__left {
+		grid-column: 1;
+		grid-row: 1;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	body.lf-theme .m3-header__left :is(.site-branding, .custom-logo-link, .m3-header__logo-link) {
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	body.lf-theme .m3-header__left .m3-logo-text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	body.lf-theme .m3-header__left .custom-logo {
+		display: block;
+		max-width: 100%;
+		width: auto;
+		height: auto;
+		min-width: 0;
+		max-height: 48px;
+		object-fit: contain;
+	}
+
+	body.lf-theme .m3-header__search-slot {
+		display: flex;
+		grid-column: 2;
+		grid-row: 1;
+		align-items: center;
+		min-width: 0;
+	}
+
+	body.lf-theme .m3-header__search-slot .m3-search-container,
+	body.lf-theme .m3-header__search-slot .m3-search-bar {
+		position: relative;
+		display: flex;
+		flex: 1 1 auto;
+		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
+		min-width: 0;
+	}
+
+	body.lf-theme .m3-header__actions {
+		grid-column: 3;
+		grid-row: 1;
+		justify-self: end;
 		position: static;
 		flex: 0 0 auto;
-		width: auto;
+		width: max-content;
+		max-width: 100%;
+	}
+
+	body.lf-theme .m3-header .m3-search-input-wrapper {
+		position: relative;
+		right: auto;
+		left: auto;
+		top: auto;
+		flex: 0 1 auto;
+		width: 0;
+		max-width: 0;
 		min-width: 0;
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		visibility: hidden;
+		overflow: hidden;
+		pointer-events: none;
+		transform: none;
 	}
 
 	body.lf-theme .m3-header.search-is-active .m3-search-input-wrapper {
-		position: absolute;
-		right: calc(100% + 12px);
-		left: auto;
-		top: 50%;
-		flex: none;
-		/* 588px = logo reserve 280 + field gap 12 + action cluster 272 + header padding 48.
-		   Do not use a percentage here: it cycles with the action cluster and shrink-wraps. */
-		width: min(460px, calc(100vw - 588px));
+		width: min(100%, 460px);
 		max-width: 460px;
-		min-width: 0;
-		margin: 0;
+		margin-left: auto;
 		padding: 2px 56px 2px 16px;
 		opacity: 1;
 		visibility: visible;
+		overflow: visible;
 		pointer-events: auto;
-		transform: translateY(-50%);
-		transform-origin: right center;
 		background: var(--md-sys-color-surface-container-highest);
 		border-radius: 28px;
 		box-shadow: var(--m3-elevation-2);
@@ -140,7 +240,7 @@ body.lf-theme .m3-search-suggestion__mark {
 	body.lf-theme .m3-header.search-is-active #m3-advanced-search-trigger {
 		position: absolute;
 		top: 50%;
-		right: calc(100% + 16px);
+		right: 4px;
 		left: auto;
 		margin: 0;
 		transform: translateY(-50%);
