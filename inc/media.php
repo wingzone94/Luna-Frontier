@@ -65,6 +65,56 @@ add_filter('big_image_size_threshold', function() { return 2000; }); // 最大�
  */
 add_filter('jpeg_quality', function() { return 80; });
 
+/**
+ * Keep local image URLs usable when the site is viewed through a Live Link host.
+ * External image URLs must retain their original host.
+ */
+function node_local_image_relative_url( string $url ): string {
+	$site_host = wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+	$url_host  = wp_parse_url( $url, PHP_URL_HOST );
+
+	if ( is_string( $site_host ) && is_string( $url_host ) && 0 === strcasecmp( $site_host, $url_host ) ) {
+		return wp_make_link_relative( $url );
+	}
+
+	return $url;
+}
+
+/** Convert each local URL in a responsive image source list. */
+function node_local_image_relative_srcset( string $srcset ): string {
+	return (string) preg_replace_callback(
+		'~https?://[^,\s]+~i',
+		static function ( array $match ): string {
+			return node_local_image_relative_url( $match[0] );
+		},
+		$srcset
+	);
+}
+
+add_filter(
+	'wp_get_attachment_image_attributes',
+	static function ( array $attr ): array {
+		if ( is_admin() ) {
+			return $attr;
+		}
+
+		foreach ( array( 'src', 'data-src' ) as $key ) {
+			if ( isset( $attr[ $key ] ) && is_string( $attr[ $key ] ) ) {
+				$attr[ $key ] = node_local_image_relative_url( $attr[ $key ] );
+			}
+		}
+		foreach ( array( 'srcset', 'data-srcset' ) as $key ) {
+			if ( isset( $attr[ $key ] ) && is_string( $attr[ $key ] ) ) {
+				$attr[ $key ] = node_local_image_relative_srcset( $attr[ $key ] );
+			}
+		}
+
+		return $attr;
+	},
+	10,
+	1
+);
+
 
 
 // ==========================================================================
@@ -86,7 +136,10 @@ function node_preload_hero_image() {
         $image_sizes   = wp_get_attachment_image_sizes( $attachment_id, 'full' );
 
         if ( $image_src ) {
-            $url = $image_src[0];
+            $url = node_local_image_relative_url( $image_src[0] );
+            if ( $image_srcset ) {
+                $image_srcset = node_local_image_relative_srcset( $image_srcset );
+            }
             echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '"';
             if ( $image_srcset ) {
                 echo ' imagesrcset="' . esc_attr( $image_srcset ) . '"';
@@ -99,5 +152,4 @@ function node_preload_hero_image() {
     }
 }
 add_action( 'wp_head', 'node_preload_hero_image', 1 );
-
 

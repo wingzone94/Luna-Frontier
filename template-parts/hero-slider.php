@@ -22,7 +22,7 @@ if ( empty( $slides ) ) {
 $total      = count( $slides );
 $slider_id  = wp_unique_id( 'lf-hero-slider-' );
 $fallback   = function_exists( 'get_theme_file_uri' )
-	? get_theme_file_uri( 'assets/images/luminous-core-card-image.png' )
+	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image.png' ) )
 	: '';
 ?>
 <section

@@ -41,6 +41,9 @@ $node_mt_logo        = '' !== $node_mt_custom_logo ? $node_mt_custom_logo : get_
 	<?php // ブランドフォント DIN 2014（header.php と同じ Adobe Fonts のキット）。読み込めなくても sans-serif へフォールバックする。 ?>
 	<link rel="preconnect" href="https://use.typekit.net" crossorigin>
 	<link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=Noto+Sans+JP:wght@400..900&amp;display=swap">
 	<style>
 		@font-face {
 			font-family: "Node Hiragino W6";
@@ -48,20 +51,6 @@ $node_mt_logo        = '' !== $node_mt_custom_logo ? $node_mt_custom_logo : get_
 			font-weight: 100 900;
 			src: local("Hiragino Sans W6"), local("Hiragino Kaku Gothic ProN W6");
 			unicode-range: U+3000-30FF, U+31F0-31FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
-		}
-		@font-face {
-			font-family: "Noto Sans JP";
-			font-style: normal;
-			font-weight: 100 900;
-			font-display: swap;
-			src: url("<?php echo esc_url( get_theme_file_uri( 'assets/ttf/NotoSansJP-VF.ttf' ) ); ?>") format("truetype");
-		}
-		@font-face {
-			font-family: "Inter";
-			font-style: normal;
-			font-weight: 400;
-			font-display: swap;
-			src: url("<?php echo esc_url( get_theme_file_uri( 'assets/ttf/Inter-Regular.ttf' ) ); ?>") format("truetype");
 		}
 		:root {
 			--mt-bg: #FFF8F0;

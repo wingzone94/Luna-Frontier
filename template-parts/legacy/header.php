@@ -119,7 +119,7 @@ declare(strict_types=1);
             <div class="site-branding">
                 <?php if (has_custom_logo()) : the_custom_logo(); else : ?>
                     <a href="<?php echo esc_url(home_url('/')); ?>" rel="home" class="m3-header__logo-link">
-                        <img src="<?php echo esc_url(get_theme_file_uri('node-logo.svg')); ?>" alt="LUMINOUS CORE" class="m3-header__logo-img" width="32" height="32">
+                        <img src="<?php echo esc_url( node_local_image_relative_url( get_theme_file_uri( 'node-logo.svg' ) ) ); ?>" alt="LUMINOUS CORE" class="m3-header__logo-img" width="32" height="32">
                         <span class="m3-logo-text">LUMINOUS CORE</span>
                     </a>
                 <?php endif; ?>

@@ -413,7 +413,7 @@ function node_json_ld_image_url( $image ): string {
  * @return string
  */
 function node_get_luminous_core_card_image(): string {
-	return get_template_directory_uri() . '/assets/images/luminous-core-card-image.png';
+	return node_local_image_relative_url( get_template_directory_uri() . '/assets/images/luminous-core-card-image.png' );
 }
 
 /**
