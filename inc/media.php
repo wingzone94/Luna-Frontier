@@ -91,6 +91,21 @@ function node_local_image_relative_srcset( string $srcset ): string {
 	);
 }
 
+/** Local's Live Link proxy rewrites srcset URLs back to the private .local host. */
+function node_is_local_live_link_request(): bool {
+	$original_host = $_SERVER['HTTP_X_ORIGINAL_HOST'] ?? '';
+	return is_string( $original_host ) && 1 === preg_match( '/^[a-z0-9-]+\.localsite\.io(?::[0-9]+)?$/i', $original_host );
+}
+
+add_filter(
+	'wp_calculate_image_srcset',
+	static function ( $sources ) {
+		return node_is_local_live_link_request() ? false : $sources;
+	},
+	10,
+	1
+);
+
 add_filter(
 	'wp_get_attachment_image_attributes',
 	static function ( array $attr ): array {
@@ -102,6 +117,10 @@ add_filter(
 			if ( isset( $attr[ $key ] ) && is_string( $attr[ $key ] ) ) {
 				$attr[ $key ] = node_local_image_relative_url( $attr[ $key ] );
 			}
+		}
+		if ( node_is_local_live_link_request() ) {
+			unset( $attr['srcset'], $attr['data-srcset'] );
+			return $attr;
 		}
 		foreach ( array( 'srcset', 'data-srcset' ) as $key ) {
 			if ( isset( $attr[ $key ] ) && is_string( $attr[ $key ] ) ) {
