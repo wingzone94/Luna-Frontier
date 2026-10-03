@@ -137,13 +137,12 @@ rsync -a \
   --exclude='.gitattributes' \
   --exclude='assets/css/main.css' \
   --exclude='assets/css/material3.css' \
-  --exclude='plugins-embedded/node-seo-tools/assets/share/fonts/NotoSansJP-VF.ttf' \
   ./ "$tmpdir/Node/"
 (cd "$tmpdir" && zip -qr "$repo_dir/node.zip" Node)
 rm -rf "$tmpdir"
 ```
 
-`NotoSansJP-VF.ttf` はテーマ側 `assets/ttf/` を配布ZIP内の正本とします。埋め込み版 Node SEO Tools は、そのプラグイン内にフォントがない場合にテーマ側の同一ファイルを参照してからキャッシュ/CDNへフォールバックするため、OGP画像生成を維持したまま約9.6MBの重複収録を避けられます。独立プラグイン配布物の同梱フォントは削除しません。
+OGP画像生成用の日本語フォントとInterは配布ZIPに同梱しません。Node SEO Tools が初回生成時に固定版のTTFをCDNから取得し、`wp-content/uploads/node-seo-tools/assets/` に保存します。以後はキャッシュを使用します。新規環境で初回取得に失敗するとタイトル文字の描画ができないため、リリース前にキャッシュが空の状態でOGP生成を検証してください。
 
 ## 5. Git へのコミットとプッシュ
 変更したソースコードと、生成した本番用ZIPファイルをGitHubにプッシュします。

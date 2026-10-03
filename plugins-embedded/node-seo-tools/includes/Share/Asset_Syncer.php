@@ -3,8 +3,7 @@
  * Resolve and cache OGP base assets.
  *
  * Background/logo: synced from Luminous Core canonical URLs.
- * Font: plugin bundle first, then the theme's verified font asset and cache/CDN.
- *       Never uses the legacy theme ogp-font.ttf (known broken HTML on prod/test).
+ * Fonts: download pinned TTF files from a CDN into the uploads cache.
  *
  * @package Node_SEO_Tools
  */
@@ -19,15 +18,15 @@ final class Asset_Syncer {
 
 	public const CANONICAL_BASE = 'https://luminous-core.net/wp-content/themes/node/assets/';
 
-	public const FONT_JP_FILENAME            = 'NotoSansJP-VF.ttf';
-	public const FONT_LATIN_FILENAME         = 'DIN2014-Regular.ttf';
-	public const FONT_LATIN_FALLBACK_BUNDLED = 'Inter-Regular.ttf';
+	public const FONT_JP_FILENAME    = 'NotoSansJP-VF-165c01b.ttf';
+	public const FONT_LATIN_FILENAME = 'Inter-VF-e1d6480.ttf';
 
 	/**
-	 * Google Fonts CDN — stable direct TTF (environment-agnostic).
+	 * Pinned upstream TTF files served by jsDelivr. GD/FreeType needs a local
+	 * font path, so the files are downloaded only when the uploads cache is empty.
 	 */
-	public const FONT_JP_CDN_URL    = 'https://fonts.gstatic.com/ea/notosansjapanese/v6/NotoSansJP-Regular.otf';
-	public const FONT_LATIN_CDN_URL = 'https://rsms.me/inter/font-files/Inter-Regular.woff2';
+	public const FONT_JP_CDN_URL    = 'https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@165c01b46ea533872e002e0785ff17e44f6d97d8/Sans/Variable/TTF/Subset/NotoSansJP-VF.ttf';
+	public const FONT_LATIN_CDN_URL = 'https://cdn.jsdelivr.net/gh/google/fonts@e1d6480102fed30739fead0faee463101f892c8f/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf';
 
 	/** @var array<string, string> */
 	private const REMOTE_IMAGES = array(
@@ -66,42 +65,23 @@ final class Asset_Syncer {
 	/**
 	 * Resolve OGP fonts usable by GD FreeType.
 	 *
-	 * Priority:
-	 * 1. Plugin bundle (works offline, identical on test/prod)
-	 * 2. Theme bundle (keeps the theme ZIP from duplicating the large JP font)
-	 * 3. Uploads cache (previous CDN sync)
-	 * 4. CDN download into cache
+	 * Use a versioned uploads cache, downloading from the CDN on a cache miss.
 	 */
 	public static function resolve_font_paths(): array {
-		$bundled_dir = NODE_SEO_TOOLS_DIR . 'assets/share/fonts/';
 		$cache_dir   = self::get_cache_dir();
 		if ( ! is_dir( $cache_dir ) ) {
 			wp_mkdir_p( $cache_dir );
 		}
 
-		$font_jp_bundled = $bundled_dir . self::FONT_JP_FILENAME;
-		if ( ! self::is_valid_font( $font_jp_bundled ) ) {
-			$font_jp_bundled = trailingslashit( get_template_directory() ) . 'assets/ttf/' . self::FONT_JP_FILENAME;
-		}
-
 		$font_jp = self::resolve_single_font(
-			$font_jp_bundled,
 			$cache_dir . '/' . self::FONT_JP_FILENAME,
 			self::FONT_JP_CDN_URL
 		);
 
 		$font_latin = self::resolve_single_font(
-			$bundled_dir . self::FONT_LATIN_FILENAME,
 			$cache_dir . '/' . self::FONT_LATIN_FILENAME,
-			''
+			self::FONT_LATIN_CDN_URL
 		);
-		if ( '' === $font_latin ) {
-			$font_latin = self::resolve_single_font(
-				$bundled_dir . self::FONT_LATIN_FALLBACK_BUNDLED,
-				$cache_dir . '/' . self::FONT_LATIN_FALLBACK_BUNDLED,
-				self::FONT_LATIN_CDN_URL
-			);
-		}
 
 		return array(
 			'font_jp'    => $font_jp,
@@ -110,36 +90,25 @@ final class Asset_Syncer {
 	}
 
 	/**
-	 * ブランドフォールバック用 Inter（プラグイン同梱を正本とする）。
+	 * Brand fallback uses the same cached Inter font as title drawing.
 	 */
 	public static function resolve_inter_font(): string {
-		$bundled = NODE_SEO_TOOLS_DIR . 'assets/share/fonts/' . self::FONT_LATIN_FALLBACK_BUNDLED;
-		if ( self::is_valid_font( $bundled ) ) {
-			return $bundled;
-		}
-
-		$cached = self::get_cache_dir() . '/' . self::FONT_LATIN_FALLBACK_BUNDLED;
-		if ( self::is_valid_font( $cached ) ) {
-			return $cached;
-		}
-
-		if ( self::download_file( self::FONT_LATIN_CDN_URL, $cached ) && self::is_valid_font( $cached ) ) {
-			return $cached;
-		}
-
-		return '';
+		return self::resolve_single_font(
+			self::get_cache_dir() . '/' . self::FONT_LATIN_FILENAME,
+			self::FONT_LATIN_CDN_URL
+		);
 	}
 
-	private static function resolve_single_font( string $bundled, string $cached, string $cdn_url ): string {
-		if ( self::is_valid_font( $bundled ) ) {
-			return $bundled;
-		}
-
+	private static function resolve_single_font( string $cached, string $cdn_url ): string {
 		if ( self::is_valid_font( $cached ) ) {
 			return $cached;
 		}
 
-		if ( '' !== $cdn_url && self::download_file( $cdn_url, $cached ) && self::is_valid_font( $cached ) ) {
+		if ( ! is_dir( dirname( $cached ) ) ) {
+			wp_mkdir_p( dirname( $cached ) );
+		}
+
+		if ( self::download_file( $cdn_url, $cached ) && self::is_valid_font( $cached ) ) {
 			return $cached;
 		}
 
