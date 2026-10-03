@@ -173,4 +173,29 @@ class Node_Release_Package_Test extends WP_UnitTestCase {
 			'リポジトリの build.json と ZIP 内の build.json の build_id が不一致。ZIP 生成後に build.json を作り直していないか、その逆。'
 		);
 	}
+
+	/** 画像修復と実行時PHPが、検証したソースと同じ内容で同梱されること。 */
+	public function test_image_repair_and_runtime_php_match_source(): void {
+		$required = [
+			'inc/image-repair.php',
+			'inc/image-repair-admin.php',
+			'inc/featured-webp.php',
+			'assets/js/image-repair.js',
+			'plugins-embedded/node-image-compressor/includes/class-webp-converter.php',
+		];
+		$source = $this->repo_dir() . '/src';
+		$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $source, FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && 'php' === strtolower( $file->getExtension() ) ) {
+				$required[] = 'src/' . str_replace( $source . '/', '', $file->getPathname() );
+			}
+		}
+		foreach ( $required as $relative ) {
+			$this->assertSame(
+				file_get_contents( $this->repo_dir() . '/' . $relative ),
+				$this->zip_contents( $relative ),
+				$relative . ' がZIP内で欠損またはソースと不一致'
+			);
+		}
+	}
 }
