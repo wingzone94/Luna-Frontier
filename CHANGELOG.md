@@ -8,6 +8,9 @@ Preview 1〜4 の記述にある「子テーマ」「`Template: node`」は、�
 
 ## [2.0.0-preview.6] - 2026.09.25 — Luna Frontier
 
+### 2026.10.04 追補
+- LocalのLive Linkが相対`srcset`を`cybernode.local`へ書き戻す場合は、Live Link表示時に`srcset`を省き、相対`src`から画像を読み込む。
+
 ### 2026.10.03 追補
 - OGP画像生成用の日本語Noto Sans JPとInterを固定版TTFのCDN取得とアップロード領域のキャッシュへ移行。メンテナンス画面のフォントもWebフォント配信へ切り替え、旧フォント原本と破損したTTF名のHTMLを配布物から除外。
 - Live Linkからの閲覧で画像がサイト内に読み込まれるよう、トップページのロゴ・ヒーロー画像・投稿サムネイルとそのsrcsetを相対パスで出力。
