@@ -11,6 +11,7 @@
     const next = root.querySelector('[data-lf-next]');
     const live = root.querySelector('[data-lf-live]');
     const playback = root.querySelector('[data-lf-playback]');
+    const playbackGlyph = playback?.querySelector('[data-lf-playback-glyph]');
     if (!viewport || slides.length === 0) return;
 
     const total = slides.length;
@@ -125,8 +126,10 @@
       if (playback) {
         playback.hidden = total < 2;
         playback.disabled = reduceMotion;
-        playback.textContent = reduceMotion ? '自動送り停止' : userPaused ? '再開' : '一時停止';
-        playback.setAttribute('aria-label', reduceMotion ? '動きを減らす設定により自動送りは停止中' : userPaused ? 'スライドの自動送りを再開' : 'スライドの自動送りを一時停止');
+        const label = reduceMotion ? '動きを減らす設定により自動送りは停止中' : userPaused ? 'スライドの自動送りを再開' : 'スライドの自動送りを一時停止';
+        playback.setAttribute('aria-label', label);
+        playback.title = label;
+        playbackGlyph?.setAttribute('d', userPaused ? 'M8 5v14l11-7z' : 'M6 4h4v16H6zM14 4h4v16h-4z');
       }
       if (live) live.setAttribute('aria-live', timer ? 'off' : 'polite');
     };
