@@ -1,0 +1,414 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — 寸法と細部の仕上げ
+ *
+ * 「Luna Frontier Craft」で実測した、色ではなく寸法まわりのばらつきを寄せる。
+ * どれも新しいデザイン判断ではなく、既にあるスケールへ合わせるだけ。
+ * 見た目の差分はここから上書きする。Node 由来のベース宣言は残す。
+ *
+ * ■ @layer reset に入れる必要がある宣言について
+ *   ベースの _buttons.css / _cards.css は @layer components にあり、!important を
+ *   多用している。important 宣言ではレイヤー順が反転して非レイヤーが最弱に
+ *   なるため、!important で競合する箇所だけ @layer reset に置く。
+ *   通常宣言は非レイヤーのままでベースに勝てるので、レイヤーに入れない。
+ */
+
+@media screen {
+
+	/* ---------------------------------------------------------------------
+	 * 1. 二次ボタン・アイコンボタンの文字色
+	 *
+	 * ベース CSS は色を
+	 *   .m3-button--text  color-mix(primary 72%, on-surface 28%)
+	 *   .m3-icon-button   color-mix(primary 70%, on-surface 30%)
+	 * で作っている。primary が明るいとき（ブランドオレンジ、淡い seed）に
+	 * 文字が薄くなりすぎ、404 の「記事一覧」で実測 2.84:1 だった。
+	 *
+	 * 面はどちらも「淡い色を透過で地色に載せた」ものなので常に明るい。
+	 * primary の比率を 35% まで下げると、試した 5 通りの primary
+	 * （ブランド / 淡い seed / 濃い seed / 緑 / マゼンタ）すべてで
+	 * 4.5:1 以上になる（最小 5.37、ブランドは 2.84 → 6.43）。
+	 * 色相は残るので「オレンジっぽさ」は失われない。
+	 * --------------------------------------------------------------------- */
+	/* ヘッダーは本番 Node 1.3.2 の色指定をそのまま使う。 */
+	body.lf-theme .m3-button--text,
+	body.lf-theme .m3-icon-button:not(:where(.m3-header *)) {
+		color: color-mix(in srgb, var(--md-sys-color-primary) 35%, var(--md-sys-color-on-surface));
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 2.（欠番）カテゴリチップの高さ・角丸
+	 *
+	 * 2.0 は .m3-label--category を 32px・全角丸に揃えていた（同じチップが
+	 * 場所によって 29px と 41px になっていたため）。2026-08-29 のユーザー指示で
+	 * Node 1.3 の見た目 —— padding 6px 14px / border-radius 12px / elevation-2 の
+	 * 影つき —— へ戻したので、この正規化は行わない。正本は既存の
+	 * src/styles/_cards.css「Label Styling」。
+	 * 「+N」バッジも同じ理由で既存の描画に任せる。
+	 * --------------------------------------------------------------------- */
+
+	/* ---------------------------------------------------------------------
+	 * 3. 小さなアクションを 40px に揃える
+	 *
+	 * 35px（目次を閉じる）と 36px（ブログカードのコピー / 印刷）が
+	 * アイコンボタンの 40px と 4〜5px ずれていた。意味のある差ではないので
+	 * 40px 段に寄せる。円形のものは幅も揃えて真円を保つ。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme :is(.m3-toc-close-btn, .m3-blogcard__action) {
+		min-block-size: 40px;
+		min-inline-size: 40px;
+		box-sizing: border-box;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 3-b. 残りの外れ値を段へ寄せる
+	 *
+	 * 実測で残ったのは 44px（ヘッダーの検索入力）と 34px（HEADLINE の
+	 * 表示切替トグル）の 2 つだけ。それぞれ 48 / 40 の段へ。
+	 * FAB の 28px は非表示状態の scale(0.5) を測っていただけなので触らない。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme .m3-search-bar__input {
+		min-block-size: 48px;
+		box-sizing: border-box;
+	}
+
+	body.lf-theme .c-headline-carousel__view {
+		min-block-size: 40px;
+		min-inline-size: 40px;
+		box-sizing: border-box;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 4. Material Symbols の光学サイズを描画サイズに合わせる
+	 *
+	 * 可変フォントの opsz は「その px で見たときに線幅が最適になる」値なので、
+	 * 実際の font-size と一致していないと線の太さが揃わない。
+	 * 実測では 24px の描画に opsz 20、13px / 18px の描画に opsz 24 が
+	 * 当たっていた（24 個のアイコンに 7 通りの指定）。
+	 *
+	 * CSS からは font-size を読めないので、描画サイズごとに宣言する。
+	 * FILL は「選択中かどうか」の意味を持つので継承したまま触らない。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme .material-symbols-outlined {
+		font-variation-settings: "FILL" var(--lf-icon-fill, 0), "GRAD" 0, "opsz" 24, "wght" 400;
+	}
+
+	body.lf-theme .material-symbols-outlined[style*="font-size: 18"],
+	body.lf-theme .material-symbols-outlined[style*="font-size:18"] {
+		font-variation-settings: "FILL" var(--lf-icon-fill, 0), "GRAD" 0, "opsz" 20, "wght" 400;
+	}
+
+	/*
+	 * 実際に小さく描画されるアイコンだけ opsz 20 にする（下限が 20）。
+	 * ここは「小さいアイコンが入る箱」を名指しすること。ブログカード全体の
+	 * ように 24px のアイコンも含む箱を指定すると、逆に噛み合わなくなる
+	 * （一度そうなった: .m3-blogcard を指定して 24px のアイコン 10 個に
+	 * opsz 20 が当たっていた）。
+	 */
+	body.lf-theme :is(.lf-meta__item, .lf-topic-nav__pick, .m3-card__meta) .material-symbols-outlined {
+		font-variation-settings: "FILL" var(--lf-icon-fill, 0), "GRAD" 0, "opsz" 20, "wght" 400;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 4-b. セクションの左端を 1 つに揃える
+	 *
+	 * ホーム 1 画面で内容の左端が 0 / 16 / 28 / 32 / 40 / 48 / 89px の
+	 * 7 種類に散っていた（1280px 幅で実測）。原因は 2 つだけ:
+	 *
+	 *   1. HOT の外枠にだけ margin-inline が無く、他のセクション（16px）と
+	 *      8〜16px ずれていた。
+	 *   2. HOT の内側グリッドが max-inline-size: 1088px + auto 中央寄せに
+	 *      なっていて、カードだけが 89px まで押し込まれていた。
+	 *      同じカードが HEADLINE では 374px 幅、HOT では 352px 幅に
+	 *      なっていたのもこれが原因。
+	 *
+	 * 他のセクションは既に 48px で揃っているので、HOT をそこへ寄せる。
+	 * 新しい余白の値は作らない。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme .m3-hot-posts {
+		margin-inline: var(--lf-space-s);
+	}
+
+	body.lf-theme .m3-hot-posts__grid {
+		max-inline-size: none;
+		margin-inline: 0;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 5. 検索 0 件の空状態
+	 *
+	 * 404 と同じ「中央揃え・行き先つき」の作りに揃える。
+	 * 空白が 496px 続いていたのは、レイアウトが「結果が来る前提」の
+	 * 最小高さを持っていたため。0 件のときだけそれを外す。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme .lf-no-results {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--lf-space-s);
+		max-inline-size: 46rem;
+		margin-inline: auto;
+		padding-block: var(--lf-space-xl) var(--lf-space-l);
+		text-align: center;
+	}
+
+	body.lf-theme .lf-no-results__text {
+		margin: 0;
+		max-inline-size: 42ch;
+		color: var(--lf-on-surface-secondary);
+	}
+
+	body.lf-theme .lf-no-results__suggest {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--lf-space-2xs);
+		margin-block-start: var(--lf-space-2xs);
+	}
+
+	body.lf-theme .lf-no-results__suggest-label {
+		font-size: var(--lf-text-2xs);
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		color: var(--lf-on-surface-muted);
+	}
+
+	body.lf-theme .lf-no-results__chips {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--lf-space-2xs);
+	}
+
+	/* 候補カテゴリは「行き先の提案」なので、記事のカテゴリ色は使わず
+	   静かな枠線チップにする。主役はその下の「記事一覧を見る」。 */
+	body.lf-theme .lf-no-results__chip {
+		display: inline-flex;
+		align-items: center;
+		min-block-size: 32px;
+		padding-inline: 0.9em;
+		border: 1px solid var(--lf-rule-strong);
+		border-radius: var(--lf-shape-full);
+		font-size: var(--lf-text-2xs);
+		font-weight: 700;
+		color: var(--lf-brand-text);
+		text-decoration: none;
+		box-sizing: border-box;
+		transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		body.lf-theme .lf-no-results__chip:hover {
+			background-color: color-mix(in srgb, var(--lf-brand) var(--lf-state-hover), transparent);
+		}
+	}
+
+	body.lf-theme .lf-no-results__action {
+		margin-block-start: var(--lf-space-2xs);
+	}
+
+	/* 結果が 0 のときは、結果グリッドの最小高さを持たせない。 */
+	body.lf-theme .search-no-results :is(.l-card-grid, .m3-post-grid) {
+		min-block-size: 0;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 6.（欠番）記事ヘッダーの面
+	 *
+	 * 記事タイトルカードの背景に seed 由来の --lc-primary-container を敷いて
+	 * 「コンテンツの色をまとう」を出していたが、2026-08-29 のユーザー指示で
+	 * 取り止めた。ヘッダーは本文と同じ neutral な紙に戻る
+	 * （正本は _article-header.css の `background: var(--lf-paper)`）。
+	 * 面が neutral なので、その上の文字色を on-primary-container 側へ
+	 * 差し替えていた一式も不要になった。
+	 * --------------------------------------------------------------------- */
+
+	/* ---------------------------------------------------------------------
+	 * 7. カードの上端にアクセント帯
+	 *
+	 * カードごとの --lf-card-accent は 6 種類の明確に違う色が入っているのに、
+	 * 実際に描かれるのは 1px の罫だけで、相互の知覚差は ΔE 0.0174（判別不能域）
+	 * だった。色の効きは面積ではなく彩度と濃さで決まるので、面を薄く染めるの
+	 * ではなく、小さく濃く置く。
+	 *
+	 * 3px の帯にすると ΔE 0.1162（現状の 6.7 倍）。紙は白のままなので
+	 * Paper Design の静けさを壊さない。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme :is(.m3-card, .c-card).lf-card-spectrum {
+		border-block-start: 3px solid var(--lf-card-accent, var(--lf-brand));
+	}
+
+	body.lf-theme[data-theme="dark"] :is(.m3-card, .c-card).lf-card-spectrum,
+	[data-theme="dark"] body.lf-theme :is(.m3-card, .c-card).lf-card-spectrum {
+		border-block-start-color: var(--lf-card-accent-dark, var(--lf-brand));
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 8. 和文の行長
+	 *
+	 * --lf-measure は 70ch。ch は欧文の「0」の字幅なので、和文では 47.5 字に
+	 * なり快適域 35〜45 を超えていた（実測）。em は全角相当なので、
+	 * min() で両方を掛けると欧文中心の記事は従来どおり、和文中心の記事だけが
+	 * 自動的に締まる。37em は palt 適用後の実測字幅（約 0.93em）から。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme {
+		--lf-measure: min(70ch, 37em);
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 9. 段落の間と、見出しの近接
+	 *
+	 * 段落間 24px に対し行送りは 32.4px。切れ目が 1 行に満たず、行間に
+	 * 埋もれて「文字の壁」に見えていた。1 行ぶん（--lf-space-l = 2rem）空ける。
+	 *
+	 * あわせて H2 の下余白を段落間より小さくする。同値だと見出しが直後の
+	 * 本文に属して見えない（近接の原則）。上 64px / 下 16px にすると
+	 * 「章の切れ目」と「見出しと本文のまとまり」が両方読める。
+	 * --------------------------------------------------------------------- */
+	body.lf-theme .m3-article__body > :is(p, ul, ol, blockquote) {
+		margin-block-end: var(--lf-space-l);
+	}
+
+	body.lf-theme .m3-article__body h2 {
+		margin-block-end: var(--lf-space-s);
+	}
+
+	/* ---------------------------------------------------------------------
+	 * 10. タップ対象
+	 *
+	 * 375px 幅の実測で 44px 未満が 38 個。うち WCAG 2.2 AA の 24×24 を
+	 * 割っていたのは 3 件（AI 要約の開閉 291×22、ライトボックス 16×31、
+	 * コメント同意のチェックボックス 13×13）。文中リンクは 2.5.8 の除外に
+	 * 当たるので対象外。
+	 *
+	 * 24×24 を割る 3 件は入力方式に関係なく直す。44px への引き上げは
+	 * pointer: coarse（指）のときだけにして、マウス環境では 40 / 48 の段を
+	 * 崩さない。静かな紙面では「押せる」手がかりが寸法しか無いので、
+	 * 装飾を削ったぶんを触れる領域で補う。
+	 * --------------------------------------------------------------------- */
+
+	/* 24×24 未達の 3 件 — 入力方式によらず直す */
+	body.lf-theme .lf-intelligence-summary__head {
+		min-block-size: 44px;
+		box-sizing: border-box;
+	}
+
+	body.lf-theme .m3-lightbox-link {
+		min-inline-size: 24px;
+		min-block-size: 24px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+	}
+
+	/*
+	 * チェックボックス／ラジオ。ブラウザ既定は 13×13 で AA の 24×24 を割る。
+	 * 44 まで上げると入力欄として不自然に大きいので、コントロール自体は
+	 * 24×24 に留め、指で押す領域は下の coarse ルールで囲みのラベル側に持たせる。
+	 */
+	body.lf-theme input[type="checkbox"],
+	body.lf-theme input[type="radio"] {
+		inline-size: 24px;
+		block-size: 24px;
+	}
+
+	/* 指で操作するときだけ 44px へ広げる */
+	@media (pointer: coarse) {
+		body.lf-theme :is(.lf-toc__link, .m3-icon-button, .m3-blogcard__action, .m3-lightbox-link) {
+			min-block-size: 44px;
+			box-sizing: border-box;
+		}
+
+		/* 目次リンクは幅が足りているので、縦の padding だけ足せば
+		   紙面の見た目を変えずに 44px に届く。 */
+		body.lf-theme .lf-toc__link {
+			display: flex;
+			align-items: center;
+		}
+
+		body.lf-theme :is(.m3-icon-button, .m3-blogcard__action) {
+			min-inline-size: 44px;
+		}
+
+		/*
+		 * 残っていたもの。いずれも「文中のリンク」ではないので 2.5.8 の
+		 * 除外に当たらず、指で押す対象として 44px を満たす必要がある。
+		 *
+		 * 幅が足りているもの（ロゴ・執筆者リンク・ブログカードのオーバーレイ）は
+		 * 高さだけ。アイコンだけの小さなもの（ライトボックス・+N トグル）は
+		 * 幅も揃える。
+		 */
+		body.lf-theme :is(
+			.m3-header__logo-link,
+			.lf-meta__item,
+			.m3-blogcard__overlay,
+			.m3-writer-card__archive-link
+		) {
+			min-block-size: 44px;
+			box-sizing: border-box;
+		}
+
+		body.lf-theme :is(.m3-lightbox-link, .m3-toc-close-btn) {
+			min-block-size: 44px;
+			min-inline-size: 44px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			box-sizing: border-box;
+		}
+
+		/*
+		 * 一覧側で残っていたもの。カード内の執筆者リンク（52×24）が最多で 9 個、
+		 * ほかに HEADLINE の表示切替と送り。
+		 * いずれも文中リンクではないので 44px を満たす必要がある。
+		 */
+		body.lf-theme :is(
+			.lf-no-results__chip,
+			.lf-choice,
+			.m3-card__writer-link,
+			.c-headline-carousel__view,
+			.c-headline-carousel__button
+		) {
+			min-block-size: 44px;
+			box-sizing: border-box;
+		}
+
+		body.lf-theme :is(
+			.c-headline-carousel__view,
+			.c-headline-carousel__button
+		) {
+			min-inline-size: 44px;
+		}
+
+		/*
+		 * flex 行の中では flex-shrink の既定値 1 が min-inline-size より先に
+		 * 効いて潰れることがある。押す対象は縮ませない。
+		 */
+		body.lf-theme :is(.m3-icon-button, .m3-blogcard__action, .m3-lightbox-link) {
+			flex-shrink: 0;
+		}
+	}
+}
+
+@layer reset {
+	@media screen {
+		/* ベースが !important で塗っている高さ・文字色に勝つぶんだけ、ここへ置く。 */
+
+		/*
+		 * 検索バーのクリアボタンはベース CSS が min-width を 28px に固定しているため、
+		 * 通常宣言では届かない（ベースは @layer components の important）。
+		 * 指で押すときだけ 44px に広げる。
+		 */
+		@media (pointer: coarse) {
+			body.lf-theme .m3-search-clear {
+				min-inline-size: 44px !important;
+			}
+		}
+
+		/* コメント送信ボタンは 52px。48px 段へ寄せる。 */
+		body.lf-theme .m3-comment-submit-btn {
+			min-block-size: 48px !important;
+			box-sizing: border-box !important;
+		}
+	}
+}

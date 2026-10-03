@@ -101,6 +101,10 @@ if ( ! function_exists( 'node_ai_ajax_generate_summary' ) ) {
             wp_send_json_error(['message' => '記事が見つかりません。']);
         }
 
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_send_json_error( array( 'message' => 'この記事を編集する権限がありません。' ) );
+        }
+
         $content = strip_shortcodes(strip_tags($post->post_content));
         if (empty(trim($content))) {
             wp_send_json_error(['message' => '記事本文が空です。']);
@@ -212,6 +216,10 @@ if ( ! function_exists( 'node_ai_ajax_fact_check' ) ) {
         $post = get_post( $post_id );
         if ( ! $post ) {
             wp_send_json_error( array( 'message' => '記事が見つかりません。' ) );
+        }
+
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_send_json_error( array( 'message' => 'この記事を編集する権限がありません。' ) );
         }
 
         $content = strip_shortcodes( strip_tags( $post->post_content ) );

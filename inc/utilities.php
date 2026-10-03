@@ -865,7 +865,7 @@ function node_get_article_ranking_info($post_id = null) {
 /**
  * テーマの build.json（リリース毎のビルド識別子）を読む
  *
- * 同日リリースはバージョンを上げず node.zip だけ更新する運用のため、
+ * 同じPreview版で luna.zip を更新する運用のため、
  * バージョンとは独立にビルドを識別する手段としてリリース時に生成される。
  * 存在しない（旧ビルド・開発中）場合は null。
  */

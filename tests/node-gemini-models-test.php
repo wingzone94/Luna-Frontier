@@ -118,6 +118,38 @@ class Node_Gemini_Models_Test extends WP_UnitTestCase {
 		$this->assertSame( 'gemini-2.5-flash', end( $ids ) );
 	}
 
+	public function test_fetch_limits_paginated_requests_on_cache_miss() {
+		$requests = 0;
+		$mock = static function () use ( &$requests ) {
+			++$requests;
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models'        => array(
+							array(
+								'name'                       => 'models/gemini-3.5-flash',
+								'displayName'                => 'Gemini 3.5 Flash',
+								'supportedGenerationMethods' => array( 'generateContent' ),
+							),
+						),
+						'nextPageToken' => 'more',
+					)
+				),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock );
+		$result = node_fetch_gemini_models_from_api( 'dummy_key', true );
+		remove_filter( 'pre_http_request', $mock );
+
+		$this->assertSame( 3, $requests );
+		$this->assertArrayHasKey( 'gemini-3.5-flash', $result['models'] );
+	}
+
 	// --- 1.3: 思考量の分離（保存形式は 1.2 系と互換） ---
 
 	public function test_user_options_do_not_leak_thinking_suffix_into_model_list() {

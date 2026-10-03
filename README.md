@@ -1,23 +1,27 @@
-# Node
+# Luna Frontier
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-1.3.0-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.0.0--preview.6-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
 Material Design 3 (Expressive) の哲学を WordPress テーマに昇華させた、次世代のクリエイティブ・プラットフォーム。  
 README は導入と運用ガイドに集中し、リリース履歴は `CHANGELOG.md` に集約します。
 
-## Luna Frontier 2.0 Preview
+## Luna Frontier 2.0
 
-Luna Frontierは、Luminous Coreの次期デザインを検証するNodeの子テーマです。現在の最新版は **2.0.0-preview.4** です。Preview版は安定版の `master` 更新チャンネルとは分離して配布します。
+Luna Frontier は Node の子テーマではありません。Node 1.x を起点に発展した、単体で成立する WordPress テーマです。`Template:` ヘッダーは置かず、Node テーマのインストールも不要です。`node_*` / `NODE_*` / `_node_*` などの名前は、既存サイトデータと公開 API の後方互換として残しています。
+
+現在の最新版は **2.0.0-preview.6** です。Preview 版の更新チャンネルは、安定版 Node を配っていた `master` とは分離しています。
 
 - **Preview 1（2026.08.16）**: 編集メディア向けのトップページ、四角いPaper表現、Manrope見出し、モバイルセクションナビを導入した初回公開版。
 - **Preview 2（2026.08.22）**: Material 3トークン、記事・パンくず・目次・FABの階層、モバイル表示、ZIP検査とCIを整備した基盤更新版。
 - **Preview 3（2026.09.12）**: 記事ヘッダー、著者・カテゴリ・検索、カード配色、HOT枠を更新し、Node AI ToolsとNode Image Compressorを同梱した最新版。
 - **Preview 4（2026.09.14）**: 1段のトピックナビゲーション、SPOTLIGHTアーカイブ、特集一覧の統一表示、レスポンシブ対応を追加。
+- **Preview 5（2026.09.20）**: 記事テンプレートの分割、要約と目次の表示整理、テーマ内スクリプトを更新。
+- **Preview 6（2026.09.25）**: Node 1.4.0のQwenレビュー修正を統合し、Luna Interactiveを同梱。Gemini一覧取得、要約権限、OGP再生成、TLS検証、テーマ更新の安全性を改善。
 
-Preview 4の配布物、導入方法、検証結果は [Luna Frontier 2.0 Preview 4 リリースノート](./docs/preview-4-release.md) を参照してください。各版の詳細は [CHANGELOG.md](./CHANGELOG.md) に記録しています。現時点のLunaは `Template: node` に依存し、スタンドアロン化はまだ含みません。
+Preview 6の配布物、導入方法、検証結果は [Luna Frontier 2.0 Preview 6 リリースノート](./docs/preview-6-release.md) を参照してください。各版の詳細は [CHANGELOG.md](./CHANGELOG.md) に記録しています。
 
 ## 主な機能
 - **Material You 動的カラー:** アイキャッチ画像やカテゴリ設定からテーマカラーを自動生成。
@@ -50,13 +54,13 @@ Node の記事体験を一新するメジャーアップデートです。詳細
 - **導線の強化** — ライター別アーカイブとSNSピル、フッターへの公式SNS常設。
 
 ## インストール
-1. `wp-content/themes/node` に配置。
+1. このテーマを `wp-content/themes/` 配下のディレクトリ（配布 ZIP のルートは `luna-frontier/`）に配置する。Node テーマは不要。
 2. `bun install && bun run build` を実行してアセットを生成。
-3. WordPress 管理画面より「Node」を有効化。
+3. WordPress 管理画面より「Luna Frontier」を有効化。
 4. 必要に応じて `functions.php` または環境変数に Gemini API キーを設定。
 
 ---
-**Node Teams**
+**Luminous Core Teams**
 *Evolution through Light and Logic.*
 
 ## 更新履歴

@@ -1,6 +1,6 @@
 # Node Theme リリース手順
 
-このドキュメントでは、テーマ編集後に本番用のZIPファイル (`node.zip`) を生成し、GitHubにプッシュするまでの手順を説明します。
+このドキュメントでは、Node安定版のテーマ編集後に本番用ZIP (`node.zip`) を生成し、GitHubにプッシュするまでの手順を説明します。Luna Frontier Preview 6 の設定画面は別チャンネル `luna-frontier-2.0-skyalow` の `style.css`・`build.json`・`luna.zip` を参照し、ZIP内のルートは `luna-frontier/` とします。Previewを公開する際は安定版 `master` の配布物を上書きしません。
 
 ## 0. 命名・ブランド
 - ブログ / サイトのブランド名は **Luminous Core** です。
@@ -70,21 +70,26 @@ printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\
 ```
 
 - `build_id` は「UTC時刻 + ZIP生成時点の HEAD 短縮SHA」。SHAはリリースコミット自体ではなく**生成時点のHEAD**を指す（識別子としての一意性はタイムスタンプが担保）。
-- `build.json` は配布ZIPに含め、**コミットにも含めます**（更新チェックが raw URL `https://raw.githubusercontent.com/wingzone94/Node/master/build.json` を参照するため）。
+- `build.json` は配布ZIPに含め、**コミットにも含めます**（更新チェックが raw URL `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/build.json` を参照するため）。
 
 ### 4-b. ZIP生成
 プロジェクトルートディレクトリから、必要なファイルのみを含めたZIPファイルを作成します。以下のコマンドで `node.zip` を出力します。
 
-**`src/` を丸ごと除外しないこと。** `src/Setup` `src/Hooks` `src/Controllers` に テーマ本体の PHP クラス（`NodeTheme\` 名前空間）が置かれ、`functions.php` のオートローダーがこれを読む。除外すると有効化時に `Class "NodeTheme\Setup\ThemeSupport" not found` で全面ダウンする（1.3.0 で実際に発生。コミット済みだった zip にも当該 PHP が入っていなかった）。除外してよいのは Vite のソース（`src/styles` `src/scripts` `src/fonts` `src/*.js`）のみ。
+**`src/` を丸ごと除外しないこと。** 1.3.0 から `src/Setup` `src/Hooks` `src/Controllers` に テーマ本体の PHP クラス（`NodeTheme\` 名前空間）が置かれ、`functions.php` のオートローダーがこれを読む。除外すると有効化時に `Class "NodeTheme\Setup\ThemeSupport" not found` で全面ダウンする。除外してよいのは Vite のソース（`src/styles` `src/scripts` `src/fonts` `src/*.js`）のみ。
 
-配布ZIPに開発用の成果物（`vendor/`・`tests/`・`.claude/` 等）を混入させないこと。1.2 のリリース準備時、除外リストがこれらの追加に追いついておらず、ZIPが 8.3MB → 46MB に膨張していました。生成後は必ず**サイズ**（目安 10MB 未満）と `zipinfo -1 node.zip | awk -F/ 'NF>2{print $2}' | sort -u` の**トップレベル構成**を確認してください。
+配布ZIPに開発用の成果物（`vendor/`・`tests/`・`.claude/` 等）を混入させないこと。`--exclude='.git/'`（末尾スラッシュ付き）はディレクトリにしかマッチしないため、git worktree 運用で `.git` が**ファイル**（`gitdir:` ポインタ）になっている環境ではZIPに混入する。スラッシュ無しの `--exclude='.git'` を併記すること（1.2.5 のZIPには 78 バイトの `Node/.git` が入っていた）。本番動作に不要な `scripts/`（検証スクリプト）と `.github/`（Actions定義）も除外する。1.2 のリリース準備時、除外リストがこれらの追加に追いついておらず、ZIPが 8.3MB → 46MB に膨張していました。生成後は `vendor/bin/phpunit --filter Node_Release_Package_Test` を実行すること。src/ のオートロード対象 PHP の欠落、開発用成果物（vendor/・tests/・node_modules/）の混入、style.css と build.json のバージョン不一致を機械的に検出する。
+
+生成後は必ず**サイズ**（目安 10MB 未満）と `zipinfo -1 node.zip | awk -F/ 'NF>2{print $2}' | sort -u` の**トップレベル構成**を確認してください。
 
 ```bash
 rm -f node.zip
 repo_dir=$(pwd)
 tmpdir=$(mktemp -d)
 rsync -a \
+  --exclude='.git' \
   --exclude='.git/' \
+  --exclude='.github/' \
+  --exclude='scripts/' \
   --exclude='node_modules/' \
   --exclude='*.zip' \
   --exclude='.DS_Store' \
@@ -97,12 +102,13 @@ rsync -a \
   --exclude='.agents/' \
   --exclude='scratch/' \
   --exclude='production_plugins/' \
+  --exclude='/luna-interactive/' \
   --exclude='luna-frontier/' \
   --exclude='src/styles/' \
   --exclude='src/scripts/' \
   --exclude='src/fonts/' \
   --exclude='src/*.js' \
-  --exclude='vendor/' \
+  --exclude='/vendor/' \
   --exclude='tests/' \
   --exclude='test-results/' \
   --exclude='composer.json' \
@@ -131,16 +137,36 @@ rsync -a \
   --exclude='.gitattributes' \
   --exclude='assets/css/main.css' \
   --exclude='assets/css/material3.css' \
-  --exclude='plugins-embedded/node-seo-tools/assets/share/fonts/NotoSansJP-VF.ttf' \
   ./ "$tmpdir/Node/"
 (cd "$tmpdir" && zip -qr "$repo_dir/node.zip" Node)
 rm -rf "$tmpdir"
 ```
 
-`NotoSansJP-VF.ttf` はテーマ側 `assets/ttf/` を配布ZIP内の正本とします。埋め込み版 Node SEO Tools は、そのプラグイン内にフォントがない場合にテーマ側の同一ファイルを参照してからキャッシュ/CDNへフォールバックするため、OGP画像生成を維持したまま約9.6MBの重複収録を避けられます。独立プラグイン配布物の同梱フォントは削除しません。
+OGP画像生成用の日本語フォントとInterは配布ZIPに同梱しません。Node SEO Tools が初回生成時に固定版のTTFをCDNから取得し、`wp-content/uploads/node-seo-tools/assets/` に保存します。以後はキャッシュを使用します。新規環境で初回取得に失敗するとタイトル文字の描画ができないため、リリース前にキャッシュが空の状態でOGP生成を検証してください。
 
 ## 5. Git へのコミットとプッシュ
 変更したソースコードと、生成した本番用ZIPファイルをGitHubにプッシュします。
+
+### 5-a. README / CHANGELOG のリリースノート確認（必須）
+
+GitHubへリリース版をpushする前に、`CHANGELOG.md`には毎回、今回のバージョン・正式リリース日・パッチノートを記載します。
+
+`README.md`へのパッチノート掲載は、**バージョンが `1.x.0` のリリース時だけ**必須です。たとえば `1.3.0` は掲載し、`1.3.1` や `1.3.2` は掲載しません。
+
+- `README.md`: `1.x.0`リリースだけ、利用者向けの簡潔なパッチノートを掲載
+- `CHANGELOG.md`: すべてのリリースについて、修正理由や影響範囲を含む完全な更新履歴を掲載
+- 掲載対象では、バージョンと日付が `style.css` のリリース内容と一致すること
+
+```bash
+release_version="$(grep -m1 '^Version:' style.css | awk '{print $2}')"
+release_date="YYYY.MM.DD" # 今回の正式リリース日に置き換える
+rg -n -x -F "## [${release_version}] - ${release_date}" CHANGELOG.md
+if [[ "${release_version}" =~ ^1\.[0-9]+\.0$ ]]; then
+  rg -n -x -F "## v${release_version} (${release_date})" README.md
+fi
+```
+
+上記の確認が通らない場合は、コミット・push・ZIP公開へ進みません。
 
 ```bash
 # 変更されたファイルをステージング
@@ -156,16 +182,16 @@ git push origin master
 ## 6. Luminous Settings 更新確認との整合
 テーマ管理画面の Luminous Settings は、GitHub Release やPRではなく、テーマ内の `inc/ajax.php` で指定している以下の `master` 固定URLを参照します。
 
-- バージョン確認: `https://raw.githubusercontent.com/wingzone94/Node/master/style.css`
-- ZIP取得: `https://github.com/wingzone94/Node/raw/master/node.zip`
+- バージョン確認: `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/style.css`
+- ZIP取得: `https://github.com/wingzone94/Luna-Frontier/raw/master/node.zip`
 
 そのため、PRブランチや `v1.1.x` タグを作成しただけでは、Luminous Settings には最新バージョンとして表示されません。リリース時は必ず `master` 上の `style.css` と `node.zip` を更新してください。
 
 確認コマンド:
 
 ```bash
-curl -L -s https://raw.githubusercontent.com/wingzone94/Node/master/style.css | sed -n '1,12p'
-curl -L -s -o /tmp/node-remote.zip https://github.com/wingzone94/Node/raw/master/node.zip
+curl -L -s https://raw.githubusercontent.com/wingzone94/Luna-Frontier/master/style.css | sed -n '1,12p'
+curl -L -s -o /tmp/node-remote.zip https://github.com/wingzone94/Luna-Frontier/raw/master/node.zip
 unzip -p /tmp/node-remote.zip Node/style.css | sed -n '1,12p'
 zipinfo -1 /tmp/node-remote.zip | head
 ```

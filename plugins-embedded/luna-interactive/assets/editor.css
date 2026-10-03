@@ -1,0 +1,210 @@
+.luna-editor-card {
+  --luna-primary: var(--md-sys-color-primary, #ff9900);
+  --luna-primary-container: var(--md-sys-color-primary-container, #fedcbe);
+  --luna-on-primary-container: var(--md-sys-color-on-primary-container, #2b1700);
+  --luna-surface: var(--md-sys-color-surface, #fff4e5);
+  --luna-surface-low: var(--md-sys-color-surface-container-low, #ffffff);
+  --luna-surface-container: var(--md-sys-color-surface-container, #ffe8d1);
+  --luna-surface-high: var(--md-sys-color-surface-container-high, #f7ddc6);
+  --luna-ink: var(--md-sys-color-on-surface, #2b1700);
+  --luna-muted: var(--md-sys-color-on-surface-variant, #6b5a4a);
+  --luna-outline-variant: var(--md-sys-color-outline-variant, #d6c2b1);
+  --luna-ease: cubic-bezier(0.2, 0, 0, 1);
+  padding: 16px;
+  background: var(--luna-surface);
+  color: var(--luna-ink);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.luna-editor-card .components-base-control {
+  margin-bottom: 0;
+}
+
+.luna-editor-card .luna-m3-surface,
+.luna-editor-canvas-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--luna-surface-low);
+  border: 1px solid var(--luna-outline-variant);
+  border-radius: 12px;
+  min-height: 240px;
+  overflow: hidden;
+}
+
+.luna-editor-card .luna-plot {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.luna-editor-canvas-wrap canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.luna-editor-pie { height: auto; min-height: 0; }
+.luna-editor-pie .luna-plot { flex: none; }
+.luna-editor-card .luna-head { flex: 1 1 160px; min-width: 0; }
+.luna-editor-card .luna-series-toggle { justify-content: center; width: auto; max-width: 100%; }
+.luna-editor-card .luna-editor-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 8px; }
+.luna-editor-card .luna-editor-legend .luna-chip { width: auto; }
+.luna-editor-snapshot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.luna-editor-card :focus-visible { outline: 3px solid var(--luna-primary); outline-offset: 2px; }
+
+.luna-editor-card .luna-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.luna-editor-card .luna-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.luna-editor-card .luna-segment-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--luna-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.luna-editor-card .luna-view-button { width: auto; padding-inline: 8px; gap: 4px; font-size: 0.75rem; }
+@media (pointer: coarse), (max-width: 720px) {
+  .luna-editor-card .luna-segment-btn { min-width: 44px; min-height: 44px; }
+  .luna-editor-card .luna-chip { min-height: 44px; }
+}
+
+.luna-editor-card .luna-segment-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.luna-editor-card .luna-segment-btn[aria-checked="true"] {
+  background: var(--luna-primary-container);
+  color: var(--luna-on-primary-container);
+}
+
+.luna-editor-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.luna-editor-note,
+.luna-editor-status {
+  margin: 0;
+  color: var(--luna-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.luna-editor-card .luna-table-scroll {
+  overflow: auto;
+  max-width: 100%;
+  border-radius: 16px;
+  background: var(--luna-surface-low);
+}
+
+.luna-editor-card table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 100%;
+}
+
+.luna-editor-card th,
+.luna-editor-card td {
+  border: 0;
+  border-bottom: 1px solid var(--luna-outline-variant);
+  padding: 8px;
+  min-width: 140px;
+  vertical-align: top;
+  background: transparent;
+}
+
+.luna-editor-card thead th {
+  background: var(--luna-surface-high);
+}
+
+.luna-data-editor summary {
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--luna-surface-container);
+}
+
+.luna-data-editor[open] > :not(summary) {
+  animation: luna-editor-in 200ms var(--luna-ease);
+}
+
+@keyframes luna-editor-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.luna-editor-card :focus-visible {
+  outline: 3px solid var(--luna-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .luna-editor-card {
+    --luna-primary: var(--md-sys-color-primary, #ffb85d);
+    --luna-primary-container: var(--md-sys-color-primary-container, #6a3c00);
+    --luna-on-primary-container: var(--md-sys-color-on-primary-container, #ffdcbe);
+    --luna-surface: var(--md-sys-color-surface, #1e1b16);
+    --luna-surface-low: var(--md-sys-color-surface-container-low, #25221b);
+    --luna-surface-container: var(--md-sys-color-surface-container, #2a2720);
+    --luna-surface-high: var(--md-sys-color-surface-container-high, #322f28);
+    --luna-ink: var(--md-sys-color-on-surface, #ebe0d9);
+    --luna-muted: var(--md-sys-color-on-surface-variant, #d6c6b8);
+    --luna-outline-variant: var(--md-sys-color-outline-variant, #524437);
+    box-shadow: none;
+  }
+}
+
+[data-theme="dark"] .luna-editor-card {
+  --luna-primary: var(--md-sys-color-primary, #ffb85d);
+  --luna-primary-container: var(--md-sys-color-primary-container, #6a3c00);
+  --luna-on-primary-container: var(--md-sys-color-on-primary-container, #ffdcbe);
+  --luna-surface: var(--md-sys-color-surface, #1e1b16);
+  --luna-surface-low: var(--md-sys-color-surface-container-low, #25221b);
+  --luna-surface-container: var(--md-sys-color-surface-container, #2a2720);
+  --luna-surface-high: var(--md-sys-color-surface-container-high, #322f28);
+  --luna-ink: var(--md-sys-color-on-surface, #ebe0d9);
+  --luna-muted: var(--md-sys-color-on-surface-variant, #d6c6b8);
+  --luna-outline-variant: var(--md-sys-color-outline-variant, #524437);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .luna-editor-card * { animation: none !important; }
+}

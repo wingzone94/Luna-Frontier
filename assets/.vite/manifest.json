@@ -14,6 +14,27 @@
     "src": "src/editor.js",
     "isEntry": true
   },
+  "src/luna/luna.js": {
+    "file": "js/luna.js",
+    "name": "luna",
+    "src": "src/luna/luna.js",
+    "isEntry": true
+  },
+  "src/luna/styles/luna-archive.css": {
+    "file": "css/luna-archive.css",
+    "src": "src/luna/styles/luna-archive.css",
+    "isEntry": true
+  },
+  "src/luna/styles/luna-spotlight.css": {
+    "file": "css/luna-spotlight.css",
+    "src": "src/luna/styles/luna-spotlight.css",
+    "isEntry": true
+  },
+  "src/luna/styles/luna.css": {
+    "file": "css/luna-style.css",
+    "src": "src/luna/styles/luna.css",
+    "isEntry": true
+  },
   "src/main.js": {
     "file": "js/main.DdbfRKla.js",
     "name": "main",

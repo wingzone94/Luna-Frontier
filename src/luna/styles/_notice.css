@@ -1,0 +1,47 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — Notice を M3 の役割体系へ（Phase 8）
+ *
+ * Node 由来の注記ブロックは --m3-notice-accent / -title / -bg / -border という
+ * 独自トークンで info / warning / alert / memo の 4 色を持ち、値は全て
+ * ハードコードされていた。M3 の役割トークンとは無関係の並行系統になっている。
+ *
+ * ここで直すのは 2 点だけで、info / warning / memo の配色は動かさない。
+ *
+ * 1) alert を M3 の error role へ繋ぐ
+ *    M3 が持つ意味色の役割は error ただ 1 つ。info / warning のような
+ *    ステータス色は M3 でも custom color 扱いなので、独自トークンのまま
+ *    でよい。しかし alert は error そのものなので役割に繋ぐのが筋。
+ *
+ *    実害もあった。warning (#a15c00, H=62.5) と alert (#b3520e, H=48.1) は
+ *    OKLCH で ΔE 0.041 しか離れておらず（次に近い組は 0.141）、4 種のうち
+ *    2 種が事実上同じ色だった。error role (#b3261e, H=28.7) へ繋ぐと
+ *    ΔE 0.110 まで開き、「注意」と「警告」が見分けられるようになる。
+ *
+ *    コントラストは light / dark いずれも実測で AA 以上:
+ *      アイコン 5.14 / 5.34、見出し 12.77 / 7.17、本文 13.47 / 7.03
+ *
+ * 2) Paper に合わせて四角にする
+ *    _paper.css が大型 Surface を四角にする一覧から notice だけ漏れており、
+ *    本文の中で唯一 16px の角丸が残っていた。
+ */
+
+body.lf-theme .m3-article__body .m3-notice--alert {
+	--m3-notice-accent: var(--md-sys-color-error);
+	--m3-notice-title: var(--md-sys-color-on-error-container);
+	--m3-notice-bg: var(--md-sys-color-error-container);
+	--m3-notice-border: color-mix(in srgb, var(--md-sys-color-error) 45%, transparent);
+}
+
+/* dark も同じ role を見るので、ベースの [data-theme="dark"] 側の値を上書きして戻す。
+   role の中身は _tokens.css がスキームごとに持っている。 */
+body.lf-theme[data-theme="dark"] .m3-notice--alert,
+[data-theme="dark"] body.lf-theme .m3-notice--alert {
+	--m3-notice-accent: var(--md-sys-color-error);
+	--m3-notice-title: var(--md-sys-color-on-error-container);
+	--m3-notice-bg: var(--md-sys-color-error-container);
+	--m3-notice-border: color-mix(in srgb, var(--md-sys-color-error) 45%, transparent);
+}
+
+body.lf-theme .m3-article__body .m3-notice {
+	border-radius: var(--lf-shape-paper);
+}

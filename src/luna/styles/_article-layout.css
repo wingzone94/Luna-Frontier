@@ -1,0 +1,259 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — Article 2 Columns / Reading Aside（Phase 5）
+ *
+ * 指示書 §25 / §26 / §28 / §29。
+ * - PC は Main 70〜75% / Aside 25〜30% を開始点にしつつ、固定値にせず可読性優先。
+ * - モバイルは 1 カラム。本文優先。Floating UI で読書を覆わない。
+ * - Sticky にするのは原則 TOC だけ。
+ *
+ * single.php を複製せずに済ませるため、Aside は本文の「前」に DOM 出力し、
+ * grid-auto-flow: row dense で本文の右隣へ回り込ませる。
+ * 未知の子要素（プラグイン出力等）は全幅にフォールバックする。
+ */
+
+/* ---------------------------------------------------------------------
+ * Mobile first: 1 カラム。Aside は本文の後ろへ回す。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-reading-aside {
+	display: flex;
+	flex-direction: column;
+	gap: var(--lf-space-m);
+	margin-block: var(--lf-space-m);
+	font-size: var(--lf-text-s);
+}
+
+body.lf-theme .lf-aside-block {
+	border-block-start: 1px solid var(--lf-rule);
+	padding-block-start: var(--lf-space-2xs);
+}
+
+body.lf-theme .lf-aside-block__title {
+	margin: 0 0 var(--lf-space-2xs);
+	color: var(--lf-on-surface-muted);
+	font-size: var(--lf-text-2xs);
+}
+
+body.lf-theme .lf-aside-block__lead {
+	margin: 0 0 var(--lf-space-2xs);
+	font-weight: 600;
+	font-size: var(--lf-text-s);
+	color: var(--lc-on-surface);
+}
+
+body.lf-theme .lf-toc,
+body.lf-theme .lf-aside-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+body.lf-theme .lf-aside-list--inline {
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: var(--lf-space-3xs);
+}
+
+body.lf-theme .lf-toc__link,
+body.lf-theme .lf-aside-list__item a {
+	display: block;
+	padding: 0.3rem 0;
+	color: var(--lf-on-surface-secondary);
+	text-decoration: none;
+	line-height: var(--lf-leading-snug);
+	border-inline-start: 2px solid transparent;
+	padding-inline-start: var(--lf-space-2xs);
+	transition: color var(--lf-motion-fast) var(--lf-easing-standard),
+		border-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-aside-list__item a:hover {
+	color: var(--lc-accent);
+	border-inline-start-color: var(--lc-accent);
+}
+
+/* ---------------------------------------------------------------------
+ * 目次の縦ライン
+ *
+ * 以前は項目ごとに border-inline-start を出し入れしていたので、現在地が
+ * 移るたびに線が「消えて、別の場所に現れる」跳び方をしていた。
+ *
+ * 1 本のマーカーに変えて、現在地へ滑り下りるようにする。移動中は薄くなり、
+ * 着いてから戻る（--lf-toc-marker-opacity を JS が一度 0 にして次のフレームで
+ * 戻すことで、透明度と位置の遷移が同時に走る）。
+ * 位置と高さは JS が --lf-toc-marker-top / --lf-toc-marker-height に書く。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-toc {
+	position: relative;
+}
+
+/* 全項目に通る薄いレール。現在地が無いときも目次の範囲が分かる。 */
+body.lf-theme .lf-toc::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	inline-size: 2px;
+	background: var(--lf-rule);
+}
+
+/* 現在地のマーカー。JS が値を入れるまでは出さない。 */
+body.lf-theme .lf-toc::after {
+	content: "";
+	position: absolute;
+	inset-inline-start: 0;
+	inline-size: 2px;
+	top: var(--lf-toc-marker-top, 0px);
+	block-size: var(--lf-toc-marker-height, 0px);
+	background: var(--lc-accent);
+	opacity: var(--lf-toc-marker-opacity, 0);
+	transition: top var(--lf-motion-emphasized) var(--lf-easing-standard),
+		block-size var(--lf-motion-emphasized) var(--lf-easing-standard),
+		opacity var(--lf-motion-emphasized) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-toc__link:hover {
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-toc__link.is-current {
+	color: var(--lc-on-surface);
+	font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme .lf-toc::after {
+		transition: none;
+	}
+}
+
+/* 見出しレベルでインデントを付け、階層を読み取れるようにする。 */
+body.lf-theme .lf-toc__item[data-level="h3"] .lf-toc__link { padding-inline-start: var(--lf-space-s); font-size: var(--lf-text-xs); }
+body.lf-theme .lf-toc__item[data-level="h4"] .lf-toc__link { padding-inline-start: var(--lf-space-m); font-size: var(--lf-text-xs); }
+body.lf-theme .lf-toc__item[data-level="h5"] .lf-toc__link,
+body.lf-theme .lf-toc__item[data-level="h6"] .lf-toc__link { padding-inline-start: var(--lf-space-l); font-size: var(--lf-text-2xs); }
+
+body.lf-theme .lf-aside-list__item.is-current > span {
+	display: block;
+	padding: 0.3rem 0 0.3rem var(--lf-space-2xs);
+	border-inline-start: 2px solid var(--lc-accent);
+	font-weight: 700;
+	color: var(--lc-on-surface);
+}
+
+body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
+	border-inline-start: 0;
+	padding: 0.2em 0.8em;
+	border: 1px solid var(--lf-rule-strong);
+	border-radius: var(--lf-shape-full);
+	font-size: var(--lf-text-2xs);
+}
+
+/* ---------------------------------------------------------------------
+ * Tablet / Foldable の 600〜800px 帯（§29）
+ * まだ 1 カラムのまま。Aside だけ 2 列に流して縦の消費を抑える。
+ * --------------------------------------------------------------------- */
+@media (min-width: 600px) and (max-width: 1023px) {
+	body.lf-theme .lf-reading-aside {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--lf-space-s) var(--lf-space-m);
+		align-items: start;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * PC: 2 カラム（§25）
+ * --------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+	body.lf-theme.single-post .m3-article {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
+		column-gap: var(--lf-column-gap);
+		align-items: start;
+		grid-auto-flow: row dense;
+		max-inline-size: var(--lf-content-max);
+		margin-inline: auto;
+	}
+
+	/* 既定は全幅。ヘッダー・ページネーション・コメント等はそのまま横断させる。 */
+	body.lf-theme.single-post .m3-article > * {
+		grid-column: 1 / -1;
+		min-inline-size: 0;
+	}
+
+	body.lf-theme.single-post .m3-article > .lf-article-header {
+		grid-column: 1;
+	}
+
+	body.lf-theme.single-post .m3-article > .m3-article__body {
+		grid-column: 1;
+	}
+
+	body.lf-theme.single-post .m3-article > .lf-reading-aside {
+		grid-column: 2;
+		grid-row: 2;
+		margin-block: 0;
+	}
+
+	/* Sticky にするのは TOC だけ（§26）。他のブロックは普通に流す。 */
+	body.lf-theme.single-post .lf-aside-block--toc {
+		position: sticky;
+		/* 固定ヘッダーぶんのオフセット */
+		inset-block-start: calc(64px + var(--lf-space-s));
+		max-block-size: calc(100vh - 64px - var(--lf-space-xl));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+}
+
+/* PC で Reading Aside に TOC が出ている間は、既存の TOC FAB を重複表示しない。
+   モバイルでは Aside が本文下へ回るため FAB は残す（§28: 読書を覆う UI を増やさない）。 */
+@media (min-width: 1024px) {
+	body.lf-theme.single-post:has(.lf-aside-block--toc) #m3-toc-trigger {
+		display: none;
+	}
+}
+
+/* 高さが足りない環境で sticky が読書の邪魔にならないよう解除する。 */
+@media (min-width: 1024px) and (max-height: 600px) {
+	body.lf-theme.single-post .lf-aside-block--toc {
+		position: static;
+		max-block-size: none;
+		overflow-y: visible;
+	}
+}
+
+/* 動きを減らす設定では sticky 追従もやめる。 */
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme.single-post .lf-aside-block--toc {
+		scroll-behavior: auto;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * 脚注（Reading Aside へ移動したとき）
+ * 移動は src/luna.js が行う。JS が動かない場合は本文末に残る。
+ * 副紙面では罫と余白を Aside の他ブロックに揃え、装飾を足さない。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-aside-block--footnotes .node-footnotes {
+	margin: 0;
+	border: 0;
+	border-radius: var(--lf-shape-paper);
+	background: none;
+	box-shadow: none;
+	font-size: var(--lf-text-2xs);
+}
+
+body.lf-theme .lf-aside-block--footnotes .node-footnotes__header {
+	padding: 0 0 var(--lf-space-3xs);
+	border-block-end: 1px solid var(--lf-rule);
+	gap: var(--lf-space-3xs);
+}
+
+body.lf-theme .lf-aside-block--footnotes .node-footnotes__body,
+body.lf-theme .lf-aside-block--footnotes .node-footnotes__list {
+	padding-inline: 0;
+}

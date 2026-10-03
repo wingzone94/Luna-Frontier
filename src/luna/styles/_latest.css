@@ -1,0 +1,533 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — LATEST セクション & Article Card 刷新
+ *
+ * 狙い:
+ * - 高さのばらつきで生まれていた「カード内の大きな空白」をなくす。
+ *   グリッドは行の最も高いカードに揃うため、画像なしカードが空洞になっていた。
+ *   本文（タイトル）を上に、メタを下に張り付け、余りは意味のある余白にする。
+ * - アイキャッチは比率を固定して視線の高さを揃える。
+ * - 階層は影ではなく「面・罫・余白・タイポグラフィ」で作る（Paper Design）。
+ * - 分類色（カテゴリチップ）と塗りピルの白文字は既存仕様のまま触らない。
+ */
+
+/* ---------------------------------------------------------------------
+ * セクション見出し
+ * --------------------------------------------------------------------- */
+body.lf-theme .m3-surface--latest,
+body.lf-theme .m3-surface--articles,
+body.lf-theme .m3-hot-posts {
+	background: transparent;
+	border-radius: var(--lf-shape-paper);
+	box-shadow: none;
+}
+
+/* 編集部おすすめのカテゴリは、画像を上に置いたアーカイブグリッド。 */
+body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--lf-space-s);
+	max-inline-size: none;
+}
+
+body.lf-theme .lf-topic-archive .lf-topic-archive__grid > .m3-card {
+	flex-direction: column;
+	align-items: stretch;
+	block-size: auto;
+	border-block-start: 0;
+}
+
+body.lf-theme .lf-topic-archive .lf-topic-archive__grid > .m3-card > .m3-card__visual {
+	inline-size: 100%;
+	width: 100%;
+	flex: 0 0 auto;
+	aspect-ratio: 16 / 9;
+	min-block-size: 0;
+}
+
+body.lf-theme .lf-topic-archive .m3-card__image-link,
+body.lf-theme .lf-topic-archive .m3-card__visual img {
+	inline-size: 100%;
+	block-size: 100%;
+	object-fit: fill;
+}
+
+@media (max-width: 1024px) {
+	body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 700px) {
+	body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+body.lf-theme .m3-hot-posts__grid {
+	gap: var(--lf-space-s);
+	max-inline-size: 68rem;
+	margin-inline: auto;
+	align-items: stretch;
+}
+
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) {
+	align-items: stretch;
+}
+
+body.lf-theme .m3-hot-card .m3-card__content {
+	gap: var(--lf-space-3xs);
+	padding: var(--lf-space-2xs) var(--lf-space-xs) 0;
+}
+
+body.lf-theme .m3-hot-card .m3-card__title {
+	font-size: var(--lf-text-base);
+	-webkit-line-clamp: 2;
+	min-block-size: calc(2 * 1.4em);
+}
+
+body.lf-theme .m3-hot-card .m3-card__footer {
+	padding: var(--lf-space-2xs) var(--lf-space-xs);
+}
+
+/*
+ * セクション見出し（HEADLINE / LATEST など）。
+ * 下線は引かない（2026-08-09 ユーザー指示）。区切りはカードとの余白で作る。
+ */
+body.lf-theme .m3-section-title {
+	display: flex;
+	align-items: baseline;
+	gap: var(--lf-space-2xs);
+	margin: 0 0 var(--lf-space-s);
+	padding-block-end: 0;
+	border-block-end: 0;
+	font-family: var(--font-heading), sans-serif;
+	font-size: var(--lf-text-l);
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	color: var(--lf-brand-text);
+}
+
+body.lf-theme .m3-section-title::after {
+	content: none;
+}
+
+body.lf-theme .m3-section-title .material-symbols-outlined {
+	color: var(--lf-brand);
+}
+
+body.lf-theme .m3-section-title__sub {
+	font-family: var(--font-ui), sans-serif;
+	font-size: var(--lf-text-2xs);
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	color: var(--lf-on-surface-muted);
+}
+
+/* 「すべて見る」は装飾を抑えたテキストリンクにして、カードの邪魔をしない。 */
+body.lf-theme .m3-latest-see-all {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	margin-inline-start: auto;
+	margin-block-start: var(--lf-space-s);
+	padding: 0.5em 0.9em;
+	border-radius: var(--lf-shape-full);
+	background: none;
+	font-size: var(--lf-text-s);
+	font-weight: 700;
+	color: var(--lf-brand-text);
+	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .m3-latest-see-all:hover {
+	background: color-mix(in srgb, var(--lf-brand) var(--lf-state-hover), transparent);
+}
+
+body.lf-theme .m3-latest-see-all:active {
+	background: color-mix(in srgb, var(--lf-brand) var(--lf-state-pressed), transparent);
+}
+
+/* ---------------------------------------------------------------------
+ * カード本体
+ * --------------------------------------------------------------------- */
+body.lf-theme .m3-card {
+	display: flex;
+	flex-direction: column;
+	overflow: clip;
+	block-size: auto;
+}
+
+body.lf-theme .m3-hot-card,
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card {
+	block-size: 100%;
+}
+
+/* アイキャッチの上に濃い帯が出ないよう、画像付きカードの上罫線を除く。 */
+body.lf-theme .m3-hot-posts .m3-hot-card.m3-card--has-image,
+body.lf-theme .m3-surface--latest .m3-card.m3-card--has-image {
+	border-block-start: 0;
+}
+
+/*
+ * アイキャッチは切り抜かない（§ 2.0「アイキャッチを全体表示」）。
+ *
+ * 枠に 16/10（HOT は 16/7）を固定し object-fit: cover で埋めていたため、
+ * 16:9 のアイキャッチは上下を削られていた。削られた結果、絵柄の外周の
+ * 余白だけが枠の上に残り、「画像の上に余白がある」ように見えていた
+ * （実測 1200px の HOT: 355×199 の画像を 355×155 の枠へ入れて上下を 22px ずつ切除）。
+ *
+ * 比率を画像自身に決めさせれば、切り抜きも余白も生まれない。
+ * 行内で高さが少し揃わなくなるが、アイキャッチを削らないことを優先する。
+ */
+body.lf-theme .m3-card__visual {
+	position: relative;
+	aspect-ratio: auto;
+	overflow: clip;
+	background: var(--lf-paper-sunken);
+	border-radius: 0;
+}
+
+body.lf-theme .m3-hot-card .m3-card__visual,
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card > .m3-card__visual {
+	flex: 1 1 auto;
+	min-block-size: 0;
+	aspect-ratio: 16 / 9;
+}
+
+body.lf-theme .m3-card__image-link {
+	display: block;
+	block-size: auto;
+}
+
+body.lf-theme .m3-card__visual img {
+	display: block;
+	inline-size: 100%;
+	block-size: auto;
+	object-fit: contain;
+	border-radius: 0;
+	transition: transform var(--lf-motion-emphasized) var(--lf-easing-emphasized);
+}
+
+body.lf-theme .m3-hot-card .m3-card__image-link,
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card .m3-card__image-link {
+	position: static;
+	inset: auto;
+	block-size: 100%;
+}
+
+body.lf-theme .m3-hot-card .m3-card__visual img,
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card > .m3-card__visual img {
+	block-size: 100%;
+	object-fit: fill;
+}
+
+body.lf-theme .m3-card:hover .m3-card__visual img {
+	transform: scale(1.04);
+}
+
+/* コンテンツは内容高で閉じ、短いタイトルの下に空洞を作らない。 */
+body.lf-theme .m3-card__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--lf-space-2xs);
+	flex: 0 0 auto;
+	padding: var(--lf-space-xs) var(--lf-space-s) 0;
+}
+
+body.lf-theme .m3-card__topline {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--lf-space-3xs);
+	margin: 0;
+}
+
+body.lf-theme .m3-card__title {
+	margin: 0;
+	/*
+	 * 狭い画面でカードの高さが詰まると、タイトルが flex の縮小で 7px 程度まで
+	 * 潰れて本文が読めなくなっていた。タイトルは縮めず、カード側を伸ばす。
+	 */
+	flex: 0 0 auto;
+	font-family: var(--font-heading), sans-serif;
+	font-size: var(--lf-text-m);
+	font-weight: 700;
+	line-height: 1.4;
+	letter-spacing: -0.005em;
+	text-wrap: pretty;
+
+	/* 行数を揃えて、カードごとの高さのばらつきを抑える。 */
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+}
+
+body.lf-theme :is(.l-card-grid__items--featured, .m3-post-grid__container--featured) > .m3-card .m3-card__title {
+	min-block-size: calc(3 * 1.4em);
+}
+
+body.lf-theme .m3-card__title a {
+	color: var(--lc-on-surface);
+	text-decoration: none;
+	transition: color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .m3-card:hover .m3-card__title a {
+	color: var(--lf-brand-text);
+}
+
+/*
+ * 画像なしカード。
+ *
+ * グリッドの行は最も高いカード（＝画像ありカード）に高さが揃う。
+ * フッターは content 内で auto マージンを取っているため、上詰めのままだと
+ * タイトルとフッターの間に大きな空洞が残っていた。
+ * そこで画像スロットと同じ比率の装飾面を与え、カードの構造自体を揃える。
+ * ブランドオレンジの薄いハッチで「画像の代わり」だと分かるようにする。
+ */
+body.lf-theme .m3-card--no-image::before {
+	content: "";
+	display: block;
+	flex: 0 0 auto;
+	aspect-ratio: 16 / 10;
+	border-block-end: 1px solid var(--lf-rule);
+	background:
+		repeating-linear-gradient(
+			135deg,
+			transparent 0 15px,
+			color-mix(in srgb, var(--lf-brand) 8%, transparent) 15px 16px
+		),
+		linear-gradient(
+			160deg,
+			color-mix(in srgb, var(--lf-brand) 14%, var(--lf-paper)) 0%,
+			var(--lf-paper) 72%
+		);
+}
+
+body.lf-theme .m3-hot-card.m3-card--no-image::before {
+	aspect-ratio: 16 / 7;
+}
+
+body.lf-theme .m3-card--no-image .m3-card__content {
+	padding-block-start: var(--lf-space-xs);
+}
+
+/* フッター: 下端に固定し、細い罫で区切る。 */
+body.lf-theme .m3-card__footer {
+	margin-block-start: 0;
+	padding: var(--lf-space-2xs) var(--lf-space-s);
+	border-block-start: 1px solid var(--lf-rule);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--lf-space-2xs);
+	font-size: var(--lf-text-2xs);
+	color: var(--lf-on-surface-secondary);
+}
+
+body.lf-theme .m3-card__writer-name,
+body.lf-theme .m3-card__date {
+	font-size: var(--lf-text-2xs);
+	color: var(--lf-on-surface-secondary);
+}
+
+body.lf-theme .m3-card__writer-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-inline-size: 0;
+	color: var(--lf-on-surface-secondary);
+	text-decoration: none;
+	border-radius: var(--lf-shape-full);
+	transition: color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .m3-card__writer-link:hover {
+	color: var(--lc-accent);
+}
+
+body.lf-theme .m3-card__writer-link:hover .m3-card__writer-name {
+	color: var(--lc-accent);
+}
+
+body.lf-theme .m3-card__writer-link .avatar {
+	flex: 0 0 auto;
+}
+
+body.lf-theme .m3-card__writer-link .m3-card__writer-name {
+	min-inline-size: 0;
+}
+
+body.lf-theme .m3-card__date {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ホバーは影ではなく罫の色で示す（Paper Design）。 */
+body.lf-theme .m3-card:hover {
+	border-color: color-mix(in srgb, var(--lf-brand) 60%, transparent);
+}
+
+body.lf-theme .m3-card:focus-within {
+	border-color: var(--lf-brand);
+}
+
+body.lf-theme .m3-card.lf-card-spectrum:hover,
+body.lf-theme .m3-card.lf-card-spectrum:focus-within {
+	border-color: var(--lf-card-current-accent);
+}
+
+/* ---------------------------------------------------------------------
+ * Featured（先頭 4 件）はタイトルを一段大きく、画像を広く。
+ * --------------------------------------------------------------------- */
+@container lf-card (min-width: 26rem) {
+	body.lf-theme .m3-card__title {
+		font-size: var(--lf-text-l);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme .m3-card__visual img,
+	body.lf-theme .m3-card__title a {
+		transition: none;
+	}
+
+	body.lf-theme .m3-card:hover .m3-card__visual img {
+		transform: none;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * カードタイトルの収まり
+ *
+ * Chromium は display: -webkit-box を blockify するため、HEADLINE カードでは
+ * Node 由来の -webkit-line-clamp が効かず、overflow: hidden だけが残って
+ * 文字の途中で切れていた。
+ *
+ * ここでは JS 無しの受け皿として「3 行ぶんの高さ + 下端のぼかし」を用意する。
+ * 実際の詰め・省略は src/luna.js が担当する（少し詰めれば収まるものは詰め、
+ * それでも溢れるものだけ … で省略する）。
+ * --------------------------------------------------------------------- */
+/*
+ * 行数ぶんちょうどの高さで切る。lh 単位は 1 行分の高さなので、
+ * 切れ目が必ず行の境目に来て文字の途中で切られない。
+ * 行数は Node 由来の -webkit-line-clamp の指定に合わせる。
+ */
+body.lf-theme .c-headline-card__title {
+	overflow: hidden;
+	max-block-size: 3lh;
+}
+
+/* JS が段階的に詰めるときの縮尺。1em は要素の文字サイズ基準。 */
+body.lf-theme .lf-title-fit {
+	font-size: calc(1em * var(--lf-title-fit, 1));
+	letter-spacing: var(--lf-title-tracking, -0.005em);
+}
+
+/*
+ * カードタイトルの受け皿を、一覧に並ぶカード全般へ広げる。
+ * HEADLINE と同じく、Chromium の blockify で clamp が効かない箇所があるため、
+ * JS 無しでも文字が真横に切られないようフェードで受ける。
+ * 実際の詰め・省略は src/luna.js が担当する。
+ */
+body.lf-theme :is(
+	.m3-related-card__title,
+	.m3-headline-card__title,
+	.m3-elevated-nav-card__title
+) {
+	overflow: hidden;
+	max-block-size: 2lh;
+}
+
+/*
+ * .m3-game-card__title は 1 行想定でクランプ指定が無い。
+ * ここに高さ上限やフェードを掛けると、1 行のタイトルが途中から薄くなる
+ * （実測でテキストの下 2/3 が消えていた）。何も掛けない。
+ */
+
+/* ---------------------------------------------------------------------
+ * モバイルの一覧は Node 1.3.1 由来の「横並びの行」に従う。
+ *
+ * 上の `body.lf-theme .m3-card { flex-direction: column }` は詳細度 (0,3,0) で
+ * ベースの行レイアウト（同じ (0,3,0)）と並び、Luna の CSS が後から読まれるぶんだけ
+ * 勝ってしまう。結果、行になるはずの一覧が縦積みのまま残っていた
+ * （実測 375×812: LATEST 6件で 1,938px / カード 266px）。
+ *
+ * 700px はベースが行へ切り替える幅。ここでは向きだけを譲り、Paper の面・罫・
+ * タイポグラフィはそのまま 2.0 のものを使う。
+ * --------------------------------------------------------------------- */
+@media (max-width: 700px) {
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card {
+		flex-direction: row;
+		align-items: stretch;
+		block-size: auto;
+	}
+
+	/* 横並びでは画像を除いた残り幅に本文を収める。 */
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card > .m3-card__content {
+		flex: 1 1 0;
+		min-inline-size: 0;
+	}
+
+	/*
+	 * アイキャッチは行の高さいっぱい。
+	 *
+	 * 2.0 のカードは aspect-ratio: 16/10 固定だが、これは縦積み前提の指定で、
+	 * 行に入れると画像が行より低くなり、上下に余白が残る
+	 * （実測 375px: 行 149px に対し画像 96px で、画像の上に 24px の空きができていた）。
+	 * Node 1.3.1 由来の行レイアウトと同じく、比率を解いて stretch に任せる。
+	 */
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card > .m3-card__visual {
+		aspect-ratio: auto;
+		align-self: stretch;
+		flex: 0 0 auto;
+	}
+
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card .m3-card__title {
+		min-block-size: 0;
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * リスト表示（著者アーカイブなど）も Node 由来の横並びに従う。
+ *
+ * ベース CSS は `--list` のカードを flex-direction: row（サムネイル 280px を左、
+ * 本文を右）にしているが、詳細度は (0,3,0) で上の
+ * `body.lf-theme .m3-card { flex-direction: column }` と並ぶ。Luna の CSS が
+ * 後から読まれるぶんだけ勝ってしまい、リスト表示が縦積みに戻っていた。
+ * 実測 1280px の著者アーカイブ: カード 800×307 の左上に 280×175 の画像が
+ * 載り、その右 520px が空白のまま本文が画像の下から始まっていた。
+ *
+ * 700px 以下は上のブロックが行として引き取るので、ここは 701px 以上だけ。
+ * 701〜768px はベースが意図的に縦積みへ戻す帯なので、そこも避ける。
+ * --------------------------------------------------------------------- */
+@media (min-width: 769px) {
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(.l-card-grid--list, .m3-post-grid--list) > .m3-card {
+		flex-direction: row;
+		block-size: auto;
+	}
+
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(.l-card-grid--list, .m3-post-grid--list) > .m3-card > .m3-card__content {
+		flex: 1 1 0;
+		min-inline-size: 0;
+	}
+}
+
+/*
+ * リスト表示のアイキャッチは、Node 由来の設計どおり「自然な比率で縦中央」にする。
+ * 2.0 の 16/10 固定を解かないと、ベースが縦積みへ戻す 701〜768px の帯で
+ * 画像が横幅いっぱい × 16:10 になり、1 件のカードが 589px になる
+ * （実測 768px: 画像 734×459）。向きが変わらないこの帯にも効かせたいので、
+ * 上のブロックとは別の下限にしてある。
+ */
+@media (min-width: 701px) {
+	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(.l-card-grid--list, .m3-post-grid--list) > .m3-card > .m3-card__visual {
+		aspect-ratio: auto;
+		/*
+		 * ベース CSS は align-items: center で画像を行の縦中央に置くが、行のほうが
+		 * 高いときはアイキャッチの上に余白が残る（実測 1440px の著者アーカイブで
+		 * 8 件すべてに発生）。カードの他の要素と同じく上端に揃える。
+		 */
+		align-items: flex-start;
+	}
+}

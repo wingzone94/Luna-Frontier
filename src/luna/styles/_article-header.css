@@ -1,0 +1,513 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — Article Header + Intelligence Summary（Phase 4）
+ *
+ * 指示書 §30 / §31。
+ * 情報の視覚強度を Category < Title > Metadata > Summary の順に明確に落とす。
+ * Paper（四角）で、階層は spacing / rule / typography で作る。
+ */
+
+/*
+ * 記事ヘッダーの Paper。
+ * Dynamic Color はリンク・CTA・一覧カードの補助アクセントに限定し、
+ * single の記事タイトル面は本文と同じ neutral surface に揃える。
+ */
+body.lf-theme .lf-article-header {
+	background: var(--lf-paper);
+	border-block: 1px solid var(--lf-rule);
+	border-radius: var(--lf-shape-paper);
+	margin-block-end: var(--lf-space-m);
+	overflow: clip;
+}
+
+/*
+ * アイキャッチ。
+ *
+ * 「読む前の情報」なので Title より強くしない＝高さは抑える。
+ * ただし切り抜かず画像全体を見せる（2026-08-09 ユーザー指示）。
+ *
+ * 枠側で縦横比や高さを固定せず、画像の width / height 属性からブラウザが
+ * 自然比率を算出する。これにより画像形式や比率に関係なく全体を表示し、
+ * contain 用の余白や cover による切り抜きを作らない。
+ */
+body.lf-theme .lf-article-header__media {
+	position: relative;
+	margin: 0;
+	display: block;
+	inline-size: 100%;
+	overflow: clip;
+}
+
+body.lf-theme .lf-article-header__image {
+	display: block;
+	inline-size: 100%;
+	block-size: auto;
+	max-inline-size: 100%;
+	max-block-size: none;
+	object-fit: contain;
+	object-position: center;
+	border-radius: 0;
+}
+
+body.lf-theme .lf-article-header__inner {
+	padding: var(--lf-space-m) var(--lf-gutter) var(--lf-space-s);
+	display: flex;
+	flex-direction: column;
+	gap: var(--lf-space-xs);
+}
+
+/* 1. Category — 小さく、しかし分類として読み取れる強度。 */
+body.lf-theme .lf-article-header__eyebrow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--lf-space-3xs);
+	font-size: var(--lf-text-2xs);
+}
+
+body.lf-theme .lf-article-header__eyebrow:empty {
+	display: none;
+}
+
+/* 2. Title — このページで最も強い要素。 */
+body.lf-theme .lf-article-header__title {
+	margin: 0;
+	font-family: var(--font-heading), sans-serif;
+	font-size: var(--md-sys-typescale-display-large-size);
+	font-weight: 800;
+	line-height: var(--md-sys-typescale-display-large-line-height);
+	letter-spacing: -0.015em;
+	font-feature-settings: "palt" 1;
+	color: var(--lc-on-surface);
+	text-wrap: balance;
+	max-inline-size: 34ch;
+
+	/* ドロップシャドウは一度試したが不採用（2026-08-09 ユーザー指示）。
+	   紙面の見出しは影ではなくサイズ・ウェイト・余白で立たせる。 */
+	text-shadow: none;
+}
+
+/* 3-4. Metadata — 弱い。読み飛ばせること。
+   2026-08-22 ユーザー指示により、公開／更新の日時を塗り面（図形）の中に入れた。
+   面を与えるぶん強くなるので、「弱い」はサイズと文字色の側で維持する:
+   本文 13px → 12px、ラベルはさらに 0.9em、文字色は --lf-on-surface-secondary のまま
+   （--lc-on-surface へ上げない）、枠線も影も付けない。行の margin も変えない。 */
+body.lf-theme .lf-article-header__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--lf-space-2xs) var(--lf-space-s);
+	font-size: var(--lf-text-xs);
+	color: var(--lf-on-surface-secondary);
+}
+
+/* 日時と執筆者。同じ行にある .lf-meta__chip（Library）と寸法を完全に揃え、
+   塗りの有無だけを「中立の情報 / アクセントのリンク」という意味の差にする。
+   透明な 1px 枠は、チップ側の実線 1px ぶんの高さ差（2px）を吸収するためのもの。
+   アイコンを入れる項目は中央揃えにして、ピル内の縦位置を安定させる。 */
+body.lf-theme .lf-meta__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	padding: 0.25em 0.85em;
+	border: 1px solid transparent;
+	border-radius: var(--lf-shape-full);
+	background: var(--lf-meta-fill);
+	font-size: var(--lf-text-2xs);
+	line-height: 1.6;
+	font-variant-numeric: tabular-nums;
+}
+
+body.lf-theme .lf-meta__icon {
+	font-size: 1.1em;
+	line-height: 1;
+	color: var(--lf-on-surface-muted);
+}
+
+body.lf-theme .lf-meta__item--link {
+	color: var(--lf-on-surface-secondary);
+	text-decoration: none;
+	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard),
+		color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-meta__item--link:hover {
+	background: color-mix(in srgb, var(--lc-accent) var(--lf-state-hover), transparent);
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-meta__item--link:hover .lf-meta__icon {
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-meta__label {
+	font-size: var(--lf-text-2xs);
+	letter-spacing: 0.06em;
+	color: var(--lf-on-surface-muted);
+}
+
+/* 本文を 12px へ落とした結果ラベルと同寸になり階層が消えるので、記事ヘッダーの中でだけ
+   ラベルをもう一段小さくする。.lf-meta__label は page.php の「最終更新」でも使うため、
+   スコープを .lf-article-header__meta に必ず限定すること。 */
+body.lf-theme .lf-article-header__meta .lf-meta__label {
+	font-size: 0.9em;
+}
+
+/* チップ（分類・状態）はピルのまま維持する（§22）。 */
+body.lf-theme .lf-meta__chip {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.5em;
+	padding: 0.25em 0.85em;
+	border: 1px solid var(--lf-rule-strong);
+	border-radius: var(--lf-shape-full);
+	font-size: var(--lf-text-2xs);
+	font-weight: 600;
+	line-height: 1.6;
+	color: var(--lf-on-surface-secondary);
+	text-decoration: none;
+}
+
+body.lf-theme .lf-meta__chip-sub {
+	font-weight: 400;
+	color: var(--lf-on-surface-muted);
+}
+
+body.lf-theme .lf-meta__chip--link {
+	border-color: color-mix(in srgb, var(--lc-accent) 45%, transparent);
+	color: var(--lc-accent);
+	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-meta__chip--link:hover {
+	background: color-mix(in srgb, var(--lc-accent) var(--lf-state-hover), transparent);
+}
+
+body.lf-theme .lf-meta__chip--link:active {
+	background: color-mix(in srgb, var(--lc-accent) var(--lf-state-pressed), transparent);
+}
+
+/* =====================================================================
+ * 読了時間・文字数バッジ
+ *
+ * 中身（円ゲージ / 読了目安 / 文字数 / 判定チップ）は Node 1.3 の実装のまま。
+ * Luna Frontier では見え方だけを差し替える。
+ *
+ * 2.0では外周の塗りピルと区切り線を使わず、紙面上の情報行として一体化する。
+ * 判定カラーはゲージとドットだけに残し、文字は surface 上の通常色で読む。
+ * ===================================================================== */
+body.lf-theme .lf-article-header__reading {
+	display: flex;
+	justify-content: flex-start;
+	margin: 0;
+}
+
+body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive {
+	/* flex アイテムの auto マージンは justify-content より強いので解除する。 */
+	margin: 0;
+
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: var(--lc-on-surface);
+	overflow: visible;
+
+	padding: 0;
+	gap: var(--lf-space-2xs);
+	flex-wrap: nowrap;
+	max-inline-size: 100%;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: var(--lf-space-2xs);
+	min-inline-size: 0;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-badge-text--main {
+	font-family: var(--font-ui), sans-serif;
+	font-size: var(--lf-text-s);
+	font-weight: 700;
+	color: var(--lc-on-surface);
+	white-space: nowrap;
+}
+
+/* 文字数は線や囲みを持たない副次情報として続ける。 */
+body.lf-theme .lf-article-header__reading .m3-reading-badge-label {
+	background: none;
+	box-shadow: none;
+	border-radius: 0;
+	border: 0;
+	border-inline-start: 0;
+	padding: 0;
+	font-size: var(--lf-text-2xs);
+	font-weight: 400;
+	line-height: 1.6;
+	color: var(--lf-on-surface-secondary);
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+body.lf-theme .lf-article-header__reading .m3-badge-label-main {
+	color: inherit;
+	font-size: inherit;
+}
+
+/* 判定はチップ化せず、色ドット＋短いラベルだけを残す。 */
+body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
+	flex: 0 0 auto;
+	margin-inline-start: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	font-size: var(--lf-text-2xs);
+	color: var(--lf-on-surface-secondary);
+	white-space: nowrap;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-rank-chip__label {
+	color: inherit;
+	font-size: inherit;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-rank-chip__dot {
+	background: var(--reading-accent);
+}
+
+/* ---- 円ゲージ ------------------------------------------------------
+ * Node 由来のゲージは viewBox 36 に対し bg 3.2 / progress 3.8＝直径の約 10% で、
+ * 30px 表示ではリングが重く中央のアイコンと繋がって見えた。約 6% へ落とす。
+ * 塗りの上に載るので、線とアイコンは白系にする。
+ * ------------------------------------------------------------------- */
+/*
+ * Node 由来のゲージは白い円盤（--reading-gauge-surface + inset shadow）を敷いている。
+ * 塗りの上では白い塊になって、白いリングとアイコンが埋もれてしまうため外す。
+ */
+body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge {
+	margin-inline-end: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-circle__bg {
+	stroke: color-mix(in srgb, var(--reading-accent) 24%, transparent);
+	stroke-width: 1.8;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-circle__progress {
+	stroke: var(--reading-accent);
+	stroke-width: 2.2;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-circle__head {
+	fill: var(--reading-accent);
+	r: 1.3px;
+	filter: none;
+}
+
+body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge .material-symbols-outlined {
+	font-size: 18px;
+	color: var(--reading-accent);
+}
+
+/*
+ * 換算方法の説明文は 1 行に収まらないので視覚的には隠す。
+ * aria-describedby から参照されているため display:none にはせず、
+ * スクリーンリーダーには残す。
+ */
+body.lf-theme .lf-article-header__reading .m3-reading-badge-text--desc {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+@media (max-width: 599px) {
+	body.lf-theme .lf-article-header__reading {
+		inline-size: 100%;
+		margin-inline: 0;
+	}
+
+	/* 狭い画面では区切りを外し、余白だけで分ける。 */
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-label {
+		border-inline-start: 0;
+		padding-inline-start: 0;
+		flex: 0 0 auto;
+		inline-size: auto;
+		max-inline-size: none;
+		font-size: 0.6875rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive {
+		display: flex;
+		flex: 1 1 auto;
+		inline-size: 100%;
+		max-inline-size: none;
+		padding: 0;
+		gap: 0.375rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge {
+		flex: 0 0 30px;
+		margin-inline-end: 0;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
+		flex: 1 1 auto;
+		inline-size: auto;
+		gap: 0.25rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-text--main {
+		flex: 0 0 auto;
+		font-size: clamp(0.75rem, 3.4vw, 0.8125rem);
+		letter-spacing: -0.02em;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
+		margin-inline-start: 0;
+		padding: 0;
+		font-size: 0.6875rem;
+	}
+}
+
+@media (max-width: 359px) {
+	body.lf-theme .lf-article-header__reading {
+		inline-size: calc(100% + 1rem);
+		margin-inline: -0.5rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-article__reading-badge-expressive {
+		padding: 0;
+		gap: 0.125rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge__gauge {
+		flex-basis: 28px;
+		inline-size: 28px;
+		block-size: 28px;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-content {
+		gap: 0.125rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-text--main {
+		font-size: 0.6875rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-badge-label,
+	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
+		font-size: 0.5625rem;
+	}
+
+	body.lf-theme .lf-article-header__reading .m3-reading-rank-chip {
+		padding: 0;
+	}
+}
+
+/* Disclosure — メタより更に弱く。ただし隠さない。 */
+body.lf-theme .lf-article-header__disclosure:empty {
+	display: none;
+}
+
+body.lf-theme .lf-article-header__disclosure {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--lf-space-3xs);
+	font-size: var(--lf-text-2xs);
+}
+
+/* ---------------------------------------------------------------------
+ * 5. Intelligence Summary（統合済み）
+ * Header の Paper の中で「本文への導入」として置く。Title より目立たせない。
+ * <details> を使い、JS 無しで開閉できるようにする（§16）。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-intelligence-summary {
+	margin-block-start: var(--lf-space-2xs);
+	padding-block-start: var(--lf-space-xs);
+	border-block-start: 1px solid var(--lf-rule);
+}
+
+body.lf-theme .lf-intelligence-summary__head {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+	cursor: pointer;
+	color: var(--lf-on-surface-muted);
+	list-style: none;
+}
+
+body.lf-theme .lf-intelligence-summary__head::-webkit-details-marker {
+	display: none;
+}
+
+body.lf-theme .lf-intelligence-summary__head::after {
+	content: "expand_more";
+	font-family: "Material Symbols Outlined", sans-serif;
+	font-size: 1.15em;
+	margin-inline-start: auto;
+	transition: transform var(--lf-motion-base) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-intelligence-summary[open] .lf-intelligence-summary__head::after {
+	transform: rotate(180deg);
+}
+
+body.lf-theme .lf-intelligence-summary__icon {
+	font-size: 1.15em;
+	color: var(--lc-accent);
+}
+
+body.lf-theme .lf-intelligence-summary__body {
+	padding-block-start: var(--lf-space-2xs);
+}
+
+body.lf-theme .lf-intelligence-summary__text {
+	margin: 0;
+	font-size: var(--lf-text-s);
+	line-height: var(--lf-leading-snug);
+	color: var(--lf-on-surface-secondary);
+	max-inline-size: var(--lf-measure);
+}
+
+body.lf-theme .lf-intelligence-summary__credit {
+	margin: var(--lf-space-3xs) 0 0;
+	font-size: var(--lf-text-2xs);
+	color: var(--lf-on-surface-muted);
+}
+
+/* ---------------------------------------------------------------------
+ * Node 由来の旧ヒーローの余白が残ると本文までが遠くなる（§30）。
+ * Luna のヒーローに置き換えた分の距離を詰める。
+ * --------------------------------------------------------------------- */
+body.lf-theme .m3-article__body {
+	margin-block-start: 0;
+}
+
+/* ---------------------------------------------------------------------
+ * AI 生成メディア / テキストのラベルは、もう少し広いピルにする
+ * （2026-08-09 ユーザー指示）。塗りと白文字の既存仕様は変えない。
+ * --------------------------------------------------------------------- */
+body.lf-theme .lf-article-header__disclosure :is(.m3-label--ai, .m3-label--sponsor) {
+	padding-inline: 1.1em;
+	padding-block: 0.4em;
+	border-radius: var(--lf-shape-full);
+	font-size: var(--lf-text-2xs);
+	line-height: 1.5;
+	letter-spacing: 0.02em;
+}
+
+body.lf-theme .lf-article-header__disclosure .m3-label__text,
+body.lf-theme .lf-article-header__disclosure .m3-ai-disclosure__text {
+	letter-spacing: 0.02em;
+}

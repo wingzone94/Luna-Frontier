@@ -1,0 +1,713 @@
+/* Luna Interactive — public chart. Tokens follow Luna Frontier / Node when present. */
+.luna-chart {
+  --luna-primary: var(--md-sys-color-primary, #ff9900);
+  --luna-on-primary: var(--md-sys-color-on-primary, #2b1700);
+  --luna-primary-container: var(--md-sys-color-primary-container, #fedcbe);
+  --luna-on-primary-container: var(--md-sys-color-on-primary-container, #2b1700);
+  --luna-accent: var(--md-sys-color-accent-text, #935400);
+  --luna-surface: var(--md-sys-color-surface, #fff4e5);
+  --luna-surface-low: var(--md-sys-color-surface-container-low, #ffffff);
+  --luna-surface-container: var(--md-sys-color-surface-container, #ffe8d1);
+  --luna-surface-high: var(--md-sys-color-surface-container-high, #f7ddc6);
+  --luna-ink: var(--md-sys-color-on-surface, #2b1700);
+  --luna-muted: var(--md-sys-color-on-surface-variant, #6b5a4a);
+  --luna-outline: var(--md-sys-color-outline, #857362);
+  --luna-outline-variant: var(--md-sys-color-outline-variant, #d6c2b1);
+  --luna-radius: var(--m3-radius-large, 28px);
+  --luna-ease: var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1));
+  --luna-shadow: 0 1px 2px rgba(43, 23, 0, 0.05), 0 10px 28px rgba(43, 23, 0, 0.06);
+  margin: 1rem 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+  background: var(--luna-surface-low);
+  color: var(--luna-ink);
+  border: 1px solid var(--luna-outline-variant);
+  border-radius: 12px;
+  box-shadow: none;
+  font-family: var(--font-main, "Inter", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif);
+  line-height: 1.5;
+  color-scheme: light;
+}
+
+.luna-chart *,
+.luna-chart *::before,
+.luna-chart *::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  .luna-chart {
+    --luna-primary: var(--md-sys-color-primary, #ffb85d);
+    --luna-on-primary: var(--md-sys-color-on-primary, #4a2800);
+    --luna-primary-container: var(--md-sys-color-primary-container, #6a3c00);
+    --luna-on-primary-container: var(--md-sys-color-on-primary-container, #ffdcbe);
+    --luna-accent: var(--md-sys-color-accent-text, #ffb85d);
+    --luna-surface: var(--md-sys-color-surface, #1e1b16);
+    --luna-surface-low: var(--md-sys-color-surface-container-low, #25221b);
+    --luna-surface-container: var(--md-sys-color-surface-container, #2a2720);
+    --luna-surface-high: var(--md-sys-color-surface-container-high, #322f28);
+    --luna-ink: var(--md-sys-color-on-surface, #ebe0d9);
+    --luna-muted: var(--md-sys-color-on-surface-variant, #d6c6b8);
+    --luna-outline: var(--md-sys-color-outline, #9f8e7d);
+    --luna-outline-variant: var(--md-sys-color-outline-variant, #524437);
+    --luna-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+[data-theme="dark"] .luna-chart {
+  --luna-primary: var(--md-sys-color-primary, #ffb85d);
+  --luna-on-primary: var(--md-sys-color-on-primary, #4a2800);
+  --luna-primary-container: var(--md-sys-color-primary-container, #6a3c00);
+  --luna-on-primary-container: var(--md-sys-color-on-primary-container, #ffdcbe);
+  --luna-accent: var(--md-sys-color-accent-text, #ffb85d);
+  --luna-surface: var(--md-sys-color-surface, #1e1b16);
+  --luna-surface-low: var(--md-sys-color-surface-container-low, #25221b);
+  --luna-surface-container: var(--md-sys-color-surface-container, #2a2720);
+  --luna-surface-high: var(--md-sys-color-surface-container-high, #322f28);
+  --luna-ink: var(--md-sys-color-on-surface, #ebe0d9);
+  --luna-muted: var(--md-sys-color-on-surface-variant, #d6c6b8);
+  --luna-outline: var(--md-sys-color-outline, #9f8e7d);
+  --luna-outline-variant: var(--md-sys-color-outline-variant, #524437);
+  --luna-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+[data-theme="light"] .luna-chart {
+  --luna-primary: var(--md-sys-color-primary, #ff9900);
+  --luna-on-primary: var(--md-sys-color-on-primary, #2b1700);
+  --luna-primary-container: var(--md-sys-color-primary-container, #fedcbe);
+  --luna-on-primary-container: var(--md-sys-color-on-primary-container, #2b1700);
+  --luna-accent: var(--md-sys-color-accent-text, #935400);
+  --luna-surface: var(--md-sys-color-surface, #fff4e5);
+  --luna-surface-low: var(--md-sys-color-surface-container-low, #ffffff);
+  --luna-surface-container: var(--md-sys-color-surface-container, #ffe8d1);
+  --luna-surface-high: var(--md-sys-color-surface-container-high, #f7ddc6);
+  --luna-ink: var(--md-sys-color-on-surface, #2b1700);
+  --luna-muted: var(--md-sys-color-on-surface-variant, #6b5a4a);
+  --luna-outline: var(--md-sys-color-outline, #857362);
+  --luna-outline-variant: var(--md-sys-color-outline-variant, #d6c2b1);
+  --luna-shadow: 0 1px 2px rgba(43, 23, 0, 0.05), 0 10px 28px rgba(43, 23, 0, 0.06);
+  color-scheme: light;
+}
+
+.luna-chart [hidden] {
+  display: none !important;
+}
+
+.luna-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--luna-outline-variant);
+}
+
+.luna-chart .luna-head {
+  flex: 1 1 160px;
+  min-width: 0;
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+.luna-m3-title {
+  font-family: var(--font-heading, "Manrope", "Noto Sans JP", sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--luna-ink);
+}
+
+.luna-caption,
+.luna-source,
+.luna-status {
+  margin: 0;
+  color: var(--luna-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.luna-source a {
+  color: var(--luna-accent);
+  text-underline-offset: 3px;
+}
+
+.luna-main {
+  min-width: 0;
+}
+
+.luna-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.luna-range-note {
+  margin: 0 4px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--luna-primary-container);
+  color: var(--luna-on-primary-container);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.luna-chart .luna-m3-surface {
+  height: var(--luna-h, 320px);
+  min-height: 240px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--luna-surface-low);
+  border-radius: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.luna-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.luna-plot {
+  container-type: inline-size;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.luna-aside {
+  flex: 0 0 116px;
+  width: 116px;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.luna-legend-toggle {
+  display: none;
+  list-style: none;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 8px 0 12px;
+  border-radius: 999px;
+  background: var(--luna-surface-high);
+  color: var(--luna-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.luna-legend-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.luna-legend-toggle svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 180ms var(--luna-ease);
+}
+
+.luna-aside[open] .luna-legend-toggle svg {
+  transform: rotate(180deg);
+}
+
+@media (min-width: 721px) {
+  .luna-legend-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+.luna-chart .luna-static,
+.luna-chart .luna-dynamic {
+  position: absolute;
+  inset: 0;
+}
+
+.luna-chart .luna-static,
+.luna-chart .luna-dynamic,
+.luna-plot svg,
+.luna-static-img,
+.luna-chart canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.luna-static-img {
+  object-fit: contain;
+}
+
+.luna-pie-tooltip {
+  position: fixed;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(160px, calc(100vw - 16px));
+  padding: 6px 8px;
+  border: 1px solid;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font: 11px/1.35 var(--font-main, "Inter", "Noto Sans JP", sans-serif);
+  pointer-events: none;
+}
+.luna-pie-tooltip[hidden] { display: none; }
+.luna-pie-tooltip strong { font-weight: 700; }
+
+/* Each pie represents one complete series. Keep the shared controls below the pies. */
+.luna-chart[data-luna-type="pie"] .luna-m3-surface {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+.luna-chart[data-luna-type="pie"] .luna-body {
+  flex-direction: column;
+}
+.luna-chart[data-luna-type="pie"] .luna-plot {
+  flex: none;
+}
+.luna-chart[data-luna-type="pie"] .luna-static,
+.luna-chart[data-luna-type="pie"] .luna-dynamic {
+  position: static;
+}
+.luna-pie-grid {
+  --luna-pie-columns: 1;
+  --luna-pie-size: 104px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+.luna-pie-grid[data-series-count="1"] { --luna-pie-size: 200px; }
+.luna-pie-grid[data-series-count="2"] { --luna-pie-size: 180px; }
+.luna-pie-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: calc((100% - (var(--luna-pie-columns) - 1) * 12px) / var(--luna-pie-columns));
+  min-width: 0;
+}
+.luna-pie-series-name,
+.luna-chart .luna-series-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  max-width: 100%;
+  color: var(--luna-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.luna-pie-series-name,
+.luna-chart .luna-series-toggle .luna-chip-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.luna-pie-canvas {
+  position: relative;
+  flex: none;
+  width: min(100%, var(--luna-pie-size));
+  aspect-ratio: 1;
+}
+.luna-pie-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--luna-muted);
+  font-size: 0.75rem;
+  border: 1px dashed var(--luna-outline-variant);
+  border-radius: 50%;
+}
+@container (min-width: 216px) {
+  .luna-pie-grid { --luna-pie-columns: 2; }
+}
+@container (min-width: 264px) {
+  .luna-pie-grid { --luna-pie-size: 128px; }
+}
+@container (min-width: 480px) {
+  .luna-pie-grid { --luna-pie-columns: 3; }
+}
+@container (min-width: 688px) {
+  .luna-pie-grid { --luna-pie-columns: 5; }
+}
+.luna-pie-grid[data-series-count="1"] { --luna-pie-columns: 1; }
+@container (min-width: 216px) {
+  .luna-pie-grid[data-series-count="2"] { --luna-pie-columns: 2; }
+}
+.luna-chart[data-luna-type="pie"] .luna-aside {
+  position: static;
+  width: 100%;
+  flex: none;
+}
+.luna-chart[data-luna-type="pie"] .luna-legend-toggle {
+  display: none;
+}
+.luna-chart[data-luna-type="pie"] .luna-legend-panel,
+.luna-chart[data-luna-type="pie"] .luna-fallback-legend,
+.luna-chart[data-luna-type="pie"] .luna-chip-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  width: 100%;
+  overflow: visible;
+}
+.luna-chart[data-luna-type="pie"] .luna-chip {
+  width: auto;
+  min-height: 36px;
+  padding-inline: 6px;
+}
+
+.luna-status {
+  padding: 0 8px;
+}
+
+.luna-status:empty {
+  display: none;
+}
+
+.luna-fallback-legend,
+.luna-chip-row {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 3px;
+  align-items: stretch;
+  padding: 0;
+}
+
+.luna-chip {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.luna-fallback-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: var(--luna-ink);
+  font-size: 0.75rem;
+}
+
+.luna-fallback-legend small {
+  color: var(--luna-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.luna-chip-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.luna-fallback-legend i,
+.luna-chip i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex: none;
+}
+
+.luna-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-inline-start: auto;
+  gap: 6px;
+  align-items: center;
+  flex: none;
+  z-index: 2;
+}
+
+.luna-toolbar-single {
+  justify-content: flex-end;
+}
+
+.luna-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.luna-segment-btn,
+.luna-chip,
+.luna-reset,
+.luna-chart summary {
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.luna-segment-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--luna-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 6px;
+  transition: background 180ms var(--luna-ease), color 180ms var(--luna-ease), transform 180ms var(--luna-ease);
+}
+
+.luna-segment-btn[data-luna-view] {
+  width: auto;
+  padding-inline: 8px;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+.luna-toolbar .luna-segment + .luna-segment {
+  border-inline-start: 1px solid var(--luna-outline-variant);
+  padding-inline-start: 6px;
+  border-radius: 0;
+}
+
+.luna-segment-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.luna-segment-btn[aria-checked="true"] {
+  background: var(--luna-primary-container);
+  color: var(--luna-on-primary-container);
+}
+
+.luna-segment-btn:hover {
+  color: var(--luna-ink);
+}
+
+.luna-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 3px 4px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--luna-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 180ms var(--luna-ease), border-color 180ms var(--luna-ease), opacity 180ms var(--luna-ease), transform 180ms var(--luna-ease);
+}
+
+.luna-chip[aria-pressed="true"] {
+  background: transparent;
+  color: var(--luna-ink);
+  font-weight: 700;
+}
+
+.luna-chip[aria-pressed="false"] {
+  color: var(--luna-muted);
+  border: 1px dashed var(--luna-outline-variant);
+}
+.luna-chip[aria-pressed="false"] .luna-chip-label {
+  text-decoration: line-through;
+}
+
+.luna-chip:hover {
+  background: var(--luna-surface-high);
+}
+
+.luna-chip[aria-pressed="false"] i {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.luna-chip:hover,
+.luna-segment-btn:hover {
+  transform: translateY(-1px);
+}
+
+.luna-chart :focus-visible {
+  outline: 3px solid var(--luna-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .luna-chart {
+    padding: 12px;
+    border-radius: 12px;
+    gap: 8px;
+  }
+  .luna-body {
+    display: block;
+    position: relative;
+  }
+  .luna-plot {
+    height: 100%;
+  }
+  .luna-aside {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 4;
+    width: auto;
+    flex: none;
+    overflow: visible;
+  }
+  .luna-legend-toggle {
+    display: inline-flex;
+  }
+  .luna-aside[open] .luna-legend-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: min(164px, 58vw);
+    max-height: min(260px, 48vh);
+    overflow: auto;
+    padding: 8px;
+    border-radius: 16px;
+    background: var(--luna-surface);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  }
+  .luna-segment-btn {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .luna-chip {
+    min-height: 44px;
+  }
+  .luna-head,
+  .luna-status {
+    padding-inline: 2px;
+  }
+  .luna-chart:not([data-luna-ready]) .luna-m3-surface {
+    height: auto;
+    overflow: visible;
+  }
+  .luna-chart:not([data-luna-ready]) .luna-plot {
+    height: var(--luna-h, 320px);
+  }
+  .luna-chart:not([data-luna-ready]) .luna-aside {
+    position: static;
+    width: 100%;
+  }
+  .luna-chart:not([data-luna-ready]) .luna-legend-toggle {
+    display: none;
+  }
+  .luna-chart:not([data-luna-ready]) .luna-aside[open] .luna-legend-panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 4px 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .luna-chart[data-luna-type="pie"] .luna-body { display: flex; }
+  .luna-chart[data-luna-type="pie"] .luna-plot { height: auto; }
+  .luna-chart[data-luna-type="pie"] .luna-aside[open] .luna-legend-panel,
+  .luna-chart[data-luna-type="pie"]:not([data-luna-ready]) .luna-aside[open] .luna-legend-panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .luna-chart[data-luna-type="pie"]:not([data-luna-ready]) .luna-plot { height: auto; }
+  .luna-chart[data-luna-type="pie"] .luna-chip { min-height: 44px; }
+}
+
+@media (pointer: coarse) {
+  .luna-chart .luna-segment-btn { min-width: 44px; min-height: 44px; }
+  .luna-chart .luna-chip { min-height: 44px; }
+}
+
+@media (max-width: 400px) {
+  .luna-chart .luna-header .luna-toolbar {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-inline-start: 0;
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .luna-chart *,
+  .luna-chart *::before,
+  .luna-chart *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.luna-chart[data-luna-copy-protected="true"],
+.luna-chart[data-luna-copy-protected="true"] * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.luna-chart[data-luna-copy-protected="true"] img,
+.luna-chart[data-luna-copy-protected="true"] svg,
+.luna-chart[data-luna-copy-protected="true"] canvas {
+  -webkit-user-drag: none;
+}
+
+.luna-chart input,
+.luna-chart textarea,
+.luna-chart select {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}

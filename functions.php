@@ -15,12 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * -------------------------------------------------------
- * 1. 定数定義（テーマパス / バージョン）
- * -------------------------------------------------------
+ * テーマ実体のパス。
+ * Luna Frontier は独立テーマであり、stylesheet ディレクトリがこのテーマ自身を指す。
+ * NODE_* の名前は Node 1.x 由来の既存呼び出しとの互換のため維持する。別テーマのインストールは前提にしない。
  */
-define( 'NODE_THEME_DIR', get_template_directory() );
-define( 'NODE_THEME_URI', get_template_directory_uri() );
+define( 'NODE_THEME_DIR', get_stylesheet_directory() );
+define( 'NODE_THEME_URI', get_stylesheet_directory_uri() );
 define( 'NODE_ALL_ARTICLES_SLUG', 'all-articles' );
 define( 'NODE_ALL_ARTICLES_PER_PAGE', 24 );
 define( 'NODE_ALL_ARTICLES_TOTAL_LIMIT', 240 );
@@ -94,6 +94,7 @@ require_once NODE_THEME_DIR . '/inc/blogcard-store.php';
 require_once NODE_THEME_DIR . '/inc/blogcard.php';
 require_once NODE_THEME_DIR . '/inc/maintenance.php';
 require_once NODE_THEME_DIR . '/inc/print.php';
+require_once NODE_THEME_DIR . '/inc/hero-slider.php';
 require_once NODE_THEME_DIR . '/inc/icon-font.php';
 
 /**
@@ -134,6 +135,18 @@ foreach ( $embedded_plugins as $plugin_file => $init_func ) {
 		if ( function_exists( $init_func ) ) {
 			$init_func();
 		}
+	}
+}
+
+// Luna Interactive は単独版を優先し、未導入時だけ同梱版を読み込む。
+if (
+	! function_exists( 'luna_interactive_register_block' )
+	&& ! in_array( 'luna-interactive/luna-interactive.php', $node_active_plugins, true )
+) {
+	$luna_embedded = NODE_THEME_DIR . '/plugins-embedded/luna-interactive/luna-interactive.php';
+	if ( is_file( $luna_embedded ) ) {
+		define( 'LUNA_INTERACTIVE_EMBEDDED', true );
+		require_once $luna_embedded;
 	}
 }
 
@@ -1526,3 +1539,9 @@ function node_robots_noindex_404( array $robots ): array {
 	return $robots;
 }
 add_filter( 'wp_robots', 'node_robots_noindex_404' );
+
+/**
+ * Luna Frontier の bootstrap。
+ * Node 1.x 由来の読み込みが終わったあとで載せる。別の親テーマは前提にしない。
+ */
+require_once NODE_THEME_DIR . '/inc/luna/bootstrap.php';

@@ -1,0 +1,118 @@
+/**
+ * Luna Frontier 2.0 / SkyAlow — Article Card（Phase 10）
+ *
+ * 指示書 §24 / §20〜§22 / §29 / §51。
+ * - Home / Archive / Search は 1 カラムを維持し、サイト全体を 2 カラム化しない。
+ * - カードは Paper 側なので四角。ただしカテゴリチップ・状態チップの丸は残す。
+ * - 階層は影ではなく面と罫で出す。
+ * - Container Queries を使い、カード自身の幅で変形させる（Viewport で分岐しない）。
+ *
+ * Phase 5 でカードごとの seed accent を追加済み。
+ * 一覧を多色の広告面にせず、Paper Design / Container Queries を土台に、
+ * M3 の color role として罫・focus・弱い面だけを記事 seed へ寄せる。
+ */
+
+body.lf-theme .m3-card,
+body.lf-theme .c-card {
+	--lf-card-current-accent: var(--lf-card-accent, var(--lf-brand-text));
+	--lf-card-current-outline: var(--lf-card-outline, var(--lf-rule));
+	--lf-card-current-surface: var(--lf-card-surface, var(--lf-paper-sunken));
+
+	border-radius: var(--lf-shape-paper);
+	background: var(--lf-paper);
+	border: 1px solid var(--lf-rule);
+	box-shadow: none;
+	container-type: inline-size;
+	container-name: lf-card;
+	transition: border-color var(--lf-motion-base) var(--lf-easing-standard),
+		transform var(--lf-motion-base) var(--lf-easing-standard);
+}
+
+body.lf-theme[data-theme="dark"] .lf-card-spectrum,
+[data-theme="dark"] body.lf-theme .lf-card-spectrum {
+	--lf-card-current-accent: var(--lf-card-accent-dark, var(--lf-brand-text));
+	--lf-card-current-outline: var(--lf-card-outline-dark, var(--lf-rule));
+	--lf-card-current-surface: var(--lf-card-surface-dark, var(--lf-paper-sunken));
+}
+
+/*
+ * Phase 5 Spectrum accent.
+ * 一覧は多色の広告面にせず、M3 の color role として罫・focus・弱い面だけを
+ * 記事 seed に寄せる。カテゴリチップの固有色は Wayfinding として維持する。
+ */
+body.lf-theme .lf-card-spectrum {
+	border-color: color-mix(in srgb, var(--lf-card-current-outline) 70%, transparent);
+}
+
+body.lf-theme .lf-card-spectrum .m3-card__visual,
+body.lf-theme .lf-card-spectrum.m3-card--no-image::before {
+	background-color: color-mix(in srgb, var(--lf-card-current-surface) 70%, var(--lf-paper));
+}
+
+body.lf-theme .m3-card:hover,
+body.lf-theme .c-card:hover {
+	border-color: var(--lf-rule-strong);
+	box-shadow: none;
+}
+
+body.lf-theme .lf-card-spectrum:hover,
+body.lf-theme .lf-card-spectrum:focus-within {
+	border-color: var(--lf-card-current-accent);
+}
+
+/* カード内のサムネイルも紙に合わせて四角にする。 */
+body.lf-theme .m3-card :is(img, .m3-card__image, .c-card__image) {
+	border-radius: var(--lf-shape-paper);
+}
+
+/* カテゴリチップ・状態チップはピルのまま（§22）。
+   カテゴリ色は Wayfinding なので触らない（§39）。 */
+body.lf-theme .m3-card :is(.m3-card__category, .m3-category-badge, .m3-chip) {
+	border-radius: var(--lf-shape-full);
+}
+
+body.lf-theme .m3-card__title,
+body.lf-theme .c-card__title {
+	font-family: var(--font-heading), sans-serif;
+	line-height: var(--lf-leading-tight);
+	letter-spacing: -0.01em;
+	text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------------
+ * Container Queries（§29）
+ * 600〜800px 帯では「ビューポート幅」ではなくカード自身の幅で決める。
+ * 狭いコンテナに入ったカードは自動的に密度を上げる。
+ * --------------------------------------------------------------------- */
+@container lf-card (max-width: 22rem) {
+	body.lf-theme .m3-card__content,
+	body.lf-theme .c-card__content {
+		padding: var(--lf-space-2xs) var(--lf-space-xs);
+		gap: var(--lf-space-3xs);
+	}
+
+	body.lf-theme .m3-card__title,
+	body.lf-theme .c-card__title {
+		font-size: var(--lf-text-base);
+	}
+}
+
+@container lf-card (min-width: 34rem) {
+	body.lf-theme .m3-card__title,
+	body.lf-theme .c-card__title {
+		font-size: var(--lf-text-l);
+	}
+}
+
+/* ---------------------------------------------------------------------
+ * Home / Archive は 1 カラム維持（§24）。
+ * 地色は Node 由来のブランドオレンジのまま。カードの面だけ Paper に寄せる。
+ * --------------------------------------------------------------------- */
+
+/* Reduced Motion ではカードの変形をやめる。 */
+@media (prefers-reduced-motion: reduce) {
+	body.lf-theme .m3-card,
+	body.lf-theme .c-card {
+		transition: none;
+	}
+}

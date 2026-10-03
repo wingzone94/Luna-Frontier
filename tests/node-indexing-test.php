@@ -253,10 +253,14 @@ class Node_Indexing_Test extends WP_UnitTestCase {
 		// 同じ結果の並び違いだけがクロールされ続ける。
 		$template = (string) file_get_contents( dirname( __DIR__ ) . '/search.php' );
 
-		$this->assertMatchesRegularExpression(
-			'#add_query_arg\(\s*[\'"]m3_sort[\'"]#',
-			$template
-		);
-		$this->assertStringContainsString( 'rel="nofollow"', $template );
+		if ( preg_match( '#add_query_arg\(\s*[\'"]m3_sort[\'"]#', $template ) ) {
+			$this->assertStringContainsString( 'rel="nofollow"', $template );
+			return;
+		}
+
+		// Lunaの検索では並び替えをGETフォームにし、クロール可能なsortリンクを出さない。
+		$this->assertStringContainsString( 'method="get"', $template );
+		$this->assertStringContainsString( 'name="m3_sort"', $template );
+		$this->assertDoesNotMatchRegularExpression( '/<a[^>]+[?&]m3_sort=/', $template );
 	}
 }

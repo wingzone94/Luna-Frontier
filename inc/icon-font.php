@@ -128,6 +128,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'travel_explore',
 			'tune',
 			'undo',
+			'unfold_less',
 			'unfold_more',
 			'update',
 			'verified',
@@ -138,7 +139,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 		);
 
 		/**
-		 * 子テーマやプラグインが独自のアイコンを足すためのフック。
+		 * プラグインや追加コードが独自のアイコンを足すためのフック。
 		 *
 		 * 足し忘れるとリガチャの文字が出るので、追加する側で必ず通すこと。
 		 *

@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Node Signal
+ * Plugin Name: Luna Signal
  * Plugin URI: https://github.com/wingzone94/Node
  * Description: メディアの収益化とユーザビリティを両立するためのマネタイズ・検知層プラグイン。報酬レート管理や広告ブロック検知UIを提供します。
- * Version: 1.2.0
+ * Version: 1.4.0
  * Author: Luminous Core Teams
  * Text Domain: node-signal
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-define( 'NODE_SIGNAL_VERSION', '1.2.0' );
+define( 'NODE_SIGNAL_VERSION', '1.4.0' );
 define( 'NODE_SIGNAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_signal_embedded_dir = get_template_directory() . '/plugins-embedded/node-signal/';

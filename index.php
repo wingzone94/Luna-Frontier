@@ -8,6 +8,8 @@ get_header();
 
     <?php
     if ((is_home() || is_front_page()) && !is_paged()) {
+        get_template_part( 'template-parts/hero-slider' );
+
         $spotlight_cats = function_exists('node_get_spotlight_categories') ? node_get_spotlight_categories() : [];
 
         if (!empty($spotlight_cats)) : ?>

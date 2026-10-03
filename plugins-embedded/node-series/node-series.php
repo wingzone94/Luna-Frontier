@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:  Node Series
+ * Plugin Name:  Luna Series
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  連載/シリーズ機能。記事をシリーズにまとめ、シリーズ内の前後記事・目次を取得する機能を提供。
- * Version:      1.2.1
+ * Version:      1.4.0
  * Author:       Luminous Core Teams
  * License:      MIT
  * Text Domain:  node-series
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_SERIES_VERSION', '1.2.1' );
+define( 'NODE_SERIES_VERSION', '1.4.0' );
 define( 'NODE_SERIES_ORDER_META_KEY', '_node_series_order' );
 define( 'NODE_SERIES_COLOR_TERM_META_KEY', 'node_series_color' );
 define( 'NODE_SERIES_COLOR_OVERRIDE_META_KEY', '_node_series_color_override' );
