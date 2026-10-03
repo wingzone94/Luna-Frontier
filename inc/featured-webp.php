@@ -120,9 +120,17 @@ function node_featured_webp_rewrite_post_content( array $replacements ) {
 
 /**
  * Replace a newly selected JPEG/PNG featured image and its registered sizes with WebP.
- * Originals are removed only after WordPress points to every converted file.
+ * Original URLs are retained; saved article content is never rewritten.
  */
 function node_featured_webp_replace( int $attachment_id ): bool {
+	global $wpdb;
+	$lock = 'image-repair-' . md5( DB_NAME . ':' . $wpdb->prefix );
+	if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) ) ) { return false; }
+	try { return node_featured_webp_replace_locked( $attachment_id ); }
+	finally { $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) ); }
+}
+
+function node_featured_webp_replace_locked( int $attachment_id ): bool {
 	if ( ! in_array( get_post_mime_type( $attachment_id ), array( 'image/jpeg', 'image/png' ), true )
 		|| ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
 		return false;
@@ -160,11 +168,14 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 	$converted = array();
 	$created   = array();
 	foreach ( array_unique( $sources ) as $source ) {
+		$root = realpath( wp_get_upload_dir()['basedir'] );
+		$real = realpath( $source );
+		if ( ! $root || ! $real || is_link( $source ) || 0 !== strpos( $real, $root . '/' ) ) { break; }
 		if ( ! is_file( $source ) || ! in_array( wp_check_filetype( $source )['type'], array( 'image/jpeg', 'image/png' ), true ) ) {
 			break;
 		}
 
-		$target = $directory . '/' . pathinfo( $source, PATHINFO_FILENAME ) . '-node-featured.webp';
+		$target = $directory . '/' . wp_unique_filename( $directory, pathinfo( $source, PATHINFO_FILENAME ) . '-node-featured.webp' );
 		$exists = is_file( $target );
 		if ( ! $exists ) {
 			$created[] = $target;
@@ -217,6 +228,7 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 	}
 
 	$old_mime = get_post_mime_type( $attachment_id );
+	add_post_meta( $attachment_id, '_node_image_original_metadata', $metadata, true );
 	update_attached_file( $attachment_id, $converted[ $full ] );
 	wp_update_attachment_metadata( $attachment_id, $new_metadata );
 	if ( is_array( $backup_sizes ) ) {
@@ -238,35 +250,12 @@ function node_featured_webp_replace( int $attachment_id ): bool {
 		}
 		return false;
 	}
-	if ( false === node_featured_webp_rewrite_post_content( $content_replacements ) ) {
-		update_attached_file( $attachment_id, $full );
-		wp_update_attachment_metadata( $attachment_id, $metadata );
-		if ( is_array( $backup_sizes ) ) {
-			update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', $backup_sizes );
-		}
-		wp_update_post( array( 'ID' => $attachment_id, 'post_mime_type' => $old_mime ) );
-		foreach ( $created as $file ) {
-			wp_delete_file( $file );
-		}
-		return false;
-	}
 
-	$pending = array();
-	foreach ( array_keys( $converted ) as $source ) {
-		wp_delete_file( $source );
-		if ( is_file( $source ) ) {
-			$pending[] = wp_basename( $source );
-		}
-	}
-	if ( $pending ) {
-		update_post_meta( $attachment_id, '_node_featured_webp_pending_delete', array_values( array_unique( $pending ) ) );
-		update_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', 0 );
-		node_featured_webp_schedule_delete_retry( $attachment_id );
-	} else {
-		delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
-		delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
-	}
-	delete_post_meta( $attachment_id, '_node_featured_webp_map' );
+	// Keep all originals, including old sizes and editor backups. Revisions and
+	// historical URLs are not exhaustively represented by current post_content.
+	update_post_meta( $attachment_id, '_node_featured_webp_map', $content_replacements );
+	delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
+	delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
 	delete_post_meta( $attachment_id, '_node_featured_webp_requested' );
 	return true;
 }
@@ -278,36 +267,9 @@ function node_featured_webp_schedule_delete_retry( int $attachment_id ): void {
 }
 
 function node_featured_webp_retry_delete( int $attachment_id ): void {
-	$pending = get_post_meta( $attachment_id, '_node_featured_webp_pending_delete', true );
-	$full = get_attached_file( $attachment_id );
-	if ( ! is_array( $pending ) || ! $pending || ! is_string( $full ) ) {
-		return;
-	}
-	$directory = dirname( $full );
-	$remaining = array();
-	foreach ( $pending as $filename ) {
-		if ( ! is_string( $filename ) || wp_basename( $filename ) !== $filename ) {
-			continue;
-		}
-		$path = $directory . '/' . $filename;
-		if ( is_file( $path ) ) {
-			wp_delete_file( $path );
-		}
-		if ( is_file( $path ) ) {
-			$remaining[] = $filename;
-		}
-	}
-	if ( ! $remaining ) {
-		delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
-		delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
-		return;
-	}
-	$attempts = (int) get_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', true ) + 1;
-	update_post_meta( $attachment_id, '_node_featured_webp_pending_delete', $remaining );
-	update_post_meta( $attachment_id, '_node_featured_webp_delete_attempts', $attempts );
-	if ( $attempts < 5 ) {
-		node_featured_webp_schedule_delete_retry( $attachment_id );
-	}
+	// Also neutralize deletion events queued by 1.4.1.
+	delete_post_meta( $attachment_id, '_node_featured_webp_pending_delete' );
+	delete_post_meta( $attachment_id, '_node_featured_webp_delete_attempts' );
 }
 add_action( 'node_featured_webp_retry_delete', 'node_featured_webp_retry_delete' );
 

@@ -90,6 +90,7 @@ require_once NODE_THEME_DIR . '/inc/gemini-helper.php';
 require_once NODE_THEME_DIR . '/inc/gemini-models.php';
 require_once NODE_THEME_DIR . '/inc/gemini-user-settings.php';
 require_once NODE_THEME_DIR . '/inc/admin-settings.php';
+require_once NODE_THEME_DIR . '/inc/image-repair-admin.php';
 require_once NODE_THEME_DIR . '/inc/seo.php';
 require_once NODE_THEME_DIR . '/inc/indexing.php';
 require_once NODE_THEME_DIR . '/inc/scheduler.php';
