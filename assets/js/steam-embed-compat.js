@@ -5,7 +5,7 @@
 
 	wp.domReady( function () {
 		var existing = wp.blocks.getBlockType( 'node/embed' );
-		if ( ! existing || String( existing.title ).indexOf( 'Steam' ) !== -1 ) { return; }
+		if ( ! existing || String( existing.title ).indexOf( 'Luna埋め込み' ) !== -1 ) { return; }
 
 		var el = wp.element.createElement;
 		var Fragment = wp.element.Fragment;
