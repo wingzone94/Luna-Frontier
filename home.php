@@ -98,7 +98,7 @@ get_header();
 						'option_none_value' => '0', 'selected' => 0,
 						'exclude_tree' => ( get_category_by_slug( 'spotlight' ) ?: (object) array( 'term_id' => 0 ) )->term_id,
 					) ); ?>
-					<button type="submit"><?php esc_html_e( '表示', 'node' ); ?></button>
+					<button type="submit" aria-label="<?php esc_attr_e( '選択したカテゴリーを表示', 'node' ); ?>"><span class="material-symbols-outlined" aria-hidden="true">send</span></button>
 				</form>
 			</section>
 			<?php endif; ?>
