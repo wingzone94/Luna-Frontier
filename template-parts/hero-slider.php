@@ -132,7 +132,9 @@ $fallback   = function_exists( 'get_theme_file_uri' )
 				></button>
 			<?php endforeach; ?>
 			<span class="lf-hero-slider__counter" aria-live="polite" aria-atomic="true" data-lf-live>1 / <?php echo esc_html( (string) $total ); ?></span>
-			<button type="button" class="lf-hero-slider__playback" data-lf-playback hidden>一時停止</button>
+			<button type="button" class="lf-hero-slider__playback" data-lf-playback aria-label="スライドの自動送りを一時停止" title="スライドの自動送りを一時停止" hidden>
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path data-lf-playback-glyph d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+			</button>
 		</div>
 	</div>
 
