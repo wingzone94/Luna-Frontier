@@ -27,6 +27,13 @@ if ( ! function_exists( 'node_render_embed_block' ) ) {
 			return '';
 		}
 
+		if ( function_exists( 'node_steam_widget_html' ) ) {
+			$steam_widget = node_steam_widget_html( $url );
+			if ( '' !== $steam_widget ) {
+				return $steam_widget;
+			}
+		}
+
 		if ( function_exists( 'node_special_embed' ) ) {
 			$embed = node_special_embed( $url );
 			if ( '' !== $embed ) {
