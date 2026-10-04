@@ -131,7 +131,7 @@ class Node_Image_Compressor_Test extends WP_UnitTestCase {
 		$this->assertTrue( Node_IC_Converter::is_restorable( $id ) );
 	}
 
-	public function test_convert_deletes_original_by_default() {
+	public function test_convert_keeps_original_by_default() {
 		$this->require_webp();
 
 		$id       = $this->make_attachment();
@@ -140,14 +140,12 @@ class Node_Image_Compressor_Test extends WP_UnitTestCase {
 		$result = Node_IC_Converter::convert( $id );
 
 		$this->assertTrue( $result['ok'], $result['message'] );
-		// 既定は本当に「置き換える」ので元ファイルは残らない
-		$this->assertFileDoesNotExist( $original );
-		$this->assertStringContainsString( '削除済み', $result['message'] );
-		$this->assertSame( '1', get_post_meta( $id, Node_IC_Converter::META_ORIGINAL_REMOVED, true ) );
-		$this->assertFalse( Node_IC_Converter::is_restorable( $id ) );
+		$this->assertFileExists( $original );
+		$this->assertSame( '0', get_post_meta( $id, Node_IC_Converter::META_ORIGINAL_REMOVED, true ) );
+		$this->assertTrue( Node_IC_Converter::is_restorable( $id ) );
 	}
 
-	public function test_restore_is_refused_when_original_was_deleted() {
+	public function test_restore_succeeds_with_default_original_retention() {
 		$this->require_webp();
 
 		$id = $this->make_attachment();
@@ -155,10 +153,8 @@ class Node_Image_Compressor_Test extends WP_UnitTestCase {
 
 		$result = Node_IC_Converter::restore( $id );
 
-		$this->assertFalse( $result['ok'] );
-		$this->assertStringContainsString( '削除済み', $result['message'] );
-		// 失敗しても WebP 側は壊さない
-		$this->assertSame( 'image/webp', get_post_mime_type( $id ) );
+		$this->assertTrue( $result['ok'], $result['message'] );
+		$this->assertSame( 'image/jpeg', get_post_mime_type( $id ) );
 	}
 
 	public function test_convert_regenerates_sizes_as_webp() {
@@ -207,7 +203,7 @@ class Node_Image_Compressor_Test extends WP_UnitTestCase {
 		$this->assertSame( 'image/jpeg', get_post_mime_type( $id ) );
 		$this->assertSame( $original, (string) get_attached_file( $id ) );
 		$this->assertFileExists( $original );
-		$this->assertFileDoesNotExist( $webp );
+		$this->assertFileExists( $webp );
 
 		// メタが掃除されていること
 		$this->assertFalse( Node_IC_Converter::is_converted( $id ) );
@@ -536,8 +532,7 @@ class Node_Image_Compressor_Test extends WP_UnitTestCase {
 		$this->assertSame( 'converted', $status['state'] );
 		$this->assertGreaterThan( 0, $status['saved'] );
 		$this->assertGreaterThan( 0, $status['rate'] );
-		// 既定では元ファイルを消すので復元不可として出る
-		$this->assertFalse( $status['restorable'] );
+		$this->assertTrue( $status['restorable'] );
 	}
 
 	public function test_status_is_restorable_when_original_kept() {
