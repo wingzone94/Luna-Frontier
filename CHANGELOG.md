@@ -8,6 +8,11 @@ Preview 1〜4 の記述にある「子テーマ」「`Template: node`」は、�
 
 ## [2.0.0-preview.6] - 2026.09.25 — Luna Frontier
 
+### 同一Preview再配布: Luna埋め込みにSteamを追加
+
+- 既存の埋め込みブロック名を「Luna埋め込み」に変更し、SteamストアのアプリURLで公式Store Widgetを表示。X・YouTube・Googleマップと、通常のURL貼り付けによるブログカード表示は維持。
+- 旧版の単独Node Blocksプラグインが有効な編集画面にも同じ表示名とSteam対応を適用。
+
 ### 2026.10.04 追補
 - LocalのLive Linkが相対`srcset`を`cybernode.local`へ書き戻す場合は、Live Link表示時に`srcset`を省き、相対`src`から画像を読み込む。
 - ヒーロースライダーの自動送り操作を文字ボタンから再生・一時停止アイコンへ変更。読み上げ用ラベルと48pxの操作領域は維持。

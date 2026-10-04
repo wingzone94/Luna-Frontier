@@ -896,6 +896,30 @@ function node_blogcard_hydrate( string $content ): string {
 	);
 }
 
+/** Extract a Steam app ID from an official product or widget URL. */
+function node_steam_widget_app_id( string $url ): string {
+	$parts = wp_parse_url( trim( $url ) );
+	if ( ! is_array( $parts ) || ! in_array( strtolower( $parts['scheme'] ?? '' ), array( 'http', 'https' ), true ) || 'store.steampowered.com' !== strtolower( $parts['host'] ?? '' ) ) {
+		return '';
+	}
+	if ( ! preg_match( '#^/(?:app|widget)/([1-9][0-9]{0,9})(?:/|$)#', $parts['path'] ?? '', $match ) ) {
+		return '';
+	}
+	return $match[1];
+}
+
+/** Render the official Steam widget for an explicitly inserted node/embed block. */
+function node_steam_widget_html( string $url ): string {
+	$steam_id = node_steam_widget_app_id( $url );
+	if ( '' !== $steam_id ) {
+		return '<div class="node-embed node-embed--steam" style="max-width:646px;margin-inline:auto">'
+			. '<iframe src="' . esc_url( 'https://store.steampowered.com/widget/' . $steam_id . '/' ) . '" title="' . esc_attr__( 'Steam Store Widget', 'node' ) . '" loading="lazy" width="646" height="190" style="display:block;width:100%;max-width:646px;border:0" referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+			. '</div>';
+	}
+
+	return '';
+}
+
 /**
  * X(Twitter) / Google マップ / YouTube 等、URL 貼り付け時に「カード」ではなく
  * 「埋め込み」を表示すべきプロバイダーの HTML を返す。該当しなければ空文字。
@@ -1373,3 +1397,27 @@ add_filter( 'the_content', 'node_auto_blogcard', 11 );
 // （従来はrequire順でのみ保たれていた脆い不変条件の明示化。STRUCTURAL-REVIEW-1.2 F-8）
 add_filter( 'the_content', 'node_blogcard_hydrate', 21 );
 add_action( 'wp_footer', 'node_print_twitter_widgets' );
+
+// An installed older Node Blocks plugin can still register node/embed. Keep its server output compatible.
+add_filter( 'render_block_node/embed', static function ( string $content, array $block ): string {
+	$url = (string) ( $block['attrs']['url'] ?? '' );
+	$steam = node_steam_widget_html( $url );
+	return '' !== $steam ? $steam : $content;
+}, 10, 2 );
+
+/** Load the Steam editor compatibility layer after an installed Node Blocks script. */
+function node_enqueue_steam_embed_compat(): void {
+	$relative = '/assets/js/steam-embed-compat.js';
+	$path = get_template_directory() . $relative;
+	if ( ! is_file( $path ) || ! wp_script_is( 'luminous-blocks-editor', 'registered' ) ) {
+		return;
+	}
+	wp_enqueue_script(
+		'node-steam-embed-compat',
+		get_template_directory_uri() . $relative,
+		array( 'luminous-blocks-editor', 'wp-blocks', 'wp-element', 'wp-components', 'wp-dom-ready', 'wp-i18n' ),
+		(string) filemtime( $path ),
+		true
+	);
+}
+add_action( 'enqueue_block_editor_assets', 'node_enqueue_steam_embed_compat', 20 );
