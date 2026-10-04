@@ -1,7 +1,7 @@
 /**
  * Luminous Blocks — エディタスクリプト
  *
- * node/embed ブロック: 投稿画面で X(Twitter) / YouTube / Google マップの URL を
+ * node/embed ブロック: 投稿画面で X(Twitter) / YouTube / Google マップ / Steam の URL を
  * 貼り付けると自動でこのブロックへ変換し、エディタ内に埋め込みプレビューを表示する。
  *
  * Gutenberg のペーストハンドラは raw transform より先に URL を検出して
@@ -101,9 +101,21 @@
 		return /(^|\.)google\.com$/.test( host ) && u.pathname.indexOf( '/maps' ) !== -1;
 	}
 
+	function getSteamAppId( url ) {
+		var parsed = parseUrl( url );
+		if ( ! parsed || ! /^https?:$/.test( parsed.protocol ) || 'store.steampowered.com' !== parsed.hostname.toLowerCase() ) {
+			return '';
+		}
+		var match = parsed.pathname.match( /^\/(?:app|widget)\/([1-9][0-9]{0,9})(?:\/|$)/ );
+		return match ? match[ 1 ] : '';
+	}
+
 	function detectProvider( url ) {
 		if ( ! /^https?:\/\//i.test( url ) ) {
 			return '';
+		}
+		if ( getSteamAppId( url ) ) {
+			return 'steam';
 		}
 		if ( getTweetId( url ) ) {
 			return 'x';
@@ -146,7 +158,9 @@
 
 			var url = String( block.attributes.url || '' );
 
-			if ( '' === url || '' === detectProvider( url ) ) {
+			// Store URLs pasted into the post keep their existing blog-card behavior.
+			var provider = detectProvider( url );
+			if ( '' === url || '' === provider || 'steam' === provider ) {
 				continue;
 			}
 
@@ -287,6 +301,17 @@
 			return el( MapPreview, { url: url } );
 		}
 
+		if ( 'steam' === provider ) {
+			return el( 'iframe', {
+				src: 'https://store.steampowered.com/widget/' + getSteamAppId( url ) + '/',
+				title: 'Steam Store Widget',
+				loading: 'lazy',
+				width: 646,
+				height: 190,
+				style: Object.assign( { maxWidth: '646px' }, frameBaseStyle ),
+			} );
+		}
+
 		return el( 'p', null, url );
 	}
 
@@ -301,11 +326,11 @@
 	}
 
 	registerBlockType( 'node/embed', {
-		title: __( 'Node 埋め込み（X / YouTube / マップ）', 'luminous-blocks' ),
-		description: __( 'X(Twitter)・YouTube・Google マップの URL を埋め込み表示します。', 'luminous-blocks' ),
+		title: __( 'Node 埋め込み（X / YouTube / Google マップ / Steam）', 'luminous-blocks' ),
+		description: __( 'X(Twitter)・YouTube・Google マップ・Steam の URL を埋め込み表示します。', 'luminous-blocks' ),
 		icon: 'embed-generic',
 		category: 'node',
-		keywords: [ 'x', 'twitter', 'youtube', __( 'マップ', 'luminous-blocks' ), 'maps', 'embed', __( '埋め込み', 'luminous-blocks' ) ],
+		keywords: [ 'x', 'twitter', 'youtube', __( 'マップ', 'luminous-blocks' ), 'maps', 'steam', 'embed', __( '埋め込み', 'luminous-blocks' ) ],
 		attributes: {
 			url: { type: 'string', default: '' },
 		},
@@ -380,8 +405,8 @@
 					Placeholder,
 					{
 						icon: 'embed-generic',
-						label: __( 'Node 埋め込み', 'luminous-blocks' ),
-						instructions: __( 'X(Twitter)・YouTube・Google マップの URL を入力してください。', 'luminous-blocks' ),
+						label: __( 'Node 埋め込み（X / YouTube / Google マップ / Steam）', 'luminous-blocks' ),
+						instructions: __( 'X(Twitter)・YouTube・Google マップ・Steam の URL を入力してください。', 'luminous-blocks' ),
 					},
 					el(
 						'form',
@@ -408,7 +433,7 @@
 						? el(
 							'p',
 							{ style: { color: '#cc1818', width: '100%', margin: '8px 0 0' } },
-							__( 'この URL は X / YouTube / Google マップの埋め込みに対応していません。', 'luminous-blocks' )
+							__( 'この URL は X / YouTube / Google マップ / Steam の埋め込みに対応していません。', 'luminous-blocks' )
 						)
 						: null
 				);
