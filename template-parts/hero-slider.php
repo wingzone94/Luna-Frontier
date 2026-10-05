@@ -27,6 +27,9 @@ $fallback        = function_exists( 'get_theme_file_uri' )
 $fallback_mobile = function_exists( 'get_theme_file_uri' )
 	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-mobile.webp' ) )
 	: '';
+$fallback_center = function_exists( 'get_theme_file_uri' )
+	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-center.webp' ) )
+	: '';
 ?>
 <section
 	id="<?php echo esc_attr( $slider_id ); ?>"
@@ -161,7 +164,7 @@ $fallback_mobile = function_exists( 'get_theme_file_uri' )
 					<?php if ( $slide['image_url'] ) : ?>
 						<img src="<?php echo esc_url( $slide['image_url'] ); ?>" alt="" loading="lazy">
 					<?php elseif ( $fallback ) : ?>
-						<img src="<?php echo esc_url( $fallback ); ?>" alt="" loading="lazy">
+						<img src="<?php echo esc_url( $fallback_center ?: $fallback ); ?>" alt="" loading="lazy">
 					<?php endif; ?>
 				</span>
 				<span class="lf-hero-thumb__label"><?php echo esc_html( $slide['title'] ); ?></span>
