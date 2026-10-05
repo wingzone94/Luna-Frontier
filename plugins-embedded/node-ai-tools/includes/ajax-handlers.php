@@ -134,7 +134,7 @@ if ( ! function_exists( 'node_ai_ajax_generate_summary' ) ) {
 
         $core = node_ai_core();
         if ( ! $core->is_enabled() ) {
-            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Node AI から有効化してください。' ) );
+            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Luna AI から有効化してください。' ) );
             return;
         }
 
@@ -242,7 +242,7 @@ if ( ! function_exists( 'node_ai_ajax_fact_check' ) ) {
 
         $core = node_ai_core();
         if ( ! $core->is_enabled() ) {
-            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Node AI から有効化してください。' ) );
+            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Luna AI から有効化してください。' ) );
             return;
         }
 
@@ -327,7 +327,7 @@ if ( ! function_exists( 'node_ai_ajax_proofread' ) ) {
 
         $core = node_ai_core();
         if ( ! $core->is_enabled() ) {
-            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Node AI から有効化してください。' ) );
+            wp_send_json_error( array( 'message' => 'AI機能が無効です。設定 → Luna AI から有効化してください。' ) );
         }
 
         $result = $core->proofread( $content, get_current_user_id(), $post_id );

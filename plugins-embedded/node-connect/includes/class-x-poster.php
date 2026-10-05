@@ -305,7 +305,7 @@ final class Node_Connect_X_Poster {
 	 */
 	public static function render_template( string $template, WP_Post $post ): string {
 		$categories    = get_the_category( $post->ID );
-		$category_name = ! empty( $categories ) ? $categories[0]->name : 'Node';
+		$category_name = ! empty( $categories ) ? $categories[0]->name : 'Luna Frontier';
 
 		$text = str_replace(
 			[ '{{title}}', '{{url}}', '{{category}}' ],

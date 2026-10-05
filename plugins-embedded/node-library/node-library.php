@@ -17,9 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'NODE_LIBRARY_VERSION', '1.4.0' );
 define( 'NODE_LIBRARY_DIR', plugin_dir_path( __FILE__ ) );
-define( 'NODE_LIBRARY_BADGE_BASE_URL', 'https://luminous-core.net/wp-content/themes/Node/plugins-embedded/node-library/assets/images/' );
-
 $node_library_embedded_dir = get_template_directory() . '/plugins-embedded/node-library/';
+define(
+	'NODE_LIBRARY_BADGE_BASE_URL',
+	is_dir( $node_library_embedded_dir )
+		? get_template_directory_uri() . '/plugins-embedded/node-library/assets/images/'
+		: plugin_dir_url( __FILE__ ) . 'assets/images/'
+);
 define(
 	'NODE_LIBRARY_URL',
 	is_dir( $node_library_embedded_dir )
@@ -159,7 +163,7 @@ function node_library_infer_hardware_from_platform( string $platform ): string {
 }
 
 /**
- * Node Library Main Class
+ * Luna Library Main Class
  */
 final class Node_Library {
 	private const CARD_REFERENCE_META        = '_node_library_card_reference';
@@ -827,9 +831,9 @@ final class Node_Library {
 	 */
 	public function register_cpt(): void {
 		$labels = [
-			'name'               => 'Node Library',
+			'name'               => 'Luna Library',
 			'singular_name'      => 'ライブラリ項目',
-			'menu_name'          => 'Node Library',
+			'menu_name'          => 'Luna Library',
 			'add_new'            => '新規追加',
 			'add_new_item'       => '新しいゲーム・アプリを追加',
 			'edit_item'          => '項目を編集',
@@ -1000,7 +1004,7 @@ final class Node_Library {
 		?>
 		<p class="node-library-metabox-help">
 			紐付けると、記事フッター（タグの下）にゲーム・アプリカードが<strong>自動表示</strong>されます。<br>
-			本文の任意位置に入れたい場合は、ブロック追加 → <strong>Node</strong> カテゴリ →「ライブラリカード」を使ってください。
+			本文の任意位置に入れたい場合は、ブロック追加 → <strong>Luna</strong> カテゴリ →「ライブラリカード」を使ってください。
 		</p>
 		<select name="node_linked_library_id" id="node-linked-library-select" style="width:100%; margin-top:8px;">
 			<option value="">— 連携しない —</option>
@@ -1259,7 +1263,7 @@ final class Node_Library {
 	}
 
 	/**
-	 * Extract Node Library item IDs from nested block content.
+	 * Extract Luna Library item IDs from nested block content.
 	 *
 	 * @param array<int, array<string, mixed>> $blocks Parsed blocks.
 	 * @return array{library_ids: array<int, int>, library_dependencies: array<int, int>, reusable_dependencies: array<int, int>}

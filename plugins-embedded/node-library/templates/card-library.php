@@ -1,6 +1,6 @@
 <?php
 /**
- * Template part for displaying game/app information (Node Library).
+ * Template part for displaying game/app information (Luna Library).
  * プラットフォームに応じたブランドカラーを適用した Material 3 形式のカード。
  */
 if ( ! isset( $game_info ) ) {
@@ -27,7 +27,7 @@ $library_permalink = isset( $lib_post ) && $lib_post instanceof WP_Post && 'node
 $store_tabs_id = wp_unique_id( 'node-library-store-tabs-' );
 $badge_base_url = defined( 'NODE_LIBRARY_BADGE_BASE_URL' )
     ? NODE_LIBRARY_BADGE_BASE_URL
-    : 'https://luminous-core.net/wp-content/themes/Node/plugins-embedded/node-library/assets/images/';
+    : get_template_directory_uri() . '/plugins-embedded/node-library/assets/images/';
 $badge_base_url = trailingslashit( apply_filters( 'node_library_badge_base_url', $badge_base_url ) );
 $platform_slug_from_name = static function ( string $platform ): string {
     if ( stripos( $platform, 'switch' ) !== false || stripos( $platform, 'nintendo' ) !== false ) return 'nintendo';

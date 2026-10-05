@@ -1,6 +1,6 @@
 <?php
 /**
- * Node Library 回帰テスト用フィクスチャ生成スクリプト（NODE_LIBRARY_REGRESSION_PLAN.md 準拠）。
+ * Luna Library 回帰テスト用フィクスチャ生成スクリプト（NODE_LIBRARY_REGRESSION_PLAN.md 準拠）。
  *
  * LocalWP の cybernode.local に対して、固定スラッグの node_library 項目と
  * それを埋め込んだ検証記事を「削除→再作成」で決定的に作り直す。
@@ -56,7 +56,7 @@ wp_set_current_user( 1 );
 $fixtures = [
 	[
 		'slug'    => 'node-library-regression-steam-only',
-		'title'   => '【回帰】Node Library: Steam Only',
+		'title'   => '【回帰】Luna Library: Steam Only',
 		'type'    => 'game',
 		'summary' => 'Steamのみのリンクを持つ回帰テスト用フィクスチャ。',
 		'links'   => [
@@ -65,7 +65,7 @@ $fixtures = [
 	],
 	[
 		'slug'    => 'node-library-regression-steam-mixed',
-		'title'   => '【回帰】Node Library: Steam Mixed',
+		'title'   => '【回帰】Luna Library: Steam Mixed',
 		'type'    => 'game',
 		'summary' => 'Steamと他ストアが混在する回帰テスト用フィクスチャ。',
 		'links'   => [
@@ -77,7 +77,7 @@ $fixtures = [
 	],
 	[
 		'slug'    => 'node-library-regression-console-mixed',
-		'title'   => '【回帰】Node Library: Console Mixed',
+		'title'   => '【回帰】Luna Library: Console Mixed',
 		'type'    => 'game',
 		'summary' => '任天堂・PS・Xboxの機種違いが混在する回帰テスト用フィクスチャ。',
 		'links'   => [
@@ -91,7 +91,7 @@ $fixtures = [
 	],
 	[
 		'slug'    => 'node-library-regression-mobile-apps',
-		'title'   => '【回帰】Node Library: Mobile Apps',
+		'title'   => '【回帰】Luna Library: Mobile Apps',
 		'type'    => 'app',
 		'summary' => 'モバイルアプリストアのみの回帰テスト用フィクスチャ。',
 		'links'   => [
@@ -102,7 +102,7 @@ $fixtures = [
 	],
 	[
 		'slug'    => 'node-library-regression-invalid-links',
-		'title'   => '【回帰】Node Library: Invalid Links',
+		'title'   => '【回帰】Luna Library: Invalid Links',
 		'type'    => 'game',
 		'summary' => '空URL・不正URL・重複URLを含む回帰テスト用フィクスチャ。',
 		'links'   => [
@@ -169,7 +169,7 @@ foreach ( $fixtures as $fixture ) {
 			'post_status'  => 'publish',
 			'post_title'   => $fixture['title'],
 			'post_name'    => $post_slug,
-			'post_content' => "<!-- wp:paragraph --><p>Node Library回帰テスト用の固定フィクスチャ記事です。</p><!-- /wp:paragraph -->\n\n" .
+			'post_content' => "<!-- wp:paragraph --><p>Luna Library回帰テスト用の固定フィクスチャ記事です。</p><!-- /wp:paragraph -->\n\n" .
 				'<!-- wp:node-library/item-card {"libraryId":' . (int) $lib_id . '} /-->',
 		],
 		true
@@ -200,7 +200,7 @@ foreach ( $fixtures as $fixture ) {
 	];
 }
 
-echo "Node Library フィクスチャを再作成しました:\n";
+echo "Luna Library フィクスチャを再作成しました:\n";
 foreach ( $created as $row ) {
 	echo sprintf( "  - %s (post=%d, library=%d)\n    %s\n", $row['slug'], $row['post_id'], $row['lib_id'], $row['url'] );
 }

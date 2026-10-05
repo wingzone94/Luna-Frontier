@@ -151,12 +151,12 @@ add_action(
 
 		error_log( 'Luminous Update: Update installed successfully (build: ' . ( $installed_build ?? 'unknown' ) . ')' );
 
-		// Node Connect（有効時のみ購読）へアップデート完了イベントを通知する
+		// Luna Connect（有効時のみ購読）へアップデート完了イベントを通知する
 		do_action(
 			'node_connect_event',
 			'node_updated',
 			array(
-				'title'   => 'Node テーマを更新しました',
+				'title'   => 'Luna Frontier を更新しました',
 				'message' => 'インストールされたビルド: ' . ( $installed_build ?? '不明' ),
 			)
 		);

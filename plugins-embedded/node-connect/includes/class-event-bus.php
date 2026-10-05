@@ -65,7 +65,7 @@ final class Node_Connect_Event_Bus {
 			self::EVENT_AI_SUMMARY_COMPLETED => 'AI要約の生成完了',
 			self::EVENT_FACT_CHECK_COMPLETED => 'ファクトチェック完了',
 			self::EVENT_AI_FAILED            => 'AI処理の失敗',
-			self::EVENT_NODE_UPDATED         => 'Nodeアップデート',
+			self::EVENT_NODE_UPDATED         => 'Lunaアップデート',
 			self::EVENT_MAINTENANCE_START    => 'メンテナンスの開始',
 			self::EVENT_MAINTENANCE_END      => 'メンテナンスの終了',
 		];

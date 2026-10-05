@@ -267,7 +267,7 @@ function lf_hero_slider_enqueue_assets(): void {
 add_action( 'wp_enqueue_scripts', 'lf_hero_slider_enqueue_assets', 30 );
 
 /**
- * Register settings so they can be saved from Node Settings.
+ * Register settings so they can be saved from Luna Settings.
  */
 function lf_hero_slider_register_settings(): void {
 	$bool = static function ( string $option, string $default ): Closure {

@@ -633,7 +633,7 @@
 		}
 
 		registerBlockType( 'node/notice', {
-			title: __( 'Node お知らせ', 'luminous-blocks' ),
+			title: __( 'Luna お知らせ', 'luminous-blocks' ),
 			description: __( 'お知らせ・注意・重要・補足のコールアウトを本文中に表示します。', 'luminous-blocks' ),
 			icon: 'info-outline',
 			category: 'node',

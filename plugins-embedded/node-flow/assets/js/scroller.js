@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 observer.disconnect();
             }
         } catch (error) {
-            console.error('Node Flow: Error loading posts.', error);
+            console.error('Luna Flow: Error loading posts.', error);
             triggerEl.innerHTML = '';
         } finally {
             isLoading = false;

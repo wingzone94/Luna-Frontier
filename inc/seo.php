@@ -191,7 +191,7 @@ function node_the_breadcrumbs() {
         $library_url = get_post_type_archive_link( 'node_library' );
         echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
         echo '<li class="m3-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
-        echo '<a itemprop="item" href="' . esc_url( $library_url ) . '"><span itemprop="name">Node Library</span></a>';
+        echo '<a itemprop="item" href="' . esc_url( $library_url ) . '"><span itemprop="name">Luna Library</span></a>';
         echo '<meta itemprop="position" content="2" /></li>';
         echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';

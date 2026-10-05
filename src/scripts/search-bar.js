@@ -47,7 +47,7 @@ export function initSearchBar() {
         searchInput.blur();
     };
 
-    // --- Search keyword suggestions (Node Library / categories) ---
+    // --- Search keyword suggestions (Luna Library / categories) ---
     const suggestionsBox = document.getElementById('m3-search-suggestions');
     const SUGGEST_MIN_LENGTH = 2;
     const SUGGEST_DEBOUNCE_MS = 250;

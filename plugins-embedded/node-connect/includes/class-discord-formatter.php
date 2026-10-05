@@ -24,7 +24,7 @@ final class Node_Connect_Discord_Formatter {
 		Node_Connect_Event_Bus::EVENT_AI_SUMMARY_COMPLETED => '✨ AI要約の生成が完了しました',
 		Node_Connect_Event_Bus::EVENT_FACT_CHECK_COMPLETED => '🔍 ファクトチェックが完了しました',
 		Node_Connect_Event_Bus::EVENT_AI_FAILED            => '⚠️ AI処理が失敗しました',
-		Node_Connect_Event_Bus::EVENT_NODE_UPDATED         => '🚀 Node がアップデートされました',
+		Node_Connect_Event_Bus::EVENT_NODE_UPDATED         => '🚀 Luna Frontier がアップデートされました',
 		Node_Connect_Event_Bus::EVENT_MAINTENANCE_START    => '🚧 メンテナンスを開始しました',
 		Node_Connect_Event_Bus::EVENT_MAINTENANCE_END      => '✅ メンテナンスが終了しました',
 	];

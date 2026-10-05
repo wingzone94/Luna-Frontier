@@ -1,6 +1,6 @@
 <?php
 /**
- * Node AI 設定画面（NODE-1.3.md §4.3 / §4.4）
+ * Luna AI 設定画面（NODE-1.3.md §4.3 / §4.4）
  *
  * プロバイダー選択（Gemini推奨 / Qwen / Ollama / 使用しない）→ 選択したプロバイダーの
  * 項目だけ表示。各プロバイダーに接続テスト。詳細なモデルIDは「詳細設定」に分離。
@@ -18,12 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action(
 	'admin_menu',
 	static function (): void {
-		// Node Settings（テーマ側の add_menu_page）配下へ入れる。
+		// Luna Settings（テーマ側の add_menu_page）配下へ入れる。
 		// 親が未登録の場合（プラグイン単体利用）は従来どおり「設定」配下へ退避する
 		if ( menu_page_url( 'luminous-settings', false ) ) {
 			add_submenu_page(
 				'luminous-settings',
-				'Node AI 設定',
+				'Luna AI 設定',
 				'AI',
 				'manage_options',
 				'node-ai',
@@ -33,8 +33,8 @@ add_action(
 		}
 
 		add_options_page(
-			'Node AI 設定',
-			'Node AI',
+			'Luna AI 設定',
+			'Luna AI',
 			'manage_options',
 			'node-ai',
 			'node_ai_render_settings_page'
@@ -351,7 +351,7 @@ function node_ai_render_settings_page(): void {
 	$monthly_count = $core->get_monthly_usage_count();
 	?>
 	<div class="wrap">
-		<h1>Node AI 設定</h1>
+		<h1>Luna AI 設定</h1>
 		<p class="description">記事制作を支援するAI機能（要約・ファクトチェックなど）の接続先を設定します。APIキーはフロントページへ出力されません。</p>
 
 		<?php if ( is_array( $test_result ) ) : ?>

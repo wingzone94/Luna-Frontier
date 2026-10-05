@@ -18,8 +18,8 @@ function node_add_admin_menu() {
     // 「設定」配下に埋もれていたが、AI・外部連携と並ぶ運営の入口なので
     // ダッシュボードのトップレベルへ独立させる（1.3）
     $page = add_menu_page(
-        'Node Settings',
-        'Node Settings',
+        'Luna Settings',
+        'Luna Settings',
         'manage_options',
         'luminous-settings',
         'node_render_settings_page',
@@ -27,10 +27,10 @@ function node_add_admin_menu() {
         58 // 「外観」の少し上（プラグインの並びと衝突しにくい位置）
     );
 
-    // 親と同じスラッグの子を先頭に置き、サブメニュー名が「Node Settings」の重複表示になるのを避ける
+    // 親と同じスラッグの子を先頭に置き、サブメニュー名が「Luna Settings」の重複表示になるのを避ける
     add_submenu_page(
         'luminous-settings',
-        'Node Settings',
+        'Luna Settings',
         'テーマ設定',
         'manage_options',
         'luminous-settings',
@@ -52,7 +52,7 @@ function node_register_settings() {
     // register_setting( 'node_settings_group', 'node_gemini_api_key' );
     // register_setting( 'node_settings_group', 'node_gemini_model' );
 
-    // --- ライブラリ設定 (Node Library) ---
+    // --- ライブラリ設定 (Luna Library) ---
     register_setting( 'node_settings_group', 'node_library_auto_insert' );
     register_setting( 'node_settings_group', 'node_library_header_text' );
     register_setting( 'node_settings_group', 'node_library_button_text' );
@@ -194,7 +194,7 @@ function node_render_settings_page() {
             <!-- ライブラリ設定 -->
             <div class="m3-admin-card" style="background: #fff; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                 <h2 style="margin-top: 0; color: #FF9900; display: flex; align-items: center; gap: 10px;">
-                    <span class="dashicons dashicons-database"></span> ライブラリ設定 (Node Library)
+                    <span class="dashicons dashicons-database"></span> ライブラリ設定 (Luna Library)
                 </h2>
                 <table class="form-table">
                     <tr valign="top">

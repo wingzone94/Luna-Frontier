@@ -124,7 +124,7 @@ get_header();
 			<?php endif; ?>
 
 			<footer class="node-library-single__footer">
-				<a href="<?php echo esc_url( $library_url ); ?>"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span><?php esc_html_e( 'Node Library一覧へ戻る', 'node' ); ?></a>
+				<a href="<?php echo esc_url( $library_url ); ?>"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span><?php esc_html_e( 'Luna Library一覧へ戻る', 'node' ); ?></a>
 			</footer>
 		</article>
 	<?php endwhile; ?>
