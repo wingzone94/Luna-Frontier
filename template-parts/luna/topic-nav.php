@@ -132,8 +132,8 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 				</ul>
 				<?php endif; ?>
 				<?php if ( '' !== $lf_spotlight_url ) : ?>
-					<a class="lf-topic-nav__past" href="<?php echo esc_url( $lf_spotlight_url ); ?>" aria-label="<?php esc_attr_e( 'スポットライトアーカイブ', 'node' ); ?>" title="<?php esc_attr_e( 'スポットライトアーカイブ', 'node' ); ?>">
-						<span aria-hidden="true">…</span>
+					<a class="lf-topic-nav__past" href="<?php echo esc_url( $lf_spotlight_url ); ?>">
+						<?php esc_html_e( '過去の特集', 'node' ); ?>
 					</a>
 				<?php endif; ?>
 			</div>
