@@ -15,6 +15,9 @@ tests_add_filter(
 	'muplugins_loaded',
 	function () {
 		$theme_dir = dirname( __DIR__ );
+		// Test-only: reproduce a standalone converter winning the theme loader race.
+		$legacy_converter = getenv( 'NODE_TEST_LEGACY_CONVERTER' );
+		if ( $legacy_converter ) { require_once $legacy_converter; }
 		if ( ! function_exists( 'LuminousCore\\Engine\\get_article_metrics' ) ) {
 			require_once $theme_dir . '/plugins-embedded/luminous-core-engine/luminous-core-engine.php';
 		}

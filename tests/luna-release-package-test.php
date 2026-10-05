@@ -95,4 +95,31 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*1\.4\.0\s*$/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
 		}
 	}
+
+	/** 画像修復と実行時PHPが、検証したソースと同じ内容で同梱されること。 */
+	public function test_image_repair_and_runtime_php_match_source(): void {
+		$zip = new ZipArchive();
+		$this->assertTrue( true === $zip->open( $this->theme_zip() ) );
+		$required = [
+			'inc/image-repair.php',
+			'inc/image-repair-admin.php',
+			'assets/js/image-repair.js',
+			'plugins-embedded/node-image-compressor/includes/class-webp-converter.php',
+		];
+		$source = $this->repo_dir() . '/src';
+		$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $source, FilesystemIterator::SKIP_DOTS ) );
+		foreach ( $iterator as $file ) {
+			if ( $file->isFile() && 'php' === strtolower( $file->getExtension() ) ) {
+				$required[] = 'src/' . str_replace( $source . '/', '', $file->getPathname() );
+			}
+		}
+		foreach ( $required as $relative ) {
+			$this->assertSame(
+				file_get_contents( $this->repo_dir() . '/' . $relative ),
+				$zip->getFromName( self::THEME_ROOT . $relative ),
+				$relative . ' がZIP内で欠損またはソースと不一致'
+			);
+		}
+		$zip->close();
+	}
 }

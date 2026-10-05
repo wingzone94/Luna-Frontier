@@ -126,8 +126,8 @@ declare(strict_types=1);
             </div>
         </div>
 
-        <!-- Header Right: Action Group -->
-        <div class="m3-header__actions">
+        <!-- Desktop search sits in the free space between the logo and the actions. -->
+        <div class="m3-header__search-slot">
             <!-- Search Control -->
             <div class="m3-search-container">
                 <form role="search" method="get" class="m3-search-bar" id="m3-main-search-form" action="<?php echo esc_url(home_url('/')); ?>">
@@ -151,9 +151,6 @@ declare(strict_types=1);
                         </div>
                         <div id="m3-search-suggestions" class="m3-suggestions-list m3-search-suggestions" role="listbox" aria-label="検索キーワードの候補"></div>
                     </div>
-                    <button type="button" class="m3-icon-button m3-search-bar__toggle m3-tooltip-target" id="search-toggle" aria-label="検索" data-tooltip="検索">
-                        <span class="material-symbols-outlined">search</span>
-                    </button>
                     <?php if ( function_exists( 'luna_frontier_is_legacy_archive' ) ) : ?>
                             <button type="button" class="m3-icon-button m3-search-advanced-trigger" id="m3-advanced-search-trigger" aria-label="詳細検索" aria-haspopup="dialog" aria-expanded="false" aria-controls="m3-advanced-search-modal">
                                 <span class="material-symbols-outlined" aria-hidden="true">tune</span>
@@ -253,6 +250,13 @@ declare(strict_types=1);
                 })();
                 </script>
             </div>
+        </div>
+
+        <!-- Header Right: Action Group. The search toggle stays here so opening search does not move it. -->
+        <div class="m3-header__actions">
+            <button type="button" class="m3-icon-button m3-search-bar__toggle m3-tooltip-target" id="search-toggle" aria-label="検索" data-tooltip="検索">
+                <span class="material-symbols-outlined">search</span>
+            </button>
 
             <!-- RSS -->
             <a href="<?php bloginfo('rss2_url'); ?>" class="m3-icon-button m3-tooltip-target m3-rss-button" id="m3-rss-trigger" aria-label="RSS" data-tooltip="RSSフィード">

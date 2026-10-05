@@ -23,7 +23,7 @@ class Node_Sslverify_Guard_Test extends WP_UnitTestCase {
 	/**
 	 * 走査から除外するリポジトリ直下のディレクトリ。
 	 */
-	private const EXCLUDED_DIRS = [ 'node_modules', 'vendor', 'scratch', '.tmp', 'tests', '.git', '.claude' ];
+	private const EXCLUDED_DIRS = [ 'node_modules', 'vendor', 'scratch', '.tmp', 'tests', '.git', '.claude', '.gemini' ];
 
 	public function test_sslverify_false_occurrences_are_frozen(): void {
 		$root  = dirname( __DIR__ );
