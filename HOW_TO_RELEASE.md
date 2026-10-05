@@ -130,6 +130,7 @@ rsync -a \
   --exclude='/vendor/' \
   --exclude='tests/' \
   --exclude='test-results/' \
+  --exclude='design/' \
   --exclude='composer.json' \
   --exclude='composer.lock' \
   --exclude='phpunit.xml.dist' \
