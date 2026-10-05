@@ -1,7 +1,7 @@
 # Node
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-1.4.1-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.4.2-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
@@ -19,14 +19,31 @@ README には最新の修正と `1.x.0` リリースの要点を掲載し、完�
 - **AI 連携:** Gemini・Qwen・Ollamaを共通基盤から利用し、記事要約・ファクトチェック補助・校正を支援。
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
 
-## v1.4.0 (2026.09.27)
-同一バージョンで再配布しました。Nintendo・PlayStation・Xbox / Microsoft Storeのブログカードで商品IDからゲーム名を照会し、ストアへの一時的な接続失敗時は取得済みの題名を表示します。旧版の取得失敗キャッシュが残る記事では再照会して商品名を表示します。
+## Node v1.4.2 (2026.10.03)
 
-## v1.4.0 (2026.09.25)
-同一バージョンで再配布しました。ブログカード取得時のTLS証明書検証、Geminiモデル一覧取得の待ち時間、記事AI要約のトーンカラーを修正しました。同梱13プラグインの表示名をLunaに揃え、版を1.4.0に統一。画像圧縮を同梱版の読み込み対象に追加し、Node LibraryのTLS検証とAI操作の投稿編集権限確認も反映しました。その後、Node Settingsの更新時の退避・復元と旧ファイルの整理を追加し、記事表示中のOGP画像再生成を予約処理に移しました。
+- SteamのアプリURLを既存の埋め込みブロックで公式Store Widgetとして表示。
+- OGP用フォントを固定版TTFのCDN取得とキャッシュへ移行。
+- Node Settingsに画像検査・修復を追加。元画像を保持し、出所や寸法を確認できない画像は自動修復しません。
 
-## v1.4.0 (2026.09.24)
-固定ヘッダーに隠れる一覧見出し、検索の解除・並び替え、公開日より前の追記表示を修正しました。Luna interactive 1.4.0をテーマに同梱し、単独版を停止した後も既存のグラフを表示できます。新しく設定したアイキャッチはWebPへ置き換え、本文内の画像参照を更新してから元ファイルを削除します。トップへ戻るボタンの読み上げ名も修正しました。 同日再配布では、記事のAI要約を展開した際に開閉アイコン名が文字として表示される問題を修正しました。
+## Luna Frontier 2.0.0 (2026.10.10予定・独立テーマ)
+
+Luna FrontierはNodeの子テーマではなく、独自の更新チャンネルと配布ZIPを持つ別テーマです。
+
+- Nodeを必要としない単体テーマとして正式化し、既存サイトとの互換性を維持。
+- デスクトップ検索とSPOTLIGHTナビゲーションを改善。「…」を「過去の特集」リンクに変更。
+- アイキャッチ未設定時の画像表示を刷新し、安全性を重視した画像検査・修復を追加。
+- Steam埋め込み、OGP/WebP操作、AI機能、Lunaブランドの同梱プラグインを整備。
+- 配布物は専用ブランチの`luna.zip`（ルート`luna-frontier/`）。Nodeの`master`更新とは分離。
+
+[Luna Frontier 2.0.0の詳細と変更履歴](https://github.com/wingzone94/Luna-Frontier/blob/luna-frontier-2.0-skyalow/README.md)
+
+## Node v1.4.0 (2026.09.24–27)
+
+- **ストアカード:** Nintendo・PlayStation・Xbox / Microsoft Storeの商品IDから題名を取得。旧失敗キャッシュは再照会し、一時的な接続失敗時も取得済み題名を表示。
+- **更新とOGP:** 更新ZIPの版・ビルドIDを検証してから切り替え、失敗時は旧テーマを復元。古いOGP画像の再生成を予約処理へ移行。
+- **同梱プラグイン:** Luna interactiveと13個のプラグインを同梱。単体版が有効な場合は優先し、既存の識別子を維持。
+- **安全性と検索:** 外部取得のTLS検証、AI操作の投稿編集権限確認、Gemini取得の上限設定を追加。検索・追記日の表示を修正。
+- **画像とアクセシビリティ:** アイキャッチWebP変換は参照更新後に元画像を削除。失敗時は元画像を保持。AI要約とトップへ戻る操作の読み上げ名・アイコンを修正。
 
 ## v1.3.3 (2026.09.18)
 カテゴリ・タグ・日付アーカイブの記事カードを改善しました。
