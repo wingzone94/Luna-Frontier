@@ -89,6 +89,12 @@
 	z-index: 0;
 }
 
+.lf-hero-slide__picture {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
 .lf-hero-slide__image,
 .lf-hero-slide__fallback {
 	width: 100%;
@@ -405,6 +411,12 @@
 	}
 }
 
+@media (min-width: 768px) and (max-width: 899px) {
+	.lf-hero-slide--no-image .lf-hero-slide__copy {
+		width: min(100%, 480px);
+	}
+}
+
 @media (max-width: 767px) {
 	.lf-hero-slider {
 		padding-inline: 12px;
@@ -420,6 +432,10 @@
 
 	.lf-hero-slide__image {
 		object-position: center 30%;
+	}
+
+	.lf-hero-slide__image--fallback {
+		object-position: right 30%;
 	}
 
 	.lf-hero-slide__overlay {

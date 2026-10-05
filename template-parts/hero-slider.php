@@ -19,10 +19,16 @@ if ( empty( $slides ) ) {
 	return;
 }
 
-$total      = count( $slides );
-$slider_id  = wp_unique_id( 'lf-hero-slider-' );
-$fallback   = function_exists( 'get_theme_file_uri' )
+$total           = count( $slides );
+$slider_id       = wp_unique_id( 'lf-hero-slider-' );
+$fallback        = function_exists( 'get_theme_file_uri' )
 	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3.webp' ) )
+	: '';
+$fallback_mobile = function_exists( 'get_theme_file_uri' )
+	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-mobile.webp' ) )
+	: '';
+$fallback_center = function_exists( 'get_theme_file_uri' )
+	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-center.webp' ) )
 	: '';
 ?>
 <section
@@ -61,7 +67,12 @@ $fallback   = function_exists( 'get_theme_file_uri' )
 								<?php if ( $slide['has_image'] && $slide['image_html'] ) : ?>
 									<?php echo $slide['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								<?php elseif ( $fallback ) : ?>
-									<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>">
+									<picture class="lf-hero-slide__picture">
+										<?php if ( $fallback_mobile ) : ?>
+											<source media="(max-width: 767px)" srcset="<?php echo esc_url( $fallback_mobile ); ?>">
+										<?php endif; ?>
+										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>">
+									</picture>
 								<?php else : ?>
 									<div class="lf-hero-slide__fallback"></div>
 								<?php endif; ?>
@@ -153,7 +164,7 @@ $fallback   = function_exists( 'get_theme_file_uri' )
 					<?php if ( $slide['image_url'] ) : ?>
 						<img src="<?php echo esc_url( $slide['image_url'] ); ?>" alt="" loading="lazy">
 					<?php elseif ( $fallback ) : ?>
-						<img src="<?php echo esc_url( $fallback ); ?>" alt="" loading="lazy">
+						<img src="<?php echo esc_url( $fallback_center ?: $fallback ); ?>" alt="" loading="lazy">
 					<?php endif; ?>
 				</span>
 				<span class="lf-hero-thumb__label"><?php echo esc_html( $slide['title'] ); ?></span>
