@@ -17,7 +17,7 @@
             } catch (ignored) {}
         }
         var document = app.open(backgroundFile);
-        document.crop([UnitValue(95, 'px'), UnitValue(110, 'px'), UnitValue(1475, 'px'), UnitValue(835, 'px')]);
+        document.crop([UnitValue(110, 'px'), UnitValue(145, 'px'), UnitValue(1463, 'px'), UnitValue(855, 'px')]);
         document.resizeImage(UnitValue(1200, 'px'), UnitValue(630, 'px'), 72, ResampleMethod.BICUBICSHARPER);
         document.activeLayer.name = 'Generated M3 tonal background';
 
@@ -38,8 +38,24 @@
 
         var black = new SolidColor();
         black.rgb.hexValue = '101010';
+        var shadowColor = new SolidColor();
+        shadowColor.rgb.hexValue = '54250D';
 
         function addDinLine(name, baseline) {
+            var shadow = document.artLayers.add();
+            shadow.kind = LayerKind.TEXT;
+            shadow.name = 'Soft drop shadow ' + name;
+            shadow.textItem.contents = name;
+            shadow.textItem.font = 'DINAlternate-Bold';
+            shadow.textItem.size = UnitValue(106, 'pt');
+            shadow.textItem.position = [495, baseline + 7];
+            shadow.textItem.color = shadowColor;
+            shadow.textItem.justification = Justification.LEFT;
+            shadow.textItem.fauxBold = true;
+            shadow.rasterize(RasterizeType.ENTIRELAYER);
+            shadow.applyGaussianBlur(10);
+            shadow.opacity = 22;
+
             var layer = document.artLayers.add();
             layer.kind = LayerKind.TEXT;
             layer.name = 'DIN Alternate Bold ' + name;
@@ -49,6 +65,7 @@
             layer.textItem.position = [495, baseline];
             layer.textItem.color = black;
             layer.textItem.justification = Justification.LEFT;
+            layer.textItem.fauxBold = true;
             return layer;
         }
 

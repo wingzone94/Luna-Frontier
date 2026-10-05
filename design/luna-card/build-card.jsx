@@ -31,8 +31,24 @@
 
         var black = new SolidColor();
         black.rgb.hexValue = '101010';
+        var shadowColor = new SolidColor();
+        shadowColor.rgb.hexValue = '54250D';
 
         function addDinLine(name, baseline) {
+            var shadow = document.artLayers.add();
+            shadow.kind = LayerKind.TEXT;
+            shadow.name = 'Soft drop shadow ' + name;
+            shadow.textItem.contents = name;
+            shadow.textItem.font = 'DINAlternate-Bold';
+            shadow.textItem.size = UnitValue(28, 'pt');
+            shadow.textItem.position = [134, baseline + 2];
+            shadow.textItem.color = shadowColor;
+            shadow.textItem.justification = Justification.LEFT;
+            shadow.textItem.fauxBold = true;
+            shadow.rasterize(RasterizeType.ENTIRELAYER);
+            shadow.applyGaussianBlur(3);
+            shadow.opacity = 20;
+
             var layer = document.artLayers.add();
             layer.kind = LayerKind.TEXT;
             layer.name = 'DIN Alternate Bold ' + name;
@@ -42,11 +58,12 @@
             layer.textItem.position = [134, baseline];
             layer.textItem.color = black;
             layer.textItem.justification = Justification.LEFT;
+            layer.textItem.fauxBold = true;
             return layer;
         }
 
-        var first = addDinLine('LUMINOUS', 89);
-        var second = addDinLine('CORE', 122);
+        addDinLine('LUMINOUS', 89);
+        addDinLine('CORE', 122);
 
         var psdOptions = new PhotoshopSaveOptions();
         psdOptions.layers = true;
@@ -56,7 +73,6 @@
         document.saveAs(new File(out + 'luminous-core-material3-318x202.png'), pngOptions, true, Extension.LOWERCASE);
         document.close(SaveOptions.DONOTSAVECHANGES);
 
-        'OK ' + document.width.as('px') + 'x' + document.height.as('px') + ' logo=' + logoLayer.bounds[0].as('px') + ',' + logoLayer.bounds[1].as('px') + ' text-right=' + first.bounds[2].as('px');
     } catch (error) {
         var log = new File(out + 'photoshop-error.txt');
         log.open('w');
