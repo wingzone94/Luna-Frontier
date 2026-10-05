@@ -25,9 +25,9 @@
         var logoLayer = document.activeLayer;
         logoLayer.name = 'Original Luminous Core emblem';
         var logoWidth = logoLayer.bounds[2].as('px') - logoLayer.bounds[0].as('px');
-        var scale = 76 / logoWidth * 100;
+        var scale = 32 / logoWidth * 100;
         logoLayer.resize(scale, scale, AnchorPosition.MIDDLECENTER);
-        logoLayer.translate(18 - logoLayer.bounds[0].as('px'), 76 - logoLayer.bounds[1].as('px'));
+        logoLayer.translate(190 - logoLayer.bounds[0].as('px'), 84 - logoLayer.bounds[1].as('px'));
 
         var black = new SolidColor();
         black.rgb.hexValue = '101010';
@@ -40,30 +40,30 @@
             shadow.name = 'Soft drop shadow ' + name;
             shadow.textItem.contents = name;
             shadow.textItem.font = 'DINAlternate-Bold';
-            shadow.textItem.size = UnitValue(28, 'pt');
-            shadow.textItem.position = [134, baseline + 2];
+            shadow.textItem.size = UnitValue(15, 'pt');
+            shadow.textItem.position = [228, baseline + 1];
             shadow.textItem.color = shadowColor;
             shadow.textItem.justification = Justification.LEFT;
             shadow.textItem.fauxBold = true;
             shadow.rasterize(RasterizeType.ENTIRELAYER);
-            shadow.applyGaussianBlur(3);
-            shadow.opacity = 20;
+            shadow.applyGaussianBlur(2);
+            shadow.opacity = 14;
 
             var layer = document.artLayers.add();
             layer.kind = LayerKind.TEXT;
             layer.name = 'DIN Alternate Bold ' + name;
             layer.textItem.contents = name;
             layer.textItem.font = 'DINAlternate-Bold';
-            layer.textItem.size = UnitValue(28, 'pt');
-            layer.textItem.position = [134, baseline];
+            layer.textItem.size = UnitValue(15, 'pt');
+            layer.textItem.position = [228, baseline];
             layer.textItem.color = black;
             layer.textItem.justification = Justification.LEFT;
             layer.textItem.fauxBold = true;
             return layer;
         }
 
-        addDinLine('LUMINOUS', 89);
-        addDinLine('CORE', 122);
+        addDinLine('LUMINOUS', 112);
+        addDinLine('CORE', 133);
 
         var psdOptions = new PhotoshopSaveOptions();
         psdOptions.layers = true;

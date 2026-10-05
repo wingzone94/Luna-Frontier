@@ -34,7 +34,7 @@
         var logoWidth = logoLayer.bounds[2].as('px') - logoLayer.bounds[0].as('px');
         var scale = 118 / logoWidth * 100;
         logoLayer.resize(scale, scale, AnchorPosition.MIDDLECENTER);
-        logoLayer.translate(755 - logoLayer.bounds[0].as('px'), 250 - logoLayer.bounds[1].as('px'));
+        logoLayer.translate(755 - logoLayer.bounds[0].as('px'), 95 - logoLayer.bounds[1].as('px'));
 
         var black = new SolidColor();
         black.rgb.hexValue = '101010';
@@ -69,14 +69,14 @@
             return layer;
         }
 
-        addDinLine('LUMINOUS', 320);
-        addDinLine('CORE', 390);
+        addDinLine('LUMINOUS', 155);
+        addDinLine('CORE', 225);
 
         var psdOptions = new PhotoshopSaveOptions();
         psdOptions.layers = true;
-        document.saveAs(new File(out + 'luminous-core-material3-1200x630.psd'), psdOptions, true, Extension.LOWERCASE);
+        document.saveAs(new File(out + 'luminous-core-material3-mobile-1200x630.psd'), psdOptions, true, Extension.LOWERCASE);
 
-        document.saveAs(new File(out + 'luminous-core-material3-1200x630.png'), new PNGSaveOptions(), true, Extension.LOWERCASE);
+        document.saveAs(new File(out + 'luminous-core-material3-mobile-1200x630.png'), new PNGSaveOptions(), true, Extension.LOWERCASE);
         document.close(SaveOptions.DONOTSAVECHANGES);
     } finally {
         app.preferences.rulerUnits = oldUnits;
