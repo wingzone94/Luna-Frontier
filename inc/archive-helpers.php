@@ -103,7 +103,7 @@ function node_get_archive_context() {
 }
 
 /**
- * Filter the Node Library archive by its saved content type.
+ * Filter the Luna Library archive by its saved content type.
  *
  * @param WP_Query $query Main query.
  * @return void

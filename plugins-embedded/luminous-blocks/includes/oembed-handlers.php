@@ -19,7 +19,7 @@ if ( ! function_exists( 'node_register_block_category' ) ) {
             $categories,
             [
                 'slug'  => 'node',
-                'title' => 'Node',
+                'title' => 'Luna',
                 'icon'  => null,
             ]
         );

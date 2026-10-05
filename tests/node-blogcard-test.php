@@ -232,7 +232,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'Luminous Core Article', $html );
 		$this->assertStringContainsString( 'per-post-thumb.jpg', $html );
-		$this->assertStringNotContainsString( 'luminous-core-card-image.png', $html );
+		$this->assertStringNotContainsString( 'luminous-core-card-image-m3.webp', $html );
 	}
 
 	public function test_shortcode_overrides_image_with_brand_card_for_luminous_core_host(): void {
@@ -245,7 +245,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $filter, 10 );
 
 		$this->assertStringContainsString( 'Luminous Core Article', $html );
-		$this->assertStringContainsString( 'luminous-core-card-image.png', $html );
+		$this->assertStringContainsString( 'luminous-core-card-image-m3.webp', $html );
 		$this->assertStringNotContainsString( 'per-post-thumb.jpg', $html );
 	}
 
@@ -261,7 +261,7 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'Another Luminous Core Article', $html );
 		$this->assertStringContainsString( 'another-thumb.jpg', $html );
-		$this->assertStringNotContainsString( 'luminous-core-card-image.png', $html );
+		$this->assertStringNotContainsString( 'luminous-core-card-image-m3.webp', $html );
 	}
 
 	public function test_embed_maybe_make_link_delegates_to_render_blogcard_with_amazon_tag(): void {

@@ -58,7 +58,7 @@ final class Node_AI_Core {
 			case 'ollama':
 				return new Node_AI_Provider_Ollama();
 			case 'off':
-				return new WP_Error( 'ai_disabled', 'AI機能は現在無効に設定されています。設定 → Node AI から有効化してください。' );
+				return new WP_Error( 'ai_disabled', 'AI機能は現在無効に設定されています。設定 → Luna AI から有効化してください。' );
 		}
 
 		return new WP_Error( 'ai_disabled', '不明なAIプロバイダーです: ' . $id );

@@ -1,7 +1,7 @@
 # Luna Frontier
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-2.0.0--preview.6-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.0.0-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
@@ -12,7 +12,7 @@ README は導入と運用ガイドに集中し、リリース履歴は `CHANGELO
 
 Luna Frontier は Node の子テーマではありません。Node 1.x を起点に発展した、単体で成立する WordPress テーマです。`Template:` ヘッダーは置かず、Node テーマのインストールも不要です。`node_*` / `NODE_*` / `_node_*` などの名前は、既存サイトデータと公開 API の後方互換として残しています。
 
-現在の最新版は **2.0.0-preview.6** です。Preview 版の更新チャンネルは、安定版 Node を配っていた `master` とは分離しています。
+次回リリースは **2.0.0（2026.10.10予定）** です。Luna Frontier の更新チャンネルは、安定版 Node を配っていた `master` とは分離しています。
 
 - **Preview 1（2026.08.16）**: 編集メディア向けのトップページ、四角いPaper表現、Manrope見出し、モバイルセクションナビを導入した初回公開版。
 - **Preview 2（2026.08.22）**: Material 3トークン、記事・パンくず・目次・FABの階層、モバイル表示、ZIP検査とCIを整備した基盤更新版。
@@ -26,13 +26,13 @@ Preview 6の配布物、導入方法、検証結果は [Luna Frontier 2.0 Previe
 ## 主な機能
 - **Material You 動的カラー:** アイキャッチ画像やカテゴリ設定からテーマカラーを自動生成。
 - **シリーズ（連載）:** 複数記事を連載としてまとめ、目次・前後ナビ・カード上のバナー（現在回/全話数）を自動表示。
-- **Node Library:** 作品・アプリのストアフロント一覧と個別ページ。記事からの導線と「この作品に触れた記事」の逆引きに対応。
+- **Luna Library:** 作品・アプリのストアフロント一覧と個別ページ。記事からの導線と「この作品に触れた記事」の逆引きに対応。
 - **ブログカード / 埋め込み:** 自サイト・他サイトの記事URLを統一デザインのカードに変換（X・YouTube は標準の埋め込みを維持）。
 - **インテリジェント詳細検索:** 読了時間、文字数、プラットフォーム、AI生成の有無などで高度な絞り込みが可能。
 - **フローティング・ナビゲーション:** 記事ページでの目次アクセス、コメント移動、トップ戻りをスムーズに。
 - **プラットフォーム・ブランド連携:** デバイスごとの公式ブランドカラーをUIに反映（Windows, iOS, Android, Nintendo, PlayStation, Xbox）。
 - **AI 連携:** Gemini・Qwen・Ollamaを共通基盤から利用し、記事要約・ファクトチェック補助・校正を支援。ファクトチェックは無料枠で使える最新の Gemini Flash を自動選択し、Web 検索と公式ページを根拠に検証します（根拠のない断定は保存前に補正されます）。
-- **アイキャッチの WebP 置き換え:** アップロードしたアイキャッチを自動で WebP へ置き換え、転送量と LCP を改善。品質は画像ごとに自動決定し、「Node Settings → 画像圧縮」または投稿編集画面からいつでも手動で実行できます。置き換えで消えた旧 URL は新しい画像へ 301 転送されます。
+- **アイキャッチの WebP 置き換え:** アップロードしたアイキャッチを自動で WebP へ置き換え、転送量と LCP を改善。品質は画像ごとに自動決定し、「Luna Settings → 画像圧縮」または投稿編集画面からいつでも手動で実行できます。置き換えで消えた旧 URL は新しい画像へ 301 転送されます。
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
 
 ## v1.2.1 (2026.07.19)

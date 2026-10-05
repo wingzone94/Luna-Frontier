@@ -56,7 +56,7 @@ function node_search_suggest_response( WP_REST_Request $request ): WP_REST_Respo
 }
 
 /**
- * Build suggestions from Node Library item titles.
+ * Build suggestions from Luna Library item titles.
  *
  * @return array<int, array<string, mixed>>
  */

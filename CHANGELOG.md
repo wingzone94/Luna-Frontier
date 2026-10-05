@@ -6,6 +6,13 @@ Luna Frontier 2.0 は Node の子テーマではない。Node 1.x から発展�
 
 Preview 1〜4 の記述にある「子テーマ」「`Template: node`」は、当時の配布形態の記録である。現行の設計ではない。
 
+## [2.0.0] - 2026.10.10（リリース予定） — Luna Frontier
+
+- Preview 6 と 2026.10.05 までの修正を正式版として準備。検索UI、Luna独立版の画像修復、元画像・旧派生画像の保持を含む。
+- 配布チャンネルは `luna-frontier-2.0-skyalow`、配布物は `luna.zip`（ルート `luna-frontier/`）。
+- 公開表示を Luna ブランドへ統一。管理画面の Luna Settings / Luna AI と Luna Library のメニュー・ブロック・一覧・詳細表示を更新。既存の設定キーとプログラム識別子は維持。
+- アイキャッチ未設定時のスライドショーとブログカードに、元のロゴを保ったMaterial 3調のDINブランド画像を使用。
+
 ## [2.0.0-preview.6] - 2026.09.25 — Luna Frontier
 
 ### 2026.10.05 追補

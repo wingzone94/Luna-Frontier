@@ -66,13 +66,13 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
         
         $is_gemini = ! function_exists( 'node_ai_core' ) || 'gemini' === node_ai_core()->get_provider_id();
 
-        // ファクトチェックのモデルは「設定 → Node AI」の方針（既定は自動・無料枠）で決まる。
+        // ファクトチェックのモデルは「設定 → Luna AI」の方針（既定は自動・無料枠）で決まる。
         // ここのプルダウンは要約・校正など他機能の既定モデルとして保存される
         if ( $is_gemini && class_exists( 'Node_AI_Fact_Check_Models' ) ) {
             $fc_model = Node_AI_Fact_Check_Models::select();
             echo '<p class="description">ファクトチェックには無料枠のモデルを自動選択して使います（現在: <code>'
                 . esc_html( is_wp_error( $fc_model ) ? '利用可能なモデルなし' : $fc_model )
-                . '</code>）。変更は「設定 → Node AI」から行えます。</p>';
+                . '</code>）。変更は「設定 → Luna AI」から行えます。</p>';
         }
 
         if ( $is_gemini && ! empty( $models ) ) {

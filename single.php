@@ -32,7 +32,7 @@ get_header();
                 get_template_part( 'template-parts/ai-summary', null, $ai_args );
             }
 
-            // プラグイン等からの拡張表示（Node Library等）
+            // プラグイン等からの拡張表示（Luna Library等）
             luminous_after_article_header( get_the_ID() );
             ?>
 

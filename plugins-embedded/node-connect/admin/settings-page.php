@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action(
 	'admin_menu',
 	static function (): void {
-		// Node Settings（テーマ側の add_menu_page）配下へ入れる。
+		// Luna Settings（テーマ側の add_menu_page）配下へ入れる。
 		// 親が未登録の場合（プラグイン単体利用）は従来どおり「設定」配下へ退避する
 		if ( menu_page_url( 'luminous-settings', false ) ) {
 			add_submenu_page(

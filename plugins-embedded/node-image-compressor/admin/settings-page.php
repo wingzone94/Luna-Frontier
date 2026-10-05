@@ -2,7 +2,7 @@
 /**
  * Node Image Compressor の管理ページ（Material 3 / モバイル対応）。
  *
- * Node Settings 配下のサブメニューとして 1 ページに
+ * Luna Settings 配下のサブメニューとして 1 ページに
  * サマリー・一括置き換え・対象一覧・設定を収める。
  *
  * @package Node_Image_Compressor

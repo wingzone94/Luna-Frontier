@@ -156,7 +156,7 @@ function initNodeLibraryQr() {
                 copyStatus.textContent = 'コピーしました';
             } catch (error) {
                 copyStatus.textContent = 'コピーできませんでした';
-                console.error('Node Library URL copy failed', error);
+                console.error('Luna Library URL copy failed', error);
             }
         };
 
@@ -172,7 +172,7 @@ function initNodeLibraryQr() {
                 if (!dialog.open) dialog.showModal();
                 status.hidden = false;
                 status.textContent = 'QRコードを生成できませんでした。';
-                console.error('Node Library QR generation failed', error);
+                console.error('Luna Library QR generation failed', error);
             } finally {
                 toggle.disabled = false;
                 toggle.removeAttribute('aria-busy');

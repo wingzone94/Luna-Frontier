@@ -17,7 +17,7 @@
 
     if (blocks.registerBlockCategory) {
         blocks.registerBlockCategory('node', {
-            title: 'Node',
+            title: 'Luna',
             icon: 'database-add'
         });
     }
@@ -222,7 +222,7 @@
     // --- ライブラリカード ---
     registerBlockType('node-library/item-card', {
         title: 'ライブラリカード',
-        description: 'Node Library に登録したゲーム・アプリ情報を本文に表示します。',
+        description: 'Luna Library に登録したゲーム・アプリ情報を本文に表示します。',
         icon: 'database-add',
         category: 'node',
         keywords: ['node', 'library', 'game', 'app', 'ライブラリ', 'ゲーム'],
@@ -276,7 +276,7 @@
                 },
                     isLoading && el(Spinner),
                     !isLoading && allItems.length === 0 && el('p', { style: { margin: '0 0 12px' } },
-                        'ライブラリ項目がありません。先に Node Library メニューから登録してください。'
+                        'ライブラリ項目がありません。先に Luna Library メニューから登録してください。'
                     ),
                     !isLoading && allItems.length > 0 && el(TextControl, {
                         label: 'タイトルで絞り込み（任意）',

@@ -31,7 +31,7 @@ Theme URI: https://luminous-core.net/
 Author: Luminous Core Teams
 Author URI: https://luminous-core.net/
 Description: Luna Frontier for Luminous Core. Independent theme descended from Node 1.x. Not a child theme.
-Version: 2.0.0-preview.6
+Version: 2.0.0
 Text Domain: node
 */
 ```
@@ -130,6 +130,7 @@ rsync -a \
   --exclude='/vendor/' \
   --exclude='tests/' \
   --exclude='test-results/' \
+  --exclude='design/' \
   --exclude='composer.json' \
   --exclude='composer.lock' \
   --exclude='phpunit.xml.dist' \

@@ -17,7 +17,7 @@ add_action(
 	static function (): void {
 		add_meta_box(
 			'node_connect_x_post',
-			'X投稿（Node Connect）',
+			'X投稿（Luna Connect）',
 			'node_connect_render_x_meta_box',
 			'post',
 			'side',

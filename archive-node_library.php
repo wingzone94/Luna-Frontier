@@ -79,7 +79,7 @@ if ( ! empty( $archive_library_ids ) ) {
 	<section class="node-library-archive__showcase" aria-labelledby="node-library-title">
 		<div class="node-library-archive__eyebrow">
 			<span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
-			<?php esc_html_e( 'Node Library', 'node' ); ?>
+			<?php esc_html_e( 'Luna Library', 'node' ); ?>
 		</div>
 		<div class="node-library-archive__heading">
 			<div>

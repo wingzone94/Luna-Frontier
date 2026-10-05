@@ -2,7 +2,7 @@
 /**
  * Plugin Name:  Luna Interactivity
  * Plugin URI:   https://github.com/wingzone94/Node
- * Description:  スポイラー（目隠し）、CERO Z 年齢確認ダイアログ。Node テーマと連携。
+ * Description:  スポイラー（目隠し）、CERO Z 年齢確認ダイアログ。Luna Frontier テーマと連携。
  * Version:      1.4.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94

@@ -44,7 +44,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 
 		$style = $this->contents( $this->theme_zip(), self::THEME_ROOT . 'style.css' );
 		$this->assertSame( 1, preg_match( '/^Version:\s*(\S+)/m', $style, $version_match ) );
-		$this->assertSame( '2.0.0-preview.6', $version_match[1] );
+		$this->assertSame( '2.0.0', $version_match[1] );
 		$build = json_decode( $this->contents( $this->theme_zip(), self::THEME_ROOT . 'build.json' ), true );
 		$this->assertIsArray( $build );
 		$this->assertSame( $version_match[1], (string) ( $build['version'] ?? '' ) );
