@@ -366,13 +366,13 @@ function node_render_settings_page() {
                 <h2 style="margin-top: 0; color: #FF9900; display: flex; align-items: center; gap: 10px;">
                     <span class="dashicons dashicons-update"></span> テーマのアップデート
                 </h2>
-                <p class="description">GitHub から最新の `node.zip` を取得して自動インストールします。</p>
+                <p class="description">Luna Frontier 2.0 正式版へ移行します。記事・設定と現在のテーマディレクトリを維持して、テーマ本体を置き換えます。事前にバックアップしてください。</p>
                 
                 <div id="luminous-update-info" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <p>現在のバージョン: <strong>v<?php echo esc_html( node_get_theme_version() ); ?></strong></p>
                     <?php $node_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null; ?>
                     <p>現在のビルド: <strong><?php echo esc_html( $node_build_info['build_id'] ?? '不明（build.json なし）' ); ?></strong></p>
-                    <p class="description">フッター表示（v<?php echo esc_html( node_get_theme_version() ); ?>）と同じ style.css の Version を参照しています。同一バージョンのまま node.zip が更新された場合はビルド識別子で検知します。</p>
+                    <p class="description">フッター表示（v<?php echo esc_html( node_get_theme_version() ); ?>）と同じ style.css の Version を参照しています。更新先は Luna Frontier の正式版です。</p>
                     <div id="update-check-result"></div>
                 </div>
 
@@ -434,8 +434,8 @@ function node_render_settings_page() {
                                 var remote = response.data.remote_version;
                                 var local = response.data.local_version;
                                 if (response.data.update_available) {
-                                    $('#update-check-result').html('<p style="color: #FF9900; font-weight: bold;">新しいバージョン (v' + remote + ') が見つかりました！</p>');
-                                    $('#luminous-install-update').text('最新版をインストール').show();
+                                    $('#update-check-result').html('<p style="color: #FF9900; font-weight: bold;">Luna Frontier (v' + remote + ') へ移行できます。</p>');
+                                    $('#luminous-install-update').text('Luna Frontier に移行').show();
                                 } else if (response.data.install_available) {
                                     if (response.data.build_update_available) {
                                         $('#update-check-result').html('<p style="color: #FF9900; font-weight: bold;">同一バージョン (v' + local + ') の新しいビルドが配信されています。<br>配信中: ' + response.data.remote_build + '<br>インストール済み: ' + (response.data.local_build || '不明') + '</p>');
@@ -463,7 +463,7 @@ function node_render_settings_page() {
                 });
 
                 $('#luminous-install-update').on('click', function() {
-                    if (!confirm('テーマを最新バージョンに更新しますか？\n(現在のファイルが上書きされます)')) return;
+                    if (!confirm('Luna Frontier 2.0 に移行しますか？\n記事・設定を保持し、現在のテーマファイルを置き換えます。バックアップ済みであることを確認してください。')) return;
 
                     var btn = $(this);
                     btn.prop('disabled', true);

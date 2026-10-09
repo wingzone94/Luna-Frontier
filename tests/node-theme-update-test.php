@@ -54,6 +54,29 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$this->assertSame( 'new-build', node_validate_theme_update_package( $source, '1.4.0', 'old-build' )['build_id'] );
 	}
 
+	public function test_luna_migration_accepts_standalone_release_and_preserves_node_validation(): void {
+		$source = $this->create_package( '2.0.0', 'luna-release' );
+		file_put_contents( $source . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0\n*/\n" );
+		$this->assertFalse( node_is_valid_theme_update_source( $source ) );
+		$this->assertSame( 'luna-release', node_validate_theme_update_package( $source, '1.4.2', 'node-build', 'Luna Frontier' )['build_id'] );
+		$archive = $this->root . '/archive';
+		wp_mkdir_p( $archive );
+		rename( $source, $archive . '/luna-frontier' );
+		$this->assertSame( trailingslashit( $archive . '/luna-frontier' ), node_resolve_theme_update_source_dir( $archive, 'Luna Frontier' ) );
+	}
+
+	public function test_luna_migration_rejects_child_preview_and_other_theme_packages(): void {
+		$source = $this->create_package( '2.0.0', 'luna-release' );
+		foreach ( array(
+			"Theme Name: Luna Frontier\nVersion: 2.0.0\nTemplate: node",
+			"Theme Name: Luna Frontier\nVersion: 2.0.0-preview.6",
+			"Theme Name: Node\nVersion: 2.0.0",
+		) as $headers ) {
+			file_put_contents( $source . '/style.css', "/*\n{$headers}\n*/\n" );
+			$this->assertWPError( node_validate_theme_update_package( $source, '1.4.2', 'node-build', 'Luna Frontier' ) );
+		}
+	}
+
 	public function test_swap_removes_obsolete_files_after_success(): void {
 		$source = $this->create_package( '1.4.1', 'new-build' );
 		$theme  = $this->root . '/Node';
