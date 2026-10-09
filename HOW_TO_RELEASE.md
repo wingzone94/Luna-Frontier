@@ -2,6 +2,18 @@
 
 このドキュメントでは、テーマ編集後に本番用のZIPファイル (`node.zip`) を生成し、GitHubにプッシュするまでの手順を説明します。
 
+## Node Settings から Luna Frontier 2.0 へ移行する修正版
+
+Node 1.4.2 の旧更新処理は `master/style.css` と `master/node.zip` を参照し、Node というテーマ名だけを受け付けます。Luna の配布先だけを更新しても、既存の Node Settings に 2.0 は表示されません。
+
+1. この修正版を Node 1.4.2 の新しい Build ID として `master/node.zip`（`Node/`）で配布します。Node のテーマ名と Version は維持します。
+2. 利用者は Node Settings で「新しいビルドを再インストール」を実行します。
+3. リロード後、もう一度「アップデートを確認」を押すと Luna Frontier 2.0 が表示されます。「Luna Frontier に移行」で正式版を取得します。
+
+修正版の更新先は `luna-frontier-2.0-skyalow` の `style.css`・`build.json`・`luna.zip` です。ZIP は Luna Frontier 2.x 正式版かつ `Template:` のない独立テーマだけを受け付けます。子テーマを使用中の場合は Node を有効化してから実行します。
+
+移行では現在のテーマディレクトリと WordPress の stylesheet 識別子を維持し、テーマファイルを置き換えます。記事・オプション・theme_mods は削除しません。移行後の見た目は Luna に変わるため、事前バックアップを案内します。Luna の公開ZIPや配布ブランチを Node のZIPで上書きしないでください。
+
 ## 0. 命名・ブランド
 - ブログ / サイトのブランド名は **Luminous Core** です。
 - WordPress テーマ名は **Node** です。
