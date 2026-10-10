@@ -120,6 +120,32 @@ body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
 	flex: 0 0 auto;
 }
 
+/* Desktop feature shelf shows one complete title at a time. */
+@media (min-width: 1001px) {
+	body.lf-theme .lf-topic-nav__features {
+		flex: 1 1 0;
+		container-type: inline-size;
+		scroll-snap-type: inline mandatory;
+	}
+
+	body.lf-theme .lf-topic-nav__features > li {
+		flex: 0 0 100cqi;
+		min-inline-size: 0;
+		scroll-snap-align: start;
+	}
+
+	body.lf-theme .lf-topic-nav__features a {
+		max-inline-size: 100%;
+		justify-content: flex-start;
+	}
+
+	body.lf-theme .lf-topic-nav__features .lf-topic-nav__label {
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
 /* Center native keyboard focus scrolling, including at browser zoom.
  * Scroll padding leaves touch and wheel scrolling unconstrained. */
 body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list):has(a:focus-visible) {
