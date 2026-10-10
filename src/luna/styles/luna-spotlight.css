@@ -97,9 +97,8 @@ body.lf-theme .lf-spotlight-archive__cover {
 	color: var(--lf-spotlight-ink);
 }
 
-body.lf-theme .lf-spotlight-archive__cover-index {
-	font-size: 1.25rem;
-	font-weight: 300;
+body.lf-theme .lf-spotlight-archive__cover-icon {
+	font-size: 24px;
 	color: var(--lf-spotlight-accent);
 }
 

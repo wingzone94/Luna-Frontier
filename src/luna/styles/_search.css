@@ -3,7 +3,7 @@
  *
  * 指示書 §43 / §17〜§19。
  * 標準 Material 3 のフォームを土台にし、Expressive は「検索実行」だけに残す。
- * Paper（四角）の面に、フィールドは M3 の Outlined text field 相当。
+ * 検索結果ページは M3 の面と Outlined text field を使う。
  */
 
 /* Header search: keep the existing form, suggestions and mobile disclosure. */
@@ -275,15 +275,16 @@ body.lf-theme .lf-search__count {
 }
 
 /* ---------------------------------------------------------------------
- * Form Paper
+ * Search form surface
  * --------------------------------------------------------------------- */
 body.lf-theme .lf-search-form {
 	max-inline-size: var(--lf-content-max);
 	margin: 0 auto var(--lf-space-l);
-	padding: var(--lf-space-s) var(--lf-gutter) var(--lf-space-xs);
-	background: var(--lf-paper);
-	border-block: 1px solid var(--lf-rule);
-	border-radius: var(--lf-shape-paper);
+	padding: var(--lf-space-m);
+	background: var(--md-sys-color-surface-container-low);
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: var(--md-sys-shape-corner-extra-large);
+	box-shadow: var(--m3-elevation-1);
 }
 
 /* Basic: 常時表示。ここだけで検索が完結する。 */
@@ -306,45 +307,52 @@ body.lf-theme .lf-field--grow {
 }
 
 body.lf-theme .lf-field__label {
-	font-size: var(--lf-text-2xs);
-	letter-spacing: 0.06em;
-	color: var(--lf-on-surface-muted);
+	font-size: var(--lf-text-s);
+	font-weight: 600;
+	color: var(--md-sys-color-on-surface-variant);
 }
 
 body.lf-theme .lf-field__control {
 	font: inherit;
 	font-size: var(--lf-text-s);
 	color: var(--lc-on-surface);
-	background: var(--lf-paper);
-	border: 1px solid var(--lf-rule-strong);
-	border-radius: var(--lf-shape-action);
+	background: var(--md-sys-color-surface);
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: var(--md-sys-shape-corner-medium);
 	padding: 0.55em 0.75em;
-	min-block-size: 2.75rem;
+	min-block-size: 3.5rem;
 	inline-size: 100%;
 	max-inline-size: 100%;
 }
 
 body.lf-theme .lf-field__control:focus-visible {
-	border-color: var(--lc-accent);
+	border: 2px solid var(--lc-primary);
+	outline: 2px solid var(--lc-primary);
+	outline-offset: 2px;
 }
 
 /* 検索実行だけ Expressive を残す（§19）。ピル形状 + 明確な塗り。 */
 body.lf-theme .lf-search-form__submit {
+	--lf-search-action: var(--lc-primary);
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5em;
 	font: inherit;
 	font-size: var(--lf-text-s);
 	font-weight: 700;
-	color: var(--lc-on-primary);
-	background: var(--lc-primary);
+	color: #fff;
+	background: var(--lf-search-action);
 	border: 0;
 	border-radius: var(--lf-shape-full);
 	padding: 0.7em 1.6em;
-	min-block-size: 2.75rem;
+	min-block-size: 3.5rem;
 	cursor: pointer;
 	transition: background-color var(--lf-motion-base) var(--lf-easing-emphasized),
 		transform var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme[data-theme="dark"] .lf-search-form__submit {
+	--lf-search-action: color-mix(in srgb, var(--lf-brand) 60%, #000);
 }
 
 /*
@@ -353,12 +361,35 @@ body.lf-theme .lf-search-form__submit {
  * 記事の色によって手応えが変わってしまう（他のボタンとも濃さが揃わない）。
  */
 body.lf-theme .lf-search-form__submit:hover {
-	background: color-mix(in srgb, var(--lc-on-primary) var(--lf-state-hover), var(--lc-primary));
+	background: color-mix(in srgb, #fff var(--lf-state-hover), var(--lf-search-action));
 }
 
 body.lf-theme .lf-search-form__submit:active {
-	background: color-mix(in srgb, var(--lc-on-primary) var(--lf-state-pressed), var(--lc-primary));
+	background: color-mix(in srgb, #fff var(--lf-state-pressed), var(--lf-search-action));
 	transform: scale(0.98);
+}
+
+body.lf-theme .lf-search-form__submit:focus-visible,
+body.lf-theme .lf-search-form__advanced-head:focus-visible,
+body.lf-theme .lf-choice:focus-within {
+	outline: 2px solid var(--lc-primary);
+	outline-offset: 3px;
+}
+
+body.lf-theme .lf-search .m3-search-results-grid .m3-card {
+	border-radius: var(--md-sys-shape-corner-large);
+	overflow: hidden;
+}
+
+@media (max-width: 600px) {
+	body.lf-theme .lf-search-form__basic > .lf-field,
+	body.lf-theme .lf-search-form__submit {
+		flex: 1 1 100%;
+	}
+
+	body.lf-theme .lf-search-form__submit {
+		justify-content: center;
+	}
 }
 
 /* ---------------------------------------------------------------------

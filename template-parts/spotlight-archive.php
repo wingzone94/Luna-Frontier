@@ -61,7 +61,7 @@ get_header();
 							<?php echo $lf_image; // WordPress generates escaped attachment markup. ?>
 						<?php else : ?>
 							<div class="lf-spotlight-archive__cover" aria-hidden="true">
-								<span class="lf-spotlight-archive__cover-index"><?php echo esc_html( sprintf( '%02d', $lf_index + 1 ) ); ?></span>
+								<span class="lf-spotlight-archive__cover-icon material-symbols-outlined">local_fire_department</span>
 								<span class="lf-spotlight-archive__cover-name"><?php echo esc_html( $lf_feature['name'] ); ?></span>
 								<span class="lf-spotlight-archive__cover-label">LUMINOUS CORE / SPOTLIGHT</span>
 							</div>

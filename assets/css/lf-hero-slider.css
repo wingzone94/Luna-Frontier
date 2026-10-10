@@ -42,6 +42,7 @@
 	scroll-behavior: smooth;
 	scrollbar-width: none;
 	-webkit-overflow-scrolling: touch;
+	touch-action: pan-y;
 	overscroll-behavior-x: contain;
 	border-radius: var(--lf-hero-radius);
 	outline: none;
