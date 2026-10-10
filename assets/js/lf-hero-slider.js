@@ -47,6 +47,8 @@
     let hovering = false;
     let keyboardFocus = false;
     let pointerHeld = false;
+    let touchStart = null;
+    let suppressSwipeClick = false;
     let manualUntil = 0;
 
     const clamp = (value) => ((value % total) + total) % total;
@@ -255,6 +257,29 @@
       pendingTarget = null;
       pauseByUser();
     }, { passive: true });
+    viewport.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch' && total > 1) {
+        touchStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      }
+    }, { passive: true });
+    viewport.addEventListener('pointerup', (event) => {
+      if (!touchStart || touchStart.id !== event.pointerId) return;
+      const dx = event.clientX - touchStart.x;
+      const dy = event.clientY - touchStart.y;
+      touchStart = null;
+      if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy) * 1.2) return;
+      suppressSwipeClick = true;
+      window.setTimeout(() => { suppressSwipeClick = false; }, 350);
+      pauseByUser();
+      goTo(index + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    viewport.addEventListener('pointercancel', () => { touchStart = null; }, { passive: true });
+    viewport.addEventListener('click', (event) => {
+      if (!suppressSwipeClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressSwipeClick = false;
+    }, true);
     const releasePointer = () => {
       if (!pointerHeld) return;
       pointerHeld = false;

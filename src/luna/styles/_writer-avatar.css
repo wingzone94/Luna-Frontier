@@ -24,6 +24,16 @@ body.lf-theme .lf-writer-avatar {
 	box-sizing: border-box;
 }
 
+/* WordPress's #wpadminbar * reset has higher specificity than the theme avatar. */
+body.lf-theme #wpadminbar .lf-writer-avatar {
+	inline-size: 26px;
+	block-size: 26px;
+	padding: 3px;
+	border-radius: 50%;
+	box-sizing: border-box;
+	vertical-align: middle;
+}
+
 /*
  * 一覧カードのフッターでは、面を持たせない。
  *
