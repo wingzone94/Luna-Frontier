@@ -4,6 +4,7 @@
 
   const init = (root) => {
     const viewport = root.querySelector('[data-lf-viewport]');
+    const stage = root.querySelector('.lf-hero-slider__stage');
     const slides = Array.from(root.querySelectorAll('[data-lf-slide]'));
     const dots = Array.from(root.querySelectorAll('[data-lf-dot]'));
     const thumbs = Array.from(root.querySelectorAll('[data-lf-thumb]'));
@@ -257,15 +258,17 @@
       pendingTarget = null;
       pauseByUser();
     }, { passive: true });
-    viewport.addEventListener('pointerdown', (event) => {
-      if (event.pointerType === 'touch' && total > 1) {
-        touchStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
-      }
+    (stage || viewport).addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1 || total < 2) return;
+      const touch = event.changedTouches[0];
+      touchStart = { id: touch.identifier, x: touch.clientX, y: touch.clientY };
     }, { passive: true });
-    viewport.addEventListener('pointerup', (event) => {
-      if (!touchStart || touchStart.id !== event.pointerId) return;
-      const dx = event.clientX - touchStart.x;
-      const dy = event.clientY - touchStart.y;
+    (stage || viewport).addEventListener('touchend', (event) => {
+      if (!touchStart) return;
+      const touch = Array.from(event.changedTouches).find((item) => item.identifier === touchStart.id);
+      if (!touch) return;
+      const dx = touch.clientX - touchStart.x;
+      const dy = touch.clientY - touchStart.y;
       touchStart = null;
       if (Math.abs(dx) < 45 || Math.abs(dx) <= Math.abs(dy) * 1.2) return;
       suppressSwipeClick = true;
@@ -273,8 +276,8 @@
       pauseByUser();
       goTo(index + (dx < 0 ? 1 : -1));
     }, { passive: true });
-    viewport.addEventListener('pointercancel', () => { touchStart = null; }, { passive: true });
-    viewport.addEventListener('click', (event) => {
+    (stage || viewport).addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+    (stage || viewport).addEventListener('click', (event) => {
       if (!suppressSwipeClick) return;
       event.preventDefault();
       event.stopPropagation();
