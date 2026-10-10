@@ -122,6 +122,13 @@ body.lf-theme .m3-search-suggestion__mark {
 		max-height: var(--lf-search-sheet-height);
 	}
 
+	/* Safari's expanded browser bars can make dvh taller than the visible area. */
+	@supports (height: 100svh) {
+		body.lf-theme #m3-advanced-search-modal .m3-modal__content {
+			--lf-search-sheet-height: min(90svh, calc(100svh - var(--wp-admin--admin-bar--height, 0px) - max(16px, env(safe-area-inset-top, 0px))));
+		}
+	}
+
 	/* A missing thumbnail must not consume most of a narrow results card. */
 	body.lf-theme .lf-search .m3-search-results-grid .m3-card--no-image::before {
 		display: none;
