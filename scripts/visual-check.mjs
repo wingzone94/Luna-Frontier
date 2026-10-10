@@ -70,7 +70,7 @@ async function inspectTextLayout(page) {
     }
 
     function labelFor(element) {
-      const text = (element.innerText || element.value || element.getAttribute('aria-label') || '')
+      const text = (element.innerText || element.value || '')
         .replace(/\s+/g, ' ')
         .trim();
       return text.length > 60 ? `${text.slice(0, 57)}...` : text;
@@ -104,6 +104,8 @@ async function inspectTextLayout(page) {
       if (issues.length >= limit) break;
       if (seen.has(element)) continue;
       seen.add(element);
+      // Screen-reader-only labels have intentional 1px boxes, not visible text layout.
+      if (element.matches('.screen-reader-text, .lf-hero-sr-only')) continue;
 
       const style = window.getComputedStyle(element);
       const rect = element.getBoundingClientRect();
