@@ -25,14 +25,15 @@ body.lf-theme {
 	 * UI ラベルは本文側に寄せて Inter を使う（見出しだけを Manrope に保つ）。
 	 * 日本語は共通で Noto Sans JP。
 	 * --------------------------------------------------------------- */
-	--font-latin: "Inter", system-ui, sans-serif;
-	--font-latin-display: "Manrope", "Inter", system-ui, sans-serif;
-	--font-japanese: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+	/* 汎用フォントは最後に置き、日本語が Noto Sans JP に届くようにする。 */
+	--font-latin: "Inter";
+	--font-latin-display: "Manrope", "Inter";
+	--font-japanese: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
 	--font-body: var(--font-latin), var(--font-japanese);
 	--font-heading: var(--font-latin-display), var(--font-japanese);
 	--font-ui: var(--font-latin), var(--font-japanese);
 	/* 機能ラベル用。Orbitron は 2026-08-09 のユーザー指示で不採用（見た目が浮くため）。 */
-	--font-system: var(--font-latin);
+	--font-system: var(--font-body);
 	--font-code: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
 	/* ---------------------------------------------------------------
