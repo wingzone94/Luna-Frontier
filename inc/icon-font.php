@@ -67,6 +67,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'desktop_windows',
 			'devices',
 			'edit',
+			'edit_note',
 			'error',
 			'expand_less',
 			'expand_more',
@@ -99,6 +100,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'perm_media',
 			'person',
 			'print',
+			'priority_high',
 			'psychology',
 			'qr_code_2',
 			'reorder',
@@ -133,6 +135,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'verified',
 			'videogame_asset',
 			'view_list',
+			'warning',
 			'web_asset',
 			'whatshot',
 		);
