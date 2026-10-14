@@ -15,7 +15,7 @@ export function initHeroTOC() {
     if (!isSinglePostView()) return;
 
     const heroSelect = document.querySelector('[data-hero-toc-select]');
-    const heroCard = document.querySelector('.m3-article__header-card');
+    const heroCard = document.querySelector('.m3-article__header-card, .lf-article-header');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const getHeaderHeight = () => {

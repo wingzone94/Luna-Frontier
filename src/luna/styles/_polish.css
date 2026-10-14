@@ -264,11 +264,11 @@
 	 * 本文に属して見えない（近接の原則）。上 64px / 下 16px にすると
 	 * 「章の切れ目」と「見出しと本文のまとまり」が両方読める。
 	 * --------------------------------------------------------------------- */
-	body.lf-theme .m3-article__body > :is(p, ul, ol, blockquote) {
+	body.lf-theme .m3-article__body > :is(p, ul, ol, blockquote:not(.m3-notice)) {
 		margin-block-end: var(--lf-space-l);
 	}
 
-	body.lf-theme .m3-article__body h2 {
+	body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) {
 		margin-block-end: var(--lf-space-s);
 	}
 
