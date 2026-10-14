@@ -39,9 +39,14 @@
         pointer-events: none !important;
     }
 
+    /* 非表示の TOP が場所を占めると目次ボタンがパネルへ重なるため、開いている間は詰める。 */
+    body.is-active-toc .m3-action-stack.is-singular #m3-back-to-top {
+        display: none !important;
+    }
+
     /* ヒーロー統合目次（hero-toc.js）がヒーロー通過を検知したら、
      * モバイルでも目次FABを解放して追従導線を引き継ぐ。 */
-    body.is-hero-passed .m3-action-stack.is-singular #m3-toc-trigger {
+    body.is-hero-passed .m3-action-stack.is-singular #m3-toc-trigger.toc-ready {
         display: flex !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -275,7 +280,8 @@ body.is-active-toc #m3-sticky-toc {
 }
 
 #m3-sticky-toc.m3-sticky-toc--expressive .m3-toc-icon {
-    display: grid;
+    /* レイヤー外のアイコンフォント CSS に中央配置用の grid を上書きさせない。 */
+    display: grid !important;
     place-items: center;
     width: 40px;
     height: 40px;
@@ -363,6 +369,8 @@ body.is-active-toc #m3-sticky-toc {
         bottom: calc(104px + env(safe-area-inset-bottom)) !important;
         width: auto !important;
         max-height: min(64vh, 560px);
+        /* Safari のブラウザ UI 展開時も見出しを画面内に収める。 */
+        max-height: min(64svh, 560px, calc(100svh - 120px - env(safe-area-inset-bottom)));
         transform-origin: bottom right;
     }
 
@@ -533,15 +541,15 @@ body.is-active-toc #m3-sticky-toc {
 
 /* ===== Sticky FAB Production Color Lock ===== */
 .m3-action-stack .m3-fab {
-    background-color: var(--md-sys-color-surface-container-low) !important;
-    color: color-mix(in srgb, var(--node-article-accent, #FF9900) 42%, var(--md-sys-color-on-surface)) !important;
-    border: 1px solid color-mix(in srgb, var(--node-article-accent, #FF9900) 34%, var(--md-sys-color-outline-variant)) !important;
-    box-shadow: var(--m3-elevation-2);
+    background-color: var(--node-fab-background, var(--md-sys-color-surface-container-low)) !important;
+    color: var(--node-fab-color, color-mix(in srgb, var(--node-article-accent, #FF9900) 42%, var(--md-sys-color-on-surface))) !important;
+    border: var(--node-fab-border, 1px solid color-mix(in srgb, var(--node-article-accent, #FF9900) 34%, var(--md-sys-color-outline-variant))) !important;
+    box-shadow: var(--node-fab-shadow, var(--m3-elevation-2));
 }
 
 .m3-action-stack .m3-fab:hover {
-    background-color: color-mix(in srgb, var(--node-article-accent-container, #fedcbe) 24%, var(--md-sys-color-surface-container-low)) !important;
-    box-shadow: var(--m3-elevation-2);
+    background-color: var(--node-fab-hover-background, color-mix(in srgb, var(--node-article-accent-container, #fedcbe) 24%, var(--md-sys-color-surface-container-low))) !important;
+    box-shadow: var(--node-fab-hover-shadow, var(--m3-elevation-2));
     filter: none;
     transform: scale(1);
 }

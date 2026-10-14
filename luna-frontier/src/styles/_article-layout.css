@@ -168,6 +168,17 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
  * PC: 2 カラム（§25）
  * --------------------------------------------------------------------- */
 @media (min-width: 1024px) {
+	/* 横はみ出しを抑えつつ、viewport への sticky を妨げる scroll container を作らない。 */
+	body.lf-theme.single-post,
+	body.lf-theme.single-post .m3-page-container {
+		overflow-x: clip;
+		overflow-y: visible;
+	}
+
+	body.lf-theme.single-post .m3-page-container {
+		display: flow-root;
+	}
+
 	body.lf-theme.single-post .m3-article {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
@@ -195,17 +206,32 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	body.lf-theme.single-post .m3-article > .lf-reading-aside {
 		grid-column: 2;
 		grid-row: 2;
+		align-self: stretch;
 		margin-block: 0;
 	}
 
 	/* Sticky にするのは TOC だけ（§26）。他のブロックは普通に流す。 */
 	body.lf-theme.single-post .lf-aside-block--toc {
 		position: sticky;
-		/* 固定ヘッダーぶんのオフセット */
-		inset-block-start: calc(64px + var(--lf-space-s));
-		max-block-size: calc(100vh - 64px - var(--lf-space-xl));
+		/* 固定ヘッダー・safe area・管理バーを避ける。 */
+		--lf-toc-offset: calc(64px + var(--safe-area-top, 0px) + var(--wp-admin-bar-offset, 0px));
+		inset-block-start: calc(var(--lf-toc-offset) + var(--lf-space-s));
+		max-block-size: calc(100vh - var(--lf-toc-offset) - var(--lf-space-xl));
+		flex-shrink: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+}
+
+/* Luna 移行前（537de1ca）の目次ボタン配色。寸法・開閉・safe area は親を継承する。 */
+@media (max-width: 1023px) {
+	body.lf-theme #m3-toc-trigger {
+		--node-fab-background: #FF9900;
+		--node-fab-color: #ffffff;
+		--node-fab-border: none;
+		--node-fab-shadow: var(--m3-elevation-3);
+		--node-fab-hover-background: #e68a00;
+		--node-fab-hover-shadow: var(--m3-elevation-4);
 	}
 }
 

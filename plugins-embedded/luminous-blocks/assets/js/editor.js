@@ -597,7 +597,7 @@
 			);
 		}
 
-		var NOTICE_ALLOWED = [ 'core/paragraph', 'core/list', 'core/heading', 'core/image', 'core/quote', 'core/table', 'core/buttons' ];
+		var NOTICE_ALLOWED = [ 'core/paragraph', 'core/list', 'core/heading', 'core/image', 'core/quote', 'core/table', 'core/buttons', 'node-library/blog-card' ];
 		var NOTICE_TEMPLATE = [ [ 'core/paragraph', {} ] ];
 
 		// PHP 側の register_block_type がサーバー登録するため、

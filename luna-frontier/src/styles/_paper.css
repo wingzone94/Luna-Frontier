@@ -45,16 +45,38 @@ body.lf-theme .m3-inline-toc {
 
 /* 記事本文の Paper。影ではなく面と罫で紙を表現する。 */
 body.lf-theme .m3-article__body {
+	--lf-article-inset: var(--lf-space-m);
 	background: var(--lf-paper);
 	box-shadow: none;
 	border: 1px solid var(--lf-rule);
-	border-inline: 0;
+	padding: var(--lf-article-inset);
+}
+
+@media (max-width: 600px) {
+	body.lf-theme .m3-article__body {
+		--lf-article-inset: var(--lf-space-s);
+	}
 }
 
 /* 画像・図版・埋め込みは本文の紙に収める。角丸は極小に留める。 */
 body.lf-theme .m3-article__body :is(img, figure, iframe, video, table) {
 	border-radius: var(--lf-shape-paper-inner);
 	max-inline-size: 100%;
+}
+
+/* 通常の画像・表は従来の幅を保ち、文章だけを Paper の内側へ寄せる。 */
+body.lf-theme .m3-article__body > :is(figure.wp-block-image, figure.wp-block-table):not(.alignleft, .alignright, .aligncenter, .alignwide, .alignfull) {
+	margin-inline: calc(-1 * var(--lf-article-inset));
+	inline-size: calc(100% + 2 * var(--lf-article-inset));
+	max-inline-size: none;
+	max-width: none;
+}
+
+/* 親の components レイヤーが表へ付ける max-width: 100% !important を解除する。 */
+@layer components {
+	body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignleft, .alignright, .aligncenter, .alignwide, .alignfull) {
+		max-width: none !important;
+	}
 }
 
 /* ---------------------------------------------------------------------

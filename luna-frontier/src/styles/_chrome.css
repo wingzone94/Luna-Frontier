@@ -320,7 +320,15 @@ body.lf-theme .lf-footer__copyright {
 	color: var(--lf-on-surface-secondary);
 }
 
-/* パンくずは控えめな一体型のナビゲーションとして表示する。 */
+/* パンくずは控えめな一体型のナビゲーションとして表示する。
+   記事全体（.m3-article）と同じ最大幅・左右中央に揃え、モバイルでも適切な余白を確保する。 */
+body.lf-theme .m3-breadcrumbs {
+	box-sizing: border-box;
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding-inline: var(--lf-gutter);
+}
+
 body.lf-theme .m3-breadcrumbs__list {
 	box-sizing: border-box;
 	max-inline-size: 100%;

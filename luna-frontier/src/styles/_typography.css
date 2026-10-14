@@ -92,7 +92,7 @@ body.lf-theme .m3-article__body {
 body.lf-theme .m3-article__body > p,
 body.lf-theme .m3-article__body > ul,
 body.lf-theme .m3-article__body > ol,
-body.lf-theme .m3-article__body > blockquote {
+body.lf-theme .m3-article__body > blockquote:not(.m3-notice) {
 	max-inline-size: var(--lf-measure);
 }
 
@@ -106,7 +106,7 @@ body.lf-theme .m3-article__body li {
  * 引用の面は本文と同じ Paper に戻し、左のブランド線だけで区切る。
  * 背景色で段差を作ると本文中でグレーの塊に見え、Luna の紙面感が崩れる。
  * --------------------------------------------------------------------- */
-body.lf-theme .m3-article__body blockquote {
+body.lf-theme .m3-article__body blockquote:not(.m3-notice) {
 	background-color: var(--lf-paper);
 	border-inline-start: 3px solid var(--lf-brand);
 	border-radius: var(--lf-shape-paper);
@@ -134,12 +134,12 @@ body.lf-theme .m3-article__body .m3-blogcard {
  * 親テーマの「文字幅ぶんだけ太い下線 + fit-content」をやめ、
  * Paper に合う階層表現（下罫線 / 左のアクセント / タイポグラフィ）へ置き換える。
  * --------------------------------------------------------------------- */
-body.lf-theme .m3-article__body h1,
-body.lf-theme .m3-article__body h2,
-body.lf-theme .m3-article__body h3,
-body.lf-theme .m3-article__body h4:not(.m3-blogcard__title),
-body.lf-theme .m3-article__body h5,
-body.lf-theme .m3-article__body h6 {
+body.lf-theme .m3-article__body h1:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h3:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h4:not(.m3-blogcard__title):not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h5:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h6:not(:where(.m3-notice *)) {
 	font-family: var(--font-heading), sans-serif;
 	display: block;
 	width: auto;
@@ -163,9 +163,9 @@ body.lf-theme .m3-article__body h6 {
  * 「縦 + 下線」の二重装飾を避ける。線色と線幅の両方を H2 > H3 > H4 で
  * 段階化し、見出しレベルの差を明確にする。
  */
-body.lf-theme .m3-article__body h2,
-body.lf-theme .m3-article__body h3,
-body.lf-theme .m3-article__body h4:not(.m3-blogcard__title) {
+body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h3:not(:where(.m3-notice *)),
+body.lf-theme .m3-article__body h4:not(.m3-blogcard__title):not(:where(.m3-notice *)) {
 	--lf-heading-line-h2: var(--lf-brand);
 	--lf-heading-line-h3: color-mix(in srgb, var(--lf-brand) 72%, transparent);
 	--lf-heading-line-h4: color-mix(in srgb, var(--lf-brand) 48%, transparent);
@@ -174,7 +174,7 @@ body.lf-theme .m3-article__body h4:not(.m3-blogcard__title) {
 	position: relative;
 }
 
-body.lf-theme .m3-article__body h2::before {
+body.lf-theme .m3-article__body h2:not(:where(.m3-notice *))::before {
 	content: "";
 	position: absolute;
 	inset-inline-start: 0;
@@ -185,7 +185,7 @@ body.lf-theme .m3-article__body h2::before {
 }
 
 /* H2: 大区切り。埋め込みの既存寸法を保ち、本文見出しだけを強調する。 */
-body.lf-theme .m3-article__body h2 {
+body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) {
 	--lf-heading-rule-length: clamp(5.5rem, 18%, 9rem);
 	--lf-heading-rule-weight: 4px;
 
@@ -199,7 +199,7 @@ body.lf-theme .m3-article__body h2 {
 		font-size: clamp(1.875rem, 1.65rem + 1vw, 2.5rem);
 		line-height: 1.4;
 		overflow-wrap: anywhere;
-		margin-block-end: var(--lf-space-s);
+		margin-block-end: var(--lf-space-m);
 		border-block-end: 0.3125rem solid var(--lf-heading-line-h2);
 
 		&::before {
@@ -212,8 +212,8 @@ body.lf-theme .m3-article__body h2 {
 	}
 }
 
-body.lf-theme .m3-article__body h3::before,
-body.lf-theme .m3-article__body h4:not(.m3-blogcard__title)::before {
+body.lf-theme .m3-article__body h3:not(:where(.m3-notice *))::before,
+body.lf-theme .m3-article__body h4:not(.m3-blogcard__title):not(:where(.m3-notice *))::before {
 	content: "";
 	position: absolute;
 	inset-inline-start: 0;
@@ -224,14 +224,14 @@ body.lf-theme .m3-article__body h4:not(.m3-blogcard__title)::before {
 }
 
 /* H3: 中区切り。縦線だけで本文のリズムを軽く分ける。 */
-body.lf-theme .m3-article__body h3 {
+body.lf-theme .m3-article__body h3:not(:where(.m3-notice *)) {
 	--lf-heading-rail-width: 3px;
 	--lf-heading-rail-height: 1.55em;
 	--lf-heading-rail-color: var(--lf-heading-line-h3);
 
 	font-size: var(--md-sys-typescale-headline-medium-size);
 	font-weight: 700;
-	margin: var(--lf-space-xl) 0 var(--lf-space-s);
+	margin: var(--lf-space-xl) 0 var(--lf-space-m);
 	padding-block-start: 0;
 	padding-inline-start: var(--lf-space-s);
 	border-inline-start: 0;
@@ -249,14 +249,14 @@ body.lf-theme .m3-article__body h3 {
 }
 
 /* H4: 最小のアクセント。H3 より細く薄い縦線だけを持つ。 */
-body.lf-theme .m3-article__body h4:not(.m3-blogcard__title) {
+body.lf-theme .m3-article__body h4:not(.m3-blogcard__title):not(:where(.m3-notice *)) {
 	--lf-heading-rail-width: 2px;
 	--lf-heading-rail-height: 1.2em;
 	--lf-heading-rail-color: var(--lf-heading-line-h4);
 
 	font-size: var(--md-sys-typescale-headline-small-size);
 	font-weight: 700;
-	margin: var(--lf-space-l) 0 var(--lf-space-2xs);
+	margin: var(--lf-space-l) 0 var(--lf-space-s);
 	padding-inline-start: var(--lf-space-xs);
 	color: var(--lf-on-surface-secondary);
 
@@ -281,6 +281,7 @@ body.lf-theme.single-post .m3-article__body :is(h2, h3, h4):not(:where([class*="
 		border-block-end: 0;
 		border-inline-start: 4px solid var(--lf-brand);
 		padding-inline-start: var(--lf-space-s);
+		margin-block-end: var(--lf-space-m);
 
 		&::before {
 			content: none;
@@ -308,7 +309,7 @@ body.lf-theme.single-post .m3-article__body :is(h2, h3, h4):not(:where([class*="
 	}
 }
 
-body.lf-theme .m3-article__body h5 {
+body.lf-theme .m3-article__body h5:not(:where(.m3-notice *)) {
 	font-size: var(--lf-text-m);
 	font-weight: 700;
 	margin: var(--lf-space-m) 0 var(--lf-space-2xs);
@@ -316,7 +317,7 @@ body.lf-theme .m3-article__body h5 {
 	color: var(--lf-on-surface-secondary);
 }
 
-body.lf-theme .m3-article__body h6 {
+body.lf-theme .m3-article__body h6:not(:where(.m3-notice *)) {
 	font-size: var(--lf-text-base);
 	font-weight: 700;
 	margin: var(--lf-space-m) 0 var(--lf-space-2xs);
@@ -345,10 +346,10 @@ body.lf-theme .lf-toc__link.lf-toc__link--flash {
 }
 
 /* 見出しが連続する場合は上余白を詰める。 */
-body.lf-theme .m3-article__body h2 + h3,
-body.lf-theme .m3-article__body h3 + h4:not(.m3-blogcard__title),
-body.lf-theme .m3-article__body h4 + h5,
-body.lf-theme .m3-article__body h5 + h6 {
+body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) + h3,
+body.lf-theme .m3-article__body h3:not(:where(.m3-notice *)) + h4:not(.m3-blogcard__title),
+body.lf-theme .m3-article__body h4:not(:where(.m3-notice *)) + h5,
+body.lf-theme .m3-article__body h5:not(:where(.m3-notice *)) + h6 {
 	margin-block-start: var(--lf-space-s);
 }
 
