@@ -71,7 +71,7 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 										<?php if ( $fallback_mobile ) : ?>
 											<source media="(max-width: 767px)" srcset="<?php echo esc_url( $fallback_mobile ); ?>">
 										<?php endif; ?>
-										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>">
+										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>"<?php echo $is_current ? ' fetchpriority="high"' : ''; ?>>
 									</picture>
 								<?php else : ?>
 									<div class="lf-hero-slide__fallback"></div>
