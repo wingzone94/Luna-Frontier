@@ -3,8 +3,12 @@
     "file": "js/color-tools.DO17jA51.js",
     "name": "color-tools"
   },
-  "_vendor.CoViGN73.js": {
-    "file": "js/vendor.CoViGN73.js",
+  "_gsap-lib.SFc2wnMY.js": {
+    "file": "js/gsap-lib.SFc2wnMY.js",
+    "name": "gsap-lib"
+  },
+  "_vendor.CZWT1Kl-.js": {
+    "file": "js/vendor.CZWT1Kl-.js",
     "name": "vendor",
     "isDynamicEntry": true
   },
@@ -13,6 +17,15 @@
     "name": "editor",
     "src": "src/editor.js",
     "isEntry": true
+  },
+  "src/gsap.js": {
+    "file": "js/gsap.BRNMdhwV.js",
+    "name": "gsap",
+    "src": "src/gsap.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_gsap-lib.SFc2wnMY.js"
+    ]
   },
   "src/luna/luna.js": {
     "file": "js/luna.js",
@@ -36,15 +49,13 @@
     "isEntry": true
   },
   "src/main.js": {
-    "file": "js/main.CM5pfIHJ.js",
+    "file": "js/main.CJrDfkeT.js",
     "name": "main",
     "src": "src/main.js",
     "isEntry": true,
-    "imports": [
-      "_vendor.CoViGN73.js"
-    ],
     "dynamicImports": [
       "src/scripts/search-platforms.js",
+      "src/gsap.js",
       "src/scripts/color-extraction.js",
       "src/scripts/comment-form.js",
       "src/scripts/header-clock.js",
@@ -53,8 +64,9 @@
       "src/scripts/footnotes-popover.js",
       "src/scripts/reading-badge-animation.js",
       "src/scripts/series-toc.js",
+      "src/gsap.js",
       "src/scripts/color-mode.js",
-      "_vendor.CoViGN73.js"
+      "_vendor.CZWT1Kl-.js"
     ]
   },
   "src/scripts/color-extraction.js": {
@@ -67,12 +79,12 @@
     ]
   },
   "src/scripts/color-mode.js": {
-    "file": "js/color-mode.BkdnB88G.js",
+    "file": "js/color-mode.BpMAbzfn.js",
     "name": "color-mode",
     "src": "src/scripts/color-mode.js",
     "isDynamicEntry": true,
     "imports": [
-      "_vendor.CoViGN73.js"
+      "_vendor.CZWT1Kl-.js"
     ]
   },
   "src/scripts/comment-form.js": {
@@ -82,13 +94,12 @@
     "isDynamicEntry": true
   },
   "src/scripts/footnotes-popover.js": {
-    "file": "js/footnotes-popover.gZ6JAcB4.js",
+    "file": "js/footnotes-popover.QjX4BBZR.js",
     "name": "footnotes-popover",
     "src": "src/scripts/footnotes-popover.js",
     "isDynamicEntry": true,
     "imports": [
-      "src/main.js",
-      "_vendor.CoViGN73.js"
+      "src/main.js"
     ]
   },
   "src/scripts/header-clock.js": {

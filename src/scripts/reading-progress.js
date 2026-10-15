@@ -3,11 +3,12 @@
  * Bar at bottom of header.php with shimmer + shatter animation at 100%.
  */
 
-import gsap from 'gsap';
 import { isSinglePostView } from './page-state';
 
 const SHATTER_THRESHOLD = 99.8;
 const RESTORE_THRESHOLD = 99.5;
+
+let gsapApi = null;
 
 function getHeaderOffset() {
     const header = document.querySelector('.m3-header');
@@ -43,14 +44,23 @@ export function initReadingProgress() {
 
         if (progress < RESTORE_THRESHOLD && shattered) {
             shattered = false;
-            gsap.to(progressBar, { opacity: 1, scaleY: 1, duration: 0.3, ease: 'power2.out' });
+            if (gsapApi) {
+                gsapApi.to(progressBar, { opacity: 1, scaleY: 1, duration: 0.3, ease: 'power2.out' });
+            } else {
+                progressBar.style.opacity = '1';
+                progressBar.style.transform = '';
+            }
         }
 
         if (!shattered) {
             progressBar.style.width = `${progress}%`;
         }
 
-        if (progress >= SHATTER_THRESHOLD && !shattered) {
+        if (!gsapApi && progress >= 80) {
+            ensureReadingGsap();
+        }
+
+        if (progress >= SHATTER_THRESHOLD && !shattered && gsapApi) {
             shattered = true;
             playBarShatterAnimation(container, progressBar);
         }
@@ -58,6 +68,23 @@ export function initReadingProgress() {
         if (container) {
             container.classList.toggle('is-visible', scrollY > scrollStart && progress > 0);
         }
+    };
+
+    let gsapRequested = false;
+
+    const ensureReadingGsap = () => {
+        if (gsapRequested) return;
+        gsapRequested = true;
+
+        import('../gsap.js')
+            .then((module) => {
+                gsapApi = module.default;
+                updateProgress();
+            })
+            .catch((error) => {
+                gsapRequested = false;
+                console.error('Initializer failed: reading-progress gsap', error);
+            });
     };
 
     window.addEventListener('scroll', updateProgress, { passive: true });
@@ -76,9 +103,9 @@ export function initReadingProgressSingleOnly() {
 }
 
 function playBarShatterAnimation(parent, bar) {
-    if (!parent || !bar) return;
+    if (!parent || !bar || !gsapApi) return;
 
-    gsap.to(bar, {
+    gsapApi.to(bar, {
         opacity: 0,
         scaleY: 3,
         duration: 0.2,
@@ -102,7 +129,7 @@ function playBarShatterAnimation(parent, bar) {
         const angle = Math.random() * Math.PI + Math.PI;
         const dist = 40 + Math.random() * 120;
 
-        gsap.to(shard, {
+        gsapApi.to(shard, {
             x: Math.cos(angle) * dist,
             y: Math.sin(angle) * dist,
             rotation: Math.random() * 720,
