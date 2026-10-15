@@ -61,6 +61,9 @@ export default defineConfig({
             ) {
               return 'color-tools';
             }
+            if (id.includes('node_modules/gsap')) {
+              return 'gsap-lib';
+            }
             return 'vendor';
           }
         }

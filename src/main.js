@@ -1,5 +1,4 @@
-import './gsap';
-import './scripts/card-animation';
+import { hasBelowFoldCardMotion, initCardAnimations } from './scripts/card-animation';
 import './scripts/share-actions';
 import './scripts/blogcard-actions';
 import { initSearchBar } from './scripts/search-bar';
@@ -87,6 +86,38 @@ const scheduleOptionalInitializers = () => {
 
     window.setTimeout(runOptionalInitializers, 250);
 };
+
+let gsapReady = null;
+
+const ensureGsap = () => {
+    if (!gsapReady) {
+        gsapReady = import('./gsap').then(() => undefined).catch((error) => {
+            gsapReady = null;
+            console.error('Initializer failed: gsap', error);
+            throw error;
+        });
+    }
+
+    return gsapReady;
+};
+
+function scheduleCardMotion() {
+    if (!hasBelowFoldCardMotion()) return;
+
+    ensureGsap()
+        .then(() => initCardAnimations())
+        .catch((error) => {
+            console.error('Initializer failed: initCardAnimations', error);
+        });
+}
+
+function scheduleHeaderClockMotion() {
+    const clock = document.getElementById('m3-header-clock');
+    const isHomePage = document.body.classList.contains('home') || document.body.classList.contains('front-page');
+    if (!clock || isHomePage) return;
+
+    ensureGsap().catch(() => {});
+}
 
 function initColorModeLoader() {
     if (!document.querySelector('#theme-toggle, #m3-theme-toggle-handy, #m3-color-scheme-toggle, .m3-color-scheme-toggle, [data-color-toggle]')) return;
@@ -445,5 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    scheduleCardMotion();
+    scheduleHeaderClockMotion();
     scheduleOptionalInitializers();
 });
