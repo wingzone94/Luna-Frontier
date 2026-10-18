@@ -13,6 +13,7 @@ import { initScrollAnimations } from './scripts/scroll-animations';
 import { initSmartHeader } from './scripts/smart-header';
 import { initKeyboardShortcuts, initOverdriveScroll, initRippleEffect, initTooltips } from './scripts/ui-effects';
 import { initViewSwitcher } from './scripts/view-switcher';
+import { initHomeNewsImages } from './scripts/home-news-images';
 
 const optionalInitializers = [
     {
@@ -442,6 +443,7 @@ function initCategoryOverflowToggle() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const initializers = [
+        initHomeNewsImages,
         initSearchBar,
         initViewSwitcher,
         initColorModeLoader,

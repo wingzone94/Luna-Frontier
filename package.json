@@ -10,7 +10,10 @@
     "verify:icons": "node scripts/verify-icon-classes.mjs",
     "verify:routes": "bun scripts/route-check.mjs",
     "verify:visual": "bun x playwright install chromium && bun scripts/visual-check.mjs",
-    "verify:icon-subset": "bun scripts/verify-icon-subset.mjs"
+    "verify:icon-subset": "bun scripts/verify-icon-subset.mjs",
+    "verify:icon-subset:test": "node --test scripts/verify-icon-subset.test.mjs",
+    "verify:topic-nav-icons:test": "node --test scripts/topic-nav-icons.test.mjs",
+    "verify:icons:tests": "node --test scripts/verify-icon-subset.test.mjs scripts/topic-nav-icons.test.mjs"
   },
   "dependencies": {
     "colorthief": "^2.4.0",

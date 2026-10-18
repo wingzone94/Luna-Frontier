@@ -28,7 +28,13 @@
         copy.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
         copy.setAttribute('aria-hidden', 'true');
         copy.setAttribute('inert', '');
-        copy.querySelectorAll('img').forEach(img => { img.loading = 'eager'; });
+        copy.querySelectorAll('img').forEach(img => {
+          // 端の複製は画面外のスペーサー。先頭画像の eager / fetchpriority を
+          // 複製へ引き継ぐと、別スライドの画像まで初期取得に混ざる。
+          img.removeAttribute('fetchpriority');
+          img.loading = 'lazy';
+          img.decoding = 'async';
+        });
         if (position === 'start') track.prepend(copy);
         else track.append(copy);
         edgeCopies.push(copy);
@@ -54,6 +60,25 @@
 
     const clamp = (value) => ((value % total) + total) % total;
 
+    const loadSlideImage = (slide) => {
+      if (!slide) return;
+      slide.querySelectorAll('[data-lf-src], [data-lf-srcset]').forEach(element => {
+        if (element.tagName === 'IMG') {
+          element.loading = 'eager';
+          element.fetchPriority = 'low';
+        }
+        // Restore source selection before src to avoid an unnecessary fallback fetch.
+        for (const attribute of ['sizes', 'srcset', 'src']) {
+          const value = element.getAttribute(`data-lf-${attribute}`);
+          if (value !== null) {
+            element.setAttribute(attribute, value);
+            element.removeAttribute(`data-lf-${attribute}`);
+          }
+        }
+        element.removeAttribute('data-lf-deferred-image');
+      });
+    };
+
     const offset = (slide) => slide.getBoundingClientRect().left - viewport.getBoundingClientRect().left + viewport.scrollLeft;
     const slideOffset = (i) => offset(slides[i]);
 
@@ -63,11 +88,13 @@
       const behavior = instant || reduceMotion ? 'instant' : 'smooth';
       const target = !instant && total > 1 && nextIndex < 0 ? edgeCopies[0]
         : !instant && total > 1 && nextIndex >= total ? edgeCopies[1] : slides[index];
+      loadSlideImage(target);
       viewport.scrollTo({ left: offset(target), behavior });
       sync();
     };
 
     const sync = () => {
+      [index, clamp(index - 1), clamp(index + 1)].forEach(i => loadSlideImage(slides[i]));
       slides.forEach((slide, i) => {
         const current = i === index;
         slide.classList.toggle('lf-hero-is-current', current);
@@ -303,6 +330,7 @@
 
     goTo(0, { instant: true });
     startTimer();
+    root.setAttribute('data-lf-ready', '');
   };
 
   const boot = () => {
