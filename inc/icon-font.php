@@ -95,6 +95,8 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'media_output',
 			'menu_book',
 			'more_horiz',
+			'movie',
+			'music_note',
 			'newspaper',
 			'open_in_new',
 			'pause_circle',
@@ -106,6 +108,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'qr_code_2',
 			'reorder',
 			'report_problem',
+			'restaurant',
 			'rss_feed',
 			'save',
 			'schedule',
@@ -202,5 +205,24 @@ if ( ! function_exists( 'node_get_icon_font_url' ) ) {
 		$parts[] = 'display=block';
 
 		return 'https://fonts.googleapis.com/css2?' . implode( '&', $parts );
+	}
+}
+
+if ( ! function_exists( 'node_get_text_font_stylesheet_url' ) ) {
+	/**
+	 * 本文・見出し用 Google Fonts CSS の URL。
+	 *
+	 * Manrope / Inter / Noto Sans JP は、静的ウェイトを並べても実体は
+	 * 同じ可変フォント（wght）だった。`wght@400;500;700` だと @font-face が
+	 * ウェイト数だけ重複し、CSS の転送量だけが増える。範囲指定にすると
+	 * フォントファイルの URL は変わらず、CSS の重複列挙だけが落ちる。
+	 *
+	 * 日本語の unicode-range 分割は残す。本文フォントの置き換えもしない。
+	 * `display=swap` は、文字の表示待ちを優先して維持する。
+	 *
+	 * @return string
+	 */
+	function node_get_text_font_stylesheet_url(): string {
+		return 'https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Inter:wght@400..700&family=Noto+Sans+JP:wght@400..700&display=swap';
 	}
 }

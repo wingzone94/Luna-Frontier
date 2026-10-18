@@ -33,7 +33,22 @@ if ( $lf_terms && function_exists( 'node_get_category_label_props' ) && function
 		<?php if ( 'popular' === $lf_variant ) : ?><span class="lf-home-story__rank" aria-label="<?php echo esc_attr( sprintf( __( '%d位', 'node' ), (int) $args['rank'] ) ); ?>"><?php echo (int) $args['rank']; ?></span><?php endif; ?>
 		<div class="lf-home-story__visual">
 			<?php if ( has_post_thumbnail( $lf_story ) ) : ?>
-				<?php echo get_the_post_thumbnail( $lf_story, 'news' === $lf_variant ? 'medium_large' : 'medium', array( 'alt' => '', 'loading' => 'news' === $lf_variant ? 'eager' : 'lazy', 'sizes' => 'news' === $lf_variant ? '(max-width: 600px) 90vw, (max-width: 1000px) 45vw, 23vw' : '(max-width: 600px) 100px, 160px' ) ); ?>
+				<?php
+				$lf_image_attr = array(
+					'alt'     => '',
+					'loading' => 'news' === $lf_variant ? 'eager' : 'lazy',
+					'sizes'   => 'news' === $lf_variant
+						? node_get_home_news_image_sizes()
+						: '(max-width: 600px) 100px, 160px',
+				);
+				// 速報は画面内に入る幅・高さもある。eager を維持し、表示位置に応じた
+				// 優先度の引き上げをブラウザーに任せる。
+				if ( 'news' === $lf_variant ) {
+					$lf_image_attr['fetchpriority'] = 'auto';
+				}
+				$lf_image_html = get_the_post_thumbnail( $lf_story, 'news' === $lf_variant ? 'medium_large' : 'medium', $lf_image_attr );
+				echo 'news' === $lf_variant ? node_defer_image_html( $lf_image_html ) : $lf_image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				?>
 			<?php else : ?>
 				<span class="lf-home-story__placeholder material-symbols-outlined" aria-hidden="true">article</span>
 			<?php endif; ?>

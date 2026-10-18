@@ -97,6 +97,7 @@ require_once NODE_THEME_DIR . '/inc/maintenance.php';
 require_once NODE_THEME_DIR . '/inc/print.php';
 require_once NODE_THEME_DIR . '/inc/hero-slider.php';
 require_once NODE_THEME_DIR . '/inc/icon-font.php';
+require_once NODE_THEME_DIR . '/inc/performance.php';
 
 /**
  * -------------------------------------------------------
@@ -424,15 +425,11 @@ add_filter( 'wp_unique_post_slug', 'luminous_core_auto_post_slug', 10, 4 );
 
 /**
  * -------------------------------------------------------
- * 7. Font Preconnect (存在しないフォントファイルのプリロードは削除)
+ * 7. Font preconnect
+ * Google Fonts と Adobe Fonts の preconnect は header.php で、
+ * スタイルシートより前に出している。wp_head では遅いので重ねない。
  * -------------------------------------------------------
  */
-function node_preload_webfonts() {
-    // Google Fonts preconnect のみ（ローカルフォントファイルは存在しないため削除）
-    echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
-}
-add_action( 'wp_head', 'node_preload_webfonts', 1 );
 
 /**
  * -------------------------------------------------------

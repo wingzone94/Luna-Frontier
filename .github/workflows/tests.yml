@@ -120,3 +120,21 @@ jobs:
           NODE_TEST_DB_PASSWORD: root
           NODE_TEST_WP_CORE_DIR: /tmp/wp-core
         run: vendor/bin/phpunit
+
+  # Node 側の静的検証テスト（アイコンサブセット検証器と topic-nav の名指し回帰テスト）。
+  # phpunit ジョブとは独立で、依存パッケージも要らない（相対 import と repo のファイルだけ）。
+  # 標準コマンド（package.json の verify:icons:tests）をそのまま実行する。
+  node-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run icon / topic-nav unit tests
+        run: npm run verify:icons:tests

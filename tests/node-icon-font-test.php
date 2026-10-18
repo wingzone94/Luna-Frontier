@@ -72,6 +72,25 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'display=block', node_get_icon_font_url() );
 	}
 
+	/**
+	 * 静的ウェイトを並べると、同じ可変フォントの @font-face がウェイト数だけ増える。
+	 * 範囲指定でも 400 / 500 / 700 / 800 は軸の内側に残る。
+	 */
+	public function test_text_font_css_uses_variable_ranges_without_dropping_families() {
+		$url = node_get_text_font_stylesheet_url();
+
+		$this->assertStringStartsWith( 'https://fonts.googleapis.com/css2?', $url );
+		$this->assertStringContainsString( 'family=Manrope:wght@400..800', $url );
+		$this->assertStringContainsString( 'family=Inter:wght@400..700', $url );
+		$this->assertStringContainsString( 'family=Noto+Sans+JP:wght@400..700', $url );
+		$this->assertStringContainsString( 'display=swap', $url );
+		$this->assertStringNotContainsString( 'wght@400;500;700', $url );
+
+		$header = (string) file_get_contents( dirname( __DIR__ ) . '/template-parts/legacy/header.php' );
+		$this->assertStringContainsString( 'node_get_text_font_stylesheet_url()', $header );
+		$this->assertStringNotContainsString( 'wght@400;500;700', $header );
+	}
+
 	public function test_filter_can_add_icons() {
 		add_filter(
 			'node_icon_font_names',
