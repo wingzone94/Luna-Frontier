@@ -81,8 +81,13 @@ function node_defer_sitekit_sign_in_scripts( array $attributes ): array {
 		return $attributes;
 	}
 
+	// WordPress 6.9 may add this classic type before wp_script_attributes runs.
+	// Keep module/data scripts excluded and preserve the original type attribute.
+	$is_classic_script = empty( $attributes['type'] )
+		|| ( is_string( $attributes['type'] ) && 'text/javascript' === strtolower( trim( $attributes['type'] ) ) );
+
 	if ( 'https://accounts.google.com/gsi/client' === $src ) {
-		$client_deferred = empty( $attributes['async'] ) && empty( $attributes['type'] );
+		$client_deferred = empty( $attributes['async'] ) && $is_classic_script;
 		if ( $client_deferred ) {
 			$attributes['defer'] = true;
 		}
@@ -92,7 +97,7 @@ function node_defer_sitekit_sign_in_scripts( array $attributes ): array {
 	$path = wp_parse_url( $src, PHP_URL_PATH );
 	if ( $client_deferred && isset( $attributes['data-siwg-config'] ) && is_string( $path )
 		&& preg_match( '~/google-site-kit/dist/assets/js/sign-in-with-google(?:-[^/]+)?\.js$~', $path )
-		&& empty( $attributes['async'] ) && empty( $attributes['type'] ) ) {
+		&& empty( $attributes['async'] ) && $is_classic_script ) {
 		$attributes['defer'] = true;
 	}
 

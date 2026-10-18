@@ -92,6 +92,40 @@ class Node_Performance_Test extends WP_UnitTestCase {
 		$this->assertSame( $config + array( 'defer' => true ), node_defer_sitekit_sign_in_scripts( $config ) );
 	}
 
+	public function test_wordpress_classic_script_type_is_deferred_without_removing_type() {
+		$client = array( 'src' => 'https://accounts.google.com/gsi/client', 'type' => 'text/javascript' );
+		$this->assertSame( $client + array( 'defer' => true ), node_defer_sitekit_sign_in_scripts( $client ) );
+		$config = $this->bootstrap_attributes() + array( 'type' => 'text/javascript' );
+		$this->assertSame( $config + array( 'defer' => true ), node_defer_sitekit_sign_in_scripts( $config ) );
+		$tag = wp_get_script_tag( $client );
+		$this->assertStringContainsString( 'type="text/javascript"', $tag );
+		$this->assertStringContainsString( ' defer', $tag );
+	}
+
+	public function test_non_classic_client_types_do_not_defer_either_script() {
+		foreach ( array( 'module', 'application/ld+json', 'application/json' ) as $type ) {
+			$client = array( 'src' => 'https://accounts.google.com/gsi/client', 'type' => $type );
+			$this->assertSame( $client, node_defer_sitekit_sign_in_scripts( $client ) );
+			$config = $this->bootstrap_attributes();
+			$this->assertSame( $config, node_defer_sitekit_sign_in_scripts( $config ) );
+		}
+	}
+
+	public function test_non_classic_bootstrap_types_remain_unchanged() {
+		node_defer_sitekit_sign_in_scripts( array( 'src' => 'https://accounts.google.com/gsi/client' ) );
+		foreach ( array( 'module', 'application/ld+json', 'application/json' ) as $type ) {
+			$config = $this->bootstrap_attributes() + array( 'type' => $type );
+			$this->assertSame( $config, node_defer_sitekit_sign_in_scripts( $config ) );
+		}
+	}
+
+	public function test_async_classic_client_keeps_its_bootstrap_synchronous() {
+		$client = array( 'src' => 'https://accounts.google.com/gsi/client', 'type' => 'text/javascript', 'async' => true );
+		$this->assertSame( $client, node_defer_sitekit_sign_in_scripts( $client ) );
+		$config = $this->bootstrap_attributes() + array( 'type' => 'text/javascript' );
+		$this->assertSame( $config, node_defer_sitekit_sign_in_scripts( $config ) );
+	}
+
 	public function test_async_client_and_its_bootstrap_are_unchanged() {
 		$client = array( 'src' => 'https://accounts.google.com/gsi/client', 'async' => true );
 		$this->assertSame( $client, node_defer_sitekit_sign_in_scripts( $client ) );
