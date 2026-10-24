@@ -87,6 +87,36 @@
     border-radius: inherit !important;
 }
 
+/* Image plugins may wrap thumbnails in a link. Keep that wrapper inside the tile. */
+.m3-blogcard .m3-blogcard__image > a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Scheduled cards show the full title and a landscape thumbnail without stretching. */
+.m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__image {
+    align-self: flex-start;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+}
+
+.m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__image img {
+    object-fit: contain;
+}
+
+.m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__title {
+    display: block;
+    line-clamp: unset;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
 /* ---- Placeholder tile: shown when the page blocks fetching (Cloudflare etc.) so
    the card keeps the same two-column M3 composition as a normal card. ---- */
 .m3-blogcard__image--placeholder {
@@ -172,7 +202,7 @@
     overflow: hidden;
 }
 
-.m3-blogcard__schedule {
+.m3-blogcard .m3-blogcard__schedule {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.6;
@@ -390,6 +420,30 @@
 
     .m3-blogcard__text {
         padding: 0 var(--m3-spacing-xs) var(--m3-spacing-xs);
+    }
+
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__body {
+        display: grid;
+        grid-template-columns: 88px minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__image {
+        width: 88px;
+    }
+
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__text {
+        display: contents;
+    }
+
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__overlay,
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__schedule,
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__footer {
+        grid-column: 1 / -1;
+    }
+
+    .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__image + .m3-blogcard__text .m3-blogcard__overlay {
+        grid-column: 2;
     }
 }
 
