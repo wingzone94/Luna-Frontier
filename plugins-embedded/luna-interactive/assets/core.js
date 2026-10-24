@@ -101,7 +101,24 @@
         }
       }),
     }));
-    return { labels, datasets };
+    const numeric = labels.length > 1 && labels.every((label) =>
+      label.trim() !== "" && Number.isFinite(Number(label))) &&
+      labels.every((label, i) => i === 0 || Number(label) > Number(labels[i - 1]));
+    const values = datasets.flatMap((d) => d.data).filter((v) => v != null);
+    const battery = datasets.length === 1 && /電池残量|バッテリー|battery[_ ]?percent/i.test(datasets[0].label) &&
+      values.length > 0 && values.every((v) => v >= 0 && v <= 100);
+    const low = values.length ? Math.min(0, ...values) : 0;
+    const high = battery ? 100 : values.length ? Math.max(0, ...values) : 1;
+    return {
+      labels, datasets,
+      xTitle: String(header[0] || ""),
+      yTitle: datasets.length === 1 ? datasets[0].label : "",
+      xScale: numeric ? "linear" : "category",
+      xMin: numeric ? Math.min(...labels.map(Number)) : undefined,
+      xMax: numeric ? Math.max(...labels.map(Number)) : undefined,
+      yMin: battery ? 0 : low,
+      yMax: high > low ? high : low + 1,
+    };
   }
   function isoDate(s) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -141,6 +158,7 @@
         return true;
       });
     return {
+      ...spec,
       type: spec.type,
       labels: indices.map((i) => spec.labels[i]),
       datasets: selected.map((j) => ({
@@ -214,11 +232,14 @@
     const dark = !!opt.dark;
     const colors = opt.colors || themeColors(dark);
     const pie = spec.type === "pie";
-    const yMin = finiteOrNull(opt.yMin);
-    const yMax = finiteOrNull(opt.yMax);
+    const yMin = finiteOrNull(opt.yMin ?? spec.yMin);
+    const yMax = finiteOrNull(opt.yMax ?? spec.yMax);
+    const numericX = !pie && spec.xScale === "linear" && spec.labels.every((label) =>
+      String(label).trim() !== "" && Number.isFinite(Number(label)));
     const limited = !pie && (yMin != null || yMax != null);
     const dense = (spec.labels || []).length > 48;
     const yScale = {
+      title: { display: !!spec.yTitle, text: spec.yTitle, color: colors.muted },
       beginAtZero: !limited,
       grace: limited ? 0 : "6%",
       ticks: {
@@ -250,7 +271,7 @@
             label: d.label,
             data: pie
               ? d.data.map((v) => (v == null || v < 0 ? null : v))
-              : d.data,
+              : numericX ? d.data.map((y, index) => ({ x: Number(spec.labels[index]), y })) : d.data,
             sourceData: d.data,
             backgroundColor: sliceColors,
             borderColor: pie ? (opt.plotColor || colors.pointStroke) : color,
@@ -290,7 +311,8 @@
         },
         interaction: {
           mode: "nearest",
-          intersect: true,
+          intersect: !numericX,
+          axis: numericX ? "x" : "xy",
         },
         layout: { padding: pie ? 2 : { top: 12, right: 12, bottom: 4, left: 4 } },
         plugins: {
@@ -315,11 +337,13 @@
             titleMarginBottom: 2,
             callbacks: {
               title(items) {
-                const label = items[0] ? items[0].label : "";
-                return String(label ?? "");
+                const item = items[0];
+                const label = item ? (numericX ? spec.labels[item.dataIndex] : item.label) : "";
+                return (spec.xTitle ? spec.xTitle + ": " : "") + String(label ?? "");
               },
               label(ctx) {
-                const name = ctx.dataset?.label || "";
+                const name = !pie && spec.datasets.length === 1 && spec.yTitle
+                  ? spec.yTitle : ctx.dataset?.label || "";
                 const src = ctx.dataset?.sourceData
                   ? ctx.dataset.sourceData[ctx.dataIndex]
                   : ctx.raw;
@@ -344,6 +368,10 @@
           ? {}
           : {
               x: {
+                type: numericX ? "linear" : "category",
+                ...(numericX && finiteOrNull(spec.xMin) != null ? { min: Number(spec.xMin) } : {}),
+                ...(numericX && finiteOrNull(spec.xMax) != null ? { max: Number(spec.xMax) } : {}),
+                title: { display: !!spec.xTitle, text: spec.xTitle, color: colors.muted },
                 ticks: {
                   color: colors.muted,
                   maxRotation: 0,
@@ -351,6 +379,7 @@
                   autoSkipPadding: 10,
                   maxTicksLimit: (spec.labels || []).length > 14 ? 8 : 12,
                   callback(value) {
+                    if (numericX) return formatAxis(Number(value));
                     const label = this.getLabelForValue
                       ? this.getLabelForValue(value)
                       : value;
