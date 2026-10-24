@@ -80,7 +80,7 @@ add_action(
 
 		error_log( 'Luminous Update: Starting update from ' . $zip_url );
 
-		$temp_file = download_url( $zip_url );
+		$temp_file = download_url( add_query_arg( 'cb', time(), $zip_url ) );
 		if ( is_wp_error( $temp_file ) ) {
 			error_log( 'Luminous Update: Download failed - ' . $temp_file->get_error_message() );
 			wp_send_json_error( 'Download failed: ' . $temp_file->get_error_message() );
