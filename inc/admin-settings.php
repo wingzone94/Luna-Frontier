@@ -379,6 +379,12 @@ function node_render_settings_page() {
                 <button type="button" id="luminous-check-update" class="button button-secondary">アップデートを確認</button>
                 <button type="button" id="luminous-install-update" class="button button-primary" style="display:none;">最新版をインストール</button>
                 
+                <div id="luminous-update-confirmation" hidden role="group" aria-label="テーマ更新の確認" style="margin-top: 16px;">
+                    <p>配信中のビルドでテーマファイルを更新します。更新を開始しますか？</p>
+                    <button type="button" id="luminous-confirm-update" class="button button-primary">更新を開始する</button>
+                    <button type="button" id="luminous-cancel-update" class="button button-secondary">キャンセル</button>
+                </div>
+
                 <div id="update-progress-container" style="display:none; margin-top: 20px;">
                     <div style="width: 100%; background: #eee; border-radius: 10px; height: 10px; overflow: hidden;">
                         <div id="update-progress-bar" style="width: 0%; height: 100%; background: #FF9900; transition: width 0.3s ease;"></div>
@@ -420,6 +426,8 @@ function node_render_settings_page() {
                     var btn = $(this);
                     btn.prop('disabled', true).text('確認中...');
                     $('#update-check-result').html('');
+                    $('#luminous-update-confirmation').prop('hidden', true);
+                    $('#luminous-install-update').hide();
 
                     $.ajax({
                         url: ajaxurl,
@@ -463,11 +471,20 @@ function node_render_settings_page() {
                 });
 
                 $('#luminous-install-update').on('click', function() {
-                    if (!confirm('テーマを最新バージョンに更新しますか？\n(現在のファイルが上書きされます)')) return;
+                    $('#luminous-update-confirmation').prop('hidden', false);
+                    $('#luminous-confirm-update').trigger('focus');
+                });
 
-                    var btn = $(this);
+                $('#luminous-cancel-update').on('click', function() {
+                    $('#luminous-update-confirmation').prop('hidden', true);
+                    $('#luminous-install-update').trigger('focus');
+                });
+
+                $('#luminous-confirm-update').on('click', function() {
+                    $('#luminous-update-confirmation').prop('hidden', true);
+                    var btn = $('#luminous-install-update');
                     btn.prop('disabled', true);
-                    $('#luminous-check-update').hide();
+                    $('#luminous-check-update').prop('disabled', true);
                     $('#update-progress-container').show();
                     
                     updateStatus('最新版のダウンロードを開始しています...', 20);
@@ -489,11 +506,14 @@ function node_render_settings_page() {
                             } else {
                                 updateStatus('エラー: ' + response.data, 0);
                                 btn.prop('disabled', false);
+                                $('#luminous-check-update').prop('disabled', false);
                             }
                         },
-                        error: function() {
-                            updateStatus('インストール中に致命的なエラーが発生しました。', 0);
+                        error: function(xhr) {
+                            var message = xhr.responseJSON && xhr.responseJSON.data;
+                            updateStatus(typeof message === 'string' ? message : '更新結果を取得できませんでした。ページを再読み込みして現在のビルドを確認してください。', 0);
                             btn.prop('disabled', false);
+                            $('#luminous-check-update').prop('disabled', false);
                         }
                     });
                 });
