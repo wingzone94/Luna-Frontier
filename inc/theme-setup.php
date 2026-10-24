@@ -126,6 +126,20 @@ function node_is_valid_theme_update_source( string $dir ): bool {
 }
 
 /**
+ * Compare timestamped release builds; retain compatibility with legacy IDs.
+ */
+function node_is_newer_theme_build( ?string $remote_build, ?string $local_build ): bool {
+	if ( ! $remote_build || $remote_build === $local_build ) {
+		return false;
+	}
+	$pattern = '/^(\d{8}T\d{6}Z)-/';
+	if ( $local_build && preg_match( $pattern, $remote_build, $remote ) && preg_match( $pattern, $local_build, $local ) ) {
+		return strcmp( $remote[1], $local[1] ) > 0;
+	}
+	return true;
+}
+
+/**
  * 展開済みZIPの版とビルドIDを確認する。
  *
  * @return array{version:string,build_id:string}|WP_Error
@@ -146,6 +160,10 @@ function node_validate_theme_update_package( string $source_dir, string $local_v
 	}
 	if ( $version === $local_version && (string) $build['build_id'] === $local_build ) {
 		return new WP_Error( 'same_theme_build', 'このビルドは既にインストールされています。' );
+	}
+
+	if ( $version === $local_version && ! node_is_newer_theme_build( (string) $build['build_id'], $local_build ) ) {
+		return new WP_Error( 'older_theme_build', '現在より古いビルドはインストールできません。' );
 	}
 
 	return array( 'version' => $version, 'build_id' => (string) $build['build_id'] );
