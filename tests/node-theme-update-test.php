@@ -54,6 +54,19 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$this->assertSame( 'new-build', node_validate_theme_update_package( $source, '2.0.0-preview.6', 'old-build' )['build_id'] );
 	}
 
+	public function test_cached_older_build_cannot_trigger_update_or_downgrade(): void {
+		$old = '20261024T093840Z-1e0d61e';
+		$new = '20261024T094728Z-5360029';
+		$this->assertFalse( node_is_newer_theme_build( $old, $new ) );
+		$this->assertFalse( node_is_newer_theme_build( $new, $new ) );
+		$this->assertTrue( node_is_newer_theme_build( $new, $old ) );
+		$this->assertFalse( node_is_newer_theme_build( null, $new ) );
+		$source = $this->create_package( '2.0.1', $old );
+		$result = node_validate_theme_update_package( $source, '2.0.1', $new );
+		$this->assertWPError( $result );
+		$this->assertSame( 'older_theme_build', $result->get_error_code() );
+	}
+
 	public function test_luna_zip_root_is_resolved(): void {
 		$package = $this->create_package( '2.0.0-preview.6', 'preview-build' );
 		$archive = $this->root . '/archive';
