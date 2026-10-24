@@ -172,6 +172,22 @@
     overflow: hidden;
 }
 
+.m3-blogcard__schedule {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--md-sys-color-on-surface-variant);
+    overflow-wrap: anywhere;
+}
+
+.m3-blogcard__schedule > span {
+    display: block;
+}
+
+.m3-blogcard__countdown {
+    font-variant-numeric: tabular-nums;
+}
+
 /* ---- Footer: source (favicon / sitename / badge) + actions ---- */
 .m3-blogcard__footer {
     display: flex;

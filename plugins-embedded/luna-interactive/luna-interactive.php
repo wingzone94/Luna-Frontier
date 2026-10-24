@@ -20,9 +20,11 @@ define( 'LUNA_INTERACTIVE_URL', defined( 'LUNA_INTERACTIVE_EMBEDDED' ) && LUNA_I
 require_once __DIR__ . '/includes/static.php';
 function luna_interactive_attributes() {
  $result = array();
- foreach (array('title'=>'','caption'=>'','source'=>'','sourceUrl'=>'','chartType'=>'bar','mode'=>'dynamic','fileName'=>'','staticUrl'=>'') as $key=>$value) { $result[$key]=array('type'=>'string','default'=>$value); }
+ foreach (array('title'=>'','caption'=>'','source'=>'','sourceUrl'=>'','chartType'=>'bar','mode'=>'dynamic','fileName'=>'','staticUrl'=>'','xTitle'=>'','yTitle'=>'','xScale'=>'category') as $key=>$value) { $result[$key]=array('type'=>'string','default'=>$value); }
+ foreach (array('xMin','xMax','yMin','yMax') as $key) { $result[$key]=array('type'=>'number'); }
  $result['labels']=array('type'=>'array','default'=>array());
  $result['datasets']=array('type'=>'array','default'=>array());
+ $result['allowedModes']=array('type'=>'array','default'=>array('dynamic','static'));
  $result['allowedTypes']=array('type'=>'array','default'=>array('bar','line','pie'));
  $result['height']=array('type'=>'number','default'=>320);
  $result['staticId']=array('type'=>'number','default'=>0);
@@ -33,8 +35,8 @@ function luna_interactive_register_block() {
  $url=LUNA_INTERACTIVE_URL; $v=LUNA_INTERACTIVE_VERSION;
  wp_register_script('luna-interactive-chartjs',$url.'assets/vendor/chart.umd.min.js',array(),'4.4.3',true);
  wp_register_script('luna-interactive-xlsx',$url.'assets/vendor/xlsx.full.min.js',array(),'0.20.3',true);
- wp_register_script('luna-interactive-core',$url.'assets/core.js',array(),$v,true);
- wp_register_script('luna-interactive-editor',$url.'assets/editor.js',array('wp-blocks','wp-element','wp-block-editor','wp-components','wp-data','luna-interactive-chartjs','luna-interactive-xlsx','luna-interactive-core'),$v,true);
+ wp_register_script('luna-interactive-core',$url.'assets/core.js',array(),$v.'.'.filemtime(__DIR__.'/assets/core.js'),true);
+ wp_register_script('luna-interactive-editor',$url.'assets/editor.js',array('wp-blocks','wp-element','wp-block-editor','wp-components','wp-data','luna-interactive-chartjs','luna-interactive-xlsx','luna-interactive-core'),$v.'.'.filemtime(__DIR__.'/assets/editor.js'),true);
  wp_register_script('luna-interactive-view',$url.'assets/view.js',array('luna-interactive-chartjs','luna-interactive-core'),$v,true);
  wp_register_style('luna-interactive-style',$url.'assets/style.css',array(),$v);
  wp_register_style('luna-interactive-editor',$url.'assets/editor.css',array('wp-edit-blocks','luna-interactive-style'),$v);
@@ -49,7 +51,13 @@ function luna_interactive_clean_spec($a) {
   foreach($labels as $j=>$_){$v=$values[$j]??null;$data[]=is_numeric($v)&&is_finite((float)$v)&&abs((float)$v)<=1e15?(float)$v:null;}
   $datasets[]=array('label'=>is_scalar($d['label']??null)?sanitize_text_field((string)$d['label']):'系列 '.($i+1),'data'=>$data);
  }
- return array('type'=>in_array($a['chartType']??'',array('bar','line','pie'),true)?$a['chartType']:'bar','labels'=>$labels,'datasets'=>$datasets);
+ $spec=array('type'=>in_array($a['chartType']??'',array('bar','line','pie'),true)?$a['chartType']:'bar','labels'=>$labels,'datasets'=>$datasets,
+  'xTitle'=>is_scalar($a['xTitle']??null)?sanitize_text_field((string)$a['xTitle']):'',
+  'yTitle'=>is_scalar($a['yTitle']??null)?sanitize_text_field((string)$a['yTitle']):'',
+  'xScale'=>($a['xScale']??'')==='linear'?'linear':'category');
+ foreach(array('xMin','xMax','yMin','yMax') as $key){$v=$a[$key]??null;if(is_numeric($v)&&is_finite((float)$v)&&abs((float)$v)<=1e15)$spec[$key]=(float)$v;}
+ foreach(array('x','y') as $axis){if(isset($spec[$axis.'Min'],$spec[$axis.'Max'])&&$spec[$axis.'Min']>=$spec[$axis.'Max'])unset($spec[$axis.'Min'],$spec[$axis.'Max']);}
+ return $spec;
 }
 function luna_interactive_allowed_types($a) {
  $valid=array('bar','line','pie');
@@ -58,6 +66,13 @@ function luna_interactive_allowed_types($a) {
  $requested=array_filter($requested,'is_string');
  $allowed=array_values(array_intersect($valid,$requested));
  return $allowed?:array('bar');
+}
+function luna_interactive_allowed_modes($a) {
+ $valid=array('dynamic','static');
+ $requested=$a['allowedModes']??$valid;
+ if(!is_array($requested))$requested=$valid;
+ $allowed=array_values(array_intersect($valid,array_filter($requested,'is_string')));
+ return $allowed?:array('dynamic');
 }
 function luna_interactive_icon($name) {
  $icons=array(
@@ -71,27 +86,28 @@ function luna_interactive_icon($name) {
 }
 function luna_interactive_render_chart($a) {
  $spec=luna_interactive_clean_spec($a);$allowed=luna_interactive_allowed_types($a);if(!in_array($spec['type'],$allowed,true))$spec['type']=$allowed[0];
- $title=wp_strip_all_tags($a['title']??'');$caption=wp_strip_all_tags($a['caption']??'');$source=wp_strip_all_tags($a['source']??'');
+ $title=trim(wp_strip_all_tags($a['title']??''));$caption=trim(wp_strip_all_tags($a['caption']??''));$source=trim(wp_strip_all_tags($a['source']??''));
  $id=wp_unique_id('luna-chart-');$title_id=$id.'-title';$caption_id=$id.'-caption';
  $source_url=esc_url($a['sourceUrl']??'',array('http','https'));
- $height=max(200,min(560,(int)($a['height']??320)));$mode=($a['mode']??'')==='static'?'static':'dynamic';
+ $height=max(200,min(560,(int)($a['height']??320)));$modes=luna_interactive_allowed_modes($a);$mode=in_array($a['mode']??'',$modes,true)?$a['mode']:$modes[0];
  $legend=$spec['type']==='pie'?$spec['labels']:array_column($spec['datasets'],'label');
  ob_start(); ?>
  <figure <?php echo get_block_wrapper_attributes(array('class'=>'luna-chart luna-m3-card')); ?> draggable="false" data-luna-copy-protected="true" aria-label="<?php echo esc_attr($title?:'グラフ'); ?>" <?php if($caption): ?>aria-describedby="<?php echo esc_attr($caption_id); ?>"<?php endif; ?> data-luna-type="<?php echo esc_attr($spec['type']); ?>" data-luna-mode="<?php echo esc_attr($mode); ?>" data-luna-spec="<?php echo esc_attr(wp_json_encode($spec)); ?>">
  <figcaption class="luna-header">
- <div class="luna-head">
+ <?php if($title!==''||$caption!==''||$source!==''||$source_url!==''): ?><div class="luna-head">
  <?php if($title): ?><span class="luna-m3-title" id="<?php echo esc_attr($title_id); ?>"><?php echo esc_html($title); ?></span><?php endif; ?>
- <?php if($caption): ?><p class="luna-caption" id="<?php echo esc_attr($caption_id); ?>"><?php echo esc_html($caption); ?></p><?php endif; ?>
+ <?php if($caption): ?><p class="luna-caption" style="white-space:pre-line" id="<?php echo esc_attr($caption_id); ?>"><?php echo esc_html($caption); ?></p><?php endif; ?>
  <?php if($source||$source_url): ?><p class="luna-source">出典: <?php if($source_url): ?><a href="<?php echo $source_url; ?>" rel="noopener noreferrer"><?php echo esc_html($source?:$source_url); ?></a><?php else: echo esc_html($source); endif; ?></p><?php endif; ?>
- </div>
+ </div><?php endif; ?>
  <div class="luna-toolbar<?php echo count($allowed)===1?' luna-toolbar-single':''; ?>" hidden>
  <?php if(count($allowed)>1): ?><div class="luna-segment" role="radiogroup" aria-label="グラフ形式">
  <?php foreach($allowed as $type): $type_label=array('bar'=>'棒グラフ','line'=>'折れ線グラフ','pie'=>'円グラフ')[$type]; ?>
  <button type="button" class="luna-segment-btn" role="radio" data-luna-type="<?php echo esc_attr($type); ?>" aria-label="<?php echo esc_attr($type_label); ?>" title="<?php echo esc_attr($type_label); ?>" aria-checked="<?php echo $spec['type']===$type?'true':'false'; ?>" tabindex="<?php echo $spec['type']===$type?'0':'-1'; ?>"><?php echo luna_interactive_icon($type); ?></button>
  <?php endforeach; ?></div><?php endif; ?>
  <div class="luna-segment" role="radiogroup" aria-label="表示モード">
- <button type="button" class="luna-segment-btn" role="radio" data-luna-view="dynamic" aria-label="動的表示" title="動的表示" aria-checked="<?php echo $mode==='dynamic'?'true':'false'; ?>" tabindex="<?php echo $mode==='dynamic'?'0':'-1'; ?>"><?php echo luna_interactive_icon('dynamic'); ?><span>動的</span></button>
- <button type="button" class="luna-segment-btn" role="radio" data-luna-view="static" aria-label="静的表示" title="静的表示" aria-checked="<?php echo $mode==='static'?'true':'false'; ?>" tabindex="<?php echo $mode==='static'?'0':'-1'; ?>"><?php echo luna_interactive_icon('static'); ?><span>静的</span></button>
+ <?php foreach($modes as $view): $view_label=$view==='static'?'静的':'動的'; ?>
+ <button type="button" class="luna-segment-btn" role="radio" data-luna-view="<?php echo esc_attr($view); ?>" aria-label="<?php echo esc_attr($view_label.'表示'); ?>" title="<?php echo esc_attr($view_label.'表示'); ?>" aria-checked="<?php echo $mode===$view?'true':'false'; ?>" tabindex="<?php echo $mode===$view?'0':'-1'; ?>"><?php echo luna_interactive_icon($view); ?><span><?php echo esc_html($view_label); ?></span></button>
+ <?php endforeach; ?>
  </div>
  </div>
  </figcaption>
