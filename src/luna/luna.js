@@ -322,163 +322,23 @@ function markCurrentTocLink(list, targetId) {
 }
 
 /* ---------------------------------------------------------------------
- * 見出し横の目次（PC）
- *
- * 右カラムの Contents は記事の先頭で止まるので、下の方を読んでいるときに
- * 全体のどこにいるか確かめるには視線を大きく戻す必要があった。
- * 見出しにカーソルを乗せているあいだ、同じ目次をその行の真横に出す。
+ * 本文見出しのダブルクリックで、右カラムの目次を現在地表示にする。
  * --------------------------------------------------------------------- */
-const HEADING_TOC_MIN_WIDTH = 260;
-const HEADING_TOC_GAP = 24;
-const HEADING_TOC_CLOSE_MS = 220;
-
-function buildHeadingTocPanel(sourceToc) {
-  const panel = document.createElement('div');
-  panel.className = 'lf-heading-toc';
-  panel.hidden = false;
-
-  const title = document.createElement('p');
-  title.className = 'lf-heading-toc__title lf-system-label';
-  title.textContent = 'Contents';
-  panel.append(title);
-
-  const list = sourceToc.cloneNode(true);
-  // 複製なので、元の目次と id / 現在地の状態を共有しない。
-  list.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
-  list.querySelectorAll('.lf-toc__link').forEach((link) => {
-    link.classList.remove('is-current', 'lf-toc__link--flash');
-    link.removeAttribute('aria-current');
-  });
-  panel.append(list);
-
-  return { panel, list };
-}
-
 function setupHeadingTocAccess() {
   if (!isSinglePostView()) return;
 
   const article = document.querySelector('.m3-article__body');
-  const sourceToc = document.querySelector('.lf-aside-block--toc .lf-toc');
   if (!article) return;
 
   const media = window.matchMedia(DESKTOP_TOC_MEDIA);
-  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-
-  const headingFromEvent = (event) => {
-    if (!media.matches) return null;
+  article.addEventListener('dblclick', (event) => {
+    if (!media.matches) return;
 
     const heading = event.target.closest(ARTICLE_HEADING_SELECTOR);
-    if (!heading || !article.contains(heading) || heading.closest(HEADING_EXCLUDE_SELECTOR)) return null;
-
-    return heading;
-  };
-
-  // ダブルクリックは従来どおり右カラムの目次を光らせる（タッチでも効く）。
-  article.addEventListener('dblclick', (event) => {
-    const heading = headingFromEvent(event);
-    if (!heading) return;
+    if (!heading || !article.contains(heading) || heading.closest(HEADING_EXCLUDE_SELECTOR)) return;
 
     event.preventDefault();
     revealAsideTocForHeading(heading);
-  });
-
-  if (!sourceToc || !sourceToc.querySelector('.lf-toc__link')) return;
-
-  const { panel, list } = buildHeadingTocPanel(sourceToc);
-  // 見出しの座標を基準に置くので、position: relative な祖先へ入れる。
-  const host = article.offsetParent instanceof HTMLElement ? article.offsetParent : document.body;
-  if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-  host.append(panel);
-
-  let closeTimer = 0;
-  let openFor = null;
-
-  // 出す場所は右カラムと同じ帯なので、開いているあいだは右カラムの
-  // Contents を退かせる。同じ目次が 2 つ重なって見えるのを避ける。
-  const asideBlock = document.querySelector('.lf-aside-block--toc');
-
-  const close = () => {
-    panel.classList.remove('is-open');
-    asideBlock?.classList.remove('is-lf-toc-relocated');
-    openFor = null;
-  };
-
-  const scheduleClose = () => {
-    window.clearTimeout(closeTimer);
-    closeTimer = window.setTimeout(close, HEADING_TOC_CLOSE_MS);
-  };
-
-  const open = (heading) => {
-    window.clearTimeout(closeTimer);
-    if (openFor === heading) return;
-
-    const hostRect = host.getBoundingClientRect();
-    const headingRect = heading.getBoundingClientRect();
-
-    /*
-     * 本文の右隣に置く。右に入りきらない画面では本文の左隣へ回し、
-     * どちらも足りなければ出さない（本文の上に被せて読書を邪魔しない）。
-     */
-    const articleRect = article.getBoundingClientRect();
-    const spaceRight = window.innerWidth - articleRect.right - HEADING_TOC_GAP;
-    const spaceLeft = articleRect.left - HEADING_TOC_GAP;
-
-    let width;
-    let left;
-    if (spaceRight >= HEADING_TOC_MIN_WIDTH) {
-      width = Math.min(320, spaceRight - 8);
-      left = articleRect.right + HEADING_TOC_GAP - hostRect.left;
-    } else if (spaceLeft >= HEADING_TOC_MIN_WIDTH) {
-      width = Math.min(320, spaceLeft - 8);
-      left = articleRect.left - HEADING_TOC_GAP - width - hostRect.left;
-    } else {
-      close();
-      return;
-    }
-
-    panel.style.setProperty('--lf-heading-toc-width', `${Math.round(width)}px`);
-    panel.style.setProperty('--lf-heading-toc-left', `${Math.round(left)}px`);
-    // 見出しの上端に揃える。scrollY を足すのは host が通常フローにあるため。
-    panel.style.setProperty('--lf-heading-toc-top', `${Math.round(headingRect.top - hostRect.top)}px`);
-
-    markCurrentTocLink(list, heading.id);
-    panel.classList.add('is-open');
-    // パネルが右カラムに重なるときだけ退かせる（左に出た場合は重ならない）。
-    const overlapsAside = Boolean(asideBlock)
-      && left + width > asideBlock.getBoundingClientRect().left - hostRect.left;
-    asideBlock?.classList.toggle('is-lf-toc-relocated', overlapsAside);
-    openFor = heading;
-  };
-
-  if (finePointer.matches) {
-    article.addEventListener('mouseover', (event) => {
-      const heading = headingFromEvent(event);
-      if (!heading || heading.contains(event.relatedTarget)) return;
-
-      heading.classList.add('is-lf-toc-anchor');
-      open(heading);
-    });
-
-    article.addEventListener('mouseout', (event) => {
-      const heading = headingFromEvent(event);
-      if (!heading || heading.contains(event.relatedTarget)) return;
-      if (panel.contains(event.relatedTarget)) return;
-
-      scheduleClose();
-    });
-
-    // パネルへカーソルが移ったら閉じない。目次を辿れるようにする。
-    panel.addEventListener('mouseenter', () => window.clearTimeout(closeTimer));
-    panel.addEventListener('mouseleave', scheduleClose);
-  }
-
-  // スクロールで位置が合わなくなるので、そのときは畳む。
-  window.addEventListener('scroll', () => {
-    if (openFor) close();
-  }, { passive: true });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && openFor) close();
   });
 }
 

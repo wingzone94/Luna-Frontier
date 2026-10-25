@@ -7,6 +7,85 @@
 
 class Node_Blogcard_Test extends WP_UnitTestCase {
 
+	public function test_scheduled_pretty_url_renders_notice_without_excerpt_or_navigation(): void {
+		$this->set_permalink_structure( '/%year%/%monthnum%/%postname%/' );
+		$publish_at = time() + 2 * DAY_IN_SECONDS + HOUR_IN_SECONDS;
+		$post_id = self::factory()->post->create( array(
+			'post_status' => 'future',
+			'post_title' => '次回の記事',
+			'post_name' => 'scheduled-card',
+			'post_content' => '公開前の本文を表示しない',
+			'post_date' => wp_date( 'Y-m-d H:i:s', $publish_at ),
+		) );
+		$url = home_url( wp_date( '/Y/m/', $publish_at ) . 'scheduled-card/' );
+		$this->assertSame( $post_id, node_internal_url_to_postid( $url ) );
+		$this->assertSame( 0, (int) url_to_postid( $url ), 'The scoped query filter must be removed.' );
+		$html = node_render_blogcard( $url );
+		$this->assertStringContainsString( '次回の記事', $html );
+		$this->assertStringContainsString( 'この記事は' . wp_date( 'n月j日 G時i分', $publish_at ) . 'に公開されます。', $html );
+		$this->assertStringContainsString( '公開まであと2日', $html );
+		$this->assertStringNotContainsString( '公開前の本文', $html );
+		$this->assertStringNotContainsString( '<a class="m3-blogcard__overlay"', $html );
+		$this->assertStringContainsString( 'data-publish-at=', $html );
+		$this->assertNotNull( node_pre_oembed_internal_result( null, $url, array() ) );
+	}
+
+	public function test_internal_cards_ignore_stale_ogp_cache_and_refresh_deferred_schedules(): void {
+		$post_id = self::factory()->post->create( array(
+			'post_status' => 'future',
+			'post_title' => '予約カード',
+			'post_date' => wp_date( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+		) );
+		$url = get_permalink( $post_id );
+		set_transient( 'node_ogp_' . md5( $url ), array( 'title' => '古いキャッシュ' ), WEEK_IN_SECONDS );
+		$html = node_render_blogcard( $url );
+		$this->assertStringContainsString( '予約カード', $html );
+		$slot = node_blogcard_defer( $html );
+		wp_update_post( array( 'ID' => $post_id, 'post_date' => wp_date( 'Y-m-d H:i:s', time() + 3 * DAY_IN_SECONDS + HOUR_IN_SECONDS ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() + 3 * DAY_IN_SECONDS + HOUR_IN_SECONDS ) ) );
+		$this->assertStringContainsString( '公開まであと3日', node_blogcard_hydrate( $slot ) );
+		wp_update_post( array( 'ID' => $post_id, 'post_status' => 'publish', 'post_date' => wp_date( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ), 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) );
+		$published = node_blogcard_hydrate( $slot );
+		$this->assertStringNotContainsString( 'm3-blogcard__countdown', $published );
+		$this->assertStringContainsString( '<a class="m3-blogcard__overlay"', $published );
+		wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
+		$this->assertSame( '', node_blogcard_hydrate( $slot ) );
+	}
+
+	public function test_internal_cards_do_not_disclose_nonpublic_or_password_protected_posts(): void {
+		foreach ( array( 'draft', 'pending', 'private', 'trash', 'future' ) as $status ) {
+			$post_id = self::factory()->post->create( array(
+				'post_status' => $status,
+				'post_password' => 'future' === $status ? 'secret' : '',
+				'post_date' => wp_date( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+			) );
+			$url = home_url( '/?p=' . $post_id );
+			set_transient( 'node_ogp_' . md5( $url ), array( 'title' => '保存された非公開メタデータ' ), WEEK_IN_SECONDS );
+			$this->assertFalse( node_get_ogp_data( $url ), $status );
+		}
+	}
+
+	public function test_schedule_countdown_rounds_up_and_handles_overdue_publication(): void {
+		$this->assertSame( '公開まであと0時間1分', node_blogcard_countdown( time() + 30 ) );
+		$this->assertSame( '公開まであと1日', node_blogcard_countdown( time() + 25 * HOUR_IN_SECONDS + 61 ) );
+		$this->assertSame( '公開まであと2日', node_blogcard_countdown( time() + 51 * HOUR_IN_SECONDS ) );
+		$this->assertSame( '公開まであと24時間0分', node_blogcard_countdown( time() + DAY_IN_SECONDS ) );
+		$this->assertSame( '公開まであと23時間59分', node_blogcard_countdown( time() + DAY_IN_SECONDS - MINUTE_IN_SECONDS ) );
+		$this->assertSame( '公開準備中です。', node_blogcard_countdown( time() - 60 ) );
+	}
+
+	public function test_internal_nonpost_urls_keep_public_ogp_cards(): void {
+		foreach ( array( home_url( '/' ), home_url( '/category/news/' ) ) as $url ) {
+			$mock = $this->mock_ogp_response( $url, '公開ページのタイトル' );
+			try {
+				$html = node_render_blogcard( $url );
+				$this->assertStringContainsString( '公開ページのタイトル', $html );
+				$this->assertStringNotContainsString( 'm3-blogcard__fallback', $html );
+			} finally {
+				remove_filter( 'pre_http_request', $mock, 10 );
+			}
+		}
+	}
+
 	public function tear_down(): void {
 		delete_option( 'luminous_nexus_amazon_id' );
 		parent::tear_down();

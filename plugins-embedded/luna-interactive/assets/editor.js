@@ -26,12 +26,20 @@
     chartType: { type: "string", default: "bar" },
     allowedTypes: { type: "array", default: ["bar", "line", "pie"] },
     mode: { type: "string", default: "dynamic" },
+    allowedModes: { type: "array", default: ["dynamic", "static"] },
     labels: { type: "array", default: [] },
     datasets: { type: "array", default: [] },
     fileName: { type: "string", default: "" },
     staticUrl: { type: "string", default: "" },
     staticId: { type: "number", default: 0 },
     height: { type: "number", default: 320 },
+    xTitle: { type: "string", default: "" },
+    yTitle: { type: "string", default: "" },
+    xScale: { type: "string", default: "category" },
+    xMin: { type: "number" },
+    xMax: { type: "number" },
+    yMin: { type: "number" },
+    yMax: { type: "number" },
   };
   function Edit({ attributes: a, setAttributes, clientId }) {
     const types = [
@@ -46,6 +54,16 @@
     const initialType = enabled.some(({ value }) => value === a.chartType)
       ? a.chartType
       : enabled[0].value;
+    const viewModes = [
+      { label: "動的", value: "dynamic" },
+      { label: "静的", value: "static" },
+    ];
+    const permittedModes = viewModes.filter(({ value }) =>
+      Array.isArray(a.allowedModes) ? a.allowedModes.includes(value) : true,
+    );
+    const modes = permittedModes.length ? permittedModes : viewModes.slice(0, 1);
+    const initialMode = modes.some(({ value }) => value === a.mode)
+      ? a.mode : modes[0].value;
     const pieAllowed = enabled.some(({ value }) => value === "pie");
     const pieOverflow = pieAllowed && a.datasets.length > G.limits.pieSeries;
     const [error, setError] = useState(""),
@@ -70,7 +88,11 @@
         request.current++;
       };
     }, []);
-    const hasInvalid = Object.values(drafts).some((v) => {
+    const invalidAxes = initialType !== "pie" && ["x", "y"].some((axis) =>
+      (axis === "y" || a.xScale === "linear") &&
+      a[axis + "Min"] != null && a[axis + "Max"] != null &&
+      a[axis + "Min"] >= a[axis + "Max"]);
+    const hasInvalid = invalidAxes || Object.values(drafts).some((v) => {
       try {
         G.number(v);
         return false;
@@ -96,7 +118,7 @@
             explicit === "dark" ||
             (explicit !== "light" &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
-          const spec = { type: initialType, labels: a.labels, datasets: a.datasets };
+          const spec = { ...a, type: initialType };
           const items = a.labels.map((_, i) => i).filter((i) => !hiddenItems.includes(i));
           const series = a.datasets.map((_, i) => i).filter((i) => !hiddenSeries.includes(i));
           const entries = initialType === "pie"
@@ -109,7 +131,7 @@
             const chart = new window.Chart(canvas, G.config({ ...data, type: initialType }, { dark, plotColor }));
             charts.push(chart);
             chart.update("none");
-            if (a.mode === "static") images[index] = canvas.toDataURL("image/webp", 0.95);
+            if (initialMode === "static") images[index] = canvas.toDataURL("image/webp", 0.95);
           });
           setPreviewImages(images);
         }
@@ -119,7 +141,7 @@
       return () => {
         charts.forEach((chart) => chart.destroy());
       };
-    }, [a.labels, a.datasets, initialType, a.height, a.mode, hiddenSeries, hiddenItems]);
+    }, [a.labels, a.datasets, a.xTitle, a.yTitle, a.xScale, a.xMin, a.xMax, a.yMin, a.yMax, initialType, a.height, initialMode, hiddenSeries, hiddenItems]);
     function toggleType(value, checked) {
       if (value === "pie" && checked && a.datasets.length > G.limits.pieSeries) {
         setError("円グラフを許可する場合、系列は5つ以下にしてください。");
@@ -186,14 +208,16 @@
             throw new Error(
               "Excel読み込み機能を開始できません。ページを再読み込みしてください。",
             );
-          const wb = window.XLSX.read(buffer, {
+          // File objects originate in Gutenberg's iframe. Normalize cross-realm
+          // ArrayBuffers before SheetJS performs its instanceof checks.
+          const wb = window.XLSX.read(new Uint8Array(buffer), {
             type: "array",
             cellDates: true,
             sheetRows: G.limits.rows + 2,
           });
+          applyRows(sheetRows(wb.Sheets[wb.SheetNames[0]]), file.name);
           setBook({ wb, name: file.name });
           setSheet(wb.SheetNames[0]);
-          applyRows(sheetRows(wb.Sheets[wb.SheetNames[0]]), file.name);
         } else throw new Error("CSV・XLSX・XLSを選んでください。");
       } catch (err) {
         if (mounted.current) setError(err.message);
@@ -309,13 +333,26 @@
             })),
           ),
           h(SelectControl, {
-            label: "公開時の初期ビュー",
-            help: "閲覧者は動的・静的を切り替えられます。形式の切り替えは表示中だけで、再読み込みすると初期値に戻ります。",
-            value: a.mode,
+            label: "公開できる表示モード",
+            value: modes.length === 2 ? "both" : modes[0].value,
             options: [
-              { label: "動的", value: "dynamic" },
-              { label: "静的", value: "static" },
+              { label: "動的・静的の両方", value: "both" },
+              { label: "動的のみ", value: "dynamic" },
+              { label: "静的のみ", value: "static" },
             ],
+            onChange: (v) => {
+              const allowedModes = v === "both" ? ["dynamic", "static"] : [v];
+              set({ allowedModes, mode: allowedModes.includes(initialMode) ? initialMode : allowedModes[0] });
+            },
+          }),
+          h(SelectControl, {
+            label: "公開時の初期ビュー",
+            help: modes.length === 2
+              ? "閲覧者は動的・静的を切り替えられます。再読み込みすると初期値に戻ります。"
+              : "選択した表示モードだけを公開します。",
+            value: initialMode,
+            options: modes,
+            disabled: modes.length === 1,
             onChange: (v) => set({ mode: v }),
           }),
           h(RangeControl, {
@@ -327,6 +364,26 @@
           }),
           control("出典名", "source"),
           control("出典URL（https://…）", "sourceUrl"),
+        ),
+        h(PanelBody, { title: "軸の設定", initialOpen: true },
+          h("p", null, "ファイル読み込み時に列名と範囲を自動設定します。空欄の範囲は自動です。円グラフには適用されません。"),
+          control("横軸の項目名", "xTitle"),
+          control("縦軸の項目名", "yTitle"),
+          h(SelectControl, {
+            label: "横軸の種類", value: a.xScale,
+            options: [{ label: "項目（等間隔）", value: "category" }, { label: "数値（時間間隔を反映）", value: "linear" }],
+            onChange: (v) => set({ xScale: v }),
+          }),
+          ["xMin", "xMax", "yMin", "yMax"].map((key, index) => h(TextControl, {
+            key, label: ["横軸の最小値", "横軸の最大値", "縦軸の最小値", "縦軸の最大値"][index],
+            type: "number", step: "any", value: a[key] ?? "",
+            disabled: key.startsWith("x") && a.xScale !== "linear",
+            onChange: (v) => {
+              if (v === "") set({ [key]: undefined });
+              else if (Number.isFinite(Number(v))) set({ [key]: Number(v) });
+            },
+          })),
+          invalidAxes && h(Notice, { status: "error", isDismissible: false }, "軸の最小値は最大値より小さくしてください。"),
         ),
       ),
       h(
@@ -352,9 +409,9 @@
             style: initialType === "pie" ? undefined : { height: a.height },
           },
           h("div", { className: "luna-header" },
-            h("div", { className: "luna-head" },
-              h("span", { className: "luna-m3-title" }, a.title || "グラフ"),
-              a.caption && h("p", { className: "luna-caption" }, a.caption)),
+            (a.title.trim() || a.caption.trim()) && h("div", { className: "luna-head" },
+              a.title.trim() && h("span", { className: "luna-m3-title" }, a.title),
+              a.caption.trim() && h("p", { className: "luna-caption", style: { whiteSpace: "pre-line" } }, a.caption)),
           h(
             "div",
             { className: "luna-toolbar", role: "group", "aria-label": "グラフの形式と初期ビュー" },
@@ -366,8 +423,7 @@
             h(
               "div",
               { className: "luna-segment", role: "radiogroup", "aria-label": "公開時の初期ビュー" },
-              segment("動的表示", "dynamic", a.mode, (v) => set({ mode: v }), icon("dynamic")),
-              segment("静的表示", "static", a.mode, (v) => set({ mode: v }), icon("static")),
+              modes.map(({ label, value }) => segment(label + "表示", value, initialMode, (v) => set({ mode: v }), icon(value))),
             ),
           )),
           h(
@@ -382,13 +438,13 @@
                         : h(Fragment, null,
                           h("canvas", {
                             ref: (node) => { pieRefs.current[i] = node; }, role: "img",
-                            "aria-hidden": a.mode === "static" ? "true" : undefined,
+                            "aria-hidden": initialMode === "static" ? "true" : undefined,
                             "aria-label": G.describePie(G.filter({ type: "pie", labels: a.labels, datasets: a.datasets }, {
                               series: [i], items: a.labels.map((_, index) => index).filter((index) => !hiddenItems.includes(index)),
                             }), a.title || "グラフのプレビュー"),
-                            style: a.mode === "static" ? { visibility: "hidden" } : undefined,
+                            style: initialMode === "static" ? { visibility: "hidden" } : undefined,
                           }),
-                          a.mode === "static" && previewImages[i] && h("img", {
+                          initialMode === "static" && previewImages[i] && h("img", {
                             className: "luna-editor-snapshot", src: previewImages[i],
                             alt: G.describePie(G.filter({ type: "pie", labels: a.labels, datasets: a.datasets }, {
                               series: [i], items: a.labels.map((_, index) => index).filter((index) => !hiddenItems.includes(index)),
@@ -401,9 +457,9 @@
                   )))
               : h(Fragment, null, h("canvas", {
                   ref, role: "img", "aria-label": a.title || "グラフのプレビュー",
-                  "aria-hidden": a.mode === "static" ? "true" : undefined,
-                  style: a.mode === "static" ? { visibility: "hidden" } : undefined,
-                }), a.mode === "static" && previewImages[0] && h("img", {
+                  "aria-hidden": initialMode === "static" ? "true" : undefined,
+                  style: initialMode === "static" ? { visibility: "hidden" } : undefined,
+                }), initialMode === "static" && previewImages[0] && h("img", {
                   className: "luna-editor-snapshot", src: previewImages[0], alt: (a.title || "グラフ") + "（静的画像）",
                 })),
           ),

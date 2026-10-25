@@ -138,6 +138,10 @@
   line-height: 1.55;
 }
 
+.luna-caption {
+  overflow-wrap: anywhere;
+}
+
 .luna-source a {
   color: var(--luna-accent);
   text-underline-offset: 3px;

@@ -31,11 +31,10 @@ $lf_news = $lf_news_category instanceof WP_Term ? get_posts( array(
 	'cat' => $lf_news_category->term_id, 'orderby' => array( 'date' => 'DESC', 'ID' => 'DESC' ),
 	'ignore_sticky_posts' => true,
 ) ) : array();
-$lf_popular = defined( 'NODE_HOT_SCORE_META' ) ? get_posts( array(
-	'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => 5, 'ignore_sticky_posts' => true,
-	'meta_key' => NODE_HOT_SCORE_META, 'orderby' => array( 'meta_value_num' => 'DESC', 'date' => 'DESC' ),
-	'meta_query' => array( array( 'key' => NODE_HOT_SCORE_META, 'value' => 0, 'compare' => '>', 'type' => 'NUMERIC' ) ),
-) ) : array();
+$lf_period = isset( $_GET['lf_period'] ) && is_string( $_GET['lf_period'] ) && '30' === wp_unslash( $_GET['lf_period'] ) ? 30 : 7;
+$lf_popular = function_exists( 'node_get_popular_posts_for_period' ) ? node_get_popular_posts_for_period( $lf_period ) : array();
+$lf_popular_url = $lf_selected ? add_query_arg( 'lf_category', $lf_selected, $lf_home_url ) : $lf_home_url;
+$lf_filter_url = add_query_arg( 'lf_period', $lf_period, $lf_home_url );
 
 get_header();
 ?>
@@ -61,9 +60,9 @@ get_header();
 			<div class="lf-home__section-head">
 				<h2 id="lf-latest-title"><?php esc_html_e( '新着記事', 'node' ); ?></h2>
 				<nav class="lf-home__filters" aria-label="新着記事のカテゴリー">
-					<a href="<?php echo esc_url( $lf_home_url . '#latest' ); ?>"<?php echo 0 === $lf_selected ? ' aria-current="page"' : ''; ?>><?php esc_html_e( 'すべて', 'node' ); ?></a>
+					<a href="<?php echo esc_url( $lf_filter_url . '#latest' ); ?>"<?php echo 0 === $lf_selected ? ' aria-current="page"' : ''; ?>><?php esc_html_e( 'すべて', 'node' ); ?></a>
 					<?php foreach ( array_slice( $lf_categories, 0, 4 ) as $lf_category ) : ?>
-					<a href="<?php echo esc_url( add_query_arg( 'lf_category', $lf_category->term_id, $lf_home_url ) . '#latest' ); ?>"<?php echo $lf_selected === $lf_category->term_id ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $lf_category->name ); ?></a>
+					<a href="<?php echo esc_url( add_query_arg( 'lf_category', $lf_category->term_id, $lf_filter_url ) . '#latest' ); ?>"<?php echo $lf_selected === $lf_category->term_id ? ' aria-current="page"' : ''; ?>><?php echo esc_html( $lf_category->name ); ?></a>
 					<?php endforeach; ?>
 				</nav>
 				<a class="lf-home__more" href="<?php echo esc_url( $lf_more_url ); ?>"><?php esc_html_e( 'もっと見る', 'node' ); ?><span aria-hidden="true">→</span></a>
@@ -75,10 +74,14 @@ get_header();
 		</section>
 
 		<aside class="lf-home__aside" aria-label="記事を探す">
-			<section class="lf-home__panel" aria-labelledby="lf-popular-title">
+			<section id="popular" class="lf-home__panel" aria-labelledby="lf-popular-title">
 				<div class="lf-home__section-head">
 					<h2 id="lf-popular-title"><span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span><?php esc_html_e( '人気記事', 'node' ); ?></h2>
-					<span class="lf-home__period"><?php esc_html_e( '過去7日間', 'node' ); ?></span>
+					<nav class="lf-home__period" aria-label="<?php esc_attr_e( '人気記事の集計期間', 'node' ); ?>">
+						<?php foreach ( array( 7 => __( '過去7日間', 'node' ), 30 => __( '過去30日間', 'node' ) ) as $lf_days => $lf_label ) : ?>
+						<a href="<?php echo esc_url( add_query_arg( 'lf_period', $lf_days, $lf_popular_url ) . '#popular' ); ?>"<?php echo $lf_period === $lf_days ? ' aria-current="true"' : ''; ?>><?php if ( $lf_period === $lf_days ) : ?><span aria-hidden="true">✓</span><?php endif; ?><?php echo esc_html( $lf_label ); ?></a>
+						<?php endforeach; ?>
+					</nav>
 				</div>
 				<ol class="lf-home__ranking">
 					<?php foreach ( $lf_popular as $lf_rank => $lf_story ) : ?>

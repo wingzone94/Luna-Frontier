@@ -17,6 +17,31 @@
         document.documentElement.classList.add('has-web-share');
     }
 
+    // Absolute timestamps also keep cached pages accurate. No timer is needed without scheduled cards.
+    const countdowns = [...document.querySelectorAll('.m3-blogcard__countdown[data-publish-at]')];
+    if (countdowns.length) {
+        const updateCountdowns = () => {
+            const now = Date.now();
+            countdowns.forEach((element) => {
+                const remaining = Number(element.dataset.publishAt) * 1000 - now;
+                if (!Number.isFinite(remaining)) return;
+                const minutes = Math.max(0, Math.ceil(remaining / 60000));
+                let text;
+                if (remaining > 86400000) {
+                    text = `公開まであと${Math.floor(remaining / 86400000)}日`;
+                } else if (minutes > 0) {
+                    text = `公開まであと${Math.floor(minutes / 60)}時間${minutes % 60}分`;
+                } else {
+                    text = '公開予定時刻になりました。ページを更新してご確認ください。';
+                }
+                if (element.textContent !== text) element.textContent = text;
+            });
+        };
+        updateCountdowns();
+        window.setInterval(updateCountdowns, 1000);
+        window.addEventListener('pageshow', updateCountdowns);
+    }
+
     const iconResetTimers = new WeakMap();
     let toastTimer = 0;
 

@@ -36,13 +36,76 @@ function node_is_internal_url( string $url ): bool {
  * @return int 投稿 ID（見つからなければ 0）。
  */
 function node_internal_url_to_postid( string $url ): int {
+	if ( ! node_is_internal_url( $url ) ) {
+		return 0;
+	}
 	$post_id = url_to_postid( $url );
 	if ( ! $post_id ) {
 		// home 側のスキームへ揃えて再試行（http/https 混在対策）。
 		$post_id = url_to_postid( set_url_scheme( $url ) );
 	}
+	if ( ! $post_id ) {
+		// 通常の公開クエリは変更せず、この URL 解決中だけ予約投稿も検索する。
+		$include_scheduled = static function ( WP_Query $query ): void {
+			$query->set( 'post_status', array( 'publish', 'future' ) );
+		};
+		add_action( 'pre_get_posts', $include_scheduled );
+		try {
+			$post_id = url_to_postid( set_url_scheme( $url ) );
+		} finally {
+			remove_action( 'pre_get_posts', $include_scheduled );
+		}
+	}
 
 	return (int) $post_id;
+}
+
+/** 公開済み記事、または予約記事のカード用メタデータを毎回最新状態から取得する。 */
+function node_blogcard_internal_ogp( string $url ) {
+	$post_id = node_internal_url_to_postid( $url );
+	if ( ! $post_id ) {
+		return false;
+	}
+	$post = get_post( $post_id );
+	if ( ! $post instanceof WP_Post || '' !== $post->post_password
+		|| ! is_post_type_viewable( $post->post_type )
+		|| ! in_array( $post->post_status, array( 'publish', 'future' ), true ) ) {
+		return false;
+	}
+
+	$is_scheduled = 'future' === $post->post_status;
+	return array(
+		'title'        => get_the_title( $post ),
+		'description'  => $is_scheduled ? '' : get_the_excerpt( $post ),
+		'image'        => get_the_post_thumbnail_url( $post, 'large' ) ?: '',
+		'site_name'    => get_bloginfo( 'name' ),
+		'is_internal'  => true,
+		'favicon'      => get_site_icon_url( 32 ) ?: '',
+		'scheduled_id' => $is_scheduled ? $post->ID : 0,
+		'publish_at'   => $is_scheduled ? (int) get_post_timestamp( $post ) : 0,
+	);
+}
+
+/** 24時間超は日数のみ。24時間以下は分未満を切り上げる。 */
+function node_blogcard_countdown( int $publish_at ): string {
+	$remaining = $publish_at - time();
+	if ( $remaining <= 0 ) {
+		return __( '公開準備中です。', 'node' );
+	}
+	if ( $remaining > DAY_IN_SECONDS ) {
+		return sprintf(
+			/* translators: %d: whole days until publication. */
+			__( '公開まであと%d日', 'node' ),
+			intdiv( $remaining, DAY_IN_SECONDS )
+		);
+	}
+	$minutes = (int) ceil( $remaining / MINUTE_IN_SECONDS );
+	return sprintf(
+		/* translators: 1: hours until publication, 2: remaining minutes. */
+		__( '公開まであと%1$d時間%2$d分', 'node' ),
+		intdiv( $minutes, 60 ),
+		$minutes % 60
+	);
 }
 
 /**
@@ -56,9 +119,15 @@ function node_get_ogp_data( string $url ) {
 	if ( empty( $url ) ) {
 		return false;
 	}
+	// 投稿の公開状態を毎回確認し、トップ・アーカイブ等の非投稿 URL は公開 OGP を取得する。
+	$is_internal = node_is_internal_url( $url );
+	if ( $is_internal && node_internal_url_to_postid( $url ) ) {
+		return node_blogcard_internal_ogp( $url );
+	}
 
 	$transient_key = 'node_ogp_' . md5( $url );
-	$cached        = get_transient( $transient_key );
+	// 非公開化されて URL 解決できなくなった投稿の旧メタデータも再利用しない。
+	$cached        = $is_internal ? false : get_transient( $transient_key );
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
@@ -76,20 +145,6 @@ function node_get_ogp_data( string $url ) {
 		'site_name'   => '',
 		'is_internal' => false,
 	);
-
-	if ( node_is_internal_url( $url ) ) {
-		$post_id = node_internal_url_to_postid( $url );
-		if ( $post_id ) {
-			$ogp['title']       = get_the_title( $post_id );
-			$ogp['description'] = get_the_excerpt( $post_id );
-			$ogp['image']       = get_the_post_thumbnail_url( $post_id, 'large' ) ?: '';
-			$ogp['site_name']   = get_bloginfo( 'name' );
-			$ogp['is_internal'] = true;
-			$ogp['favicon']     = get_site_icon_url( 32 ) ?: '';
-			set_transient( $transient_key, $ogp, WEEK_IN_SECONDS );
-			return $ogp;
-		}
-	}
 
 	$response = wp_safe_remote_get(
 		$url,
@@ -444,6 +499,7 @@ function node_blogcard_markup( array $ogp, string $url ): string {
 	}
 
 	$is_internal = ! empty( $ogp['is_internal'] );
+	$is_scheduled = $is_internal && ! empty( $ogp['scheduled_id'] ) && ! empty( $ogp['publish_at'] );
 	$modifier    = $is_internal ? 'm3-blogcard--internal' : 'm3-blogcard--external';
 	if ( ! empty( $ogp['store'] ) ) {
 		// ゲームストアの商品ページは、プラットフォーム色のアクセントとストア名バッジを付ける。
@@ -478,7 +534,7 @@ function node_blogcard_markup( array $ogp, string $url ): string {
 	// <a> の中にインタラクティブ要素を入れ子にせずに独立してクリックできるようにする。
 	ob_start();
 	?>
-	<div class="m3-blogcard-wrap">
+	<div class="m3-blogcard-wrap"<?php if ( $is_scheduled ) : ?> data-node-scheduled-post="<?php echo esc_attr( (string) $ogp['scheduled_id'] ); ?>"<?php endif; ?>>
 		<div class="m3-blogcard m3-reveal <?php echo esc_attr( $modifier ); ?>">
 			<div class="m3-blogcard__body">
 				<?php if ( ! empty( $ogp['image'] ) ) : ?>
@@ -492,15 +548,27 @@ function node_blogcard_markup( array $ogp, string $url ): string {
 					</div>
 				<?php endif; ?>
 				<div class="m3-blogcard__text">
+					<?php if ( $is_scheduled ) : ?>
+					<span class="m3-blogcard__overlay">
+					<?php else : ?>
 					<a class="m3-blogcard__overlay" href="<?php echo esc_url( $url ); ?>"
 					   aria-label="<?php echo esc_attr( $aria_label ); ?>"
 					   <?php echo $is_internal ? '' : 'target="_blank" rel="noopener noreferrer"'; ?>>
+					<?php endif; ?>
 						<span class="m3-blogcard__title"><?php echo esc_html( $title ); ?></span>
 						<?php if ( ! $is_internal ) : ?>
 							<span class="m3-blogcard__external-icon material-symbols-outlined" aria-hidden="true">open_in_new</span>
 						<?php endif; ?>
-					</a>
-					<?php if ( ! empty( $ogp['description'] ) ) : ?>
+					<?php echo $is_scheduled ? '</span>' : '</a>'; ?>
+					<?php if ( $is_scheduled ) : ?>
+					<p class="m3-blogcard__schedule"><span><?php
+						echo esc_html( sprintf(
+							/* translators: %s: scheduled publication date and time in the site timezone. */
+							__( 'この記事は%sに公開されます。', 'node' ),
+							wp_date( 'n月j日 G時i分', (int) $ogp['publish_at'] )
+						) );
+					?></span><span class="m3-blogcard__countdown" data-publish-at="<?php echo esc_attr( (string) $ogp['publish_at'] ); ?>"><?php echo esc_html( node_blogcard_countdown( (int) $ogp['publish_at'] ) ); ?></span></p>
+					<?php elseif ( ! empty( $ogp['description'] ) ) : ?>
 						<p class="m3-blogcard__description"><?php echo esc_html( wp_trim_words( $ogp['description'], 40 ) ); ?></p>
 					<?php endif; ?>
 					<div class="m3-blogcard__footer">
@@ -890,6 +958,14 @@ function node_blogcard_hydrate( string $content ): string {
 		'#<div class="node-blogcard-slot">([A-Za-z0-9+/=]+)</div>#',
 		static function ( array $m ): string {
 			$decoded = base64_decode( $m[1], true );
+			// oEmbed の保存済みプレースホルダでも予定変更・公開・下書きへの戻しを反映する。
+			if ( false !== $decoded && preg_match( '/data-node-scheduled-post="([0-9]+)"/', $decoded, $scheduled ) ) {
+				$post = get_post( (int) $scheduled[1] );
+				if ( ! $post || ! in_array( $post->post_status, array( 'future', 'publish' ), true ) || '' !== $post->post_password ) {
+					return '';
+				}
+				return node_render_blogcard( get_permalink( $post ) );
+			}
 			return false === $decoded ? '' : $decoded;
 		},
 		$content

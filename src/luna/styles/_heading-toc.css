@@ -1,80 +1,10 @@
-/**
- * Luna Frontier 2.0 / SkyAlow — 見出し横の目次
- *
- * PC で本文の見出しにカーソルを乗せると、その見出しの真横に目次を出す。
- * 右カラムの Contents は記事の先頭で止まっているので、下の方の見出しを
- * 読んでいるときに「今どこか」を確かめるには視線を大きく戻す必要があった。
- * 読んでいる行のすぐ横に同じ地図を出して、その往復を無くす。
- *
- * 位置は JS が --lf-heading-toc-top / --lf-heading-toc-left に書く。
- * 出す条件（ポインタが精密・十分な横幅がある）も JS 側が持つ。
- */
+/** Luna Frontier — 右カラムの目次の配色と装飾。 */
 
-body.lf-theme .lf-heading-toc {
-	position: absolute;
-	top: var(--lf-heading-toc-top, 0px);
-	left: var(--lf-heading-toc-left, 0px);
-	inline-size: var(--lf-heading-toc-width, 260px);
-	max-block-size: min(60vh, 420px);
-	overflow-y: auto;
-	overscroll-behavior: contain;
-
-	margin: 0;
-	padding: var(--lf-space-2xs) var(--lf-space-xs) var(--lf-space-xs);
-	background: color-mix(in srgb, var(--lf-brand) 8%, var(--lf-paper));
-	border: 1px solid color-mix(in srgb, var(--lf-brand) 36%, var(--lf-paper));
-	border-radius: var(--lf-shape-paper);
-	font-size: var(--lf-text-s);
-
-	/* 本文の上に重なるので、地の透けない面にする。 */
-	z-index: 30;
-
-	opacity: 0;
-	visibility: hidden;
-	transform: translateY(-4px);
-	transition: opacity var(--lf-motion-base) var(--lf-easing-standard),
-		transform var(--lf-motion-base) var(--lf-easing-standard),
-		visibility 0s linear var(--lf-motion-base);
-}
-
-body.lf-theme .lf-heading-toc.is-open {
-	opacity: 1;
-	visibility: visible;
-	transform: translateY(0);
-	transition-delay: 0s;
-}
-
-body.lf-theme .lf-heading-toc__title {
-	margin: 0 0 var(--lf-space-3xs);
-	color: var(--lf-brand-text);
-	font-size: var(--lf-text-2xs);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	body.lf-theme .lf-heading-toc {
-		transition: none;
-		transform: none;
-	}
-}
-
-/*
- * 見出し側は「押せる／反応する」ことが分かるようにする。
- * 触れるものが増えたと誤解されないよう、下線などは出さず色だけ動かす。
- */
-body.lf-theme .m3-article__body :is(h2, h3, h4, h5, h6).is-lf-toc-anchor {
-	cursor: default;
-}
-
-/*
- * 見出し横のパネルは右カラムと同じ帯に出る。重なっているあいだは
- * 右カラムの Contents を退かせて、同じ目次が二重に見えないようにする。
- */
 body.lf-theme .lf-aside-block--toc {
 	--lc-accent: var(--lf-brand);
 	padding: var(--lf-space-xs);
 	background: color-mix(in srgb, var(--lf-brand) 8%, var(--lf-paper));
 	border: 1px solid color-mix(in srgb, var(--lf-brand) 36%, var(--lf-paper));
-	transition: opacity var(--lf-motion-base) var(--lf-easing-standard);
 }
 
 body.lf-theme .lf-aside-block--toc .lf-aside-block__title {
@@ -93,9 +23,4 @@ body.lf-theme .lf-toc__link:hover,
 body.lf-theme .lf-toc__link.is-current {
 	color: var(--lf-brand-text);
 	background: color-mix(in srgb, var(--lf-brand) 14%, var(--lf-paper));
-}
-
-body.lf-theme .lf-aside-block--toc.is-lf-toc-relocated {
-	opacity: 0;
-	pointer-events: none;
 }

@@ -51,15 +51,25 @@ function luna_interactive_static_svg($s,$title,$height=320){
  if(!$n||!$k)return $out.'<text x="'.($w/2).'" y="'.($h/2).'" text-anchor="middle" fill="currentColor">データがありません</text></svg>';
  {
   $min=0;$max=0;foreach($s['datasets'] as $d)foreach($d['data'] as $v){if($v!==null){$min=min($min,$v);$max=max($max,$v);}}
-  if($max===$min)$max=$min+1;$left=72;$right=784;$top=16;$bottom=$h-36;$width=$right-$left;
+  if(isset($s['yMin']))$min=$s['yMin'];if(isset($s['yMax']))$max=$s['yMax'];
+  if($max<=$min){if(isset($s['yMax'])&&!isset($s['yMin']))$min=$max-1;else $max=$min+1;}$left=empty($s['yTitle'])?72:88;$right=784;$top=16;$bottom=$h-(empty($s['xTitle'])?36:60);$width=$right-$left;
+  $numeric=($s['xScale']??'')==='linear';foreach($s['labels'] as $label)if(!is_numeric($label)||!is_finite((float)$label))$numeric=false;
+  $xmin=$numeric?($s['xMin']??min(array_map('floatval',$s['labels']))):0;
+  $xmax=$numeric?($s['xMax']??max(array_map('floatval',$s['labels']))):1;if($xmax<=$xmin){if(isset($s['xMax'])&&!isset($s['xMin']))$xmin=$xmax-1;else $xmax=$xmin+1;}
+  $xpos=static function($i)use($s,$numeric,$xmin,$xmax,$left,$width,$n){return $numeric?$left+((float)$s['labels'][$i]-$xmin)/($xmax-$xmin)*$width:$left+($i+.5)*$width/$n;};
+  if(!empty($s['xTitle']))$out.='<text x="'.($left+$width/2).'" y="'.($h-8).'" text-anchor="middle" fill="currentColor" font-size="13">'.esc_html($s['xTitle']).'</text>';
+  if(!empty($s['yTitle'])){$cy=($top+$bottom)/2;$out.='<text transform="translate(18 '.$cy.') rotate(-90)" text-anchor="middle" fill="currentColor" font-size="13">'.esc_html($s['yTitle']).'</text>';}
   $y=static function($v)use($min,$max,$top,$bottom){return $bottom-($v-$min)/($max-$min)*($bottom-$top);};
   for($tick=0;$tick<=4;$tick++){$v=$min+($max-$min)*$tick/4;$yy=$y($v);$out.='<line x1="'.$left.'" x2="'.$right.'" y1="'.$yy.'" y2="'.$yy.'" stroke="currentColor" opacity=".16"/><text x="'.($left-8).'" y="'.($yy+4).'" text-anchor="end" fill="currentColor" font-size="12">'.esc_html(sprintf('%.4g',$v)).'</text>';}
   $step=$width/$n;$stride=max(1,(int)ceil($n/8));
-  foreach($s['labels'] as $i=>$label){$x=$left+($i+.5)*$step;if($i%$stride===0)$out.='<text x="'.$x.'" y="'.($h-14).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(luna_interactive_axis_label($label)).'</text>';}
-  foreach($s['datasets'] as $j=>$d){$color=$p[$j%8];$previous=null;foreach($d['data'] as $i=>$v){if($v===null){$previous=null;continue;}$x=$left+($i+.5)*$step;$yy=$y($v);
-    if($s['type']==='bar'){$bw=max(1,$step*.78/$k);$bx=$left+$i*$step+$step*.11+$j*$bw;$by=min($yy,$y(0));$bh=max(0.5,abs($yy-$y(0)));$out.='<rect x="'.$bx.'" y="'.$by.'" width="'.$bw.'" height="'.$bh.'" rx="3" fill="'.$color.'"/>';}
+  if($numeric){for($tick=0;$tick<=4;$tick++){$v=$xmin+($xmax-$xmin)*$tick/4;$x=$left+$width*$tick/4;$out.='<text x="'.$x.'" y="'.($bottom+22).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(sprintf('%.4g',$v)).'</text>';}}
+  else foreach($s['labels'] as $i=>$label){$x=$xpos($i);if($i%$stride===0)$out.='<text x="'.$x.'" y="'.($bottom+22).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(luna_interactive_axis_label($label)).'</text>';}
+  $clip=wp_unique_id('luna-plot-clip-');$out.='<defs><clipPath id="'.esc_attr($clip).'"><rect x="'.$left.'" y="'.$top.'" width="'.$width.'" height="'.($bottom-$top).'"/></clipPath></defs><g clip-path="url(#'.esc_attr($clip).')">';
+  if($numeric&&$n>1){$gap=INF;for($i=1;$i<$n;$i++)$gap=min($gap,abs($xpos($i)-$xpos($i-1)));$step=max(1,$gap);}
+  foreach($s['datasets'] as $j=>$d){$color=$p[$j%8];$previous=null;foreach($d['data'] as $i=>$v){if($v===null){$previous=null;continue;}$x=$xpos($i);$yy=$y($v);
+    if($s['type']==='bar'){$bw=max(1,$step*.78/$k);$bx=$x-$step*.39+$j*$bw;$by=min($yy,$y(0));$bh=max(0.5,abs($yy-$y(0)));$out.='<rect x="'.$bx.'" y="'.$by.'" width="'.$bw.'" height="'.$bh.'" rx="3" fill="'.$color.'"/>';}
     else{if($previous)$out.='<line x1="'.$previous[0].'" y1="'.$previous[1].'" x2="'.$x.'" y2="'.$yy.'" stroke="'.$color.'" stroke-width="2.5" stroke-linecap="round"/>';$out.='<circle cx="'.$x.'" cy="'.$yy.'" r="2.5" fill="'.$color.'"/>';$previous=array($x,$yy);}
-  }}
+  }}$out.='</g>';
  }
  return $out.'</svg>';
 }

@@ -24,6 +24,7 @@ require_once LUNA_FRONTIER_DIR . '/inc/luna/dynamic-color.php';
 require_once LUNA_FRONTIER_DIR . '/inc/luna/reading-aside.php';
 require_once LUNA_FRONTIER_DIR . '/inc/luna/category-label.php';
 require_once LUNA_FRONTIER_DIR . '/inc/luna/writer-avatar.php';
+require_once LUNA_FRONTIER_DIR . '/inc/luna/heading-typography.php';
 
 /**
  * このテーマのバージョン（style.css の Version）。

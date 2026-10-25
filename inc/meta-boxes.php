@@ -152,7 +152,7 @@ if ( ! function_exists( 'node_primary_category_meta_box_callback' ) ) {
 
         echo '</select>';
         echo '<p class="description">パンくずとカテゴリラベルで優先表示するカテゴリを選択します。選択肢はこの記事に割り当て済みのカテゴリのみです。</p>';
-        echo '<p class="description" style="color:#996800;">※ 編集中に追加したばかりのカテゴリは、一度保存するまでこの一覧に表示されません。</p>';
+        echo '<p class="description" style="color:#666;">※ 編集中のカテゴリ選択に合わせて候補が連動します。</p>';
     }
 }
 
@@ -332,3 +332,235 @@ if ( ! function_exists( 'node_cleanup_primary_category_after_terms_change' ) ) {
     }
 }
 add_action('set_object_terms', 'node_cleanup_primary_category_after_terms_change', 10, 6);
+
+if ( ! function_exists( 'node_validate_primary_category_on_rest_save' ) ) {
+    /**
+     * REST API投稿保存時にもプライマリカテゴリが割り当てカテゴリに含まれていることを検証する
+     */
+    function node_validate_primary_category_on_rest_save( $post, $request, $creating ) {
+        if ( ! $post instanceof WP_Post || 'post' !== $post->post_type ) {
+            return;
+        }
+
+        $post_id  = $post->ID;
+        $selected = absint( get_post_meta( $post_id, '_node_primary_category', true ) );
+        if ( ! $selected ) {
+            return;
+        }
+
+        $category_ids = wp_get_post_categories( $post_id, array( 'fields' => 'ids' ) );
+        $category_ids = array_map( 'intval', is_array( $category_ids ) ? $category_ids : array() );
+
+        if ( ! in_array( $selected, $category_ids, true ) ) {
+            delete_post_meta( $post_id, '_node_primary_category' );
+        }
+    }
+}
+add_action( 'rest_after_insert_post', 'node_validate_primary_category_on_rest_save', 25, 3 );
+
+if ( ! function_exists( 'node_enqueue_primary_category_block_editor_assets' ) ) {
+    /**
+     * ブロックエディターで編集中のカテゴリ選択とプライマリカテゴリ候補を即時連動させる
+     */
+    function node_enqueue_primary_category_block_editor_assets() {
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( ! $screen || 'post' !== $screen->post_type ) {
+            return;
+        }
+
+        wp_register_script(
+            'node-primary-category-editor',
+            false,
+            array( 'wp-data', 'wp-core-data', 'wp-edit-post', 'wp-editor', 'wp-element', 'wp-dom-ready' ),
+            defined( 'NODE_THEME_VERSION' ) ? NODE_THEME_VERSION : '1.0',
+            true
+        );
+        wp_enqueue_script( 'node-primary-category-editor' );
+
+        $js = <<<'JS'
+(function (wp) {
+    if (!wp || !wp.data || !wp.domReady) {
+        return;
+    }
+
+    wp.domReady(function () {
+        var selectEl = document.getElementById('node_primary_category_select');
+        if (!selectEl) {
+            return;
+        }
+
+        var storeSelect = wp.data.select;
+        var storeDispatch = wp.data.dispatch;
+        var storeSubscribe = wp.data.subscribe;
+
+        if (!storeSelect('core/editor') || !storeSelect('core')) {
+            return;
+        }
+
+        var termNames = {};
+        for (var i = 0; i < selectEl.options.length; i++) {
+            var opt = selectEl.options[i];
+            if (opt.value) {
+                termNames[opt.value] = opt.textContent;
+            }
+        }
+
+        var lastCategoryIdsKey = null;
+        var isInitialized = false;
+
+        function updateOptions(categoryIds) {
+            var currentSelected = selectEl.value;
+            var stringIds = [];
+
+            for (var j = 0; j < categoryIds.length; j++) {
+                var idStr = String(categoryIds[j]);
+                if (stringIds.indexOf(idStr) === -1) {
+                    stringIds.push(idStr);
+                }
+            }
+
+            var pendingFetch = false;
+            var core = storeSelect('core');
+
+            for (var k = 0; k < stringIds.length; k++) {
+                var catIdStr = stringIds[k];
+                var catIdNum = parseInt(catIdStr, 10);
+
+                if (!termNames[catIdStr]) {
+                    var record = (core && core.getEntityRecord) ? core.getEntityRecord('taxonomy', 'category', catIdNum) : null;
+                    if (record && record.name) {
+                        termNames[catIdStr] = record.name;
+                    } else if (core && core.getEntityRecords) {
+                        var allRecords = core.getEntityRecords('taxonomy', 'category', { per_page: -1, context: 'view' });
+                        if (!allRecords) {
+                            allRecords = core.getEntityRecords('taxonomy', 'category', { per_page: -1 });
+                        }
+                        if (Array.isArray(allRecords)) {
+                            for (var r = 0; r < allRecords.length; r++) {
+                                if (allRecords[r] && allRecords[r].id === catIdNum && allRecords[r].name) {
+                                    termNames[catIdStr] = allRecords[r].name;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!termNames[catIdStr]) {
+                        pendingFetch = true;
+                    }
+                }
+            }
+
+            // カテゴリ情報の取得中は、既存の指定を消さないよう保留
+            if (pendingFetch) {
+                return;
+            }
+
+            var existingValues = [];
+            for (var m = 0; m < selectEl.options.length; m++) {
+                var val = selectEl.options[m].value;
+                if (val !== '') {
+                    existingValues.push(val);
+                }
+            }
+
+            var isSame = existingValues.length === stringIds.length;
+            if (isSame) {
+                for (var n = 0; n < stringIds.length; n++) {
+                    if (existingValues.indexOf(stringIds[n]) === -1) {
+                        isSame = false;
+                        break;
+                    }
+                }
+            }
+
+            var nextSelectedValue = '';
+            if (currentSelected && stringIds.indexOf(currentSelected) !== -1) {
+                nextSelectedValue = currentSelected;
+            } else {
+                nextSelectedValue = '';
+            }
+
+            if (isSame && selectEl.value === nextSelectedValue && isInitialized) {
+                return;
+            }
+
+            var fragment = document.createDocumentFragment();
+
+            var defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '指定なし（先頭カテゴリを使用）';
+            fragment.appendChild(defaultOption);
+
+            for (var p = 0; p < stringIds.length; p++) {
+                var cId = stringIds[p];
+                var optEl = document.createElement('option');
+                optEl.value = cId;
+                optEl.textContent = termNames[cId] || ('カテゴリ ' + cId);
+                fragment.appendChild(optEl);
+            }
+
+            selectEl.innerHTML = '';
+            selectEl.appendChild(fragment);
+            selectEl.value = nextSelectedValue;
+
+            if (isInitialized && currentSelected !== nextSelectedValue) {
+                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (window.jQuery) {
+                    window.jQuery(selectEl).trigger('change');
+                }
+                if (storeDispatch('core/editor') && storeDispatch('core/editor').editPost) {
+                    storeDispatch('core/editor').editPost({
+                        meta: {
+                            _node_primary_category: nextSelectedValue ? parseInt(nextSelectedValue, 10) : 0
+                        }
+                    });
+                }
+            }
+
+            isInitialized = true;
+        }
+
+        storeSubscribe(function () {
+            var editor = storeSelect('core/editor');
+            if (!editor) {
+                return;
+            }
+
+            var categoryIds = editor.getEditedPostAttribute('categories');
+            if (!Array.isArray(categoryIds)) {
+                return;
+            }
+
+            var sortedKey = categoryIds.slice().sort(function (a, b) {
+                return a - b;
+            }).join(',');
+
+            if (sortedKey !== lastCategoryIdsKey || !isInitialized) {
+                lastCategoryIdsKey = sortedKey;
+                updateOptions(categoryIds);
+            }
+        });
+
+        selectEl.addEventListener('change', function () {
+            var val = selectEl.value;
+            var numVal = val ? parseInt(val, 10) : 0;
+            if (storeDispatch('core/editor') && storeDispatch('core/editor').editPost) {
+                var currentMeta = storeSelect('core/editor').getEditedPostAttribute('meta') || {};
+                if (currentMeta._node_primary_category !== numVal) {
+                    storeDispatch('core/editor').editPost({
+                        meta: {
+                            _node_primary_category: numVal
+                        }
+                    });
+                }
+            }
+        });
+    });
+})(window.wp);
+JS;
+        wp_add_inline_script( 'node-primary-category-editor', $js );
+    }
+}
+add_action( 'enqueue_block_editor_assets', 'node_enqueue_primary_category_block_editor_assets' );
+

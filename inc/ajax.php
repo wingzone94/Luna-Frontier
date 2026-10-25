@@ -19,9 +19,9 @@ add_action(
 		}
 
 		$local_version = node_get_theme_version();
-		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/luna-frontier-2.0-skyalow/style.css';
+		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/style.css';
 
-		$response = wp_remote_get( $remote_url );
+		$response = wp_remote_get( add_query_arg( 'cb', wp_generate_uuid4(), $remote_url ), array( 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
 		if ( is_wp_error( $response ) ) {
 			wp_send_json_error( 'Failed to fetch remote version' );
 		}
@@ -40,7 +40,7 @@ add_action(
 		$local_build      = $local_build_info['build_id'] ?? null;
 
 		$remote_build   = null;
-		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/refs/heads/luna-frontier-2.0-skyalow/build.json?cb=' . time() );
+		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/build.json?cb=' . wp_generate_uuid4(), array( 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
 		if ( ! is_wp_error( $build_response ) && 200 === wp_remote_retrieve_response_code( $build_response ) ) {
 			$build_data = json_decode( wp_remote_retrieve_body( $build_response ), true );
 			if ( is_array( $build_data ) && ! empty( $build_data['build_id'] ) ) {
@@ -49,6 +49,8 @@ add_action(
 		}
 
 		$same_version = ! $update_available && $install_available;
+		$build_update_available = $same_version && node_is_newer_theme_build( $remote_build, $local_build );
+		$install_available = $update_available || $build_update_available;
 
 		wp_send_json_success(
 			array(
@@ -59,7 +61,8 @@ add_action(
 				'same_version'      => $same_version,
 				'local_build'       => $local_build,
 				'remote_build'      => $remote_build,
-				'build_update_available' => $same_version && $remote_build && $remote_build !== $local_build,
+				'build_update_available' => $build_update_available,
+				'remote_build_behind' => $same_version && $remote_build && $local_build && $remote_build !== $local_build && ! $build_update_available,
 			)
 		);
 	}
@@ -80,7 +83,7 @@ add_action(
 
 		error_log( 'Luminous Update: Starting update from ' . $zip_url );
 
-		$temp_file = download_url( $zip_url );
+		$temp_file = download_url( add_query_arg( 'cb', time(), $zip_url ) );
 		if ( is_wp_error( $temp_file ) ) {
 			error_log( 'Luminous Update: Download failed - ' . $temp_file->get_error_message() );
 			wp_send_json_error( 'Download failed: ' . $temp_file->get_error_message() );

@@ -81,7 +81,7 @@ body.lf-theme .lf-system-label {
 
 /* ---------------------------------------------------------------------
  * 本文
- * 行長は max-inline-size（ch）で制御する。幅は Phase 5 のグリッド側が決める。
+ * 本文の行長は記事グリッドと Paper の内側余白で制御する。
  * --------------------------------------------------------------------- */
 body.lf-theme .m3-article__body {
 	font-size: var(--md-sys-typescale-body-large-size);
@@ -93,7 +93,7 @@ body.lf-theme .m3-article__body > p,
 body.lf-theme .m3-article__body > ul,
 body.lf-theme .m3-article__body > ol,
 body.lf-theme .m3-article__body > blockquote:not(.m3-notice) {
-	max-inline-size: var(--lf-measure);
+	max-inline-size: 100%;
 }
 
 body.lf-theme .m3-article__body li {
@@ -149,10 +149,20 @@ body.lf-theme .m3-article__body h6:not(:where(.m3-notice *)) {
 	letter-spacing: -0.01em;
 	font-feature-settings: "palt" 1;
 	color: var(--lc-on-surface);
+	/* 語の保護は表示時の inline 単位に任せ、行長を強制的に均等化しない。 */
 	text-wrap: pretty;
 
 	/* 目次・アンカーリンクからの着地位置。固定ヘッダーぶん確保する（§35）。 */
 	scroll-margin-top: calc(64px + var(--lf-space-m));
+}
+
+/* モデルIDや割合は一塊で送る。単位自体が紙面より長い場合だけ内部で折る。 */
+body.lf-theme .m3-article__body :is(h2, h3, h4):not(:where([class*="__title"], .m3-blogcard *, .m3-product-card *, .m3-game-card *, .m3-notice *)) .lf-heading-unit {
+	display: inline-block;
+	max-inline-size: 100%;
+	word-break: normal;
+	overflow-wrap: anywhere;
+	text-wrap: wrap;
 }
 
 /*
@@ -198,6 +208,7 @@ body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) {
 	&:not(:where([class*="__title"], .m3-blogcard *, .m3-product-card *, .m3-game-card *, .m3-notice *)) {
 		font-size: clamp(1.875rem, 1.65rem + 1vw, 2.5rem);
 		line-height: 1.4;
+		word-break: normal;
 		overflow-wrap: anywhere;
 		margin-block-end: var(--lf-space-m);
 		border-block-end: 0.3125rem solid var(--lf-heading-line-h2);
@@ -240,6 +251,7 @@ body.lf-theme .m3-article__body h3:not(:where(.m3-notice *)) {
 		--lf-heading-rail-width: 0.1875rem;
 		--lf-heading-rail-height: 1.4em;
 		line-height: 1.4;
+		word-break: normal;
 		overflow-wrap: anywhere;
 
 		&::before {
@@ -264,6 +276,7 @@ body.lf-theme .m3-article__body h4:not(.m3-blogcard__title):not(:where(.m3-notic
 		--lf-heading-rail-width: 0.125rem;
 		--lf-heading-rail-height: 1.4em;
 		line-height: 1.4;
+		word-break: normal;
 		overflow-wrap: anywhere;
 
 		&::before {
@@ -327,7 +340,7 @@ body.lf-theme .m3-article__body h6:not(:where(.m3-notice *)) {
 }
 
 /*
- * PC 限定: 本文見出しをダブルクリックまたはホバーした時に、
+ * PC 限定: 本文見出しをダブルクリックした時に、
  * 右側ペインの目次を現在地表示にする。
  */
 @media (min-width: 1024px) {

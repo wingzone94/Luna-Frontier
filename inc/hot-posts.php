@@ -72,7 +72,7 @@ function node_hot_recalculate_local_score( int $post_id ): int {
 		$score += max( 0, (int) get_post_meta( $post_id, node_hot_day_meta_key( $i ), true ) );
 	}
 
-	for ( $i = 10; $i <= 31; $i++ ) {
+	for ( $i = 30; $i <= 61; $i++ ) {
 		delete_post_meta( $post_id, node_hot_day_meta_key( $i ) );
 	}
 
@@ -80,6 +80,42 @@ function node_hot_recalculate_local_score( int $post_id ): int {
 	update_post_meta( $post_id, NODE_HOT_SCORE_META, (string) $score );
 
 	return $score;
+}
+
+/**
+ * Rank published posts by views within the selected calendar-day window.
+ * Query daily buckets so inactive posts also age out without another visit.
+ *
+ * @return WP_Post[]
+ */
+function node_get_popular_posts_for_period( int $days = 7, int $limit = 5 ): array {
+	global $wpdb;
+
+	$days = 30 === $days ? 30 : 7;
+	$keys = array();
+	for ( $i = 0; $i < $days; $i++ ) {
+		$keys[] = node_hot_day_meta_key( $i );
+	}
+	$placeholders = implode( ', ', array_fill( 0, count( $keys ), '%s' ) );
+	// Only daily view buckets contribute; lifetime and saved HOT scores do not.
+	$sql = "SELECT p.ID FROM {$wpdb->posts} p
+		INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+		WHERE p.post_type = 'post' AND p.post_status = 'publish'
+		AND pm.meta_key IN ($placeholders)
+		GROUP BY p.ID, p.post_date
+		HAVING SUM(GREATEST(0, CAST(pm.meta_value AS SIGNED))) > 0
+		ORDER BY SUM(GREATEST(0, CAST(pm.meta_value AS SIGNED))) DESC, p.post_date DESC, p.ID DESC
+		LIMIT %d";
+	$ids = $wpdb->get_col( $wpdb->prepare( $sql, array_merge( $keys, array( max( 1, $limit ) ) ) ) );
+	if ( ! $ids ) {
+		return array();
+	}
+
+	return get_posts( array(
+		'post_type' => 'post', 'post_status' => 'publish',
+		'post__in' => array_map( 'absint', $ids ), 'orderby' => 'post__in',
+		'posts_per_page' => count( $ids ), 'ignore_sticky_posts' => true,
+	) );
 }
 
 /**
