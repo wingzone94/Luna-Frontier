@@ -1,12 +1,11 @@
 <?php
 
 declare(strict_types=1);
-$paged            = max( 1, (int) get_query_var( 'paged' ) );
-$per_page         = max( 1, (int) NODE_ALL_ARTICLES_PER_PAGE );
-$total_limit      = max( 1, (int) NODE_ALL_ARTICLES_TOTAL_LIMIT );
-$total_published  = node_get_total_published_posts();
-$total_displaying = min( $total_published, $total_limit );
-$total_pages      = max( 1, (int) ceil( $total_displaying / $per_page ) );
+$paged          = max( 1, (int) get_query_var( 'paged' ) );
+$articles_query = new WP_Query( node_get_all_articles_page_query_args( $paged ) );
+// 表示件数と総ページ数は、この一覧クエリの found_posts に合わせる。
+$total_published = (int) $articles_query->found_posts;
+$total_pages     = node_get_all_articles_total_pages( $total_published );
 
 if ( $paged > $total_pages ) {
 	global $wp_query;
@@ -18,23 +17,6 @@ if ( $paged > $total_pages ) {
 }
 
 get_header();
-
-$offset     = ( $paged - 1 ) * $per_page;
-$remaining  = max( 0, $total_displaying - $offset );
-$page_count = min( $per_page, $remaining );
-
-$articles_query = new WP_Query(
-	array(
-		'post_type'           => 'post',
-		'post_status'         => 'publish',
-		'ignore_sticky_posts' => true,
-		'orderby'             => 'date',
-		'order'               => 'DESC',
-		'posts_per_page'      => $page_count,
-		'offset'              => $offset,
-		'no_found_rows'       => true,
-	)
-);
 
 $archive_base = trailingslashit( node_get_all_articles_url() );
 ?>
@@ -50,8 +32,7 @@ $archive_base = trailingslashit( node_get_all_articles_url() );
 			</h1>
 		</div>
 		<p class="m3-archive-header__desc" style="margin-top: 16px; color: var(--md-sys-color-on-surface-variant);">
-			公開記事 <?php echo esc_html( number_format_i18n( $total_published ) ); ?> 件中、
-			最新 <?php echo esc_html( number_format_i18n( $total_displaying ) ); ?> 件を表示しています。
+			公開記事 <?php echo esc_html( number_format_i18n( $total_published ) ); ?> 件
 		</p>
 	</section>
 
