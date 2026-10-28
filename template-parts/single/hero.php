@@ -40,8 +40,7 @@ $lf_reading = function_exists( 'node_get_article_ranking_info' )
 	: array();
 
 $lf_published = get_the_date( 'c', $lf_post_id );
-$lf_modified  = get_the_modified_date( 'c', $lf_post_id );
-$lf_has_update = ( get_the_date( 'Ymd', $lf_post_id ) !== get_the_modified_date( 'Ymd', $lf_post_id ) );
+$lf_update    = node_get_post_modified_display( $lf_post_id );
 
 // Node Library への導線（既存メタをそのまま利用）。
 $lf_library_id = absint( get_post_meta( $lf_post_id, '_node_linked_library_id', true ) );
@@ -89,11 +88,11 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 				<?php echo esc_html( get_the_date( '', $lf_post_id ) ); ?>
 			</time>
 
-			<?php if ( $lf_has_update ) : ?>
-				<time class="lf-meta__item" datetime="<?php echo esc_attr( $lf_modified ); ?>">
+			<?php if ( $lf_update ) : ?>
+				<time class="lf-meta__item" datetime="<?php echo esc_attr( $lf_update['datetime'] ); ?>">
 					<span class="material-symbols-outlined lf-meta__icon" aria-hidden="true">update</span>
 					<span class="screen-reader-text">更新日</span>
-					<?php echo esc_html( get_the_modified_date( '', $lf_post_id ) ); ?>
+					<?php echo esc_html( $lf_update['display'] ); ?>
 				</time>
 			<?php endif; ?>
 

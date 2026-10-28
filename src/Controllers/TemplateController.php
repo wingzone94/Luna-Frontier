@@ -43,9 +43,19 @@ final class TemplateController {
 	 * @return array{datetime: string, display: string, display_short: string}|null
 	 */
 	public static function getPostModifiedDisplay( int $post_id ): ?array {
+		$published = get_post_datetime( $post_id, 'date' );
+		$modified  = get_post_datetime( $post_id, 'modified' );
+		if ( ! $published || ! $modified || 'publish' !== get_post_status( $post_id )
+			|| $published->getTimestamp() > time() ) {
+			return null;
+		}
+
 		$manual     = get_post_meta( $post_id, '_node_manual_modified_date', true );
 		$has_manual = is_string( $manual )
-			&& 1 === preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $manual, $matches );
+			&& 1 === preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $manual, $matches )
+			&& checkdate( (int) $matches[2], (int) $matches[3], (int) $matches[1] )
+			&& $manual >= $published->format( 'Y-m-d' )
+			&& $manual <= current_datetime()->format( 'Y-m-d' );
 
 		if ( $has_manual ) {
 			$short = $matches[1] === get_the_date( 'Y', $post_id )
@@ -59,7 +69,10 @@ final class TemplateController {
 			);
 		}
 
-		if ( get_the_modified_date( 'Y/m/d', $post_id ) === get_the_date( 'Y/m/d', $post_id ) ) {
+		// Scheduled publication/date edits can leave post_modified before post_date.
+		// Never turn that earlier timestamp into a post-publication update.
+		if ( $modified <= $published || $modified->getTimestamp() > time()
+			|| $modified->format( 'Y-m-d' ) === $published->format( 'Y-m-d' ) ) {
 			return null;
 		}
 

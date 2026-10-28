@@ -45,7 +45,7 @@ body.lf-theme.search.m3-search-suggestions-is-active:has(.lf-topic-nav) .site-ma
 	padding-top: calc(var(--lf-space-m) + var(--m3-search-suggestions-space, 0px));
 }
 
-/* One row: desktop shelves scroll independently; narrow screens use one rail. */
+/* Desktop shelves scroll independently; mobile exposes both groups. */
 body.lf-theme .lf-topic-nav__inner {
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
@@ -213,29 +213,38 @@ body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 }
 
 @media (max-width: 1000px) {
+	body.lf-theme .lf-topic-nav__pick::after { content: "↔"; font-size: 1rem; }
 	body.lf-theme .lf-topic-nav__inner {
-		overflow-x: auto;
-		overscroll-behavior-inline: contain;
-		scroll-padding-inline: var(--lf-gutter);
-		scrollbar-width: none;
-	}
-
-	body.lf-theme .lf-topic-nav__inner:has(a:focus-visible) {
-		scroll-padding-inline: 50%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
 	}
 
 	body.lf-theme .lf-topic-nav__group {
-		flex: 0 0 auto;
-		max-inline-size: none;
+		flex: 1 1 auto;
+		max-inline-size: 100%;
 	}
 
-	body.lf-theme .lf-topic-nav__group--topics:only-child {
-		max-inline-size: none;
+	body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
+		border-inline-start: 0;
+		padding-inline-start: 0;
+		border-block-start: 1px solid var(--lf-rule);
 	}
 
 	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
-		flex: 0 0 auto;
-		overflow: visible;
+		flex: 1 1 0;
+		scrollbar-width: thin;
+		scrollbar-color: var(--lc-accent) transparent;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar {
+		display: block;
+		height: 6px;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar-thumb {
+		background: var(--lc-accent);
+		border-radius: 3px;
 	}
 }
 

@@ -144,31 +144,36 @@ add_filter(
  * ヒーロー画像（アイキャッチ画像）のPreloadヘッダーを出力し、LCPを改善する
  */
 function node_preload_hero_image() {
-    // 記事/固定ページでアイキャッチ画像が設定されている場合
-    if ( is_singular() && has_post_thumbnail() ) {
-        $post_id = get_the_ID();
-        
-        // アイキャッチ画像のURLとsrcset属性を取得してPreloadする
-        $attachment_id = get_post_thumbnail_id( $post_id );
-        $image_src     = wp_get_attachment_image_src( $attachment_id, 'full' );
-        $image_srcset  = wp_get_attachment_image_srcset( $attachment_id, 'full' );
-        $image_sizes   = wp_get_attachment_image_sizes( $attachment_id, 'full' );
+    // The article header renders "large". Other singular templates may render
+    // a different size or no cover, so do not speculate about their LCP image.
+    if ( ! is_singular( 'post' ) || ! has_post_thumbnail() ) {
+        return;
+    }
 
-        if ( $image_src ) {
-            $url = node_local_image_relative_url( $image_src[0] );
-            if ( $image_srcset ) {
-                $image_srcset = node_local_image_relative_srcset( $image_srcset );
-            }
-            echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '"';
-            if ( $image_srcset ) {
-                echo ' imagesrcset="' . esc_attr( $image_srcset ) . '"';
-            }
-            if ( $image_sizes ) {
-                echo ' imagesizes="' . esc_attr( $image_sizes ) . '"';
-            }
-            echo ">\n";
+    $html = wp_get_attachment_image(
+        get_post_thumbnail_id(),
+        'large',
+        false,
+        array( 'class' => 'lf-article-header__image', 'loading' => 'eager', 'fetchpriority' => 'high', 'decoding' => 'async' )
+    );
+    $image = new WP_HTML_Tag_Processor( $html );
+    if ( ! $image->next_tag( 'IMG' ) ) {
+        return;
+    }
+
+    // Read after the normal image filters, including Live Link URL/srcset handling.
+    $src = $image->get_attribute( 'src' );
+    if ( ! is_string( $src ) || '' === $src ) {
+        return;
+    }
+    echo '<link rel="preload" as="image" fetchpriority="high" href="' . esc_url( $src ) . '"';
+    foreach ( array( 'srcset' => 'imagesrcset', 'sizes' => 'imagesizes' ) as $attribute => $preload_attribute ) {
+        $value = $image->get_attribute( $attribute );
+        if ( is_string( $value ) && '' !== $value ) {
+            echo ' ' . esc_attr( $preload_attribute ) . '="' . esc_attr( $value ) . '"';
         }
     }
+    echo ">\n";
 }
 add_action( 'wp_head', 'node_preload_hero_image', 1 );
 

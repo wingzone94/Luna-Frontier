@@ -432,8 +432,7 @@ body.lf-theme .lf-title-fit {
  */
 body.lf-theme :is(
 	.m3-related-card__title,
-	.m3-headline-card__title,
-	.m3-elevated-nav-card__title
+	.m3-headline-card__title
 ) {
 	overflow: hidden;
 	max-block-size: 2lh;

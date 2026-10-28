@@ -41,13 +41,12 @@ declare(strict_types=1);
     $next_post = get_next_post();
     if ($prev_post || $next_post) :
     ?>
-    <nav class="m3-post-navigation">
+    <nav class="m3-post-navigation" aria-label="前後の記事">
         <?php if ($prev_post) : ?>
         <?php $prev_thumb = get_the_post_thumbnail_url($prev_post->ID, 'medium_large'); ?>
-        <a href="<?php echo get_permalink($prev_post->ID); ?>" class="m3-elevated-nav-card m3-ripple-host<?php echo $prev_thumb ? '' : ' m3-elevated-nav-card--plain'; ?>">
+        <a href="<?php echo esc_url( get_permalink( $prev_post->ID ) ); ?>" class="m3-elevated-nav-card m3-ripple-host<?php echo $prev_thumb ? '' : ' m3-elevated-nav-card--plain'; ?>">
             <?php if ($prev_thumb) : ?>
-                <div class="m3-elevated-nav-card__bg" style="background-image: url('<?php echo esc_url($prev_thumb); ?>');"></div>
-                <div class="m3-elevated-nav-card__overlay"></div>
+                <img class="m3-elevated-nav-card__bg" src="<?php echo esc_url($prev_thumb); ?>" alt="" loading="lazy" decoding="async">
             <?php endif; ?>
             <div class="m3-elevated-nav-card__content">
                 <span class="m3-elevated-nav-card__label">
@@ -61,10 +60,9 @@ declare(strict_types=1);
         
         <?php if ($next_post) : ?>
         <?php $next_thumb = get_the_post_thumbnail_url($next_post->ID, 'medium_large'); ?>
-        <a href="<?php echo get_permalink($next_post->ID); ?>" class="m3-elevated-nav-card m3-ripple-host<?php echo $next_thumb ? '' : ' m3-elevated-nav-card--plain'; ?>" style="text-align: right;">
+        <a href="<?php echo esc_url( get_permalink( $next_post->ID ) ); ?>" class="m3-elevated-nav-card m3-ripple-host<?php echo $next_thumb ? '' : ' m3-elevated-nav-card--plain'; ?>" style="text-align: right;">
             <?php if ($next_thumb) : ?>
-                <div class="m3-elevated-nav-card__bg" style="background-image: url('<?php echo esc_url($next_thumb); ?>');"></div>
-                <div class="m3-elevated-nav-card__overlay"></div>
+                <img class="m3-elevated-nav-card__bg" src="<?php echo esc_url($next_thumb); ?>" alt="" loading="lazy" decoding="async">
             <?php endif; ?>
             <div class="m3-elevated-nav-card__content" style="align-items: flex-end;">
                 <span class="m3-elevated-nav-card__label">

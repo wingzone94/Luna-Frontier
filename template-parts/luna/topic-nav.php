@@ -119,7 +119,7 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 				<span class="lf-topic-nav__pick">SPOTLIGHT</span>
 
 				<?php if ( ! empty( $lf_spotlight ) ) : ?>
-				<ul class="lf-topic-nav__features">
+				<ul class="lf-topic-nav__features" tabindex="0" aria-label="特集（左右にスクロール）">
 					<?php foreach ( array_slice( $lf_spotlight, 0, 4 ) as $lf_feature ) : ?>
 						<?php $lf_feature_current = '' !== (string) ( $lf_feature['slug'] ?? '' ) && is_category( (string) $lf_feature['slug'] ); ?>
 						<li class="lf-topic-nav__item<?php echo $lf_feature_current ? ' is-current' : ''; ?>">
@@ -142,7 +142,7 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 		<?php if ( ! empty( $lf_topics ) ) : ?>
 			<div class="lf-topic-nav__group lf-topic-nav__group--topics">
 				<span class="lf-topic-nav__pick lf-topic-nav__pick--editors">おすすめ</span>
-			<ul class="lf-topic-nav__list">
+			<ul class="lf-topic-nav__list" tabindex="0" aria-label="おすすめカテゴリー（左右にスクロール）">
 				<?php foreach ( $lf_topics as $lf_topic ) : ?>
 					<li class="lf-topic-nav__item<?php echo $lf_topic['current'] ? ' is-current' : ''; ?>">
 						<a href="<?php echo esc_url( $lf_topic['url'] ); ?>"<?php echo $lf_topic['current'] ? ' aria-current="page"' : ''; ?>>

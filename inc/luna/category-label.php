@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v2';
+const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v3';
 
 /**
  * 「押せる場所」の面と文字。
@@ -276,44 +276,13 @@ function luna_frontier_build_category_css(): string {
 		);
 	}
 
-	/*
-	 * 3-b) 枠線タイプ（.is-secondary）の文字色。
-	 *
-	 * 既存 CSS は color-mix(in srgb, var(--category-color) 72%, black) で導出しており、
-	 * --category-color がブランドオレンジのときは #b86e00 = 白地に 3.99:1 で
-	 * AA を割る（面を #bc5b00 にしていた間は 7.47 で足りていた）。
-	 * こちらは塗りではなく白地の上の文字なので、既存の --lf-brand-text
-	 * （#935400 / 白地 5.99:1。「オレンジに見えるが読める」ために用意された値）
-	 * を使う。ブランドオレンジの面は変えていない。
-	 */
-	$rules[] = 'body.lf-theme .m3-label--category.is-secondary:not([data-color]){color:var(--lf-brand-text,#935400)!important}';
-
-	/*
-	 * 3-c) カードの副カテゴリを枠線チップにする。
-	 *
-	 * 既存の枠線スタイルは .m3-article__category-group:not(.is-card) に限定されて
-	 * いてカードには効かないので、同じレシピをカード側へも用意する
-		 * （border は面色 54% + 黒、文字は 58% + 黒。明るいオレンジでも
-		 * 白地で AA を満たす）。
-	 *
-	 * ホバーで塗りに変わるのは「押せる」ことの手がかり。@media (hover: hover) で
-	 * 囲うのは、タッチ端末では :hover が「タップ後に貼り付く」挙動になるため。
-	 * 幅ではなく入力方式で分けるので、タブレットの外付けマウスなども正しく拾える。
-	 * 主カテゴリは平常時から塗りなので、ホバーしても主役の座は動かない。
-	 */
+	// Outlined category text follows the surface's ink in both color modes.
+	// Keep the category hue, while avoiding dark ink on dark card surfaces.
 	$outline_face = 'var(--category-color, ' . LUNA_FRONTIER_BRAND_FACE . ')';
-
-		$rules[] = sprintf(
-			'body.lf-theme .m3-article__category-group.is-card .m3-label--category.is-secondary{background-color:transparent!important;border:1.5px solid color-mix(in srgb, %1$s 54%%, black)!important;color:color-mix(in srgb, %1$s 58%%, black)!important}',
-			$outline_face
-		);
-
-	// 色未設定の副チップは、ブランドオレンジを黒と混ぜた色ではなく既存の
-	// --lf-brand-text（白地 5.99:1）を使う。3-b と同じ扱い。
-	$rules[] = 'body.lf-theme .m3-article__category-group.is-card .m3-label--category.is-secondary:not([data-color]){border-color:var(--lf-brand-text,#935400)!important;color:var(--lf-brand-text,#935400)!important}';
-
+	$outline_ink  = 'color-mix(in srgb,' . $outline_face . ' 20%,var(--md-sys-color-on-surface))';
+	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary{background-color:var(--md-sys-color-surface-container-low)!important;border:1.5px solid ' . $outline_ink . '!important;color:' . $outline_ink . '!important}';
 	$rules[] = sprintf(
-		'@media (hover: hover) and (pointer: fine){body.lf-theme .m3-article__category-group.is-card .m3-label--category.is-secondary:hover{background-color:%1$s!important;border-color:%1$s!important;color:var(--category-on-color,%2$s)!important}}',
+		'@media (hover: hover) and (pointer: fine){body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:hover{background-color:%1$s!important;border-color:%1$s!important;color:var(--category-on-color,%2$s)!important}}',
 		$outline_face,
 		LUNA_FRONTIER_BRAND_ON
 	);

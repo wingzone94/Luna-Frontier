@@ -38,12 +38,20 @@ export function initFloatingActions() {
         const tocReady = isSingle && Boolean(document.querySelector('#m3-toc-trigger.toc-ready'));
         const isDesktop = window.matchMedia('(min-width: 1001px)').matches;
         const shouldShow = isDesktop || scrollY > 200 || tocReady;
-
-        actionStack.classList.toggle('is-visible', shouldShow);
+        const form = document.querySelector('#respond');
+        const formBounds = form?.getBoundingClientRect();
+        // Give the entire comment form the viewport while it is visible or focused.
+        // The TOC and TOP remain available before and after the form.
+        const editing = !isDesktop && form && (form.contains(document.activeElement)
+            || (formBounds.top < window.innerHeight && formBounds.bottom > 0));
+        actionStack.hidden = !shouldShow || Boolean(editing);
+        actionStack.classList.toggle('is-visible', shouldShow && !editing);
     };
 
     window.addEventListener('scroll', updateVisibility, { passive: true });
     window.addEventListener('resize', updateVisibility, { passive: true });
     document.addEventListener('m3:toc:ready', updateVisibility);
+    document.addEventListener('focusin', updateVisibility);
+    document.addEventListener('focusout', () => queueMicrotask(updateVisibility));
     setTimeout(updateVisibility, 150);
 }

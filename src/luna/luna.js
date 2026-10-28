@@ -85,7 +85,6 @@ const TITLE_SELECTOR = [
   '.m3-headline-card__title',
   '.m3-related-card__title',
   '.m3-game-card__title',
-  '.m3-elevated-nav-card__title',
 ].join(', ');
 
 // [font-size 倍率, letter-spacing]
