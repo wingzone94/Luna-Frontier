@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v3';
+const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v4';
 
 /**
  * 「押せる場所」の面と文字。
@@ -76,6 +76,27 @@ function luna_frontier_category_on_color( string $face ): string {
 	$oklch = luna_frontier_rgb_to_oklch( $rgb );
 
 	return luna_frontier_oklch_on_color( $face, $oklch['h'], $oklch['c'] );
+}
+
+/** Preserve the existing hero ink, adjusting only insufficient background tones. */
+function luna_frontier_hero_category_face( string $face, string $ink ): string {
+	if ( luna_frontier_contrast_ratio( $ink, $face ) >= 4.5 ) {
+		return $face;
+	}
+
+	$target = '#ffffff' === strtolower( $ink ) ? '#000000' : '#ffffff';
+	$low    = 0.0;
+	$high   = 1.0;
+	for ( $step = 0; $step < 20; $step++ ) {
+		$ratio = ( $low + $high ) / 2;
+		$tone  = node_mix_hex_color( $face, $target, $ratio );
+		if ( luna_frontier_contrast_ratio( $ink, $tone ) >= 4.5 ) {
+			$high = $ratio;
+		} else {
+			$low = $ratio;
+		}
+	}
+	return node_mix_hex_color( $face, $target, $high );
 }
 
 /**
@@ -268,6 +289,15 @@ function luna_frontier_build_category_css(): string {
 	 */
 	foreach ( $by_color as $face ) {
 		$on = luna_frontier_category_on_color( $face );
+		$hero_ink  = node_get_readable_text_color( $face );
+		$hero_face = luna_frontier_hero_category_face( $face, $hero_ink );
+		if ( $hero_face !== $face ) {
+			$rules[] = sprintf(
+				'body.lf-theme .lf-hero-slide__category[data-color="%1$s" i]{--category-color:%2$s!important}',
+				esc_attr( $face ),
+				esc_attr( $hero_face )
+			);
+		}
 
 		$rules[] = sprintf(
 			'body.lf-theme .m3-label--category[data-color="%1$s" i]{--category-on-color:%2$s!important}',

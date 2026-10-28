@@ -69,4 +69,17 @@ class Node_P0_P1_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'imagesizes="(max-width: 1024px) 100vw, 1024px"', $html );
 		$this->assertStringContainsString( 'fetchpriority="high"', $html );
 	}
+	public function test_hero_category_keeps_ink_and_adjusts_only_insufficient_faces(): void {
+		foreach ( array( '#d06060', '#808080', '#da8585', '#eeee22', '#FF9900', '#000000', '#ffffff', '#0078d4' ) as $face ) {
+			$ink = node_get_readable_text_color( $face );
+			$tone = luna_frontier_hero_category_face( $face, $ink );
+			$this->assertGreaterThanOrEqual( 4.5, luna_frontier_contrast_ratio( $ink, $tone ), $face );
+			if ( luna_frontier_contrast_ratio( $ink, $face ) >= 4.5 ) {
+				$this->assertSame( $face, $tone, 'Already readable category colors must not change.' );
+			}
+		}
+		$this->assertSame( '#ffffff', node_get_readable_text_color( '#d06060' ) );
+		$this->assertNotSame( '#d06060', luna_frontier_hero_category_face( '#d06060', '#ffffff' ) );
+	}
+
 }

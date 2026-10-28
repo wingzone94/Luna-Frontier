@@ -13,6 +13,7 @@ export function initFloatingActions() {
     const backToTop = document.getElementById('m3-back-to-top');
     const tocTrigger = document.getElementById('m3-toc-trigger');
     const tocPanel = document.getElementById('m3-sticky-toc');
+    const readingBody = document.querySelector('.m3-article__body');
 
     backToTop?.addEventListener('click', (event) => {
         event.preventDefault();
@@ -44,8 +45,23 @@ export function initFloatingActions() {
         // The TOC and TOP remain available before and after the form.
         const editing = !isDesktop && form && (form.contains(document.activeElement)
             || (formBounds.top < window.innerHeight && formBounds.bottom > 0));
-        actionStack.hidden = !shouldShow || Boolean(editing);
-        actionStack.classList.toggle('is-visible', shouldShow && !editing);
+        let inReadingLane = true;
+        if (!isDesktop) {
+            const bounds = readingBody?.getBoundingClientRect();
+            const style = getComputedStyle(actionStack);
+            const size = parseFloat(style.getPropertyValue('--node-action-size')) || 48;
+            const gap = parseFloat(style.gap) || 12;
+            const hasToc = tocTrigger && getComputedStyle(tocTrigger).display !== 'none';
+            const height = hasToc ? 2 * size + gap : size;
+            const bottom = window.innerHeight - (parseFloat(style.bottom) || 24);
+            // Other article sections keep their full width. Retire the actions
+            // before the body gutter ends rather than floating over those sections.
+            inReadingLane = isSingle && Boolean(bounds
+                && bounds.top <= bottom - height && bounds.bottom >= bottom);
+        }
+        const visible = shouldShow && !editing && inReadingLane;
+        actionStack.hidden = !visible;
+        actionStack.classList.toggle('is-visible', visible);
     };
 
     window.addEventListener('scroll', updateVisibility, { passive: true });

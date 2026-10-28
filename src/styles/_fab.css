@@ -339,28 +339,14 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
 
 .m3-action-stack[hidden] { display: none; }
 
-/* Reserve the rail at document end and when bringing anchors/fields into view. */
-@media (max-width: 1000px) {
-    body:has(.m3-action-stack) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
-    html:has(.m3-action-stack) { scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
-    :is(.m3-article__body, #respond) :is(a, input, textarea, button, [id]) {
-        scroll-margin-bottom: calc(88px + env(safe-area-inset-bottom));
-    }
-}
-
 /* Mobile Overrides (<= 1000px) */
 @media screen and (max-width: 1000px) {
     .m3-action-stack {
-        flex-direction: row-reverse;
-        pointer-events: auto;
-        justify-content: center;
-        align-items: center;
-        gap: 16px;
-        inset-inline: 0;
-        bottom: 0;
-        padding: 8px max(16px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-        background: var(--md-sys-color-surface-container-low);
-        border-top: 1px solid var(--md-sys-color-outline-variant);
+        --node-action-size: 48px;
+        flex-direction: column-reverse;
+        gap: 12px;
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        right: calc(8px + env(safe-area-inset-right));
     }
 
     .m3-action-stack:not(.is-visible) { visibility: hidden; }

@@ -20,7 +20,7 @@
 }
 
 @media (max-width: 1000px) {
-    .m3-action-stack #m3-back-to-top {
+    .m3-action-stack.is-singular #m3-back-to-top {
         display: flex !important;
         opacity: 1;
         visibility: visible;
@@ -203,11 +203,11 @@ body.is-active-toc #m3-sticky-toc {
 /* ===== Icon FAB + Heading Jump Menu ===== */
 .m3-action-stack #m3-back-to-top,
 .m3-action-stack #m3-toc-trigger {
-    width: 56px !important;
-    min-width: 56px !important;
-    height: 56px !important;
+    width: var(--node-action-size, 56px) !important;
+    min-width: var(--node-action-size, 56px) !important;
+    height: var(--node-action-size, 56px) !important;
     padding: 0 !important;
-    border-radius: 28px !important;
+    border-radius: 50% !important;
     aspect-ratio: 1;
 }
 

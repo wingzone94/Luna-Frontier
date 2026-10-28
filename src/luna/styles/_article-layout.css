@@ -151,6 +151,23 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	font-size: var(--lf-text-2xs);
 }
 
+/* Mobile actions use a real gutter beside the Paper, never its text/media.
+ * Consolidate the nested article gutters so 320px keeps a readable measure.
+ * The actions are shown only while this body lane occupies their screen area. */
+@media (max-width: 1000px) {
+	body.lf-theme.single-post .m3-article {
+		padding-inline: 0;
+	}
+
+	body.lf-theme.single-post .m3-article__body {
+		--lf-article-inset: var(--lf-space-xs, 12px);
+		--lf-action-gutter: calc(52px + env(safe-area-inset-right));
+		margin-inline: 0 auto;
+		inline-size: calc(100% - var(--lf-action-gutter));
+		max-inline-size: calc(100% - var(--lf-action-gutter));
+	}
+}
+
 /* ---------------------------------------------------------------------
  * Tablet / Foldable の 600〜800px 帯（§29）
  * まだ 1 カラムのまま。Aside だけ 2 列に流して縦の消費を抑える。

@@ -4,7 +4,6 @@
 
   const init = (root) => {
     const viewport = root.querySelector('[data-lf-viewport]');
-    const stage = root.querySelector('.lf-hero-slider__stage');
     const slides = Array.from(root.querySelectorAll('[data-lf-slide]'));
     const dots = Array.from(root.querySelectorAll('[data-lf-dot]'));
     const thumbs = Array.from(root.querySelectorAll('[data-lf-thumb]'));
@@ -285,12 +284,13 @@
       pendingTarget = null;
       pauseByUser();
     }, { passive: true });
-    (stage || viewport).addEventListener('touchstart', (event) => {
+    // Toolbar/dot scrolling must not trigger an article swipe.
+    viewport.addEventListener('touchstart', (event) => {
       if (event.touches.length !== 1 || total < 2) return;
       const touch = event.changedTouches[0];
       touchStart = { id: touch.identifier, x: touch.clientX, y: touch.clientY };
     }, { passive: true });
-    (stage || viewport).addEventListener('touchend', (event) => {
+    viewport.addEventListener('touchend', (event) => {
       if (!touchStart) return;
       const touch = Array.from(event.changedTouches).find((item) => item.identifier === touchStart.id);
       if (!touch) return;
@@ -303,8 +303,8 @@
       pauseByUser();
       goTo(index + (dx < 0 ? 1 : -1));
     }, { passive: true });
-    (stage || viewport).addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
-    (stage || viewport).addEventListener('click', (event) => {
+    viewport.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+    viewport.addEventListener('click', (event) => {
       if (!suppressSwipeClick) return;
       event.preventDefault();
       event.stopPropagation();
