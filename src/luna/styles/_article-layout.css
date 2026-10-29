@@ -168,6 +168,36 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
+/* Phones: use the full page width for the reading paper. The fixed actions move
+ * to a bottom bar so they no longer reserve a permanent gutter beside the text.
+ * 768px and wider keeps the existing right-hand action lane. */
+@media (max-width: 767px) {
+	body.lf-theme.single-post .m3-article__body {
+		--lf-action-gutter: 0px;
+		margin-inline: 0;
+		inline-size: 100%;
+		max-inline-size: 100%;
+	}
+
+	body.lf-theme.single-post .m3-action-stack {
+		inset: auto 0 0;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 12px;
+		padding: 8px calc(16px + env(safe-area-inset-right))
+			calc(8px + env(safe-area-inset-bottom))
+			calc(16px + env(safe-area-inset-left));
+		background: var(--md-sys-color-surface-container);
+		border-block-start: 1px solid var(--md-sys-color-outline-variant);
+		pointer-events: auto;
+	}
+
+	body.lf-theme.single-post .m3-page-container {
+		padding-block-end: calc(64px + env(safe-area-inset-bottom));
+	}
+}
+
 /* ---------------------------------------------------------------------
  * Tablet / Foldable の 600〜800px 帯（§29）
  * まだ 1 カラムのまま。Aside だけ 2 列に流して縦の消費を抑える。
