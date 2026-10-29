@@ -519,6 +519,79 @@ function setupAsideTocProgress() {
   update();
 }
 
+/**
+ * 人気記事の集計期間を、ページ全体を再読み込みせずに切り替える。
+ * JS が無効・通信失敗の場合は、通常のリンク遷移へフォールバックする。
+ */
+function setupHomePopularPeriod() {
+  const home = document.querySelector('.lf-home');
+  if (!home) return;
+
+  let request;
+
+  const replacePopular = async (url, { push = false, focus = false } = {}) => {
+    const nextUrl = new URL(url, window.location.href);
+    nextUrl.hash = '';
+    request?.abort();
+    const controller = new AbortController();
+    request = controller;
+    const current = home.querySelector('#popular');
+    if (!current) return;
+
+    current.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(nextUrl, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' },
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error('Popular request failed');
+      const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+      const next = doc.querySelector('#popular');
+      if (!next) throw new Error('Popular markup missing');
+
+      current.replaceWith(next);
+      if (push) {
+        window.history.pushState({ lfPeriod: nextUrl.searchParams.get('lf_period') }, '', nextUrl.pathname + nextUrl.search);
+      }
+
+      const period = nextUrl.searchParams.get('lf_period') || '7';
+      home.querySelectorAll('.lf-home__filters a').forEach((link) => {
+        const linkUrl = new URL(link.href, window.location.href);
+        if (linkUrl.origin !== window.location.origin) return;
+        linkUrl.searchParams.set('lf_period', period);
+        link.href = linkUrl.pathname + linkUrl.search + linkUrl.hash;
+      });
+
+      if (focus) {
+        next.querySelector('.lf-home__period a[aria-current]')?.focus({ preventScroll: true });
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        window.location.assign(nextUrl.href + '#popular');
+      }
+    } finally {
+      if (request === controller) {
+        current.removeAttribute('aria-busy');
+        request = undefined;
+      }
+    }
+  };
+
+  home.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const link = target?.closest('.lf-home__period a');
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    replacePopular(link.href, { push: true, focus: true });
+  });
+
+  window.addEventListener('popstate', () => {
+    replacePopular(window.location.href, { push: false, focus: false });
+  });
+}
+
 function setupCalendarMonth() {
   const form = document.querySelector('.lf-home__calendar-form');
   if (!form) return;
@@ -559,6 +632,7 @@ function init() {
   }
   // The all-articles list uses the parent card typography without Luna auto-fit.
   if (document.body.classList.contains('lf-legacy-archive')) return;
+  setupHomePopularPeriod();
   setupCalendarMonth();
   setupFootnoteRelocation();
   setupTitleAutoFit();

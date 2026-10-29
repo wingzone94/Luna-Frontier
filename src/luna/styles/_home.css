@@ -78,6 +78,7 @@ body.lf-theme .lf-home__period a[aria-current]:hover { background: color-mix(in 
 body.lf-theme .lf-home__period a:not([aria-current]):active { background: color-mix(in srgb, #000 12%, #fff); }
 body.lf-theme .lf-home__period a[aria-current]:active { background: color-mix(in srgb, #000 12%, var(--lf-brand)); }
 body.lf-theme .lf-home__period a:focus-visible { outline: 2px solid #2b1700; outline-offset: -5px; border-radius: var(--lf-shape-full); }
+body.lf-theme .lf-home__panel[aria-busy="true"] { opacity: .65; transition: opacity 160ms ease; }
 body.lf-theme .lf-home #popular { scroll-margin-top: 88px; }
 body.lf-theme .lf-home__ranking li + li { border-top: 1px solid var(--lf-home-line); }
 body.lf-theme .lf-home-story--popular .lf-home-story__link { align-items: center; gap: 10px; padding-block: 8px; }

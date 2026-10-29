@@ -5,6 +5,18 @@
 	--lf-hero-radius: var(--node-hero-card-radius, var(--m3-radius-large, 28px));
 	--lf-hero-shadow: 0 8px 28px rgb(27 24 18 / 0.08);
 	--lf-hero-border: color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 80%, transparent);
+	--lf-hero-scrim: linear-gradient(
+		90deg,
+		rgb(18 24 38 / 0.86) 0%,
+		rgb(18 24 38 / 0.66) 38%,
+		rgb(18 24 38 / 0.2) 68%,
+		rgb(18 24 38 / 0.04) 100%
+	);
+	--lf-hero-scrim-mobile: linear-gradient(
+		180deg,
+		rgb(18 24 38 / 0.08) 24%,
+		rgb(18 24 38 / 0.78) 100%
+	);
 	box-sizing: border-box;
 	width: min(100%, var(--node-content-wide-max, 1080px));
 	margin-inline: auto;
@@ -62,13 +74,12 @@
 }
 
 .lf-hero-slide__card {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	height: 100%;
+	display: flex;
 	position: relative;
 	isolation: isolate;
 	overflow: hidden;
-	min-height: 0;
+	height: 100%;
+	min-height: clamp(320px, 38vw, 440px);
 	border-radius: var(--lf-hero-radius);
 	border: 1px solid var(--lf-hero-border);
 	background: var(--md-sys-color-surface-container, #ffe8d1);
@@ -76,9 +87,9 @@
 }
 
 .lf-hero-slide__media {
-	min-width: 0;
-	aspect-ratio: 16 / 10;
-	align-self: center;
+	position: absolute;
+	inset: 0;
+	z-index: 0;
 }
 
 .lf-hero-slide__picture {
@@ -91,8 +102,8 @@
 .lf-hero-slide__fallback {
 	width: 100%;
 	height: 100%;
-	object-fit: contain;
-	object-position: center;
+	object-fit: cover;
+	object-position: 72% center;
 	display: block;
 }
 
@@ -107,9 +118,11 @@
 	position: relative;
 	z-index: 1;
 	display: flex;
+	flex: 1 1 auto;
 	align-items: stretch;
+	min-height: inherit;
 	min-width: 0;
-	background: var(--md-sys-color-surface-container, #ffe8d1);
+	background: var(--lf-hero-scrim);
 }
 
 .lf-hero-slide__copy {
@@ -117,10 +130,13 @@
 	flex-direction: column;
 	justify-content: center;
 	gap: 14px;
-	width: 100%;
+	width: min(100%, 560px);
 	min-width: 0;
-	padding: clamp(20px, 3vw, 32px);
-	color: var(--md-sys-color-on-surface, #2b1700);
+	/* Leave the side arrows and bottom pagination their own safe zones. */
+	padding: clamp(22px, 4vw, 44px);
+	padding-inline: clamp(72px, 6vw, 88px);
+	padding-bottom: clamp(92px, 10vw, 104px);
+	color: #fff;
 }
 
 .lf-hero-slide__category {
@@ -138,7 +154,10 @@
 }
 
 .lf-hero-slide__title {
-	flex: 1;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 	overflow-wrap: anywhere;
 	margin: 0;
 	font-family: var(--font-heading, "Manrope", "Noto Sans JP", sans-serif);
@@ -146,7 +165,7 @@
 	font-weight: 800;
 	line-height: 1.25;
 	letter-spacing: -0.02em;
-	color: inherit;
+	color: #fff;
 }
 
 .lf-hero-slide__title-link {
@@ -169,7 +188,7 @@
 	font-size: 0.78rem;
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
-	color: var(--md-sys-color-on-surface-variant, #53443b);
+	color: rgb(255 255 255 / 0.74);
 }
 
 .lf-hero-slider .lf-hero-slide__copy .lf-hero-slide__cta {
@@ -211,8 +230,11 @@
 }
 
 .lf-hero-slider__nav {
-	position: relative;
-	flex: none;
+	position: absolute;
+	top: 50%;
+	bottom: auto;
+	z-index: 3;
+	transform: translateY(-50%);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -231,6 +253,14 @@
 		opacity 200ms ease;
 }
 
+.lf-hero-slider__nav--prev {
+	inset-inline-start: 12px;
+}
+
+.lf-hero-slider__nav--next {
+	inset-inline-end: 12px;
+}
+
 .lf-hero-slider__nav:hover {
 	background: #FF9900;
 }
@@ -244,31 +274,35 @@
 	font-size: 24px;
 }
 
-/* Controls occupy their own flow rows, never the image or article/CTA. */
-.lf-hero-slider__toolbar {
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 8px;
-	margin-top: 12px;
-}
-
-.lf-hero-slider__controls,
-.lf-hero-slider__status {
+.lf-hero-slider__pagination {
+	position: absolute;
+	z-index: 3;
+	left: 50%;
+	bottom: 16px;
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 8px;
+	max-width: calc(100% - 24px);
+	padding: 6px 8px;
+	border-radius: 999px;
+	background: rgb(16 18 24 / 0.58);
+	backdrop-filter: blur(8px);
+	transform: translateX(-50%);
 }
 
-.lf-hero-slider__status { grid-column: 2; grid-row: 1; }
-
 .lf-hero-slider__dots {
-	grid-column: 1 / -1;
-	grid-row: 2;
 	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
 	gap: 4px;
+	min-width: 0;
 	overflow-x: auto;
 	padding: 3px;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+}
+
+.lf-hero-slider__dots::-webkit-scrollbar {
+	display: none;
 }
 
 .lf-hero-slider__playback {
@@ -403,13 +437,21 @@
 	transform: translateY(-1px);
 }
 
+@media (max-width: 1199px) {
+	.lf-hero-slide__card { min-height: clamp(300px, 46vw, 400px); }
+}
+
 @media (max-width: 767px) {
 	.lf-hero-slider { padding-inline: 12px; }
 	.lf-hero-slide { flex-basis: 100%; }
-	.lf-hero-slide__card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
-	.lf-hero-slide__media { aspect-ratio: 16 / 9; }
-	.lf-hero-slide__copy { gap: 10px; padding: 20px; }
+	.lf-hero-slide__card { min-height: 420px; }
+	.lf-hero-slide__image { object-position: center 30%; }
+	.lf-hero-slide__overlay { align-items: flex-end; background: var(--lf-hero-scrim-mobile); }
+	.lf-hero-slide__copy { width: 100%; gap: 10px; padding: 22px 64px 96px; }
 	.lf-hero-slide__title { font-size: 1.28rem; }
+	.lf-hero-slider__nav--prev { inset-inline-start: 8px; }
+	.lf-hero-slider__nav--next { inset-inline-end: 8px; }
+	.lf-hero-slider__pagination { bottom: 12px; max-width: calc(100% - 20px); }
 	.lf-hero-slider__thumbs { gap: 10px; }
 	.lf-hero-thumb { flex: 0 0 148px; }
 }

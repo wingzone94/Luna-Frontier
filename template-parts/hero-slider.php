@@ -109,28 +109,28 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 			</ul>
 		</div>
 
-		<div class="lf-hero-slider__toolbar" data-lf-pagination role="group" aria-label="カルーセル操作">
-			<div class="lf-hero-slider__controls" data-lf-controls<?php echo $total < 2 ? ' hidden' : ''; ?>>
-				<button
-					type="button"
-					class="lf-hero-slider__nav lf-hero-slider__nav--prev"
-					data-lf-prev
-					aria-controls="<?php echo esc_attr( $slider_id ); ?>-slide-0"
-					aria-label="前の注目記事"
-				>
-					<span class="lf-hero-icon" aria-hidden="true">‹</span>
-				</button>
-				<button
-					type="button"
-					class="lf-hero-slider__nav lf-hero-slider__nav--next"
-					data-lf-next
-					aria-controls="<?php echo esc_attr( $slider_id ); ?>-slide-1"
-					aria-label="次の注目記事"
-				>
-					<span class="lf-hero-icon" aria-hidden="true">›</span>
-				</button>
-			</div>
+		<div class="lf-hero-slider__controls" data-lf-controls<?php echo $total < 2 ? ' hidden' : ''; ?>>
+			<button
+				type="button"
+				class="lf-hero-slider__nav lf-hero-slider__nav--prev"
+				data-lf-prev
+				aria-controls="<?php echo esc_attr( $slider_id ); ?>-slide-0"
+				aria-label="前の注目記事"
+			>
+				<span class="lf-hero-icon" aria-hidden="true">‹</span>
+			</button>
+			<button
+				type="button"
+				class="lf-hero-slider__nav lf-hero-slider__nav--next"
+				data-lf-next
+				aria-controls="<?php echo esc_attr( $slider_id ); ?>-slide-1"
+				aria-label="次の注目記事"
+			>
+				<span class="lf-hero-icon" aria-hidden="true">›</span>
+			</button>
+		</div>
 
+		<div class="lf-hero-slider__pagination" data-lf-pagination role="group" aria-label="スライド位置">
 			<div class="lf-hero-slider__dots" role="group" aria-label="スライド位置">
 				<?php foreach ( $slides as $index => $slide ) : ?>
 					<button
@@ -144,12 +144,10 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 					></button>
 				<?php endforeach; ?>
 			</div>
-			<div class="lf-hero-slider__status">
-				<span class="lf-hero-slider__counter" aria-live="polite" aria-atomic="true" data-lf-live>1 / <?php echo esc_html( (string) $total ); ?></span>
-				<button type="button" class="lf-hero-slider__playback" data-lf-playback aria-label="スライドの自動送りを一時停止" title="スライドの自動送りを一時停止"<?php echo $total < 2 ? ' hidden' : ''; ?>>
-					<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path data-lf-playback-glyph d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
-				</button>
-			</div>
+			<span class="lf-hero-slider__counter" aria-live="polite" aria-atomic="true" data-lf-live>1 / <?php echo esc_html( (string) $total ); ?></span>
+			<button type="button" class="lf-hero-slider__playback" data-lf-playback aria-label="スライドの自動送りを一時停止" title="スライドの自動送りを一時停止"<?php echo $total < 2 ? ' hidden' : ''; ?>>
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path data-lf-playback-glyph d="M6 4h4v16H6zM14 4h4v16h-4z" /></svg>
+			</button>
 		</div>
 	</div>
 
