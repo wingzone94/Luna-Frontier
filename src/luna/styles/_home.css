@@ -67,7 +67,18 @@ body.lf-theme .lf-home-story--latest .lf-home-story__excerpt { -webkit-line-clam
 body.lf-theme .lf-home__panel { padding: 12px 16px; }
 body.lf-theme .lf-home__panel .lf-home__section-head { gap: 8px; margin-bottom: 8px; }
 body.lf-theme .lf-home__panel h2 { font-size: 18px; }
-body.lf-theme .lf-home__period { margin-left: auto; font-size: 12px; color: var(--lf-home-muted); }
+/* The clipped background makes the seam diagonal; labels and targets stay level. */
+body.lf-theme .lf-home__period { display: inline-flex; isolation: isolate; overflow: hidden; margin-left: auto; max-width: 100%; border: 1px solid var(--lf-brand); border-radius: var(--lf-shape-full); background: #fff; font-size: 12px; }
+body.lf-theme .lf-home .lf-home__period a { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding-inline: 16px; color: #2b1700; font-weight: 700; white-space: nowrap; background: #fff; }
+body.lf-theme .lf-home .lf-home__period a[aria-current] { color: #fff; background: var(--lf-brand); }
+body.lf-theme .lf-home__period a[aria-current]:first-child { clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0 100%); }
+body.lf-theme .lf-home__period a[aria-current]:last-child { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
+body.lf-theme .lf-home__period a:not([aria-current]):hover { background: color-mix(in srgb, #000 8%, #fff); }
+body.lf-theme .lf-home__period a[aria-current]:hover { background: color-mix(in srgb, #000 8%, var(--lf-brand)); }
+body.lf-theme .lf-home__period a:not([aria-current]):active { background: color-mix(in srgb, #000 12%, #fff); }
+body.lf-theme .lf-home__period a[aria-current]:active { background: color-mix(in srgb, #000 12%, var(--lf-brand)); }
+body.lf-theme .lf-home__period a:focus-visible { outline: 2px solid #2b1700; outline-offset: -5px; border-radius: var(--lf-shape-full); }
+body.lf-theme .lf-home #popular { scroll-margin-top: 88px; }
 body.lf-theme .lf-home__ranking li + li { border-top: 1px solid var(--lf-home-line); }
 body.lf-theme .lf-home-story--popular .lf-home-story__link { align-items: center; gap: 10px; padding-block: 8px; }
 body.lf-theme .lf-home-story--popular .lf-home-story__visual { width: 76px; aspect-ratio: 16 / 10; }
