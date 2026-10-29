@@ -23,7 +23,6 @@ define( 'NODE_THEME_DIR', get_stylesheet_directory() );
 define( 'NODE_THEME_URI', get_stylesheet_directory_uri() );
 define( 'NODE_ALL_ARTICLES_SLUG', 'all-articles' );
 define( 'NODE_ALL_ARTICLES_PER_PAGE', 24 );
-define( 'NODE_ALL_ARTICLES_TOTAL_LIMIT', 240 );
 define( 'NODE_PREFERRED_SOURCE_DEFAULT_URL', 'https://google.com/preferences/source?q=luminous-core.net' );
 // Official Google preferred source badges are served from production uploads, not bundled in the theme.
 define( 'NODE_PREFERRED_SOURCE_BADGE_BASE_URL', 'https://luminous-core.net/wp-content/uploads/2026/07/' );
@@ -153,7 +152,7 @@ if (
 }
 
 /**
- * 全記事一覧ページ（上限付き）のURLを返す。
+ * 全記事一覧ページのURLを返す。
  */
 function node_get_all_articles_url() {
 	return home_url( '/' . trim( NODE_ALL_ARTICLES_SLUG, '/' ) . '/' );
@@ -1411,13 +1410,12 @@ function node_resolve_404_redirect_target( WP_Query $wp_query, string $request_u
 		$requested_page = (int) $page_match[2];
 
 		if ( NODE_ALL_ARTICLES_SLUG === $base_path ) {
-			$per_page         = max( 1, (int) NODE_ALL_ARTICLES_PER_PAGE );
-			$total_limit      = max( 1, (int) NODE_ALL_ARTICLES_TOTAL_LIMIT );
-			$total_published  = function_exists( 'node_get_total_published_posts' )
+			$total_published = function_exists( 'node_get_total_published_posts' )
 				? node_get_total_published_posts()
 				: (int) wp_count_posts( 'post' )->publish;
-			$total_displaying = min( max( 0, (int) $total_published ), $total_limit );
-			$max_page        = max( 1, (int) ceil( $total_displaying / $per_page ) );
+			$max_page        = function_exists( 'node_get_all_articles_total_pages' )
+				? node_get_all_articles_total_pages( (int) $total_published )
+				: max( 1, (int) ceil( max( 0, (int) $total_published ) / max( 1, (int) NODE_ALL_ARTICLES_PER_PAGE ) ) );
 
 			if ( $requested_page > $max_page ) {
 				return node_404_redirect_preserve_query(
