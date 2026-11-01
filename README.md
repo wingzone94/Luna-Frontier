@@ -37,7 +37,7 @@ Luna Frontier は Node の子テーマではありません。Node 1.x を起点
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
 
 ## インストール
-1. [Luna Frontier 2.0.0の配布ZIP](https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/luna-frontier-2.0-skyalow/luna.zip)をダウンロードする。ZIP内のルートは`luna-frontier/`です。
+1. [最新のLuna Frontier Release](https://github.com/wingzone94/Luna-Frontier/releases)から`luna.zip`をダウンロードする（asset URL: `https://github.com/wingzone94/Luna-Frontier/releases/download/luna-frontier-v{version}-{build_id}/luna.zip`）。ZIP内のルートは`luna-frontier/`です。誤取得防止のため、`luna-release.json`の`sha256`が`shasum -a 256 luna.zip`と一致することを確認できます。
 2. WordPress管理画面の「外観 → テーマ → 新規追加 → テーマのアップロード」から`luna.zip`をアップロードし、「Luna Frontier」を有効化する。既存の同名テーマがある場合は、管理画面の置換確認に従って更新する。
 3. 管理画面でバージョン`2.0.0`を確認し、トップページと記事ページを表示確認する。Nodeテーマの追加インストールやBunによるビルドは不要です。
 
