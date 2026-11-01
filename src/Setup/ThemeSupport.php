@@ -79,49 +79,30 @@ final class ThemeSupport {
 	 * Enqueue Vite-built scripts and styles.
 	 */
 	public static function enqueueAssets(): void {
-		$manifest_path = NODE_THEME_DIR . '/assets/.vite/manifest.json';
-		$manifest      = self::readManifest( $manifest_path );
+		$build = node_resolve_vite_build();
 
-		if ( null !== $manifest ) {
-			self::enqueueMainScript( $manifest );
-			self::enqueueMainStyles( $manifest );
+		if ( null !== $build ) {
+			self::enqueueMainScript( $build );
+			self::enqueueMainStyles( $build );
 		}
 
 		luminous_enqueue_plugin_scripts();
 	}
 
 	/**
-	 * Read and validate the Vite manifest.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private static function readManifest( string $manifest_path ): ?array {
-		if ( ! is_readable( $manifest_path ) ) {
-			return null;
-		}
-
-		$contents = file_get_contents( $manifest_path );
-		if ( false === $contents ) {
-			return null;
-		}
-
-		$manifest = json_decode( $contents, true );
-
-		return is_array( $manifest ) ? $manifest : null;
-	}
-
-	/**
 	 * Enqueue the main ES module and its imported chunks.
 	 *
-	 * @param array<string, mixed> $manifest Vite manifest.
+	 * @param array{base:string,manifest:array} $build node_resolve_vite_build() の解決結果。
 	 */
-	private static function enqueueMainScript( array $manifest ): void {
+	private static function enqueueMainScript( array $build ): void {
+		$manifest = $build['manifest'];
+
 		if ( ! isset( $manifest['src/main.js']['file'] ) ) {
 			return;
 		}
 
 		$seen    = array();
-		$handles = self::registerViteChain( $manifest, 'src/main.js', $seen );
+		$handles = self::registerViteChain( $manifest, 'src/main.js', $seen, $build['base'] );
 
 		foreach ( $handles as $handle ) {
 			wp_enqueue_script( $handle );
@@ -150,20 +131,22 @@ final class ThemeSupport {
 	/**
 	 * Enqueue styles referenced by the Vite manifest.
 	 *
-	 * @param array<string, mixed> $manifest Vite manifest.
+	 * @param array{base:string,manifest:array} $build node_resolve_vite_build() の解決結果。
 	 */
-	private static function enqueueMainStyles( array $manifest ): void {
+	private static function enqueueMainStyles( array $build ): void {
+		$manifest = $build['manifest'];
+
 		if ( isset( $manifest['src/main.js']['css'] ) && is_array( $manifest['src/main.js']['css'] ) ) {
 			foreach ( $manifest['src/main.js']['css'] as $css_file ) {
 				if ( is_string( $css_file ) ) {
-					self::enqueueStyle( 'node-main-css', $css_file );
+					self::enqueueStyle( 'node-main-css', $css_file, $build['base'] );
 				}
 			}
 		}
 
 		$style_file = $manifest['src/styles/style.css']['file'] ?? null;
 		if ( is_string( $style_file ) ) {
-			self::enqueueStyle( 'node-style-css', $style_file );
+			self::enqueueStyle( 'node-style-css', $style_file, $build['base'] );
 		}
 	}
 
@@ -173,9 +156,10 @@ final class ThemeSupport {
 	 * @param array<string, mixed> $manifest Vite manifest.
 	 * @param string               $key      Manifest entry key.
 	 * @param array<string, bool>  $seen     Registered entries.
+	 * @param string               $base     node_resolve_vite_build() が選んだ成果物の base。
 	 * @return string[] Script handles in load order.
 	 */
-	private static function registerViteChain( array $manifest, string $key, array &$seen ): array {
+	private static function registerViteChain( array $manifest, string $key, array &$seen, string $base ): array {
 		if ( ! isset( $manifest[ $key ] ) || isset( $seen[ $key ] ) || ! is_array( $manifest[ $key ] ) ) {
 			return array();
 		}
@@ -186,7 +170,7 @@ final class ThemeSupport {
 		if ( is_array( $imports ) ) {
 			foreach ( $imports as $import_key ) {
 				if ( is_string( $import_key ) ) {
-					$handles = array_merge( $handles, self::registerViteChain( $manifest, $import_key, $seen ) );
+					$handles = array_merge( $handles, self::registerViteChain( $manifest, $import_key, $seen, $base ) );
 				}
 			}
 		}
@@ -208,7 +192,7 @@ final class ThemeSupport {
 		 */
 		wp_register_script(
 			$handle,
-			NODE_THEME_URI . '/assets/' . $file,
+			node_vite_public_url( $base, $file ),
 			array(),
 			null,
 			true
@@ -224,13 +208,13 @@ final class ThemeSupport {
 	/**
 	 * Enqueue a stylesheet with an mtime-based version.
 	 */
-	private static function enqueueStyle( string $handle, string $file ): void {
-		$path    = NODE_THEME_DIR . '/assets/' . $file;
+	private static function enqueueStyle( string $handle, string $file, string $base ): void {
+		$path    = node_vite_disk_path( $base, $file );
 		$version = file_exists( $path ) ? (string) filemtime( $path ) : NODE_THEME_VERSION;
 
 		wp_enqueue_style(
 			$handle,
-			NODE_THEME_URI . '/assets/' . $file,
+			node_vite_public_url( $base, $file ),
 			array(),
 			$version
 		);

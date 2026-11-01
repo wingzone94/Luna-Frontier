@@ -49,8 +49,10 @@ bun run build
 ```
 
 ### 注意事項
-- `vite.config.js` の `clean-hashed-bundles` プラグインにより、古いハッシュ付きバンドルは自動削除されます。
-- `assets/.vite/manifest.json` と生成された JS/CSS のハッシュが一致していることを確認してください。
+- 生成先は `dist/`（`vite.config.js` の `outDir: 'dist'`）。ソース階層 `assets/` には混ぜない。
+- PHP は `inc/theme-setup.php` の `node_resolve_vite_build()` で `dist/.vite/manifest.json` → `assets/.vite/manifest.json` の順に解決する。成果物の採用単位は **manifest 全体**（新・旧チャンクの混在は禁止）。
+- `dist/.vite/manifest.json` と生成された `dist/js/main.*` / `dist/js/vendor.*` のハッシュが一致していることを確認してください。
+- 既存サイトとの後方互換のため、`assets/js/main.*` / `assets/js/vendor.*` と `assets/.vite/manifest.json`（旧世代1回分）は **次リリースまで削除しない**。dist が無い環境（配布ZIP単体）はここへフォールバックして配信される。
 - フォント（`NotoSansJP-VF.ttf`, `Inter-Regular.ttf` 等）はCDNから取得するため、テーマ内には同梱しません。
 
 ## 3. テストと動作検証
@@ -63,6 +65,9 @@ composer test
 ```
 特に以下のテストがすべて成功することを確認します：
 - `tests/luna-release-package-test.php`
+- `tests/node-release-package-test.php`
+- `tests/node-vite-manifest-test.php`
+- `tests/node-settings-sanitize-test.php`
 - `tests/node-image-repair-test.php`
 - `tests/node-image-repair-ajax-test.php`
 - `tests/node-image-retention-test.php`

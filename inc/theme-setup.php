@@ -411,6 +411,86 @@ function node_verify_zip_sha256( string $zip_path, string $expected_hex ): bool|
 }
 
 /**
+ * Vite のビルド成果物（manifest）を dist → assets の順に解決する。
+ *
+ * 採用単位は manifest 全体。dist の manifest が契約を満たすなら assets にはフォールバックしない
+ * （旧・新チャンクの混在を禁止する）。dist が無い / 壊れている / 契約を満たさない場合のみ、
+ * 配布ZIP単体でも成立する assets 側（旧ハッシュバンドル1世代分）を使う。
+ *
+ * 契約: `src/main.js` の `file` が `^js/main\.[^/]+\.js$`、かつどこかの entry の `file` が
+ * `^js/vendor\.[^/]+\.js$`、かつ main の実ファイルが選んだ base 配下に存在する。
+ *
+ * @return array{base:string,manifest:array}|null
+ */
+function node_resolve_vite_build( ?string $theme_dir = null ): ?array {
+	$theme_dir = $theme_dir ?? NODE_THEME_DIR;
+
+	$candidates = array(
+		array(
+			'base'     => 'dist',
+			'manifest' => '/dist/.vite/manifest.json',
+		),
+		array(
+			'base'     => 'assets',
+			'manifest' => '/assets/.vite/manifest.json',
+		),
+	);
+
+	foreach ( $candidates as $candidate ) {
+		$path = $theme_dir . $candidate['manifest'];
+		if ( ! is_readable( $path ) ) {
+			continue;
+		}
+
+		$decoded = json_decode( (string) file_get_contents( $path ), true );
+		if ( ! is_array( $decoded ) ) {
+			continue;
+		}
+
+		$main_file = is_array( $decoded['src/main.js'] ?? null ) ? ( $decoded['src/main.js']['file'] ?? '' ) : '';
+		if ( ! is_string( $main_file ) || ! (bool) preg_match( '#^js/main\.[^/]+\.js$#', $main_file ) ) {
+			continue;
+		}
+
+		$vendor_found = false;
+		foreach ( $decoded as $entry ) {
+			if ( is_array( $entry ) && is_string( $entry['file'] ?? null ) && (bool) preg_match( '#^js/vendor\.[^/]+\.js$#', $entry['file'] ) ) {
+				$vendor_found = true;
+				break;
+			}
+		}
+		if ( ! $vendor_found ) {
+			continue;
+		}
+
+		if ( ! is_file( $theme_dir . '/' . $candidate['base'] . '/' . ltrim( $main_file, '/' ) ) ) {
+			continue;
+		}
+
+		return array(
+			'base'     => $candidate['base'],
+			'manifest' => $decoded,
+		);
+	}
+
+	return null;
+}
+
+/**
+ * manifest の相対パスを公開URLへ変換する。
+ */
+function node_vite_public_url( string $base, string $relative_file ): string {
+	return NODE_THEME_URI . '/' . $base . '/' . ltrim( $relative_file, '/' );
+}
+
+/**
+ * manifest の相対パスをディスク上のパスへ変換する。
+ */
+function node_vite_disk_path( string $base, string $relative_file ): string {
+	return NODE_THEME_DIR . '/' . $base . '/' . ltrim( $relative_file, '/' );
+}
+
+/**
  * 更新用 sidecar 名（_next_update / _previous_update / _update.lock）のフルパス。
  */
 function node_theme_update_sidecar( string $theme_dir, string $suffix ): string {
