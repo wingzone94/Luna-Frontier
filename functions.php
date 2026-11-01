@@ -23,6 +23,10 @@ define( 'NODE_THEME_DIR', get_stylesheet_directory() );
 define( 'NODE_THEME_URI', get_stylesheet_directory_uri() );
 define( 'NODE_ALL_ARTICLES_SLUG', 'all-articles' );
 define( 'NODE_ALL_ARTICLES_PER_PAGE', 24 );
+// トップとフッターの「カテゴリから探す」に出す件数。増やすとピルが数段に折り返して
+// トップが縦に伸びるため、記事数の多い順で頭打ちにする。
+define( 'NODE_CATEGORY_NAV_LIMIT', 12 );
+define( 'NODE_CATEGORY_NAV_FOOTER_LIMIT', 8 );
 define( 'NODE_PREFERRED_SOURCE_DEFAULT_URL', 'https://google.com/preferences/source?q=luminous-core.net' );
 // Official Google preferred source badges are served from production uploads, not bundled in the theme.
 define( 'NODE_PREFERRED_SOURCE_BADGE_BASE_URL', 'https://luminous-core.net/wp-content/uploads/2026/07/' );
