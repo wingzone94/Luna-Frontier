@@ -583,4 +583,34 @@ class Luna_Ads_Control_Test extends WP_UnitTestCase {
 
 		$_POST = $original_post;
 	}
+
+	public function test_excluded_post_does_not_load_automatic_ads() {
+		$id = self::factory()->post->create();
+		$this->configure( array(), array( 'client_id' => 'ca-pub-1234567890', 'exclude' => array( 'post_ids' => (string) $id ) ) );
+		$this->go_to( get_permalink( $id ) );
+		ob_start();
+		Luna_Ads_Renderer::maybe_output_adsense_loader();
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	public function test_manual_and_content_slots_do_not_duplicate_in_either_order() {
+		$id = self::factory()->post->create();
+		$this->configure( array( 'in_article' => array( 'enabled' => true, 'code' => '<ins>ad</ins>', 'paragraph' => 1 ) ) );
+		$this->go_to( get_permalink( $id ) );
+		$manual = Luna_Ads_Renderer::get_slot_html( 'in_article' );
+		$content = Luna_Ads_Renderer::filter_the_content( '<p>one</p>' );
+		$this->assertSame( 1, substr_count( $manual . $content, 'data-luna-ad="in_article"' ) );
+		Luna_Ads_Renderer::reset_state();
+		$content = Luna_Ads_Renderer::filter_the_content( '<p>one</p>' );
+		$manual = Luna_Ads_Renderer::get_slot_html( 'in_article' );
+		$this->assertSame( 1, substr_count( $manual . $content, 'data-luna-ad="in_article"' ) );
+	}
+
+	public function test_quoted_paragraphs_are_not_insertion_points() {
+		$id = self::factory()->post->create();
+		$this->configure( array( 'in_article' => array( 'enabled' => true, 'code' => '<ins>ad</ins>', 'paragraph' => 1 ) ) );
+		$out = $this->render_content( $id, '<blockquote><p>quoted</p></blockquote><p>outside</p><p>last</p>' );
+		$this->assertGreaterThan( strpos( $out, '</blockquote>' ), strpos( $out, 'data-luna-ad="in_article"' ) );
+		$this->assertGreaterThan( strpos( $out, '<p>outside</p>' ), strpos( $out, 'data-luna-ad="in_article"' ) );
+	}
 }

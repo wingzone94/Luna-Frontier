@@ -1,10 +1,10 @@
-=== Luna Ads Control ===
+=== Luna Ads Center ===
 Contributors: luminouscore
 Tags: ads, adsense, monetization, advertising
 Requires at least: 6.4
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -12,7 +12,7 @@ License URI: https://opensource.org/licenses/MIT
 
 == Description ==
 
-Luna Ads Control は、Luminous Core / Luna Frontier のための独立した広告管理プラグインです。
+Luna Ads Center は、Luminous Core / Luna Frontier のための独立した広告管理プラグインです。
 テーマを切り替えても動作し、テーマ側の `node_the_ad_area()` や Site Kit と二重に広告を挿入しません。
 
 主な特徴:
@@ -29,7 +29,7 @@ Luna Ads Control は、Luminous Core / Luna Frontier のための独立した広
 
 1. `luna-ads-control.zip` を「プラグイン → 新規追加 → プラグインのアップロード」からインストールします。
 2. プラグインを有効化します。この時点では広告は配信されません。
-3. 「設定 → Luna Ads Control」で管理元・配信方式・各枠を設定します。
+3. 「Luna Settings → Luna Ads Center」で管理元・配信方式・各枠を設定します。
 4. 問題がなければ「広告配信を有効にする」をオンにします。
 
 == Frequently Asked Questions ==

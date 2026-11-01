@@ -23,6 +23,9 @@ final class Luna_Ads_Renderer {
 	 */
 	private static $rendered = array();
 
+	/** @var array<string,bool> Slots inserted by a content filter. */
+	private static $auto_rendered = array();
+
 	/**
 	 * アーカイブのループ内で数えた投稿数。
 	 *
@@ -57,6 +60,7 @@ final class Luna_Ads_Renderer {
 	 */
 	public static function reset_state() {
 		self::$rendered       = array();
+		self::$auto_rendered = array();
 		self::$loop_index     = 0;
 		self::$loader_printed = false;
 	}
@@ -150,9 +154,7 @@ final class Luna_Ads_Renderer {
 			return $content;
 		}
 
-		$inserted_in_article = false;
-
-		if ( self::slot_has_code( 'in_article' ) && false === strpos( $content, 'data-luna-ad="in_article"' ) ) {
+		if ( ! self::is_rendered( 'in_article' ) && self::slot_has_code( 'in_article' ) && false === strpos( $content, 'data-luna-ad="in_article"' ) ) {
 			$ad = self::build_slot( 'in_article', false, false );
 			if ( '' !== $ad ) {
 				$config    = $settings['slots']['in_article'];
@@ -160,10 +162,12 @@ final class Luna_Ads_Renderer {
 				$with_ad   = self::inject_after_paragraph( $content, $ad, $paragraph );
 				if ( null !== $with_ad ) {
 					$content = $with_ad;
-				} elseif ( ! self::slot_has_code( 'article_bottom' ) ) {
+					self::$auto_rendered['in_article'] = true;
+				} elseif ( self::is_rendered( 'article_bottom' ) || ! self::slot_has_code( 'article_bottom' ) ) {
 					// 指定段落が無い場合は末尾へ回す。末尾広告と重ならないよう、
 					// 末尾広告が有効なときは本文中広告を諦める。
 					$content = $content . "\n" . $ad;
+					self::$auto_rendered['in_article'] = true;
 				}
 			}
 		}
@@ -203,6 +207,9 @@ final class Luna_Ads_Renderer {
 		}
 
 		$ad = self::build_slot( 'article_bottom', false, false );
+		if ( '' !== $ad ) {
+			self::$auto_rendered['article_bottom'] = true;
+		}
 		return '' !== $ad ? $content . "\n" . $ad : $content;
 	}
 
@@ -287,7 +294,7 @@ final class Luna_Ads_Renderer {
 		if ( ! self::manual_output_allowed( $settings ) ) {
 			return '';
 		}
-		if ( self::is_rendered( $slot ) ) {
+		if ( self::is_rendered( $slot ) || ! empty( self::$auto_rendered[ $slot ] ) ) {
 			return '';
 		}
 		if ( ! self::post_allows_ads( (int) get_the_ID() ) ) {
@@ -379,6 +386,12 @@ final class Luna_Ads_Renderer {
 
 		$settings = Luna_Ads_Settings::get();
 		if ( empty( $settings['enabled'] ) || 'plugin' !== $settings['code_source'] ) {
+			return;
+		}
+		if ( ! self::post_allows_ads( is_singular() ? (int) get_queried_object_id() : 0 ) ) {
+			return;
+		}
+		if ( is_admin() || is_feed() || is_embed() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 			return;
 		}
 		if ( '' === (string) $settings['client_id'] ) {
@@ -535,16 +548,23 @@ final class Luna_Ads_Renderer {
 	 */
 	private static function inject_after_paragraph( $content, $ad, $paragraph ) {
 		$paragraph = max( 1, (int) $paragraph );
-		$offset    = 0;
-		$seen      = 0;
-
-		while ( false !== ( $position = stripos( $content, '</p>', $offset ) ) ) {
-			$seen++;
-			if ( $seen >= $paragraph ) {
-				$insert_at = $position + 4;
-				return substr( $content, 0, $insert_at ) . "\n" . $ad . "\n" . substr( $content, $insert_at );
+		$seen = 0;
+		$depth = 0;
+		$parts = wp_html_split( $content );
+		// Do not count paragraphs inside quotes, lists, captions, tables or code.
+		$protected = 'blockquote|figure|table|ul|ol|pre|script|style|textarea';
+		foreach ( $parts as $index => $part ) {
+			if ( preg_match( '~^</(' . $protected . ')\\s*>~i', $part ) ) {
+				$depth = max( 0, $depth - 1 );
+			} elseif ( preg_match( '~^<(' . $protected . ')(?:\\s|>)~i', $part ) && ! preg_match( '~/\\s*>$~', $part ) ) {
+				$depth++;
+			} elseif ( 0 === $depth && preg_match( '~^</p\\s*>$~i', $part ) ) {
+				$seen++;
+				if ( $seen >= $paragraph ) {
+					$parts[ $index ] .= "\n" . $ad . "\n";
+					return implode( '', $parts );
+				}
 			}
-			$offset = $position + 4;
 		}
 
 		return null;

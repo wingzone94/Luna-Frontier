@@ -16,13 +16,16 @@ final class Luna_Ads_Admin {
 
 	const PAGE_SLUG = 'luna-ads-control';
 
+	/** @var string|false Registered page hook, including its current parent menu. */
+	private static $page_hook = '';
+
 	/**
 	 * フックを登録する。
 	 *
 	 * @return void
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ), 80 );
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_box' ) );
@@ -42,18 +45,25 @@ final class Luna_Ads_Admin {
 	}
 
 	/**
-	 * 設定 → Luna Ads Control。
+	 * Luna Settings → Luna Ads Center。
 	 *
 	 * @return void
 	 */
 	public static function add_menu() {
-		add_options_page(
-			'Luna Ads Control',
-			'Luna Ads Control',
+		$parent = isset( $GLOBALS['admin_page_hooks']['luminous-settings'] ) ? 'luminous-settings' : 'options-general.php';
+		self::$page_hook = add_submenu_page(
+			$parent,
+			'Luna Ads Center',
+			'Luna Ads Center',
 			self::settings_capability(),
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
 		);
+		// Keep bookmarks to the former Settings page working.
+		if ( 'luminous-settings' === $parent && 'options-general.php' === ( $GLOBALS['pagenow'] ?? '' ) && isset( $_GET['page'] ) && is_string( $_GET['page'] ) && self::PAGE_SLUG === sanitize_key( wp_unslash( $_GET['page'] ) ) && Luna_Ads_Settings::user_can_manage() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG ) );
+			exit;
+		}
 	}
 
 	/**
@@ -81,7 +91,7 @@ final class Luna_Ads_Admin {
 	 * @return void
 	 */
 	public static function enqueue_assets( $hook_suffix ) {
-		if ( 'settings_page_' . self::PAGE_SLUG !== $hook_suffix ) {
+		if ( self::$page_hook !== $hook_suffix ) {
 			return;
 		}
 
@@ -111,7 +121,7 @@ final class Luna_Ads_Admin {
 			<header class="luna-ads-hero">
 				<div>
 					<p class="luna-ads-eyebrow">Luna Frontier · Monetization</p>
-					<h1>Luna Ads Control</h1>
+					<h1>Luna Ads Center</h1>
 					<p class="luna-ads-lead">広告枠の配信を一元管理します。初期状態では配信しません。未設定の枠は空白のプレースホルダーも出力しません。</p>
 				</div>
 				<div class="luna-ads-hero__status" aria-live="polite">
@@ -413,7 +423,7 @@ final class Luna_Ads_Admin {
 	 */
 	public static function render_admin_notices() {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( ! $screen || 'settings_page_' . self::PAGE_SLUG !== $screen->id ) {
+		if ( ! $screen || self::$page_hook !== $screen->id ) {
 			return;
 		}
 
@@ -458,7 +468,7 @@ final class Luna_Ads_Admin {
 		foreach ( $post_types as $post_type ) {
 			add_meta_box(
 				'luna-ads-control-post',
-				'Luna Ads Control',
+				'Luna Ads Center',
 				array( __CLASS__, 'render_meta_box' ),
 				$post_type,
 				'side',
