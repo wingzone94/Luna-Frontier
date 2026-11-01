@@ -17,6 +17,65 @@ function node_generate_product_link($url, $type = 'amazon') {
 add_shortcode('m3_product', 'node_product_card_shortcode');
 // --- ユーティリティ ---
 
+function node_get_all_articles_per_page(): int {
+    if ( defined( 'NODE_ALL_ARTICLES_PER_PAGE' ) ) {
+        return max( 1, (int) NODE_ALL_ARTICLES_PER_PAGE );
+    }
+
+    return 24;
+}
+
+/**
+ * 公開済みの通常投稿を数える・並べるときの共通条件。
+ *
+ * 対象は post_type=post かつ post_status=publish のみ。固定ページ、下書き、
+ * 予約投稿、非公開、レビュー待ちは含めない。パスワード保護の公開記事は、
+ * 件数側も一覧側も追加の除外を持っていないため、両方に含める。
+ * 同一公開日時でもページ間で重複・欠落しないよう、投稿IDを補助ソートにする。
+ *
+ * @return array<string, mixed>
+ */
+function node_get_published_posts_query_args(): array {
+    return array(
+        'post_type'           => 'post',
+        'post_status'         => 'publish',
+        'ignore_sticky_posts' => true,
+        'orderby'             => array(
+            'date' => 'DESC',
+            'ID'   => 'DESC',
+        ),
+    );
+}
+
+/**
+ * 公開記事総数から /all-articles/ の総ページ数を求める。
+ * 0件でも空の1ページとして扱い、ページ送りは出さない。
+ */
+function node_get_all_articles_total_pages( int $total_published ): int {
+    $total = max( 0, $total_published );
+
+    if ( 0 === $total ) {
+        return 1;
+    }
+
+    return (int) ceil( $total / node_get_all_articles_per_page() );
+}
+
+/**
+ * /all-articles/ の1ページ分を取得するクエリ引数。全体の取得件数は制限しない。
+ *
+ * @return array<string, mixed>
+ */
+function node_get_all_articles_page_query_args( int $paged ): array {
+    return array_merge(
+        node_get_published_posts_query_args(),
+        array(
+            'posts_per_page' => node_get_all_articles_per_page(),
+            'paged'          => max( 1, $paged ),
+        )
+    );
+}
+
 function node_get_total_published_posts(): int {
     $cached = get_transient('node_total_published_posts');
 
@@ -25,12 +84,13 @@ function node_get_total_published_posts(): int {
     }
 
     $posts_query = new WP_Query(
-        array(
-            'post_type'           => 'post',
-            'post_status'         => 'publish',
-            'ignore_sticky_posts' => true,
-            'posts_per_page'      => 1,
-            'fields'              => 'ids',
+        array_merge(
+            node_get_published_posts_query_args(),
+            array(
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+                'no_found_rows'  => false,
+            )
         )
     );
     $total       = (int) $posts_query->found_posts;
@@ -47,6 +107,32 @@ function node_delete_total_published_posts_transient(...$args): void {
 add_action('save_post', 'node_delete_total_published_posts_transient');
 add_action('deleted_post', 'node_delete_total_published_posts_transient');
 add_action('transition_post_status', 'node_delete_total_published_posts_transient');
+
+/**
+ * The virtual archive is not a native post-type archive, so WP Super Cache
+ * does not include it in its usual post-update invalidation. Its URL API also
+ * clears /page/ descendants when publication changes shift the pagination.
+ */
+function node_invalidate_all_articles_page_cache( $post_id, $post = null ): void {
+    $post = $post instanceof WP_Post ? $post : get_post( $post_id );
+    if ( ! $post || 'post' !== $post->post_type || ! function_exists( 'wpsc_delete_url_cache' ) ) {
+        return;
+    }
+
+    // Flush once after all save/status hooks have finished updating the post.
+    if ( ! has_action( 'shutdown', 'node_purge_all_articles_page_cache' ) ) {
+        add_action( 'shutdown', 'node_purge_all_articles_page_cache' );
+    }
+}
+
+function node_purge_all_articles_page_cache(): void {
+    if ( function_exists( 'wpsc_delete_url_cache' ) ) {
+        wpsc_delete_url_cache( untrailingslashit( node_get_all_articles_url() ) );
+    }
+}
+
+add_action( 'save_post_post', 'node_invalidate_all_articles_page_cache', 10, 2 );
+add_action( 'deleted_post', 'node_invalidate_all_articles_page_cache', 10, 2 );
 
 function node_get_relative_date($post_id = null) {
 	$resolved_post_id = (int) ( $post_id ?: get_the_ID() );

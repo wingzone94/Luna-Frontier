@@ -194,11 +194,8 @@ class Node_Pagination_Redirect_Test extends WP_UnitTestCase {
 	}
 
 	public function test_all_articles_page_99_redirects_to_configured_last_page(): void {
-		$total_published = (int) wp_count_posts( 'post' )->publish;
-		$max_page        = max(
-			1,
-			(int) ceil( min( $total_published, NODE_ALL_ARTICLES_TOTAL_LIMIT ) / NODE_ALL_ARTICLES_PER_PAGE )
-		);
+		$total_published = node_get_total_published_posts();
+		$max_page        = node_get_all_articles_total_pages( $total_published );
 
 		$this->assertSame(
 			home_url( '/all-articles/page/' . $max_page . '/' ),

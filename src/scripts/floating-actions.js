@@ -52,8 +52,11 @@ export function initFloatingActions() {
             const size = parseFloat(style.getPropertyValue('--node-action-size')) || 48;
             const gap = parseFloat(style.gap) || 12;
             const hasToc = tocTrigger && getComputedStyle(tocTrigger).display !== 'none';
-            const height = hasToc ? 2 * size + gap : size;
-            const bottom = window.innerHeight - (parseFloat(style.bottom) || 24);
+            const horizontal = style.flexDirection === 'row' || style.flexDirection === 'row-reverse';
+            const height = (horizontal || !hasToc ? size : 2 * size + gap)
+                + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+            const bottomOffset = parseFloat(style.bottom);
+            const bottom = window.innerHeight - (Number.isFinite(bottomOffset) ? bottomOffset : 24);
             // Other article sections keep their full width. Retire the actions
             // before the body gutter ends rather than floating over those sections.
             inReadingLane = isSingle && Boolean(bounds
