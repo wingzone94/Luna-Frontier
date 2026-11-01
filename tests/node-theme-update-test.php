@@ -187,4 +187,110 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$empty_mismatch['build_id'] = '';
 		$this->assertSame( 'luna_update_meta_build', node_validate_luna_release_meta( $empty_mismatch, $release )->get_error_code() );
 	}
+
+	/** ライブが runnable で _next_update だけがあるとき、swap が成功し _next_update が消える。 */
+	public function test_swap_cleans_next_update_when_live_is_runnable(): void {
+		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
+		$theme  = $this->root . '/Node';
+		wp_mkdir_p( $theme );
+
+		// ライブを runnable 化（create_package と同じ構成）。
+		file_put_contents( $theme . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.6\n*/\n" );
+		file_put_contents( $theme . '/index.php', '<?php' );
+		file_put_contents( $theme . '/functions.php', '<?php' );
+		file_put_contents( $theme . '/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.6', 'build_id' => '20261028T000000Z-live000' ) ) );
+
+		wp_mkdir_p( $theme . '_next_update' );
+		file_put_contents( $theme . '_next_update/junk.php', '<?php' );
+
+		$this->assertTrue( node_swap_theme_update_directory( $this->filesystem, $source, $theme ) );
+		$this->assertDirectoryDoesNotExist( $theme . '_next_update' );
+		$this->assertFileDoesNotExist( $theme . '_update.lock' );
+	}
+
+	/** ライブの functions.php が無く _next_update があるとき、leftovers で _next_update が残る。 */
+	public function test_swap_keeps_leftovers_when_live_is_not_runnable(): void {
+		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
+		$theme  = $this->root . '/Node';
+		wp_mkdir_p( $theme );
+
+		file_put_contents( $theme . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.6\n*/\n" );
+		file_put_contents( $theme . '/index.php', '<?php' );
+		// functions.php を意図的に作らない。
+
+		wp_mkdir_p( $theme . '_next_update' );
+		file_put_contents( $theme . '_next_update/junk.php', '<?php' );
+
+		$error = node_swap_theme_update_directory( $this->filesystem, $source, $theme );
+		$this->assertWPError( $error );
+		$this->assertSame( 'theme_update_leftovers', $error->get_error_code() );
+		$this->assertDirectoryExists( $theme . '_next_update' );
+	}
+
+	/** ライブがバックアップ(_previous_update)より新しい場合、削除して swap が成功する。 */
+	public function test_swap_removes_previous_update_when_live_is_newer(): void {
+		$source = $this->create_package( '2.0.0-preview.8', 'new-build' );
+		$theme  = $this->root . '/Node';
+		wp_mkdir_p( $theme );
+
+		file_put_contents( $theme . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.7\n*/\n" );
+		file_put_contents( $theme . '/index.php', '<?php' );
+		file_put_contents( $theme . '/functions.php', '<?php' );
+		file_put_contents( $theme . '/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.7', 'build_id' => '20261029T000000Z-live001' ) ) );
+
+		// 退避残骸はライブより古い構成。
+		wp_mkdir_p( $theme . '_previous_update' );
+		file_put_contents( $theme . '_previous_update/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.6\n*/\n" );
+		file_put_contents( $theme . '_previous_update/index.php', '<?php' );
+		file_put_contents( $theme . '_previous_update/functions.php', '<?php' );
+		file_put_contents( $theme . '_previous_update/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.6', 'build_id' => '20261028T000000Z-old0001' ) ) );
+
+		$this->assertTrue( node_swap_theme_update_directory( $this->filesystem, $source, $theme ) );
+		$this->assertDirectoryDoesNotExist( $theme . '_previous_update' );
+	}
+
+	/** ライブの版が退籍残骸より古いとき、両方残して leftovers。 */
+	public function test_swap_keeps_previous_update_when_live_is_older(): void {
+		$source = $this->create_package( '2.0.0-preview.8', 'new-build' );
+		$theme  = $this->root . '/Node';
+		wp_mkdir_p( $theme );
+
+		file_put_contents( $theme . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.6\n*/\n" );
+		file_put_contents( $theme . '/index.php', '<?php' );
+		file_put_contents( $theme . '/functions.php', '<?php' );
+		file_put_contents( $theme . '/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.6', 'build_id' => '20261028T000000Z-live000' ) ) );
+
+		// 退避残骸はライブより新しい構成（ロールバック後の世界）。
+		wp_mkdir_p( $theme . '_previous_update' );
+		file_put_contents( $theme . '_previous_update/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.7\n*/\n" );
+		file_put_contents( $theme . '_previous_update/index.php', '<?php' );
+		file_put_contents( $theme . '_previous_update/functions.php', '<?php' );
+		file_put_contents( $theme . '_previous_update/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.7', 'build_id' => '20261029T000000Z-new001' ) ) );
+
+		$error = node_swap_theme_update_directory( $this->filesystem, $source, $theme );
+		$this->assertWPError( $error );
+		$this->assertSame( 'theme_update_leftovers', $error->get_error_code() );
+		$this->assertDirectoryExists( $theme . '_previous_update' );
+		$this->assertDirectoryDoesNotExist( $theme . '_update.lock' );
+	}
+
+	/** ロック mtime が900秒未満のとき、in_progress でディレクトリを消さない。 */
+	public function test_fresh_lock_blocks_swap_and_keeps_leftovers(): void {
+		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
+		$theme  = $this->root . '/Node';
+		wp_mkdir_p( $theme );
+
+		file_put_contents( $theme . '/style.css', "/*\nTheme Name: Luna Frontier\nVersion: 2.0.0-preview.6\n*/\n" );
+		file_put_contents( $theme . '/index.php', '<?php' );
+		file_put_contents( $theme . '/functions.php', '<?php' );
+		file_put_contents( $theme . '/build.json', wp_json_encode( array( 'version' => '2.0.0-preview.6', 'build_id' => '20261028T000000Z-live000' ) ) );
+
+		wp_mkdir_p( $theme . '_next_update' );
+		file_put_contents( $theme . '_update.lock', (string) time() );
+
+		$error = node_swap_theme_update_directory( $this->filesystem, $source, $theme );
+		$this->assertWPError( $error );
+		$this->assertSame( 'theme_update_in_progress', $error->get_error_code() );
+		$this->assertDirectoryExists( $theme . '_next_update' );
+	}
 }

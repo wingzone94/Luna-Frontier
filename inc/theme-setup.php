@@ -411,9 +411,151 @@ function node_verify_zip_sha256( string $zip_path, string $expected_hex ): bool|
 }
 
 /**
+ * 更新用 sidecar 名（_next_update / _previous_update / _update.lock）のフルパス。
+ */
+function node_theme_update_sidecar( string $theme_dir, string $suffix ): string {
+	return $theme_dir . $suffix;
+}
+
+/**
+ * ディレクトリが「生きているテーマ」として検閲を満たすか。
+ *
+ * style.css の Theme Name = Luna Frontier、functions.php / build.json が読め、
+ * build.json の version が style.css の Version と一致する。
+ */
+function node_theme_dir_is_runnable( string $dir ): bool {
+	if ( ! node_is_valid_theme_update_source( $dir ) ) {
+		return false;
+	}
+	if ( ! is_file( $dir . '/functions.php' ) || ! is_file( $dir . '/build.json' ) ) {
+		return false;
+	}
+
+	$headers = get_file_data( $dir . '/style.css', array( 'Version' => 'Version' ) );
+	$version = (string) ( $headers['Version'] ?? '' );
+
+	$build = json_decode( (string) file_get_contents( $dir . '/build.json' ), true );
+	if (
+		'' === $version
+		|| ! is_array( $build )
+		|| $version !== (string) ( $build['version'] ?? '' )
+		|| '' === (string) ( $build['build_id'] ?? '' )
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * live ディレクトリの版・ビルドが other ディレクトリと同等以上か。
+ *
+ * other が検閲を満たさない（退避後の不完全な残骸）なら保持の判断材料がないため true。
+ */
+function node_theme_dir_is_same_or_newer( string $live_dir, string $other_dir ): bool {
+	if ( ! node_theme_dir_is_runnable( $other_dir ) ) {
+		return true;
+	}
+
+	$read = static function ( string $dir ): array {
+		$headers = get_file_data( $dir . '/style.css', array( 'Version' => 'Version' ) );
+		$build   = json_decode( (string) file_get_contents( $dir . '/build.json' ), true );
+
+		return array(
+			'version'  => (string) ( $headers['Version'] ?? '' ),
+			'build_id' => (string) ( $build['build_id'] ?? '' ),
+		);
+	};
+
+	$live  = $read( $live_dir );
+	$other = $read( $other_dir );
+
+	if ( version_compare( $live['version'], $other['version'], '>' ) ) {
+		return true;
+	}
+	if ( version_compare( $live['version'], $other['version'], '<' ) ) {
+		return false;
+	}
+	if ( $live['build_id'] === $other['build_id'] ) {
+		return true;
+	}
+
+	return node_is_newer_theme_build( $live['build_id'], $other['build_id'] );
+}
+
+/**
+ * 更新処理の並行実行を防ぐロックを取る。
+ *
+ * 900秒より新しいロックがある間は拒否。それより古いロックは壊れたものとして上書きする。
+ *
+ * @return true|WP_Error
+ */
+function node_acquire_theme_update_lock( $filesystem, string $theme_dir ): bool|WP_Error {
+	$lock = node_theme_update_sidecar( $theme_dir, '_update.lock' );
+
+	if ( $filesystem->exists( $lock ) ) {
+		$mtime = (int) $filesystem->mtime( $lock );
+		if ( $mtime > 0 && ( time() - $mtime ) < 900 ) {
+			return new WP_Error( 'theme_update_in_progress', '別の更新が進行中です。時間をおいて再試行してください。' );
+		}
+		if ( ! $filesystem->delete( $lock, true ) ) {
+			return new WP_Error( 'theme_update_lock_failed', '更新ロックを上書きできませんでした。管理者が対象ディレクトリを確認してください。' );
+		}
+	}
+
+	if ( ! $filesystem->put_contents( $lock, (string) time(), FS_CHMOD_FILE ) ) {
+		return new WP_Error( 'theme_update_lock_failed', '更新ロックを作成できませんでした。管理者が対象ディレクトリを確認してください。' );
+	}
+
+	return true;
+}
+
+/**
+ * 更新処理のロックを解放する。失敗は握りつぶさないが、戻り値による停止はしない。
+ */
+function node_release_theme_update_lock( $filesystem, string $theme_dir ): void {
+	$filesystem->delete( node_theme_update_sidecar( $theme_dir, '_update.lock' ), true );
+}
+
+/**
+ * ステージング残骸（_next_update）と退避残骸（_previous_update）を安全に消す。
+ *
+ * 消す条件はライブのテーマが「生きている」こと。_previous_update はライブが同等以上の
+ * 場合にのみ消す（ライブの方が古い場合は管理者に _previous_update からの戻し余地を残す）。
+ *
+ * @return true|WP_Error
+ */
+function node_cleanup_theme_update_leftovers( $filesystem, string $theme_dir ): bool|WP_Error {
+	if ( ! node_theme_dir_is_runnable( $theme_dir ) ) {
+		return new WP_Error( 'theme_update_leftovers', '前回の更新用ディレクトリが残っています。管理者が確認してください。' );
+	}
+
+	$next = node_theme_update_sidecar( $theme_dir, '_next_update' );
+	$prev = node_theme_update_sidecar( $theme_dir, '_previous_update' );
+
+	if ( $filesystem->exists( $next ) ) {
+		if ( ! $filesystem->delete( $next, true ) || $filesystem->exists( $next ) ) {
+			return new WP_Error( 'theme_update_leftovers', '前回の更新用ディレクトリ（_next_update）を削除できません。管理者が確認してください。' );
+		}
+	}
+
+	if ( $filesystem->exists( $prev ) ) {
+		if ( ! node_theme_dir_is_same_or_newer( $theme_dir, $prev ) ) {
+			return new WP_Error( 'theme_update_leftovers', '前回の更新用ディレクトリが残っています。管理者が確認してください。' );
+		}
+		if ( ! $filesystem->delete( $prev, true ) || $filesystem->exists( $prev ) ) {
+			return new WP_Error( 'theme_update_leftovers', '前回の更新用ディレクトリ（_previous_update）を削除できません。管理者が確認してください。' );
+		}
+	}
+
+	return true;
+}
+
+/**
  * 展開済みテーマを別ディレクトリに配置してから切り替える。
  *
  * 旧テーマは新テーマへの切り替え成功まで保持し、失敗時は元へ戻す。
+ * swap 前に並行実行のロックと残骸クリーンアップを行い、すべての終了点でロックを解放する。
  *
  * @param WP_Filesystem_Base $filesystem WordPress filesystem instance.
  * @return true|WP_Error
@@ -422,32 +564,45 @@ function node_swap_theme_update_directory( $filesystem, string $source_dir, stri
 	$next_dir   = $theme_dir . '_next_update';
 	$backup_dir = $theme_dir . '_previous_update';
 
-	if ( $filesystem->exists( $next_dir ) || $filesystem->exists( $backup_dir ) ) {
-		return new WP_Error( 'theme_update_leftovers', '前回の更新用ディレクトリが残っています。管理者が確認してください。' );
+	$lock = node_acquire_theme_update_lock( $filesystem, $theme_dir );
+	if ( is_wp_error( $lock ) ) {
+		return $lock;
+	}
+
+	$cleaned = node_cleanup_theme_update_leftovers( $filesystem, $theme_dir );
+	if ( is_wp_error( $cleaned ) ) {
+		node_release_theme_update_lock( $filesystem, $theme_dir );
+		return $cleaned;
 	}
 
 	$copy_result = copy_dir( $source_dir, $next_dir );
 	if ( is_wp_error( $copy_result ) || ! $copy_result ) {
 		$filesystem->delete( $next_dir, true );
+		node_release_theme_update_lock( $filesystem, $theme_dir );
 		return is_wp_error( $copy_result ) ? $copy_result : new WP_Error( 'theme_stage_failed', '新しいテーマの配置に失敗しました。' );
 	}
 	if ( ! $filesystem->exists( $next_dir . '/functions.php' ) || ! $filesystem->exists( $next_dir . '/build.json' ) ) {
 		$filesystem->delete( $next_dir, true );
+		node_release_theme_update_lock( $filesystem, $theme_dir );
 		return new WP_Error( 'theme_stage_incomplete', '新しいテーマの配置が不完全です。' );
 	}
 
 	if ( ! $filesystem->move( $theme_dir, $backup_dir ) ) {
 		$filesystem->delete( $next_dir, true );
+		node_release_theme_update_lock( $filesystem, $theme_dir );
 		return new WP_Error( 'theme_backup_failed', '現在のテーマの退避に失敗しました。' );
 	}
 	if ( ! $filesystem->move( $next_dir, $theme_dir ) ) {
 		if ( ! $filesystem->move( $backup_dir, $theme_dir ) ) {
+			node_release_theme_update_lock( $filesystem, $theme_dir );
 			return new WP_Error( 'theme_rollback_failed', '更新と復元に失敗しました。退避先: ' . $backup_dir );
 		}
 		$filesystem->delete( $next_dir, true );
+		node_release_theme_update_lock( $filesystem, $theme_dir );
 		return new WP_Error( 'theme_swap_failed', '新しいテーマへの切り替えに失敗しました。元のテーマを復元しました。' );
 	}
 
 	$filesystem->delete( $backup_dir, true );
+	node_release_theme_update_lock( $filesystem, $theme_dir );
 	return true;
 }
