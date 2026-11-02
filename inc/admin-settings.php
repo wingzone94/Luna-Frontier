@@ -44,6 +44,29 @@ function node_add_admin_menu() {
 add_action( 'admin_menu', 'node_add_admin_menu' );
 
 /**
+ * register_setting 用の名前付きサニタイズコールバック。
+ *
+ * settings API の管理方向の関数であり、プレフィックス規約（node_）に従う。
+ * 開示文言は入力が input type=text の単一行のため、HTMLを保存しない単一行版を使う。
+ */
+
+function node_sanitize_checkbox_flag( $value ): string {
+	return '1' === (string) $value ? '1' : '0';
+}
+
+function node_sanitize_single_line_text( $value ): string {
+	return sanitize_text_field( wp_unslash( (string) $value ) );
+}
+
+function node_sanitize_disclosure_text( $value ): string {
+	return node_sanitize_single_line_text( $value );
+}
+
+function node_sanitize_attachment_id( $value ): int {
+	return absint( $value );
+}
+
+/**
  * Register Settings
  */
 function node_register_settings() {
@@ -53,23 +76,43 @@ function node_register_settings() {
     // register_setting( 'node_settings_group', 'node_gemini_model' );
 
     // --- ライブラリ設定 (Luna Library) ---
-    register_setting( 'node_settings_group', 'node_library_auto_insert' );
-    register_setting( 'node_settings_group', 'node_library_header_text' );
-    register_setting( 'node_settings_group', 'node_library_button_text' );
+    register_setting( 'node_settings_group', 'node_library_auto_insert', array(
+        'sanitize_callback' => 'node_sanitize_checkbox_flag',
+    ) );
+    register_setting( 'node_settings_group', 'node_library_header_text', array(
+        'sanitize_callback' => 'node_sanitize_single_line_text',
+    ) );
+    register_setting( 'node_settings_group', 'node_library_button_text', array(
+        'sanitize_callback' => 'node_sanitize_single_line_text',
+    ) );
 
     // --- 商品リンク設定 (Nexus) ---
-    register_setting( 'node_settings_group', 'luminous_nexus_amazon_id' );
-    register_setting( 'node_settings_group', 'luminous_nexus_rakuten_id' );
-    register_setting( 'node_settings_group', 'luminous_nexus_disclosure_amazon' );
-    register_setting( 'node_settings_group', 'luminous_nexus_disclosure_rakuten' );
+    register_setting( 'node_settings_group', 'luminous_nexus_amazon_id', array(
+        'sanitize_callback' => 'node_sanitize_single_line_text',
+    ) );
+    register_setting( 'node_settings_group', 'luminous_nexus_rakuten_id', array(
+        'sanitize_callback' => 'node_sanitize_single_line_text',
+    ) );
+    register_setting( 'node_settings_group', 'luminous_nexus_disclosure_amazon', array(
+        'sanitize_callback' => 'node_sanitize_disclosure_text',
+    ) );
+    register_setting( 'node_settings_group', 'luminous_nexus_disclosure_rakuten', array(
+        'sanitize_callback' => 'node_sanitize_disclosure_text',
+    ) );
     
     // --- X (Twitter) 連携設定 ---
     // node-connect プラグイン（設定 → 外部連携）へ移設。オプション名は node_x_* のまま互換維持。
 
     // --- OGP設定 ---
-    register_setting( 'node_settings_group', 'node_ogp_enabled' );
-    register_setting( 'node_settings_group', 'node_ogp_bg_id' );
-    register_setting( 'node_settings_group', 'node_ogp_logo_id' );
+    register_setting( 'node_settings_group', 'node_ogp_enabled', array(
+        'sanitize_callback' => 'node_sanitize_checkbox_flag',
+    ) );
+    register_setting( 'node_settings_group', 'node_ogp_bg_id', array(
+        'sanitize_callback' => 'node_sanitize_attachment_id',
+    ) );
+    register_setting( 'node_settings_group', 'node_ogp_logo_id', array(
+        'sanitize_callback' => 'node_sanitize_attachment_id',
+    ) );
 
     // --- Google 優先ソース CTA ---
     register_setting( 'node_settings_group', 'node_preferred_source_enabled', array(
@@ -201,6 +244,7 @@ function node_render_settings_page() {
                         <th scope="row">自動表示の有効化</th>
                         <td>
                             <?php $auto_insert = get_option( 'node_library_auto_insert', '1' ); ?>
+                            <input type="hidden" name="node_library_auto_insert" value="0" />
                             <label>
                                 <input type="checkbox" name="node_library_auto_insert" value="1" <?php checked( $auto_insert, '1' ); ?> />
                                 ライターエリアの下に「ゲーム・アプリ情報」を自動で表示する
@@ -271,6 +315,7 @@ function node_render_settings_page() {
                         <th scope="row">自動生成を有効にする</th>
                         <td>
                             <label>
+                                <input type="hidden" name="node_ogp_enabled" value="0" />
                                 <input type="checkbox" name="node_ogp_enabled" value="1" <?php checked( get_option( 'node_ogp_enabled' ), '1' ); ?> />
                                 記事保存時にOGP画像を自動生成する
                             </label>
@@ -366,7 +411,7 @@ function node_render_settings_page() {
                 <h2 style="margin-top: 0; color: #FF9900; display: flex; align-items: center; gap: 10px;">
                     <span class="dashicons dashicons-update"></span> テーマのアップデート
                 </h2>
-                <p class="description">Luna Frontier の配布ブランチから最新の <code>luna.zip</code> を取得して自動インストールします。</p>
+                <p class="description">Luna Frontier の GitHub Release（不変タグ）から最新の <code>luna.zip</code> を取得し、<code>luna-release.json</code> の sha256 と照合してからインストールします。</p>
                 
                 <div id="luminous-update-info" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <p>現在のバージョン: <strong>v<?php echo esc_html( node_get_theme_version() ); ?></strong></p>

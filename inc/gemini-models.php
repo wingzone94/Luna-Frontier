@@ -399,10 +399,15 @@ function node_fetch_gemini_models_from_api( string $api_key, bool $force_refresh
 	$last_error      = '';
 	$page_url        = add_query_arg(
 		array(
-			'key'      => $api_key,
 			'pageSize' => 100,
 		),
 		'https://generativelanguage.googleapis.com/v1beta/models'
+	);
+
+	// APIキーはURLクエリに載せずヘッダーで送る(ログ・Referer漏出防止)。
+	$request_headers = array(
+		'Accept'        => 'application/json',
+		'x-goog-api-key' => $api_key,
 	);
 
 	// 管理画面の同期リクエストを最大30秒に抑える（1ページ100件）。
@@ -411,7 +416,7 @@ function node_fetch_gemini_models_from_api( string $api_key, bool $force_refresh
 			$page_url,
 			array(
 				'timeout' => 10,
-				'headers' => array( 'Accept' => 'application/json' ),
+				'headers' => $request_headers,
 			)
 		);
 
@@ -464,7 +469,6 @@ function node_fetch_gemini_models_from_api( string $api_key, bool $force_refresh
 
 		$page_url = add_query_arg(
 			array(
-				'key'       => $api_key,
 				'pageSize'  => 100,
 				'pageToken' => $next_token,
 			),

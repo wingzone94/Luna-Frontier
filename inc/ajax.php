@@ -9,6 +9,10 @@ declare(strict_types=1);
 
 /**
  * Check for Theme Updates
+ *
+ * 取得先は GitHub Releases（不変タグ luna-frontier-v{version}-{build_id}）。
+ * Release の兄弟 asset luna-release.json の sha256 / version / build_id を使うため、
+ * ブランチ HEAD や生の style.css / build.json は参照しない。
  */
 add_action(
 	'wp_ajax_luminous_check_update',
@@ -18,51 +22,54 @@ add_action(
 			wp_send_json_error( 'Permission denied' );
 		}
 
-		$local_version = node_get_theme_version();
-		$remote_url    = 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/style.css';
-
-		$response = wp_remote_get( add_query_arg( 'cb', wp_generate_uuid4(), $remote_url ), array( 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( 'Failed to fetch remote version' );
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		preg_match( '/^Version:\s*(\S+)/mi', $body, $matches );
-		$remote_version = isset( $matches[1] ) ? $matches[1] : '0.0.0';
-
-		$update_available = version_compare( $remote_version, $local_version, '>' );
-		$install_available = version_compare( $remote_version, $local_version, '>=' );
-
-		// 同じPreview版でも luna.zip のビルドが更新されるため、
-		// バージョンとは独立に build.json のビルド識別子も比較する。
-		// ?cb= は raw URL の CDN キャッシュ回避。
+		$local_version    = node_get_theme_version();
 		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;
 		$local_build      = $local_build_info['build_id'] ?? null;
 
-		$remote_build   = null;
-		$build_response = wp_remote_get( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/build.json?cb=' . wp_generate_uuid4(), array( 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
-		if ( ! is_wp_error( $build_response ) && 200 === wp_remote_retrieve_response_code( $build_response ) ) {
-			$build_data = json_decode( wp_remote_retrieve_body( $build_response ), true );
-			if ( is_array( $build_data ) && ! empty( $build_data['build_id'] ) ) {
-				$remote_build = (string) $build_data['build_id'];
+		$best = node_select_luna_release( $local_version, is_string( $local_build ) ? $local_build : null );
+		if ( is_wp_error( $best ) ) {
+			if ( 'luna_update_none' === $best->get_error_code() ) {
+				// 現行レスポンス形を維持し、更新なしとして扱う。
+				wp_send_json_success(
+					array(
+						'local_version'    => $local_version,
+						'remote_version'   => null,
+						'update_available' => false,
+						'install_available' => false,
+						'same_version'     => false,
+						'local_build'      => $local_build,
+						'remote_build'     => null,
+						'build_update_available' => false,
+						'remote_build_behind'    => false,
+					)
+				);
 			}
+
+			error_log( 'Luminous Update: check failed - ' . $best->get_error_code() . ' ' . $best->get_error_message() );
+			wp_send_json_error( $best->get_error_message() );
 		}
 
-		$same_version = ! $update_available && $install_available;
-		$build_update_available = $same_version && node_is_newer_theme_build( $remote_build, $local_build );
-		$install_available = $update_available || $build_update_available;
+		$meta = $best['meta'];
+
+		$update_available = version_compare( (string) $meta['version'], $local_version, '>' );
+
+		// 同じPreview版でも luna.zip のビルドが更新されるため、
+		// バージョンとは独立に build_id も比較する。
+		$same_version           = ! $update_available;
+		$build_update_available = $same_version && node_is_newer_theme_build( (string) $meta['build_id'], $local_build );
+		$install_available      = $update_available || $build_update_available;
 
 		wp_send_json_success(
 			array(
 				'local_version'    => $local_version,
-				'remote_version'   => $remote_version,
-				'update_available'  => $update_available,
+				'remote_version'   => (string) $meta['version'],
+				'update_available' => $update_available,
 				'install_available' => $install_available,
-				'same_version'      => $same_version,
-				'local_build'       => $local_build,
-				'remote_build'      => $remote_build,
+				'same_version'     => $same_version,
+				'local_build'      => $local_build,
+				'remote_build'     => (string) $meta['build_id'],
 				'build_update_available' => $build_update_available,
-				'remote_build_behind' => $same_version && $remote_build && $local_build && $remote_build !== $local_build && ! $build_update_available,
+				'remote_build_behind'    => $same_version && '' !== (string) $meta['build_id'] && $local_build !== (string) $meta['build_id'] && ! $build_update_available,
 			)
 		);
 	}
@@ -79,14 +86,40 @@ add_action(
 			wp_send_json_error( 'Permission denied' );
 		}
 
-		$zip_url = 'https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/luna-frontier-2.0-skyalow/luna.zip';
+		$local_version    = node_get_theme_version();
+		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;
+		$local_build      = $local_build_info['build_id'] ?? null;
 
-		error_log( 'Luminous Update: Starting update from ' . $zip_url );
+		$best = node_select_luna_release( $local_version, is_string( $local_build ) ? $local_build : null );
+		if ( is_wp_error( $best ) ) {
+			error_log( 'Luminous Update: release selection failed - ' . $best->get_error_code() . ' ' . $best->get_error_message() );
+			wp_send_json_error( $best->get_error_message() );
+		}
 
-		$temp_file = download_url( add_query_arg( 'cb', time(), $zip_url ) );
+		$meta = $best['meta'];
+
+		$zip_asset = node_release_asset( $best['release'], 'luna.zip' );
+		if ( null === $zip_asset ) {
+			error_log( 'Luminous Update: luna.zip asset missing on ' . ( $best['release']['tag_name'] ?? '' ) );
+			wp_send_json_error( 'リリースに luna.zip が含まれていません。' );
+		}
+
+		$temp_file = node_download_release_asset( $zip_asset );
 		if ( is_wp_error( $temp_file ) ) {
 			error_log( 'Luminous Update: Download failed - ' . $temp_file->get_error_message() );
 			wp_send_json_error( 'Download failed: ' . $temp_file->get_error_message() );
+		}
+
+		// ダイジェスト不一致のZIPは展開しない。
+		// 期待値と計算値を error_log に出してよい（URL全文も可）。トークンは出さない。
+		$sha_result = node_verify_zip_sha256( $temp_file, (string) $meta['sha256'] );
+		if ( is_wp_error( $sha_result ) ) {
+			unlink( $temp_file );
+			error_log(
+				'Luminous Update: sha256 mismatch for ' . (string) ( $zip_asset['browser_download_url'] ?? '' )
+				. ' expected=' . (string) $meta['sha256']
+			);
+			wp_send_json_error( 'ZIPの整合性検証に失敗しました（sha256照合不一致）。更新を中止しました。' );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -121,11 +154,23 @@ add_action(
 			wp_send_json_error( 'ZIP 内に Luna Frontier テーマフォルダが見つかりませんでした。' );
 		}
 
-		$local_build_info = function_exists( 'node_get_build_info' ) ? node_get_build_info() : null;
-		$package_info     = node_validate_theme_update_package( $source_dir, node_get_theme_version(), $local_build_info['build_id'] ?? null );
+		$package_info = node_validate_theme_update_package( $source_dir, $local_version, $local_build );
 		if ( is_wp_error( $package_info ) ) {
 			$wp_filesystem->delete( $temp_extract_dir, true );
 			wp_send_json_error( $package_info->get_error_message() );
+		}
+
+		// ZIP 内の版・ビルドが、照合に使った luna-release.json と一致することを確認する。
+		if ( (string) $package_info['version'] !== (string) $meta['version']
+			|| (string) $package_info['build_id'] !== (string) $meta['build_id']
+		) {
+			$wp_filesystem->delete( $temp_extract_dir, true );
+			error_log(
+				'Luminous Update: meta mismatch for ' . (string) ( $zip_asset['browser_download_url'] ?? '' )
+				. ' package=' . $package_info['version'] . '/' . $package_info['build_id']
+				. ' meta=' . $meta['version'] . '/' . $meta['build_id']
+			);
+			wp_send_json_error( 'ZIPの内容と配信メタ情報（luna-release.json）が一致しません。更新を中止しました。' );
 		}
 
 		error_log( 'Luminous Update: Switching to build ' . $package_info['build_id'] );

@@ -1,0 +1,41 @@
+/*
+ * Luna Ads Control — front-end styles.
+ * Loaded only when the plugin actually renders an ad slot.
+ * No placeholder box, no reserved height.
+ */
+
+.luna-ad {
+	display: block;
+	max-width: 100%;
+	margin-block: 24px;
+	overflow: hidden;
+}
+
+.luna-ad--in-article {
+	margin-block: 28px;
+}
+
+.luna-ad--infeed {
+	grid-column: 1 / -1;
+	width: 100%;
+	margin-block: 16px 24px;
+}
+
+.luna-ad > ins,
+.luna-ad > iframe,
+.luna-ad > img,
+.luna-ad > amp-ad,
+.luna-ad > div,
+.luna-ad > script + ins {
+	max-width: 100%;
+}
+
+.luna-ad:empty {
+	display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.luna-ad {
+		transition: opacity 160ms ease;
+	}
+}

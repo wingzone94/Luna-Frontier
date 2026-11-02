@@ -1,0 +1,419 @@
+/*
+ * Luna Ads Control — admin styles.
+ * Material 3 Expressive tokens, scoped to the plugin settings screen only.
+ */
+
+.luna-ads-admin {
+	--la-primary: #ff9900;
+	--la-on-primary: #2b1700;
+	--la-primary-container: #fedcbe;
+	--la-on-primary-container: #2b1700;
+	--la-surface: #fff4e5;
+	--la-surface-container: #fffaf3;
+	--la-surface-container-high: #f8ead6;
+	--la-on-surface: #241a0e;
+	--la-on-surface-variant: #6b5a45;
+	--la-outline: #d8c3a5;
+	--la-outline-strong: #a98b63;
+	--la-success: #2e6b3f;
+	--la-success-container: #d9f2df;
+	--la-warning: #7a4b00;
+	--la-warning-container: #ffe3ad;
+	--la-radius-sm: 12px;
+	--la-radius-md: 16px;
+	--la-radius-lg: 24px;
+	--la-radius-xl: 32px;
+	--la-shadow: 0 1px 2px rgba(36, 26, 14, 0.12), 0 2px 8px rgba(36, 26, 14, 0.08);
+	max-width: 1080px;
+	color: var(--la-on-surface);
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.luna-ads-admin *,
+.luna-ads-admin *::before,
+.luna-ads-admin *::after {
+	box-sizing: border-box;
+}
+
+.luna-ads-admin h1,
+.luna-ads-admin h2 {
+	color: var(--la-on-surface);
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+.luna-ads-admin p {
+	margin: 0;
+}
+
+/* Hero */
+.luna-ads-hero {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	align-items: center;
+	justify-content: space-between;
+	margin: 16px 0 20px;
+	padding: 28px 32px;
+	border: 1px solid var(--la-outline);
+	border-radius: var(--la-radius-xl);
+	background:
+		radial-gradient(120% 140% at 100% 0%, rgba(255, 153, 0, 0.16) 0%, rgba(255, 153, 0, 0) 58%),
+		var(--la-surface);
+	box-shadow: var(--la-shadow);
+}
+
+.luna-ads-hero h1 {
+	margin: 2px 0 6px;
+	font-size: 2rem;
+	line-height: 1.2;
+}
+
+.luna-ads-eyebrow {
+	margin: 0 0 4px;
+	color: var(--la-on-surface-variant);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.luna-ads-lead {
+	max-width: 62ch;
+	color: var(--la-on-surface-variant);
+}
+
+/* Status chips */
+.luna-ads-chip {
+	display: inline-flex;
+	gap: 8px;
+	align-items: center;
+	min-height: 44px;
+	padding: 10px 18px;
+	border-radius: 999px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.luna-ads-chip__dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.luna-ads-chip.is-on {
+	background: var(--la-success-container);
+	color: var(--la-success);
+}
+
+.luna-ads-chip.is-off {
+	background: var(--la-surface-container-high);
+	color: var(--la-on-surface-variant);
+}
+
+/* Status summary */
+.luna-ads-status {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.luna-ads-status__item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 14px 16px;
+	border: 1px solid var(--la-outline);
+	border-radius: var(--la-radius-md);
+	background: var(--la-surface-container);
+}
+
+.luna-ads-status__label {
+	color: var(--la-on-surface-variant);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+.luna-ads-status__item strong {
+	font-size: 0.9rem;
+	line-height: 1.45;
+}
+
+/* Cards */
+.luna-ads-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.luna-ads-card {
+	padding: 24px 26px;
+	border: 1px solid var(--la-outline);
+	border-radius: var(--la-radius-lg);
+	background: var(--la-surface-container);
+	box-shadow: var(--la-shadow);
+}
+
+.luna-ads-card__head {
+	display: flex;
+	gap: 14px;
+	align-items: flex-start;
+	margin-bottom: 18px;
+}
+
+.luna-ads-card__head h2 {
+	margin: 0 0 2px;
+	font-size: 1.125rem;
+	line-height: 1.35;
+}
+
+.luna-ads-card__head p {
+	color: var(--la-on-surface-variant);
+	font-size: 0.875rem;
+}
+
+.luna-ads-step {
+	display: inline-flex;
+	flex: 0 0 40px;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	background: var(--la-primary-container);
+	color: var(--la-on-primary-container);
+	font-weight: 800;
+}
+
+/* Fields */
+.luna-ads-field {
+	margin-top: 16px;
+}
+
+.luna-ads-field > label {
+	display: block;
+	margin-bottom: 6px;
+	font-weight: 700;
+}
+
+.luna-ads-field--inline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+}
+
+.luna-ads-field--inline > label {
+	margin-bottom: 0;
+}
+
+.luna-ads-admin input[type="text"],
+.luna-ads-admin input[type="number"],
+.luna-ads-admin select,
+.luna-ads-admin textarea {
+	border-color: var(--la-outline-strong);
+	border-radius: var(--la-radius-sm);
+	background: #fff;
+	color: var(--la-on-surface);
+}
+
+.luna-ads-admin select,
+.luna-ads-admin input[type="text"],
+.luna-ads-admin input[type="number"] {
+	min-height: 42px;
+}
+
+.luna-ads-admin textarea.code,
+.luna-ads-admin input.code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.8125rem;
+	line-height: 1.55;
+}
+
+.luna-ads-admin input:focus-visible,
+.luna-ads-admin select:focus-visible,
+.luna-ads-admin textarea:focus-visible,
+.luna-ads-admin .button:focus-visible,
+.luna-ads-admin .luna-ads-switch:focus-visible {
+	outline: 3px solid var(--la-primary);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+.luna-ads-help {
+	display: block;
+	margin-top: 4px;
+	color: var(--la-on-surface-variant);
+	font-size: 0.8125rem;
+	line-height: 1.55;
+}
+
+.luna-ads-help code {
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--la-surface-container-high);
+	color: var(--la-on-surface);
+	font-size: 0.8125rem;
+}
+
+/* Switch rows */
+.luna-ads-switch-row {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 52px;
+	padding: 12px 16px;
+	border: 1px solid var(--la-outline);
+	border-radius: var(--la-radius-md);
+	background: var(--la-surface);
+	cursor: pointer;
+}
+
+.luna-ads-switch-row + .luna-ads-field {
+	margin-top: 18px;
+}
+
+.luna-ads-admin .luna-ads-switch {
+	position: relative;
+	flex: 0 0 auto;
+	width: 52px;
+	height: 30px;
+	margin: 0;
+	border: 0;
+	border-radius: 999px;
+	background: var(--la-outline-strong);
+	appearance: none;
+	-webkit-appearance: none;
+	cursor: pointer;
+	transition: background-color 160ms ease;
+}
+
+.luna-ads-admin .luna-ads-switch::before {
+	display: none;
+	content: none;
+}
+
+.luna-ads-admin .luna-ads-switch::after {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	content: "";
+	transition: transform 160ms ease;
+}
+
+.luna-ads-admin .luna-ads-switch:checked {
+	background: var(--la-primary);
+}
+
+.luna-ads-admin .luna-ads-switch:checked::after {
+	transform: translateX(22px);
+}
+
+/* Actions */
+.luna-ads-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	align-items: center;
+	padding: 4px 2px 24px;
+}
+
+.luna-ads-admin .button-primary {
+	min-height: 44px;
+	padding: 0 24px;
+	border-color: var(--la-primary);
+	border-radius: 999px;
+	background: var(--la-primary);
+	color: var(--la-on-primary);
+	font-weight: 700;
+	text-shadow: none;
+}
+
+.luna-ads-admin .button-primary:hover,
+.luna-ads-admin .button-primary:focus {
+	border-color: #e68a00;
+	background: #e68a00;
+	color: var(--la-on-primary);
+}
+
+/* Meta box */
+#luna-ads-control-post .description {
+	margin-top: 6px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+	.luna-ads-admin {
+		--la-surface: #1b1812;
+		--la-surface-container: #221e17;
+		--la-surface-container-high: #2c271f;
+		--la-on-surface: #f6ead8;
+		--la-on-surface-variant: #cbbba3;
+		--la-outline: #4a4234;
+		--la-outline-strong: #7d6c53;
+		--la-primary-container: #5a3c12;
+		--la-on-primary-container: #ffdcb3;
+		--la-success: #9fd8ae;
+		--la-success-container: #1f3b27;
+		--la-warning: #ffd18a;
+		--la-warning-container: #4a3408;
+		--la-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.28);
+	}
+
+	.luna-ads-admin input[type="text"],
+	.luna-ads-admin input[type="number"],
+	.luna-ads-admin select,
+	.luna-ads-admin textarea {
+		border-color: var(--la-outline-strong);
+		background: #16130e;
+		color: var(--la-on-surface);
+	}
+
+	.luna-ads-admin input::placeholder,
+	.luna-ads-admin textarea::placeholder {
+		color: #9a8b76;
+	}
+}
+
+@media (max-width: 960px) {
+	.luna-ads-status {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+	.luna-ads-hero {
+		padding: 22px;
+	}
+
+	.luna-ads-card {
+		padding: 20px 18px;
+	}
+
+	.luna-ads-status {
+		grid-template-columns: 1fr;
+	}
+
+	.luna-ads-switch-row {
+		align-items: flex-start;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.luna-ads-admin *,
+	.luna-ads-admin *::before,
+	.luna-ads-admin *::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+	}
+}

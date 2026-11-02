@@ -44,49 +44,62 @@ function luna_frontier_display_version(): string {
 /**
  * ビルド成果物のパスを Vite manifest から解決する。
  *
+ * node_resolve_vite_build()（inc/theme-setup.php）を唯一の入力とし、Luna 側で
+ * manifest パスや /assets/ 固定を持たない。dist / assets のどちらを唯一の入
+ * 力にしても（ミックスしないので）エントリが自ずと揃う。
+ *
  * @param string $entry manifest のキー（例: 'src/styles/luna.css'）。
- * @return array{file:string,css:string[]}|null
+ * @return array{file:string,css:string[],base:string}|null
  */
 function luna_frontier_manifest_entry( string $entry ): ?array {
-	static $manifest = null;
+	static $resolved = array();
 
-	if ( null === $manifest ) {
-		$path     = LUNA_FRONTIER_DIR . '/assets/.vite/manifest.json';
-		$manifest = array();
-
-		if ( is_readable( $path ) ) {
-			$decoded = json_decode( (string) file_get_contents( $path ), true );
-			if ( is_array( $decoded ) ) {
-				$manifest = $decoded;
+	if ( ! isset( $resolved[ $entry ] ) ) {
+		$build = node_resolve_vite_build( LUNA_FRONTIER_DIR );
+		if ( null === $build ) {
+			$resolved[ $entry ] = null;
+		} else {
+			$manifest = $build['manifest'];
+			if ( ! isset( $manifest[ $entry ] ) || ! is_array( $manifest[ $entry ] ) ) {
+				$resolved[ $entry ] = null;
+			} else {
+				$file = $manifest[ $entry ]['file'] ?? '';
+				if ( ! is_string( $file ) || '' === $file ) {
+					$resolved[ $entry ] = null;
+				} else {
+					$css = $manifest[ $entry ]['css'] ?? array();
+					$resolved[ $entry ] = array(
+						'file' => $file,
+						'css'  => is_array( $css ) ? $css : array(),
+						'base' => $build['base'],
+					);
+				}
 			}
 		}
 	}
 
-	if ( ! isset( $manifest[ $entry ] ) || ! is_array( $manifest[ $entry ] ) ) {
-		return null;
-	}
-
-	$file = $manifest[ $entry ]['file'] ?? '';
-	if ( ! is_string( $file ) || '' === $file ) {
-		return null;
-	}
-
-	$css = $manifest[ $entry ]['css'] ?? array();
-
-	return array(
-		'file' => $file,
-		'css'  => is_array( $css ) ? $css : array(),
-	);
+	return $resolved[ $entry ];
 }
 
 /**
  * ファイル更新時刻をバージョン文字列に使う（ハッシュなしビルドのキャッシュ対策）。
+ *
+ * @param string      $relative_file manifest の file（例: js/luna.js）。
+ * @param string|null $base          成果物の base（dist / assets）。entry の base を前提に呼ぶ。
  */
-function luna_frontier_asset_version( string $relative_file ): string {
-	$absolute = LUNA_FRONTIER_DIR . '/assets/' . ltrim( $relative_file, '/' );
+function luna_frontier_asset_version( string $relative_file, ?string $base = null ): string {
+	$base    = $base ?? 'assets';
+	$absolute = LUNA_FRONTIER_DIR . '/' . $base . '/' . ltrim( $relative_file, '/' );
 	$mtime    = is_readable( $absolute ) ? filemtime( $absolute ) : false;
 
 	return false !== $mtime ? luna_frontier_version() . '.' . $mtime : luna_frontier_version();
+}
+
+/**
+ * manifest の base から公開URLを組む。/assets/ 固定を持たない。
+ */
+function luna_frontier_asset_url( string $base, string $relative_file ): string {
+	return LUNA_FRONTIER_URI . '/' . $base . '/' . ltrim( $relative_file, '/' );
 }
 
 /**
@@ -109,9 +122,9 @@ function luna_frontier_enqueue_assets(): void {
 		if ( '.css' === substr( $style_file, -4 ) ) {
 			wp_enqueue_style(
 				$legacy_archive ? 'luna-frontier-archive' : 'luna-frontier',
-				LUNA_FRONTIER_URI . '/assets/' . $style_file,
+				luna_frontier_asset_url( $style['base'], $style_file ),
 				array(),
-				luna_frontier_asset_version( $style_file )
+				luna_frontier_asset_version( $style_file, $style['base'] )
 			);
 		}
 	}
@@ -123,9 +136,9 @@ function luna_frontier_enqueue_assets(): void {
 			$spotlight_file = $spotlight_style['css'][0] ?? $spotlight_style['file'];
 			wp_enqueue_style(
 				'luna-frontier-spotlight',
-				LUNA_FRONTIER_URI . '/assets/' . $spotlight_file,
+				luna_frontier_asset_url( $spotlight_style['base'], $spotlight_file ),
 				array( 'luna-frontier' ),
-				luna_frontier_asset_version( $spotlight_file )
+				luna_frontier_asset_version( $spotlight_file, $spotlight_style['base'] )
 			);
 		}
 	}
@@ -133,9 +146,9 @@ function luna_frontier_enqueue_assets(): void {
 	if ( null !== $script ) {
 		wp_enqueue_script(
 			'luna-frontier',
-			LUNA_FRONTIER_URI . '/assets/' . $script['file'],
+			luna_frontier_asset_url( $script['base'], $script['file'] ),
 			array(),
-			luna_frontier_asset_version( $script['file'] ),
+			luna_frontier_asset_version( $script['file'], $script['base'] ),
 			true
 		);
 	}
