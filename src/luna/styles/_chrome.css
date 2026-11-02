@@ -213,7 +213,6 @@ body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 }
 
 @media (max-width: 1000px) {
-	body.lf-theme .lf-topic-nav__pick::after { content: "↔"; font-size: 1rem; }
 	body.lf-theme .lf-topic-nav__inner {
 		flex-direction: column;
 		align-items: stretch;
