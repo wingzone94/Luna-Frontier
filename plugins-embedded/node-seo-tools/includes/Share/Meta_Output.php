@@ -126,7 +126,6 @@ final class Meta_Output {
 		echo '<meta property="og:image:type" content="' . esc_attr( $image['type'] ) . '" />' . "\n";
 		echo '<meta property="og:image:alt" content="' . esc_attr( $image_alt ) . '" />' . "\n";
 		echo '<meta name="twitter:card" content="' . esc_attr( $card_type ) . '" />' . "\n";
-		echo '<meta property="twitter:card" content="' . esc_attr( $card_type ) . '" />' . "\n";
 		if ( '' !== $twitter_site ) {
 			echo '<meta name="twitter:site" content="' . esc_attr( $twitter_site ) . '" />' . "\n";
 		}
