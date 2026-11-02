@@ -35,6 +35,47 @@ class Node_SEO_OGP_Featured_Test extends WP_UnitTestCase {
 		return (string) ob_get_clean();
 	}
 
+	public function test_front_page_uses_hero_brand_image(): void {
+		update_option( 'show_on_front', 'posts' );
+		$this->go_to( home_url( '/' ) );
+		$this->assert_front_page_brand_meta();
+	}
+
+	public function test_static_front_page_uses_hero_brand_image(): void {
+		$page_id = self::factory()->post->create( array( 'post_type' => 'page', 'post_status' => 'publish' ) );
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', $page_id );
+		$this->go_to( home_url( '/' ) );
+		$this->assert_front_page_brand_meta();
+	}
+
+	public function test_search_does_not_receive_front_page_meta(): void {
+		$this->go_to( home_url( '/?s=Luminous' ) );
+		$this->assertSame( '', $this->render_meta() );
+	}
+
+	public function test_virtual_archives_do_not_receive_front_page_meta(): void {
+		$this->go_to( home_url( '/' ) );
+		foreach ( array( 'node_all_articles', 'node_spotlight' ) as $query_var ) {
+			set_query_var( $query_var, 1 );
+			$this->assertSame( '', $this->render_meta() );
+			set_query_var( $query_var, 0 );
+		}
+	}
+
+	private function assert_front_page_brand_meta(): void {
+		$html  = $this->render_meta();
+		$image = esc_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3.webp' ) );
+		$this->assertStringContainsString( 'property="og:type" content="website"', $html );
+		$this->assertStringContainsString( 'property="og:image" content="' . $image . '"', $html );
+		$this->assertStringContainsString( 'name="twitter:image" content="' . $image . '"', $html );
+		$this->assertStringContainsString( 'property="og:image:type" content="image/webp"', $html );
+		$this->assertStringContainsString( 'property="og:image:width" content="1200"', $html );
+		$this->assertStringContainsString( 'property="og:image:height" content="630"', $html );
+		$this->assertStringNotContainsString( 'article:published_time', $html );
+		$this->assertStringNotContainsString( 'generated.png', $html );
+	}
+
 	public function test_toggle_off_uses_generated_ogp(): void {
 		$html = $this->render_meta();
 		$this->assertStringContainsString( 'content="https://example.org/ogp/generated.png"', $html );

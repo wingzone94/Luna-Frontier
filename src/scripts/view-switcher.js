@@ -1,5 +1,5 @@
 import { storage } from '../storage';
-import { isTabletLikeDevice } from './device-mode';
+import { isPhoneLikeDevice, isTabletLikeDevice } from './device-mode';
 
 const VIEW_MODE_ICON = {
     pc: 'computer',
@@ -22,15 +22,20 @@ function getViewMode() {
         return saved;
     }
 
-    return isTabletLikeDevice() ? 'mobile' : 'pc';
+    return isPhoneLikeDevice() || isTabletLikeDevice()
+        || window.matchMedia('(max-width: 767px)').matches ? 'mobile' : 'pc';
 }
 
 function syncViewToggleUI(btn) {
     const mode = getViewMode();
     const icon = document.getElementById('m3-view-toggle-icon');
-    const isTabletToggle = isTabletLikeDevice() || btn.classList.contains('m3-view-toggle--tablet');
+    const isMobileToggle = isPhoneLikeDevice() || isTabletLikeDevice()
+        || window.matchMedia('(max-width: 767px)').matches
+        || document.documentElement.dataset.deviceClass === 'phone'
+        || document.documentElement.dataset.deviceClass === 'tablet'
+        || storage.get('view-mode') === 'mobile';
 
-    if (!isTabletToggle) {
+    if (!isMobileToggle) {
         btn.hidden = true;
         return;
     }

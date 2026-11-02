@@ -143,6 +143,17 @@
         letter-spacing: 0.055em;
     }
 
+    .m3-header .m3-logo-text {
+        /* 3つの操作ボタンと並べても詰まらないよう、ブランド名を2行にする。 */
+        max-width: 6em;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        font-size: 1rem;
+        line-height: 1.15;
+        letter-spacing: 0.045em;
+    }
+
     .m3-header__actions {
         flex: 0 0 auto;
         margin-left: auto;
@@ -151,9 +162,9 @@
 
     .m3-header__actions .m3-icon-button,
     .m3-header__actions #m3-theme-controls {
-        width: 42px;
-        height: 42px;
-        flex-basis: 42px;
+        width: 48px;
+        height: 48px;
+        flex-basis: 48px;
     }
 
     .m3-social-button, .m3-rss-button {
@@ -189,9 +200,9 @@
 
     .m3-header__actions .m3-icon-button,
     .m3-header__actions #m3-theme-controls {
-        width: 40px;
-        height: 40px;
-        flex-basis: 40px;
+        width: 48px;
+        height: 48px;
+        flex-basis: 48px;
     }
 }
 
@@ -1540,8 +1551,12 @@
     }
 }
 
-/* 表示モード切替: タブレット UA で PHP 出力時のみ表示（幅では制御しない） */
-#m3-view-toggle.m3-view-toggle--tablet {
+#m3-view-toggle[hidden] {
+    display: none;
+}
+
+/* 表示モード切替: スマートフォン / タブレットでは PC 表示中も表示する。 */
+#m3-view-toggle:not([hidden]) {
     display: inline-flex;
     align-items: center;
     justify-content: center;

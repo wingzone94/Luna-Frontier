@@ -466,6 +466,24 @@ final class Node_Library {
 		);
 	}
 
+	/** Normalize UTF-8, Shift_JIS and EUC-JP pages before OGP parsing. */
+	public static function normalize_ogp_encoding( string $html, string $type ): string {
+		$encoding = '';
+		if ( preg_match( '/charset\s*=\s*["\x27]?([a-zA-Z0-9_-]+)/i', $type, $m ) || preg_match( '/<meta\b[^>]*charset\s*=\s*["\x27]?([a-zA-Z0-9_-]+)/i', substr( $html, 0, 8192 ), $m ) ) {
+			$encoding = strtolower( $m[1] );
+		}
+		$encodings = array( 'shift_jis' => 'SJIS-win', 'shift-jis' => 'SJIS-win', 'sjis' => 'SJIS-win', 'windows-31j' => 'SJIS-win', 'euc-jp' => 'EUC-JP', 'utf-8' => 'UTF-8', 'utf8' => 'UTF-8' );
+		if ( isset( $encodings[ $encoding ] ) && function_exists( 'mb_convert_encoding' ) ) {
+			$html = mb_convert_encoding( $html, 'UTF-8', $encodings[ $encoding ] );
+		} elseif ( 1 !== preg_match( '//u', $html ) && function_exists( 'mb_detect_encoding' ) ) {
+			$detected = mb_detect_encoding( $html, array( 'UTF-8', 'SJIS-win', 'EUC-JP' ), true );
+			if ( $detected ) {
+				$html = mb_convert_encoding( $html, 'UTF-8', $detected );
+			}
+		}
+		return wp_check_invalid_utf8( $html, true );
+	}
+
 	/**
 	 * OGP 取得ハンドラ (自己完結型)
 	 */
@@ -473,7 +491,7 @@ final class Node_Library {
 		$url = $request->get_param( 'url' );
 		
 		// 外部サイトからの取得ロジックを統合
-		$transient_key = 'node_lib_ogp_' . md5( $url );
+		$transient_key = 'node_lib_ogp_utf8_v3_' . md5( $url );
 		$data = get_transient( $transient_key );
 
 		if ( false === $data ) {
@@ -492,22 +510,24 @@ final class Node_Library {
 				return new WP_Error( 'empty_body', 'Fetched content is empty.', [ 'status' => 404 ] );
 			}
 
-			// 文字化け対策
-			$content_type = wp_remote_retrieve_header( $response, 'content-type' );
-			if ( str_contains( $content_type, 'shift_jis' ) || str_contains( $content_type, 'sjis' ) ) {
-				$html = mb_convert_encoding( $html, 'UTF-8', 'SJIS' );
-			}
+			$html = self::normalize_ogp_encoding( $html, (string) wp_remote_retrieve_header( $response, 'content-type' ) );
 
-			$dom = new DOMDocument();
-			libxml_use_internal_errors( true );
-			@$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
-			libxml_clear_errors();
-			
-			$xpath = new DOMXPath( $dom );
-			$data = [
-				'title' => trim( $xpath->evaluate( 'string(//meta[@property="og:title"]/@content)' ) ?: $xpath->evaluate( 'string(//title)' ) ),
-				'image' => $xpath->evaluate( 'string(//meta[@property="og:image"]/@content)' ),
-			];
+			// Parse normalized UTF-8 directly: legacy charset meta tags must not
+			// cause libxml to reinterpret the already converted document.
+			$data = [ 'title' => '', 'image' => '' ];
+			$tags = new WP_HTML_Tag_Processor( $html );
+			while ( $tags->next_tag( 'META' ) ) {
+				$property = strtolower( (string) $tags->get_attribute( 'property' ) );
+				$value = $tags->get_attribute( 'content' );
+				if ( 'og:title' === $property && is_string( $value ) ) {
+					$data['title'] = trim( $value );
+				} elseif ( 'og:image' === $property && is_string( $value ) ) {
+					$data['image'] = $value;
+				}
+			}
+			if ( '' === $data['title'] && preg_match( '~<title\\b[^>]*>(.*?)</title\\s*>~is', $html, $title ) ) {
+				$data['title'] = trim( html_entity_decode( wp_strip_all_tags( $title[1] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+			}
 
 			set_transient( $transient_key, $data, WEEK_IN_SECONDS );
 		}

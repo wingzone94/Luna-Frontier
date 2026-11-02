@@ -1,27 +1,18 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { readdirSync, unlinkSync } from 'fs';
 
-// assets/ には images/ fonts/ pwa/ や手動配置の blocks.js があるため
-// emptyOutDir は使えない。代わりにハッシュ付きバンドル（name.hash.js の
-// 2ドット形式）だけをビルド開始時に削除する。
-const cleanHashedBundles = () => ({
-  name: 'clean-hashed-bundles',
-  buildStart() {
-    const dir = resolve(__dirname, 'assets/js');
-    for (const f of readdirSync(dir)) {
-      if (/^.+\..+\.js$/.test(f)) unlinkSync(resolve(dir, f));
-    }
-  }
-});
-
+// 成果物は dist/ に出す（ソースと同階層に混ぜない）。
+// PHP 側は inc/theme-setup.php の node_resolve_vite_build() で
+// dist/.vite/manifest.json → assets/.vite/manifest.json の順に解決する。
+// assets/ には images/, fonts/, pwa/, 手動配置の blocks.js と、配布 ZIP 単体でも
+// 動くように残して置く旧ハッシュバンドル（1世代分のフォールバック）があるため、
+// assets を outDir にする運用には戻さない（emptyOutDir は dist を離れると発火しない）。
 export default defineConfig({
   base: './',
-  plugins: [cleanHashedBundles()],
   build: {
     manifest: true,
-    outDir: 'assets',
-    emptyOutDir: false,
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/main.js'),

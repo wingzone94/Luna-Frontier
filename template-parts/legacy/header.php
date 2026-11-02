@@ -79,23 +79,31 @@ declare(strict_types=1);
             }
         } catch (e) {}
 
-        // タブレット表示モード（タブレットUAは初期モバイル、保存済み設定を優先）
+        // 表示モードはブラウザで判定し、ページキャッシュの UA に依存させない。
         const VIEW_STORE_KEY = 'm3_store_view-mode';
-        const IS_TABLET_UA = <?php echo node_is_tablet_ua() ? 'true' : 'false'; ?>;
+        const ua = navigator.userAgent || '';
+        const isTablet = /iPad|Tablet|Silk|Kindle|PlayBook/i.test(ua)
+            || (/Android/i.test(ua) && !/Mobile/i.test(ua))
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+            || (navigator.maxTouchPoints > 0 && matchMedia('(min-width: 768px) and (pointer: coarse)').matches);
+        const isPhone = /iPhone|iPod|Windows Phone|Android.*Mobile/i.test(ua)
+            || (navigator.maxTouchPoints > 0 && matchMedia('(max-width: 767px) and (pointer: coarse)').matches);
         try {
             const viewRaw = localStorage.getItem(VIEW_STORE_KEY);
             const savedViewMode = viewRaw ? JSON.parse(viewRaw) : null;
             const viewMode = (savedViewMode === 'mobile' || savedViewMode === 'pc')
                 ? savedViewMode
-                : (IS_TABLET_UA ? 'mobile' : null);
+                : (isTablet || isPhone || matchMedia('(max-width: 767px)').matches ? 'mobile' : null);
             const viewport = document.getElementById('m3-viewport');
 
-            if (IS_TABLET_UA) {
-                document.documentElement.setAttribute('data-device-class', 'tablet');
+            if (isTablet || isPhone) {
+                document.documentElement.setAttribute('data-device-class', isPhone ? 'phone' : 'tablet');
             }
 
             if (viewport && viewMode === 'mobile') {
-                viewport.setAttribute('content', 'width=390, initial-scale=1, viewport-fit=cover');
+                viewport.setAttribute('content', isTablet && !isPhone
+                    ? 'width=390, initial-scale=1, viewport-fit=cover'
+                    : 'width=device-width, initial-scale=1, viewport-fit=cover');
                 document.documentElement.setAttribute('data-view-mode', 'mobile');
             } else if (viewport && viewMode === 'pc') {
                 viewport.setAttribute('content', 'width=1280, initial-scale=1, viewport-fit=cover');
@@ -286,12 +294,10 @@ declare(strict_types=1);
                 </button>
             </div>
 
-            <!-- View (Tablet UA のみ) -->
-            <?php if ( node_is_tablet_ua() ) : ?>
-            <button class="m3-icon-button m3-tooltip-target m3-view-toggle--tablet" id="m3-view-toggle" aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
+            <!-- View: 端末判定は JS で行い、PC 表示中もモバイルへ戻れるようにする。 -->
+            <button class="m3-icon-button m3-tooltip-target" id="m3-view-toggle" type="button" hidden aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
                 <span class="material-symbols-outlined" id="m3-view-toggle-icon" aria-hidden="true">smartphone</span>
             </button>
-            <?php endif; ?>
 
         </div>
     </div>
