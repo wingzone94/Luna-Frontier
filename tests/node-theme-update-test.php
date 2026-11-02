@@ -79,6 +79,8 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
 		$theme  = $this->root . '/Node';
 		wp_mkdir_p( $theme );
+		// 公開済みアップデーターは、有効なテーマメタデータを持つ配置だけを交換する。
+		$this->assertTrue( copy_dir( $source, $theme ) );
 		file_put_contents( $theme . '/obsolete.php', '<?php' );
 
 		$this->assertTrue( node_swap_theme_update_directory( $this->filesystem, $source, $theme ) );
@@ -91,6 +93,7 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$source = $this->create_package( '2.0.0-preview.7', 'new-build' );
 		$theme  = $this->root . '/Node';
 		wp_mkdir_p( $theme );
+		$this->assertTrue( copy_dir( $source, $theme ) );
 		file_put_contents( $theme . '/original.php', '<?php' );
 
 		$filesystem = new class( false ) extends WP_Filesystem_Direct {
