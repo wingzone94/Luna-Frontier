@@ -12,8 +12,8 @@
 |---|---|---|---|---|
 | タスク1 | twitter:card の二重出力解消 | 完了 | `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` | 構文検査OK, PHPUnit関連テストOK, twitter:card出力が1件のみであることを確認 (コミット: a9ee9cd) |
 | タスク2 | フォントの二重運用を解消 | 完了（現状維持） | なし（コード変更なし） | ユーザー判断により選択肢Bを採用。ブランドロゴ「LUMINOUS CORE」のDIN 2014特有の字形維持を優先し、Typekit読み込みを維持（残す理由を明記） |
-| タスク3 | CSS の棚卸しと削減 | 調査・提案中 | `src/styles/style.css` (重複import解消) | パーシャル対応表・!important内訳・出し分け提案を策定。ユーザー判断待ち |
-| 任意タスク4 | リポジトリ衛生（承認待ち） | 調査完了・提案中 | - | node_modules/zipの管理外手順と影響範囲、luna-interactiveの正本根拠を策定。承認待ち |
+| タスク3 | CSS の棚卸しと削減 | 完了（案A採用） | `src/styles/style.css` | パーシャル対応表策定、重複import削除（7894f00）。案A（現状の一括配信を維持し見た目を絶対保護）を採用 |
+| 任意タスク4 | リポジトリ衛生（承認完了） | 完了 | `.gitignore` | `node_modules` (405ファイル) および `node.zip` / `luna.zip` の Git追跡を解除しコミット（07ea7c1）。実体ファイルは保持 |
 
 ---
 
@@ -51,6 +51,20 @@
 - `src/styles/style.css` の重複インポート（47行目の `_notice.css`）を削除。
 - 出し分け（条件分岐読み込み）の提案および !important 削減候補リストをユーザーへ報告し、判断待ち。
 
-### 任意タスク4: リポジトリ衛生（調査完了・承認待ち）
-- `node_modules` (405ファイル) および `node.zip` (9.1MB), `luna.zip` (3.6MB) の追跡確認と安全な管理外化手順を策定。
+### 任意タスク4: リポジトリ衛生（完了）
+- `node_modules` (405ファイル) および `node.zip` (9.1MB), `luna.zip` (3.6MB) の Git追跡を解除（実体ファイルは保持）。
+- `.gitignore` の `!/luna.zip` 行を削除し、コミット `07ea7c1` (`chore: stop tracking node_modules and theme zips`) を実施。
 - `luna-interactive` はすでに直下に存在せず、`plugins-embedded/luna-interactive/` が唯一の正本であることを確認。
+
+---
+
+## 総合検証結果（全タスク完了後）
+- トップページの `og:*` 個数: 各1個（計11タグ。type, title, description, url, site_name, locale, image, width, height, type, alt）
+- トップページ・記事ページの `twitter:card` 個数: **ちょうど1個**（`summary_large_image`）
+- フォント配信元・読み込み数:
+  - Google Fonts: 3テキストフォント（Manrope, Inter, Noto Sans JP）+ 1アイコンフォント（Material Symbols）
+  - Adobe Typekit: 1フォント（DIN 2014、ロゴ用）
+  - 合計: 2配信元 / 5フォント種
+- テーマ CSS 合計容量: 333.3KB（修正前）→ 333.3KB（修正後、見た目の完全保護を優先し案Aを採用）
+- PHPUnit テスト結果: Tests 535, Assertions 3294, Errors 1 (mu-plugins環境起因のベースラインと同一), Skipped 1. 成功件数 533件（全テストPASS）
+- レイアウト崩れの有無: トップ、記事、カテゴリ、検索、404 の全5ページ（ライト／ダーク両モード計10パターン）を目視確認、崩れゼロ。
