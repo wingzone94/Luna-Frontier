@@ -14,6 +14,7 @@
 | タスク2 | フォントの二重運用を解消 | 完了（現状維持） | なし（コード変更なし） | ユーザー判断により選択肢Bを採用。ブランドロゴ「LUMINOUS CORE」のDIN 2014特有の字形維持を優先し、Typekit読み込みを維持（残す理由を明記） |
 | タスク3 | CSS の棚卸しと削減 | 完了（案A採用） | `src/styles/style.css` | パーシャル対応表策定、重複import削除（7894f00）。案A（現状の一括配信を維持し見た目を絶対保護）を採用 |
 | 任意タスク4 | リポジトリ衛生（承認完了） | 完了 | `.gitignore` | `node_modules` (405ファイル) および `node.zip` / `luna.zip` の Git追跡を解除しコミット（07ea7c1）。実体ファイルは保持 |
+| 追加タスク | 全記事一覧（all-articles）のカード四角化 | 完了 | `template-parts/all-articles.php`, `src/styles/_cards.css` | トップ LATEST およびカテゴリアーカイブと同様にカードの角丸を 0 に統一。アイキャッチ端の切り欠けを解消 |
 
 ---
 
@@ -55,6 +56,17 @@
 - `node_modules` (405ファイル) および `node.zip` (9.1MB), `luna.zip` (3.6MB) の Git追跡を解除（実体ファイルは保持）。
 - `.gitignore` の `!/luna.zip` 行を削除し、コミット `07ea7c1` (`chore: stop tracking node_modules and theme zips`) を実施。
 - `luna-interactive` はすでに直下に存在せず、`plugins-embedded/luna-interactive/` が唯一の正本であることを確認。
+
+### 追加タスク: 全記事一覧（all-articles）のカード四角化（完了）
+- 調査結果:
+  - トップページ LATEST およびカテゴリアーカイブ（`category.php`）は Node 1.3.3 で既に四角形（border-radius: 0）に統一済み。
+  - `template-parts/all-articles.php` のみが旧来の大きな角丸（28px/16px）のまま残っており、アイキャッチ画像の端が大きく切り欠かれていた。
+- 変更内容:
+  - `template-parts/all-articles.php`: `#primary` に `.all-articles-layout` クラスを付与。
+  - `src/styles/_cards.css`: `.all-articles-layout` コンテナに対して `--node-card-radius: 0;` および `.all-articles-layout :is(.c-card, .m3-card) { border-radius: 0; }` を追加。
+- 検証結果:
+  - 実機レンダリング（Playwright）にて、PC（1280px）およびモバイル（375px）ともにカード角丸が 0px となり、アイキャッチ画像の端の欠けが完全に解消されたことを確認。
+
 
 ---
 

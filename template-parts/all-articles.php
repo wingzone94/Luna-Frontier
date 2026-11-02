@@ -21,7 +21,7 @@ get_header();
 $archive_base = trailingslashit( node_get_all_articles_url() );
 ?>
 
-<main id="primary" class="site-main">
+<main id="primary" class="site-main all-articles-layout">
 	<?php node_the_breadcrumbs(); ?>
 
 	<section class="m3-archive-header m3-surface m3-section-spacing" aria-labelledby="all-articles-title">

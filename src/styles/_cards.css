@@ -722,3 +722,17 @@
         display: none !important;
     }
 }
+
+/* ===========================================================================
+   Luna Frontier 2.0.2: 全記事一覧（all-articles）の記事カード
+   トップの LATEST / アーカイブと同じく四角にし、アイキャッチの角欠けを防止する。
+   =========================================================================== */
+
+.all-articles-layout {
+    --node-card-radius: 0;
+}
+
+.all-articles-layout :is(.c-card, .m3-card) {
+    border-radius: 0;
+}
+
