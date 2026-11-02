@@ -1,0 +1,202 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Header (Material 3 Expressive) --- */
+.m3-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    overflow: visible;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    height: calc(64px + var(--safe-area-top)); 
+    z-index: 1000;
+    
+    background: var(--md-sys-color-surface-container-high); 
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 0;
+    box-shadow: var(--m3-elevation-1);
+    
+    display: flex; 
+    align-items: flex-end; /* セーフエリア分を下側に寄せる */
+    padding-bottom: 0;
+    
+    transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s ease;
+}
+
+.m3-header.is-hidden {
+    /* 管理バー(ログイン時)の分も含めて完全に画面外へ退避させる */
+    transform: translateY(calc(-100% - var(--wp-admin-bar-offset, 0px)));
+}
+
+/* モバイルの追従セクションナビ（SPOTLIGHT/HOT/HEADLINE/LATEST のプルダウン）は
+   2026-09-03 のユーザー指示で撤去した。ヘッダー直下の clearance は
+   _layout-fixes.css の .m3-home-layout などが自分で払う。 */
+@media (max-width: 600px) {
+    :is(#headline, #spotlight, #hot, #latest) {
+        scroll-margin-top: calc(64px + var(--safe-area-top) + var(--wp-admin-bar-offset, 0px) + 12px);
+    }
+}
+
+.m3-header__inner { 
+    width: 100%; 
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 64px; /* 実質的なコンテンツエリア */
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 0 24px;
+}
+@media (max-width: 600px) {
+    .m3-header__inner {
+        padding: 0 14px;
+        gap: 12px;
+    }
+}
+
+.m3-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.site-branding {
+    display: flex;
+    align-items: center;
+}
+
+.m3-logo-text { 
+    font-family: "din-2014", sans-serif;
+    font-size: 1.4rem; 
+    font-weight: 600; 
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #1B1812; 
+    display: block;
+    line-height: 1;
+}
+
+[data-theme="dark"] .m3-logo-text {
+    color: #F5EFEB;
+}
+
+.m3-header__logo-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.m3-header__logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.m3-header__actions { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+
+.m3-header__actions #m3-theme-controls {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+}
+
+.m3-header .menu,
+.m3-header .menu-item,
+.m3-header__actions > ul,
+.m3-header__actions > li {
+    display: none !important;
+}
+
+
+@media (max-width: 600px) {
+    .m3-header__left {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .m3-header__logo-link {
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .m3-header__logo-img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .m3-logo-text {
+        max-width: min(52vw, 13.5rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: clamp(1.02rem, 5vw, 1.24rem);
+        letter-spacing: 0.055em;
+    }
+
+    .m3-header__actions {
+        flex: 0 0 auto;
+        margin-left: auto;
+        gap: 4px;
+    }
+
+    .m3-header__actions .m3-icon-button,
+    .m3-header__actions #m3-theme-controls {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+    .m3-social-button, .m3-rss-button {
+        display: none !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .m3-header__inner {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .m3-header__logo-link {
+        gap: 8px;
+    }
+
+    .m3-header__logo-img {
+        width: 28px;
+        height: 28px;
+    }
+
+    .m3-logo-text {
+        max-width: 48vw;
+        font-size: 1rem;
+        letter-spacing: 0.045em;
+    }
+
+    .m3-header__actions {
+        margin-left: auto;
+        gap: 2px;
+    }
+
+    .m3-header__actions .m3-icon-button,
+    .m3-header__actions #m3-theme-controls {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+}
+
+.m3-rss-button:hover .material-symbols-outlined {
+    color: #f26522;
+}
+

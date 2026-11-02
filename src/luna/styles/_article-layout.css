@@ -168,8 +168,8 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
-/* Phones: use the full page width for the reading paper. The fixed actions move
- * to a bottom bar so they no longer reserve a permanent gutter beside the text.
+/* Phones: use the full page width for the reading paper. The fixed actions use
+ * a compact disclosure so they no longer reserve a permanent text gutter.
  * 768px and wider keeps the existing right-hand action lane. */
 @media (max-width: 767px) {
 	body.lf-theme.single-post .m3-article__body {
@@ -179,18 +179,15 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		max-inline-size: 100%;
 	}
 
+	/* Disclosure replaces the full-width bottom bar without taking a text gutter. */
 	body.lf-theme.single-post .m3-action-stack {
-		inset: auto 0 0;
-		flex-direction: row;
-		align-items: center;
-		justify-content: flex-end;
+		inset: auto calc(8px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) auto;
+		flex-direction: column-reverse;
+		align-items: flex-end;
 		gap: 12px;
-		padding: 8px calc(16px + env(safe-area-inset-right))
-			calc(8px + env(safe-area-inset-bottom))
-			calc(16px + env(safe-area-inset-left));
-		background: var(--md-sys-color-surface-container);
-		border-block-start: 1px solid var(--md-sys-color-outline-variant);
-		pointer-events: auto;
+		padding: 0;
+		background: transparent;
+		border: 0;
 	}
 
 	body.lf-theme.single-post .m3-page-container {

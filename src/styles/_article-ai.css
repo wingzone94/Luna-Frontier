@@ -1,0 +1,58 @@
+/* _article/AIサマリー/シャimmer — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- AI Summary --- */
+/* ... (rest of the file) */
+.m3-article__accent-line {
+    display: none;
+    /* 不要な線を非表示化 */
+}
+
+.m3-article__meta-info .m3-label--category {
+    background: #FF9000; /* Theme Orange */
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    /* CATEGORYラベルと統一 */
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* --- Shimmer Animation --- */
+.m3-ai-shimmer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.m3-ai-shimmer__line {
+    height: 14px;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+}
+
+[data-theme="light"] .m3-ai-shimmer__line {
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.05) 25%,
+            rgba(0, 0, 0, 0.1) 50%,
+            rgba(0, 0, 0, 0.05) 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+

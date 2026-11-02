@@ -19,36 +19,7 @@
     }
 }
 
-@media (max-width: 1000px) {
-    .m3-action-stack.is-singular #m3-back-to-top {
-        display: flex !important;
-        opacity: 1;
-        visibility: visible;
-        transform: scale(1);
-    }
-
-    .m3-action-stack.is-singular #m3-toc-trigger {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-    }
-
-    /* 非表示の TOP が場所を占めると目次ボタンがパネルへ重なるため、開いている間は詰める。 */
-    body.is-active-toc .m3-action-stack #m3-back-to-top {
-        display: none !important;
-    }
-
-    /* ヒーロー統合目次（hero-toc.js）がヒーロー通過を検知したら、
-     * モバイルでも目次FABを解放して追従導線を引き継ぐ。 */
-    body.is-hero-passed .m3-action-stack.is-singular #m3-toc-trigger.toc-ready {
-        display: flex !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: scale(1) !important;
-        pointer-events: auto !important;
-    }
-}
+/* Mobile action visibility is owned by _mobile-actions.css. */
 
 body.is-active-toc .m3-action-stack .m3-fab:not(#m3-toc-trigger) {
     opacity: 0 !important;

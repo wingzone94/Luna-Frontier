@@ -40,11 +40,11 @@
 @import './_hero-toc.css' layer(components);
 @import './_buttons.css' layer(components);
 @import './_toc-fab.css' layer(components);
+@import './_mobile-actions.css' layer(components);
 
 /* Specialized modules */
 @import './_blogcard-ai.css' layer(components);
 @import './_ai-summary.css' layer(components);
-@import './_notice.css' layer(components);
 @import './_fact-check.css' layer(components);
 @import './_adblock-modal.css' layer(components);
 @import './_writer-card.css' layer(components);
@@ -62,33 +62,5 @@
 /* Print (must be last: overrides everything under @media print) */
 @import './_print.css' layer(utilities);
 
-/* Production parity: external Material Symbols CSS is unlayered, so keep this
- * narrow badge override unlayered as well. Values mirror luminous-core.net. */
-.m3-label--icon-only {
-    width: 34px;
-    height: 34px;
-    padding: 0 !important;
-    justify-content: center;
-    border-radius: 50% !important;
-    cursor: pointer;
-}
-
-.m3-label--icon-only .material-symbols-outlined {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    margin: 0 !important;
-    font-size: 20px;
-}
-
-/* Node 1.2.x parity: these axes are base values shared by PC and mobile.
- * Keep them unlayered so external Material Symbols CSS cannot override them. */
-:is(.c-card__date, .m3-card__date) .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-
-.m3-article__reading-badge-expressive .m3-reading-badge__gauge .material-symbols-outlined {
-    font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
-}
+/* External icon styles are unlayered; preserve this override scope. */
+@import './_icon-parity.css';

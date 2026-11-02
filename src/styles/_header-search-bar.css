@@ -1,0 +1,213 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Search Bar --- */
+.m3-search-container { position: relative; }
+.m3-search-bar { 
+    position: relative; 
+    display: flex; 
+    align-items: center; 
+}
+.m3-search-input-wrapper {
+    position: absolute; right: 100%; top: 50%; transform: translateY(-50%) scaleX(0.8);
+    opacity: 0; width: 320px; display: flex; align-items: center;
+    background: var(--md-sys-color-surface-container-highest);
+    border-radius: 28px; padding: 2px 4px 2px 20px;
+    box-shadow: var(--m3-elevation-2); transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: right center; pointer-events: none; z-index: 1001;
+}
+.m3-search-bar.is-active .m3-search-input-wrapper { opacity: 1; pointer-events: auto; }
+
+/* 検索起動時: 検索以外のヘッダー操作ボタンを非表示 */
+.m3-header.search-is-active .m3-header__actions > .m3-rss-button,
+.m3-header.search-is-active .m3-header__actions > .m3-social-button,
+.m3-header.search-is-active .m3-header__actions > #m3-theme-controls,
+.m3-header.search-is-active .m3-header__actions > #m3-view-toggle {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    flex: 0 0 0 !important;
+}
+
+/* 検索起動時: 虫眼鏡トグルを非表示（← で閉じる / Enter で検索） */
+.m3-header.search-is-active #search-toggle {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    flex: 0 0 0 !important;
+}
+
+.m3-header.search-is-active .m3-search-mobile-close {
+    display: flex !important;
+    color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.m3-header.search-is-active .m3-search-submit {
+    display: inline-flex !important;
+}
+
+/* 検索起動時: ヘッダー内 flex 展開（PC / モバイル共通） */
+.m3-header.search-is-active .m3-header__actions {
+    flex: 1;
+    min-width: 0;
+}
+
+.m3-header.search-is-active .m3-search-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.m3-header.search-is-active .m3-search-bar {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+}
+
+.m3-header.search-is-active .m3-search-input-wrapper {
+    position: relative;
+    right: auto;
+    top: auto;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    max-width: min(460px, calc(100vw - var(--m3-search-logo-reserve, 10rem) - 2rem));
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    margin: 0;
+    padding: 2px 4px;
+}
+
+.m3-header.search-is-active .m3-search-bar.is-active .m3-search-input-wrapper {
+    transform: none;
+}
+
+@media (max-width: 600px) {
+    .m3-header.search-is-active {
+        --m3-search-logo-reserve: 3rem;
+    }
+
+    .m3-header.search-is-active .m3-header__inner {
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 0 8px;
+    }
+
+    .m3-header.search-is-active .m3-header__left {
+        flex: 0 0 32px;
+        min-width: 0;
+        width: 32px;
+        overflow: hidden;
+    }
+
+    .m3-header.search-is-active .site-branding,
+    .m3-header.search-is-active .m3-header__logo-link,
+    .m3-header.search-is-active .custom-logo-link {
+        flex: 0 0 32px;
+        width: 32px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .m3-header.search-is-active .m3-header__logo-link,
+    .m3-header.search-is-active .custom-logo-link {
+        gap: 0;
+    }
+
+    .m3-header.search-is-active .m3-logo-text {
+        display: none;
+    }
+
+    .m3-header.search-is-active .m3-header__logo-img,
+    .m3-header.search-is-active .custom-logo {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+    }
+
+    .m3-header.search-is-active .m3-search-input-wrapper {
+        max-width: none;
+        min-height: 48px;
+        border-radius: 24px;
+    }
+}
+
+.m3-search-mobile-close { display: none; }
+.m3-search-submit { display: none; }
+.m3-search-bar__input { flex: 1; min-width: 0; height: 44px; border: none; background: transparent; outline: none; color: var(--md-sys-color-on-surface); font-weight: 500; }
+/* ブラウザ標準の検索クリア（×）を非表示 — #m3-search-clear と重複するため */
+.m3-search-bar__input::-webkit-search-cancel-button,
+.m3-search-bar__input::-webkit-search-decoration,
+.m3-search-bar__input::-webkit-search-results-button,
+.m3-search-bar__input::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+.m3-search-bar__input::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+}
+.m3-search-actions-inline { 
+    display: flex; 
+    align-items: center; 
+    padding-right: 4px;
+}
+/* ID指定 — _buttons.css の `.m3-header .m3-icon-button { background: transparent !important }` より優先させる */
+#m3-search-clear {
+    /* 薄いオレンジのティントサークル × オレンジアイコン（検索バーに馴染むトーナル配色） */
+    color: var(--md-sys-color-primary, #FF9900) !important;
+    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 14%, transparent) !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    flex: 0 0 28px !important; /* モバイル幅の .m3-icon-button 用 flex-basis 上書きを打ち消し正円を維持 */
+    margin: 0 4px;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+#m3-search-clear[hidden] {
+    display: none !important;
+}
+#m3-search-clear:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 26%, transparent) !important;
+}
+#m3-search-clear .material-symbols-outlined {
+    font-size: 16px !important;
+}
+/* 検索クリア — 読了ゲージ破壊時と同じ「一瞬で弾けて消える」フェード。破片はJSが .m3-search-shard で飛ばす */
+.m3-search-bar__input.is-dissipating {
+    opacity: 0 !important;
+    filter: blur(2px);
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* 読了ゲージの .m3-gauge-shard と同系の破片。overflowクリップを避けるため body 直下に fixed で置く */
+.m3-search-shard {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 3000;
+}
+.m3-search-trigger-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+

@@ -71,13 +71,13 @@ export function initExpressiveFloatingTOC() {
             tocTrigger = document.createElement('button');
             tocTrigger.id = 'm3-toc-trigger';
             tocTrigger.type = 'button';
-            tocTrigger.className = 'm3-fab m3-fab--extended m3-fab--mobile-hidden toc-ready';
+            tocTrigger.className = 'm3-fab m3-fab--extended toc-ready';
             tocTrigger.setAttribute('aria-label', '目次を表示');
             tocTrigger.innerHTML = [
                 '<span class="material-symbols-outlined" aria-hidden="true">list</span>',
                 '<span class="m3-fab-text">目次</span>'
             ].join('');
-            actionStack.appendChild(tocTrigger);
+            (actionStack.querySelector('#m3-actions-items') || actionStack).appendChild(tocTrigger);
         }
 
         if (!tocPanel) {
@@ -136,7 +136,7 @@ export function initExpressiveFloatingTOC() {
         });
     };
 
-    const setPanelOpen = (open) => {
+    const setPanelOpen = (open, restoreFocus = false) => {
         ensureShell();
 
         const { tocPanel, tocTrigger } = getRefs();
@@ -161,8 +161,14 @@ export function initExpressiveFloatingTOC() {
         scrim.classList.toggle('is-active', open);
         tocTrigger?.setAttribute('aria-expanded', String(open));
 
+        document.dispatchEvent(new CustomEvent('m3:toc:visibility', { detail: { open } }));
         if (open) {
             updateActiveLink();
+            tocPanel.querySelector('#m3-toc-close')?.focus({ preventScroll: true });
+        } else if (restoreFocus || tocPanel.contains(document.activeElement)) {
+            const mobileToggle = document.getElementById('m3-actions-toggle');
+            const target = mobileToggle && !mobileToggle.hidden ? mobileToggle : tocTrigger;
+            target?.focus({ preventScroll: true });
         }
     };
 
@@ -398,7 +404,7 @@ export function initExpressiveFloatingTOC() {
             const closeButton = event.target.closest('#m3-toc-close');
             if (closeButton) {
                 event.preventDefault();
-                setPanelOpen(false);
+                setPanelOpen(false, true);
                 return;
             }
 
@@ -420,7 +426,7 @@ export function initExpressiveFloatingTOC() {
         }, true);
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') setPanelOpen(false);
+            if (event.key === 'Escape' && document.body.classList.contains('is-active-toc')) setPanelOpen(false, true);
         });
 
         window.addEventListener('scroll', updateActiveLink, { passive: true });

@@ -8,8 +8,10 @@
 
 ## 文書の正本と適用範囲
 
+正本のファイル名は **`AGENT.MD`**。`AGEND.MD` 等の別名コピーを新設しない。入口スタブ以外のLLM向け規則は本書にだけ追加し、設計資料や作業記録へ同じ指示を複製しない。
+
 本書は Gemini / AntiGravity、Claude / Claude Code、ChatGPT / Codex に共通する開発・運用指示の正本。
-ブランド別ファイルおよび `AGENTS.md`、`AI.md`、`AI-AGENTS.md` は本書への入口とし、独立した運用規則を置かない。
+ツールが自動参照する `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` だけは本書への入口のスタブとし、独立した運用規則を置かない。それ以外の入口ファイル（`AI.md`、`CHATGPT.md`、`AI-AGENTS.md`）は 2026-11-02 に削除した。新規エージェント用入口を増やさず、本書を直接参照させる。
 作業開始時は本書を読み、UI・レイアウトを扱う場合は [DESIGN.MD](./DESIGN.MD) も読む。
 `DESIGN.MD` はデザイン判断の共通基準、[NODE-2.0.md](./NODE-2.0.md) は版固有の計画・背景、[HOW_TO_RELEASE.md](./HOW_TO_RELEASE.md) はリリース手順を扱う。
 過去の計画にあるモデル担当・日付・バージョン・試作ディレクトリを現状や実行許可とみなさない。
@@ -19,9 +21,10 @@
 
 - `GEMINI.md`: Bun、スコープ限定、既存互換、検証後ZIPの原則を本書へ集約。旧TOC/FABの圧縮コード置換・150ms待機・末尾CSSパッチ・専用ZIP手順は過去の緊急処置として廃止し、再適用しない。
 - Claude / Claude Code: 本書の「Claude Code / Opus向け運用ルール」とモデル使用方針を参照する。統合時点でルートに `CLAUDE.md` は存在せず、参照用入口を新設した。
-- ChatGPT / Codex: 仕様・プロンプト整理とコーディング作業を区別し、本書の共通制約・モデル使用方針を適用する。統合時点でルートに `CHATGPT.md` は存在せず、参照用入口を新設した。
-- `AI-AGENTS.md`: 開発ツールの役割は本書の編成に集約。テーマ内AI機能は `node-ai-tools` の実装を正本とし、モデルID・APIの可用性を古い静的一覧で断定しない。
-- `AI.md`: 下記のコーディング・機能保護規則と `DESIGN.MD` に集約。全面Expressive、`!important` 全面禁止、固定 `main` ブランチ、無条件pull/rebase、履歴の強制結合を共通手順として採用しない。
+- ChatGPT / Codex: 仕様・プロンプト整理とコーディング作業を区別し、本書の共通制約・モデル使用方針を適用する。入口ファイルは持たない。
+- `AI-AGENTS.md`（削除済み・2026-11-02）: 開発ツールの役割は本書の編成に集約。テーマ内AI機能は `node-ai-tools` の実装を正本とし、モデルID・APIの可用性を古い静的一覧で断定しない。
+- `AI.md`（削除済み・2026-11-02）: 下記のコーディング・機能保護規則と `DESIGN.MD` に集約。全面Expressive、`!important` 全面禁止、固定 `main` ブランチ、無条件pull/rebase、履歴の強制結合を共通手順として採用しない。
+- `CHATGPT.md`（削除済み・2026-11-02）: 入口スタブのみで独立規則はなし。
 
 ### コーディング・機能保護規則
 
@@ -548,11 +551,12 @@ WordPressテーマ開発・Vite/Bunビルド・バニラJS UIのエキスパー�
   * `src/scripts/*`
   * `src/styles/style.css`
   * `src/styles/*`
-* 出力先:
+* 出力先（現行の `vite.config.js` に従う）:
 
-  * `assets/js/*`
-  * `assets/css/*`
-  * `assets/.vite/manifest.json`
+  * `dist/js/*`
+  * `dist/css/*`
+  * `dist/.vite/manifest.json`
+  * `assets/` は静的素材と旧ビルドのフォールバック。PHP側の `node_resolve_vite_build()` で解決する。
 * `src/` がない場合は、`assets/` を直接編集して上書き保存すること
 
 ---
@@ -615,6 +619,19 @@ WordPressテーマ開発・Vite/Bunビルド・バニラJS UIのエキスパー�
 
 ### 4. CSS整理
 
+#### 段階的モジュール化とモバイル操作
+
+- ルートの `style.css` はWordPressテーマ情報用。表示CSSの入口は `src/styles/style.css` とし、入口へ実装ルールを追記しない。
+- ヘッダーは `_header.css` を互換入口として、shell / search-bar / controls / search-modal / search-filters / search-footer / progress / clock のpartialに分割。互換入口内のimport順と外側の `layer(components)` を維持する。
+- 記事CSSは `_article.css` をimport専用の正本入口とする。旧2,822行の実装重複は保持しない。`_article-spotlight.css` も互換入口とし、labels / metadata / content / breadcrumbs を順番どおり読み込む。
+- 外部アイコンCSSとの互換指定は `_icon-parity.css` に置き、既存どおりunlayeredで読み込む。
+- `bun scripts/verify-style-modules.mjs` で入口への実装混入・重複import・循環・1,000行超の実装partialを検査する。分割前CSSを引数に渡すと、生成CSSのルール・順序・所属レイヤーも比較する。
+- `bun scripts/verify-agent-entrypoints.mjs` でLLM入口の参照先と旧入口の再増殖を検査する。
+- `bun scripts/verify-mobile-actions.mjs` で格納UIを検証する。`NODE_VISUAL_BASE_URL` と `NODE_ACTIONS_ARTICLE` に実在する検証環境・見出しあり記事を指定し、現在のmanifestとブラウザの読み込みJSが一致することを確認する。
+- 純粋なCSS分割では、分割前ソースの完全再構成とビルド済みCSSの実内容比較を必須とする。サイズ一致だけで同等と判断しない。機能変更と分割の比較は分ける。
+- モバイル（1000px以下）のTOP・目次は `mobile-action-menu.js` と `_mobile-actions.css` が開閉を担当する。既存のボタンIDと目次生成を再利用し、二重のクリック処理を追加しない。
+- 初期状態は格納。Escape・外側クリック・操作後に閉じ、閉じた領域へフォーカスさせない。デスクトップでは従来のボタン配置を維持する。
+
 * `src/styles/style.css` の import 構成を正本とする
 * 未使用セレクタは PHP / JS 出力と照合してから削除する
 * 追加パッチを末尾に積み続けず、責務に合うpartialへ移す
@@ -670,7 +687,7 @@ WordPressテーマ開発・Vite/Bunビルド・バニラJS UIのエキスパー�
 変更後は、最低限以下を確認する。
 
 1. `bun x vite build`
-2. `assets/.vite/manifest.json`、`assets/js/*`、`assets/css/*` が更新内容と整合していること
+2. `dist/.vite/manifest.json`、`dist/js/*`、`dist/css/*` が更新内容と整合し、PHP側が同じビルドを採用していること
 3. cybernode.local へ同期
 4. トップページ確認
 5. 単一記事確認

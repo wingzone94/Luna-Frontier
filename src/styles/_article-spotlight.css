@@ -1,0 +1,5 @@
+/* Compatibility entry: preserve original rule order and inherited layer. */
+@import './_article-labels.css';
+@import './_article-metadata.css';
+@import './_article-content.css';
+@import './_article-breadcrumbs.css';

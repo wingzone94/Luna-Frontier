@@ -2,11 +2,16 @@
  * Floating action stack (back-to-top, comments, AI, TOC trigger visibility).
  */
 
+import { initMobileActionMenu } from './mobile-action-menu';
 import { isIndexOrArchiveView, isSinglePostView } from './page-state';
 
 export function initFloatingActions() {
     const actionStack = document.querySelector('.m3-action-stack');
     if (!actionStack) return;
+
+    if (actionStack.dataset.actionsBound) return;
+    actionStack.dataset.actionsBound = 'true';
+    const closeMenu = initMobileActionMenu(actionStack);
 
     const isSingle = isSinglePostView();
     const showBackToTopContext = isSingle || isIndexOrArchiveView();
@@ -17,7 +22,7 @@ export function initFloatingActions() {
 
     backToTop?.addEventListener('click', (event) => {
         event.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     });
 
     if (!isSingle) {
@@ -32,6 +37,8 @@ export function initFloatingActions() {
     const updateVisibility = () => {
         if (!showBackToTopContext) {
             actionStack.classList.remove('is-visible');
+            actionStack.hidden = true;
+            closeMenu();
             return;
         }
 
@@ -46,15 +53,10 @@ export function initFloatingActions() {
         const editing = !isDesktop && form && (form.contains(document.activeElement)
             || (formBounds.top < window.innerHeight && formBounds.bottom > 0));
         let inReadingLane = true;
-        if (!isDesktop) {
+        if (!isDesktop && isSingle) {
             const bounds = readingBody?.getBoundingClientRect();
             const style = getComputedStyle(actionStack);
-            const size = parseFloat(style.getPropertyValue('--node-action-size')) || 48;
-            const gap = parseFloat(style.gap) || 12;
-            const hasToc = tocTrigger && getComputedStyle(tocTrigger).display !== 'none';
-            const horizontal = style.flexDirection === 'row' || style.flexDirection === 'row-reverse';
-            const height = (horizontal || !hasToc ? size : 2 * size + gap)
-                + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+            const height = actionStack.offsetHeight;
             const bottomOffset = parseFloat(style.bottom);
             const bottom = window.innerHeight - (Number.isFinite(bottomOffset) ? bottomOffset : 24);
             // Other article sections keep their full width. Retire the actions
@@ -63,6 +65,7 @@ export function initFloatingActions() {
                 && bounds.top <= bottom - height && bounds.bottom >= bottom);
         }
         const visible = shouldShow && !editing && inReadingLane;
+        if (!visible) closeMenu();
         actionStack.hidden = !visible;
         actionStack.classList.toggle('is-visible', visible);
     };
@@ -72,5 +75,5 @@ export function initFloatingActions() {
     document.addEventListener('m3:toc:ready', updateVisibility);
     document.addEventListener('focusin', updateVisibility);
     document.addEventListener('focusout', () => queueMicrotask(updateVisibility));
-    setTimeout(updateVisibility, 150);
+    updateVisibility();
 }

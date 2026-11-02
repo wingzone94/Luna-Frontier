@@ -1,0 +1,64 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Footer & Pagination --- */
+.m3-modal__pagination { display: flex; justify-content: center; gap: 12px; padding: 24px 0 16px; }
+.m3-modal__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--md-sys-color-surface-container-high, #eee8e4); border: none; cursor: pointer; transition: all 0.3s; }
+.m3-modal__dot.is-active { background: var(--md-sys-color-primary, #FF9900); width: 32px; border-radius: 6px; }
+
+.m3-modal__footer { 
+    padding: 24px 56px 40px; display: flex; justify-content: space-between; align-items: center; 
+    border-top: 1px solid var(--md-sys-color-outline-variant, #eee8e4); 
+    background: var(--md-sys-color-surface-container-low);
+}
+
+@media (max-width: 600px) {
+    .m3-modal__footer {
+        padding: 20px;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .m3-search-hits-display {
+        width: auto;
+        background: var(--md-sys-color-surface-container-high);
+        padding: 8px 24px;
+        border-radius: 20px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .m3-search-hits-text {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--md-sys-color-on-surface-variant);
+    }
+    #m3-search-hit-count {
+        font-size: 1.2rem;
+        color: var(--md-sys-color-primary);
+    }
+    .m3-modal__footer-actions {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .m3-button--filled {
+        flex-grow: 2;
+        height: 56px;
+        border-radius: 16px;
+        font-size: 1rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .m3-button--text {
+        flex-grow: 1;
+        font-weight: 700;
+        color: var(--md-sys-color-primary);
+    }
+}
+
+/* --- Search Hits Display --- */
+.m3-search-hits-display { 
+    display: flex; align-items: center; gap: 12px; 
+    background: var(--md-sys-color-surface-container-high); 
+    padding: 12px 24px; border-radius: 20px; 
+}
+.m3-search-hits-icon { font-size: 24px !important; color: var(--md-sys-color-primary); }
+.m3-search-hits-text { font-size: 1.1rem; font-weight: 700; color: var(--md-sys-color-on-surface); }
+.m3-search-hits-text strong { font-size: 1.4rem; font-weight: 700; color: var(--md-sys-color-primary); margin-right: 4px; }

@@ -1,0 +1,19 @@
+/* _article/画像キャプション — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- Image Captions --- */
+.wp-caption,
+.wp-block-image figcaption,
+figcaption,
+.wp-element-caption {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--md-sys-color-on-surface-variant, #666);
+    margin-top: 12px;
+    margin-bottom: 24px;
+    font-weight: 700;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+}
+
+.wp-caption img {
+    margin-bottom: 8px;
+}

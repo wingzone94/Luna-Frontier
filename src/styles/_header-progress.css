@@ -1,0 +1,143 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Reading Progress Bar --- */
+.m3-header__progress-container {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; 
+    background: transparent; z-index: 1002; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+}
+.m3-header__progress-container.is-visible { opacity: 1; }
+
+.m3-header__progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(
+        to right,
+        var(--md-sys-color-primary),
+        var(--md-sys-color-tertiary, var(--md-sys-color-primary)),
+        var(--md-sys-color-primary)
+    );
+    background-size: 200% 100%;
+    animation: m3-progress-shimmer 2s infinite linear;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--md-sys-color-primary) 60%, transparent);
+    transition: width 0.1s ease-out;
+    border-radius: 0 2px 2px 0;
+    transform-origin: center bottom;
+    will-change: width, transform, opacity;
+}
+
+@keyframes m3-progress-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Gauge Shatter Effect */
+.m3-gauge-shard {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1005;
+}
+
+
+
+.m3-card__char-count { 
+    display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 800; 
+    background: var(--md-sys-color-surface-container-high); padding: 4px 10px; border-radius: 10px;
+}
+.m3-card__char-count .material-symbols-outlined { font-size: 16px; }
+
+.m3-modal__footer-options {
+    flex-grow: 1;
+    margin: 0 24px;
+    display: flex;
+    align-items: center;
+}
+
+.m3-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 700;
+    color: var(--md-sys-color-on-surface-variant);
+    transition: color 0.3s ease;
+}
+
+.m3-checkbox-label:hover {
+    color: var(--md-sys-color-primary);
+}
+
+.m3-checkbox-label input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.m3-checkbox-custom {
+    height: 24px;
+    width: 24px;
+    background-color: var(--md-sys-color-surface-container-highest);
+    border: 2px solid var(--md-sys-color-outline);
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.m3-checkbox-label input:checked ~ .m3-checkbox-custom {
+    background-color: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+    transform: scale(1.1);
+}
+
+.m3-checkbox-custom:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 8px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+.m3-checkbox-label input:checked ~ .m3-checkbox-custom:after {
+    display: block;
+}
+
+.m3-modal__footer-actions { display: flex; gap: 16px; align-items: center; }
+.m3-button--filled {
+    background: #0061A4; /* Material Blue */
+    color: #FFFFFF;
+    border: none;
+    border-radius: 20px;
+    padding: 0 32px;
+    height: 56px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: 0 12px 32px rgba(0, 97, 164, 0.3);
+    transition: all 0.3s var(--m3-motion-easing);
+}
+.m3-button--filled:hover {
+    background: #0078CC;
+    box-shadow: 0 16px 40px rgba(0, 97, 164, 0.4);
+    transform: translateY(-2px);
+}
+.m3-button--filled:active {
+    transform: scale(0.96);
+    box-shadow: 0 4px 12px rgba(255, 153, 0, 0.2);
+}
+.m3-button--filled:hover { opacity: 0.9; }
+.m3-button--text { background: none; border: none; color: var(--md-sys-color-on-surface, #6d5e53); font-size: 1.05rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 16px 24px; border-radius: 28px; transition: background-color 0.2s; }
+.m3-button--text:hover { background: var(--md-sys-color-surface-container-high); }
+

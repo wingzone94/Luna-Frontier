@@ -1,0 +1,49 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Header Clock & Greeting --- */
+.m3-header__clock {
+    position: absolute;
+    right: 24px;
+    bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0;
+    pointer-events: none;
+    font-family: var(--font-main);
+    letter-spacing: 0.05em;
+    z-index: 5;
+}
+
+.m3-header__greeting {
+    color: var(--md-sys-color-primary);
+    font-weight: 700;
+}
+
+.m3-header__datetime {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 600px) {
+    .m3-header__clock {
+        display: none;
+    }
+}
+
+/* 表示モード切替: タブレット UA で PHP 出力時のみ表示（幅では制御しない） */
+#m3-view-toggle.m3-view-toggle--tablet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#m3-view-toggle[data-view-mode="pc"] .material-symbols-outlined {
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+#m3-view-toggle[data-view-mode="mobile"] .material-symbols-outlined {
+    color: var(--md-sys-color-primary);
+}

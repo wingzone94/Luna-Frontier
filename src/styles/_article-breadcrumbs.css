@@ -1,0 +1,125 @@
+/* Extracted from _article-spotlight.css (1061 lines), 2026-11-02. */
+/* Breadcrumbs (SEO & Navigation)
+   2026-08-22 ユーザー指示: プレーンテキストをやめ、塗り面の図形に入れる。
+   2026-08-23 ユーザー指示: 項目ごとに区切らず、経路全体を「一体感のあるピル」1つに収める。
+   したがって塗りを持つのは ol（リスト全体）だけで、個々の li は面を持たない。
+   2026-08-23 ユーザー指示: 必ず1行。折り返しも横スクロールもせず、溢れは省略記号で吸収する。 */
+.m3-breadcrumbs {
+    margin: var(--m3-spacing-m) 0;
+    padding: 0 var(--node-gutter-inline);
+}
+
+/* ここが唯一の図形。inline-flex なので経路の長さぶんだけ横に伸びる（帯にはならない）。 */
+.m3-breadcrumbs__list {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    max-width: 100%;
+    list-style: none;
+    margin: 0;
+    gap: var(--m3-spacing-xs);
+    padding: var(--m3-spacing-xs) var(--m3-spacing-m);
+    border-radius: var(--m3-radius-full);
+    background: var(--md-sys-color-surface-container-highest);
+    color: var(--md-sys-color-on-surface);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.5;
+    /* text-transform: uppercase は外した（2026-08-23）。
+       旧実装から引き継いだ指定だが、カテゴリ名（Made by Google（2026）、Node Library など）が
+       すべて大文字に潰れる。日本語には効かないので無害だと判断していたのは誤りだった。
+       letter-spacing はもともと大文字ラベル向けの値なので 0.05em → 0.02em に緩める。 */
+    letter-spacing: 0.02em;
+}
+
+/* min-width: 0 は「flex アイテムは内容の最小幅より小さくならない」既定を外すためのもの。
+   これが無いと nowrap でも縮まず、ピルが親から溢れる。 */
+.m3-breadcrumbs__item {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
+/* 縮み方の配分。flex-shrink は「係数 × 基準幅」の比で同時に配分されるので、
+   現在地に極端に大きい係数を与えて、不足ぶんを実質そこだけで吸わせる。
+   1 : 100 だと中間項目（カテゴリ名）が負担するのは 1% 程度で、省略記号は出ない。
+   ホームは経路の起点なので、どんなに狭くても削らない。 */
+.m3-breadcrumbs__item:first-child {
+    flex-shrink: 0;
+}
+
+.m3-breadcrumbs__item--current {
+    flex-shrink: 100;
+}
+
+/* 項目自身は面を持たない。ピルの中の文字として振る舞う。 */
+.m3-breadcrumbs__item > a,
+.m3-breadcrumbs__item--current > span {
+    display: block;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ピルの中で背景を変えると「項目ごとの区切り」が復活してしまうので、
+   ホバーは面ではなく下線で示す。 */
+.m3-breadcrumbs__item > a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.m3-breadcrumbs__item > a:focus-visible {
+    outline: 2px solid var(--md-sys-color-accent-text);
+    outline-offset: 2px;
+    border-radius: var(--m3-radius-small);
+}
+
+.m3-breadcrumbs__item--current > span {
+    /* 上限は 200px。幅に余裕が無い画面ではこれより先に flex-shrink が効いてさらに詰まる。
+       旧実装の opacity: 0.7 は外した。塗り面に重ねると実効 2.68:1 で AA を割るため
+       （素の背景の上でも割っていたので、既存のコントラスト不備の是正でもある）。 */
+    max-inline-size: 200px;
+}
+
+/* 区切りはピルの中で経路を読み取るために要る。ただしアイコンフォントは使わない:
+   .material-symbols-outlined の font-size はカスケードレイヤーの外にある Google Fonts の
+   24px に負けるため（レイヤー外の通常宣言はレイヤー内のどんな特異度にも勝つ）、
+   ここで 14px を指定しても効かず、本文 12px の倍のグリフが並んでしまう。
+   文字の "›" にすればレイヤーと無関係で、!important も不要。
+   併せて中の span を display: none にすることで、aria-hidden を持たないこの li が
+   支援技術に "chevron_right" と読み上げられる既存の問題も解消する。
+   HTML（inc/seo.php）は触っていない。区切りの li は itemprop を持たないので
+   schema.org/BreadcrumbList の解析には元から関与しない。 */
+.m3-breadcrumbs__separator {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+/* !important はカスケードレイヤー脱出のため。Google Fonts の .material-symbols-outlined は
+   レイヤー外で display: inline-block を持ち、レイヤー内の display: none には特異度で勝つ。
+   外すと 24px のグリフが残り、ピルの高さが 26px → 32px に膨らむ（実測）。
+   font-size を !important で殴っている _article.css の SPOTLIGHT ピルと同じ事情。 */
+.m3-breadcrumbs__separator .material-symbols-outlined {
+    display: none !important;
+}
+
+.m3-breadcrumbs__separator::before {
+    content: "\203A";
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.m3-archive-description {
+    font-size: 0.9rem;
+    color: var(--md-sys-color-on-surface-variant);
+    line-height: 1.6;
+    margin-top: var(--m3-spacing-s);
+    max-width: 600px;
+}
+

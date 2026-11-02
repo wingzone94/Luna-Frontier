@@ -1,0 +1,130 @@
+/* Extracted from _article-spotlight.css (1061 lines), 2026-11-02. */
+/* _article/スポットライトバッジ — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- Spotlight Badges --- */
+.m3-spotlight-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    /* R4: 45px / 18.4px から M3 chip 相当（36px / 14.4px）へ。
+       9px + 18px + 9px = 36px。角丸はピルのまま維持する。 */
+    padding: 9px 16px;
+    border-radius: var(--m3-radius-extra-large);
+    font-size: 0.9rem;
+    line-height: 1.25;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+}
+
+/* R4: アイコンは 24px 固定だとピルの高さを一人で決めてしまうので 18px（M3 chip）。
+   トップ（.special-features）と特集一覧（.m3-archive-spotlight-pills）の両方に効かせる。
+   font-size だけ !important なのはカスケードレイヤーのため:
+   本ファイルは @layer components に入るが、Google Fonts の
+   `.material-symbols-outlined { font-size: 24px }` はレイヤー外で、
+   レイヤー外の通常宣言はレイヤー内のどんな特異度にも勝つ。
+   !important を付けたレイヤー内宣言だけがこれを上書きできる。
+   これを外すと箱 18px にグリフ 24px が入り overflow: hidden で欠ける。 */
+.m3-spotlight-badge > .material-symbols-outlined {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    overflow: hidden;
+    font-size: 18px !important;
+    line-height: 1;
+}
+
+.m3-spotlight-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Tooltip Polish */
+.m3-dynamic-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-surface);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 5000 !important;
+    /* 最前面 */
+    opacity: 0;
+    display: none;
+    /* 初期状態は非表示 */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 280px;
+    line-height: 1.5;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 本番と同じカスケード: カードを含むアイコンバッジを34pxへ統一する。 */
+.m3-label--icon-only {
+    width: 34px;
+    height: 34px;
+    padding: 0 !important;
+    justify-content: center;
+    border-radius: 50% !important;
+    cursor: pointer;
+    /* ヘルプカーソル(?)をポインターに変更 */
+}
+
+.m3-label--icon-only .material-symbols-outlined {
+    margin: 0 !important;
+    font-size: 20px;
+}
+
+.m3-article__featured-image {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--node-hero-media-ratio, 16 / 9);
+    /* 見切れ解消: 記事ごとの自然なアスペクト比で全体表示。
+       レターボックス（サイドパネル）は使わないため背景色は持たせない。 */
+    overflow: hidden;
+    border-radius: 32px 32px 0 0;
+    z-index: 1;
+}
+
+.m3-article__featured-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--md-sys-color-surface-container-low) 0%, transparent 30%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+[data-theme="dark"] .m3-article__featured-gradient {
+    background: linear-gradient(to top, var(--md-sys-color-surface-container-low) 0%, transparent 30%);
+}
+
+@media (max-width: 600px) {
+    .m3-article__featured-image {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        margin-top: 0;
+        margin-bottom: 16px;
+        border-radius: 24px 24px 0 0;
+    }
+
+    .m3-article__featured-image img,
+    .m3-article__featured-img {
+        border-radius: 24px 24px 0 0;
+    }
+}
+
+.m3-article__featured-image img,
+.m3-article__featured-img {
+    /* 幅に合わせて縮尺を自動調整し、自然なアスペクト比のまま全体を見せる。
+       contain＋背景色のレターボックス（サイドパネル）は違和感が強いため廃止。 */
+    width: 100%;
+    height: auto;
+    display: block;
+}
+

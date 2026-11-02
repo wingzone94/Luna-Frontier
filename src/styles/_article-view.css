@@ -1,0 +1,44 @@
+/* _article/記事ビュー基盤 — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- Article View (Single) --- */
+.article-view {
+    padding: var(--node-header-content-offset) var(--node-gutter-inline) 0;
+    position: relative;
+}
+
+.m3-article {
+    max-width: var(--node-content-max);
+    margin: 0 auto;
+    padding: 0 var(--node-gutter-inline) var(--m3-spacing-xxxl);
+    position: relative;
+    overflow-wrap: break-word;
+    /* 画面はみ出し防止 */
+}
+
+@media (min-width: 768px) {
+    .m3-article {
+        padding: 0 var(--node-gutter-inline-lg) var(--m3-spacing-xxxl);
+    }
+}
+
+.m3-article__top-badges {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+}
+
+@media (max-width: 599px) {
+    .m3-article__top-badges {
+        position: relative;
+        top: 0;
+        right: 0;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+}
+

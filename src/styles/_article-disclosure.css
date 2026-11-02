@@ -1,0 +1,161 @@
+/* _article/AI開示(Expressive) — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- AI Disclosure Expressive (M3E) --- */
+.m3-article__ai-disclosure-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    perspective: 1000px;
+}
+
+.m3-article__ai-disclosure-expressive {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 28px;
+    background: #FF9900 !important;
+    border: none !important;
+    border-radius: 100px;
+    color: #2b1700 !important;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(43, 23, 0, 0.14);
+    animation: none;
+    cursor: default;
+    text-shadow: none;
+}
+
+.m3-article__ai-disclosure-expressive .material-symbols-outlined {
+    color: #2b1700 !important;
+}
+
+[data-theme="dark"] .m3-article__ai-disclosure-expressive {
+    background: #FF9900 !important;
+    border: none !important;
+    color: #2b1700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+.m3-ai-disclosure__glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.5);
+    animation: none;
+    pointer-events: none;
+}
+
+.m3-ai-disclosure__icon {
+    font-size: 18px !important;
+    animation: none;
+}
+
+@keyframes aiDisclosureEntrance {
+    0% { opacity: 0; transform: translateY(15px) rotateX(-15deg); }
+    100% { opacity: 1; transform: translateY(0) rotateX(0); }
+}
+
+@keyframes aiDisclosureGlow {
+    0% { opacity: 0.05; transform: scale(0.5) translate(-15%, -15%); }
+    100% { opacity: 0.2; transform: scale(0.9) translate(15%, 15%); }
+}
+
+@keyframes aiIconPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px transparent); }
+    50% { transform: scale(1.25); filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.6)); }
+}
+
+
+@media (min-width: 1024px) {
+    .m3-article__header-card {
+        /* タイトルカードを本文・画像カラムと同じ基準に揃える（ヒーロー張り出しを解除） */
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+    }
+}
+
+/* フォールダブル等で本文が 680px に絞られる場合、カードも同じ幅に揃える
+   （_navigation.css の本文ルールより後に読み込まれる本ファイルで上書き） */
+@media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 4/5) {
+    .m3-article__header-card {
+        max-width: 680px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .m3-article__header-card {
+        padding: 0; /* Seamless */
+        border-radius: var(--node-hero-card-radius);
+        /* タイトルカードの左右端を本文テキスト・画像と同じガター基準に揃える */
+        margin: 8px 0 24px;
+        max-width: 100%;
+    }
+    .m3-article__header--overlap {
+        padding: clamp(28px, 7vw, 36px) clamp(18px, 5vw, 24px); /* 0.7.0 style */
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .has-thumbnail .m3-article__header--overlap {
+        margin-top: -32px; /* Adjusted for mobile overlap */
+    }
+}
+
+.m3-article__meta-info .m3-label--category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--node-article-accent, #FF9900);
+    color: var(--node-article-on-accent, #ffffff) !important;
+    padding: 10px 24px;
+    border-radius: var(--m3-radius-large);
+    font-size: 1.05rem;
+    font-weight: 800;
+    border: 1px solid var(--node-article-accent, #FF9900);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--node-article-accent, #FF9900) 24%, transparent);
+    text-decoration: none;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s, background 0.2s;
+}
+
+.m3-article__meta-info .m3-label--category:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    background: color-mix(in srgb, var(--node-article-accent, #FF9900) 88%, #000000 12%);
+    color: var(--node-article-on-accent, #ffffff) !important;
+}
+
+/* --- AD Area Placeholder --- */
+.m3-ad-area {
+    margin: var(--m3-spacing-xxxl) auto;
+    background: var(--md-sys-color-surface-container);
+    border-radius: 24px;
+    /* 全てを角丸に */
+    padding: var(--m3-spacing-l);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    border: 2px dashed var(--md-sys-color-outline-variant);
+    max-width: 100%;
+}
+
+.m3-ad-area::before {
+    content: "";
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.6;
+    letter-spacing: 0.1em;
+}
+
+
+

@@ -1,0 +1,50 @@
+/* _article/モバイルレイアウト修正 — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* ===== Mobile Layout Fixes ===== */
+.m3-article__body pre,
+.m3-article__body table,
+.m3-article__body .wp-block-table {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+.m3-article__body img,
+.m3-article__body video,
+.m3-article__body canvas,
+.m3-article__body iframe,
+.m3-article__body embed,
+.m3-article__body object {
+    max-width: 100%;
+}
+
+.m3-article__body img,
+.m3-article__body video {
+    height: auto;
+}
+
+.m3-article__body figure,
+.m3-article__body .wp-block-image,
+.m3-article__body .wp-block-embed,
+.m3-article__body .wp-block-table {
+    width: 100%;
+    min-width: 0;
+}
+
+@media (max-width: 600px) {
+    .m3-inline-toc {
+        padding: 20px 16px;
+        border-radius: 20px;
+        margin: 24px 0 36px;
+    }
+
+    .m3-inline-toc__header {
+        align-items: flex-start;
+        font-size: 1rem;
+        line-height: 1.35;
+    }
+
+    .m3-inline-toc__content a {
+        overflow-wrap: anywhere;
+    }
+}
+

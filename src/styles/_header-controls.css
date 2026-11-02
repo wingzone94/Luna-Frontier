@@ -1,0 +1,83 @@
+/* Split from _header.css (1556 lines), 2026-11-02. */
+/* --- Icons --- */
+.m3-icon-button { 
+    width: 48px; 
+    height: 48px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    border: none; 
+    background: transparent; 
+    color: var(--md-sys-color-on-surface-variant); 
+    transition: background-color 0.2s;
+}
+.m3-icon-button:hover { 
+    background: var(--md-sys-color-surface-variant); 
+}
+
+.m3-social-button__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.m3-social-button:hover .m3-social-button__icon {
+    transform: scale(1.15);
+}
+
+.m3-x-button:hover {
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .m3-x-button:hover {
+    color: #ffffff !important;
+}
+
+.m3-discord-button:hover {
+    color: #5865F2 !important;
+}
+
+@media (max-width: 600px) {
+    .m3-social-button {
+        display: none !important; /* Hide on mobile to keep header clean */
+    }
+}
+
+/* --- Theme Controls & Popover --- */
+#m3-theme-controls { position: relative; }
+.m3-popover {
+    position: absolute;
+    top: calc(100% + 16px);
+    right: 0;
+    background: var(--md-sys-color-surface-container-high);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px) scale(0.95);
+    min-width: 240px;
+    transform-origin: top right;
+    transition: all 0.4s var(--m3-motion-easing);
+}
+.m3-popover.is-active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.m3-popover__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+

@@ -1,0 +1,17 @@
+/* _article/PhotoSwipe統合 — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- PhotoSwipe M3 Integration --- */
+.pswp__bg {
+    /* R3: opacity 0.95 で背後がほぼ見えず、全画面要素に blur(12px) を払うだけだったので削除。
+       ライトボックスは「ページを隠す」のが目的なので、透過を上げる方向は採らない。 */
+    background: var(--md-sys-color-surface) !important;
+    opacity: 0.95 !important;
+}
+
+.pswp__img--placeholder {
+    background: var(--md-sys-color-surface-container-highest) !important;
+}
+
+.pswp__icn {
+    color: var(--md-sys-color-on-surface) !important;
+}
+

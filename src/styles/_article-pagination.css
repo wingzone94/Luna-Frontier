@@ -1,0 +1,568 @@
+/* _article/ページネーション・分割投稿・目次導線 — 親テーマ _article.css(2,822行)の責務分割 (2026-11-02) */
+/* --- Expressive Pagination TOC --- */
+.m3-pagination-toc.expressive {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-right: 16px;
+}
+
+.m3-pagination-toc__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 12px;
+}
+
+.m3-pagination-toc__icon {
+    font-size: 20px;
+    color: var(--md-sys-color-primary);
+    z-index: 1;
+}
+
+.m3-pagination-toc__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--md-sys-color-on-surface);
+    letter-spacing: 0.1em;
+    z-index: 1;
+}
+
+.m3-pagination-toc__icon-glow {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: var(--md-sys-color-primary-container);
+    filter: blur(8px);
+    opacity: 0.6;
+    border-radius: 50%;
+}
+
+.m3-pagination-toc.expressive .m3-pagination-toc__wrapper {
+    position: relative;
+    width: 160px;
+}
+
+.m3-pagination-toc__select {
+    width: 100%;
+    height: 40px;
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 12px;
+    padding: 0 32px 0 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.m3-pagination-toc__select:hover {
+    background: var(--md-sys-color-primary-container);
+    border-color: var(--md-sys-color-primary);
+}
+
+.m3-pagination-toc.expressive .m3-select-chevron {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--md-sys-color-outline);
+    pointer-events: none;
+}
+
+.pswp__button--close:hover {
+    background: var(--md-sys-color-error-container) !important;
+    color: var(--md-sys-color-on-error-container) !important;
+}
+
+.pswp__caption__center {
+    font-family: var(--font-main) !important;
+    font-weight: 700 !important;
+    color: var(--md-sys-color-on-surface) !important;
+    text-align: center;
+}
+
+.pswp__counter {
+    font-family: var(--font-main) !important;
+    font-weight: 700 !important;
+    color: var(--md-sys-color-primary) !important;
+}
+
+/* --- Sortable Tables --- */
+.wp-block-table.is-sortable th,
+.wp-block-table.is-style-sortable th,
+.m3-table--sortable th {
+    position: relative;
+    padding-right: 24px !important;
+    user-select: none;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.wp-block-table.is-sortable th:hover,
+.wp-block-table.is-style-sortable th:hover,
+.m3-table--sortable th:hover {
+    background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.wp-block-table.is-sortable th::after,
+.wp-block-table.is-style-sortable th::after,
+.m3-table--sortable th::after {
+    content: 'unfold_more';
+    font-family: 'Material Symbols Outlined';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    opacity: 0.3;
+}
+
+.wp-block-table.is-sortable th.is-asc::after,
+.wp-block-table.is-style-sortable th.is-asc::after,
+.m3-table--sortable th.is-asc::after {
+    content: 'arrow_upward';
+    opacity: 1;
+    color: var(--md-sys-color-primary);
+}
+
+.wp-block-table.is-sortable th.is-desc::after,
+.wp-block-table.is-style-sortable th.is-desc::after,
+.m3-table--sortable th.is-desc::after {
+    content: 'arrow_downward';
+    opacity: 1;
+    color: var(--md-sys-color-primary);
+}
+/* --- Split Post Pagination (wp_link_pages) --- */
+.m3-pagination--split {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: var(--m3-spacing-xl) 0;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Pagination Label Icon Animation (Automatic) */
+.m3-pagination__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--md-sys-color-on-primary-container);
+    background: var(--md-sys-color-primary-container);
+    padding: 6px 16px;
+    border-radius: 100px;
+    margin-right: 12px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    cursor: default;
+}
+
+.m3-article-pagination .m3-pagination__label-icon {
+    font-size: 18px;
+}
+
+.m3-article-pagination .m3-pagination__number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    background: var(--md-sys-color-surface-container-high);
+    color: var(--md-sys-color-on-surface);
+    transition: all 0.3s var(--m3-motion-easing);
+    border: none;
+    box-shadow: none;
+}
+
+.m3-article-pagination a.m3-pagination__number,
+.m3-article-pagination span.m3-pagination__number {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+}
+
+.m3-article-pagination .m3-pagination__number.is-current {
+    background: var(--m3-pagination-current);
+    color: var(--m3-pagination-on-current);
+    box-shadow: 0 4px 12px var(--m3-pagination-current-shadow);
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+.m3-article-pagination .m3-pagination__number.is-page-after-first {
+    background: var(--m3-pagination-after-first);
+    color: var(--m3-pagination-on-after-first);
+    box-shadow: 0 4px 12px var(--m3-pagination-after-first-shadow);
+}
+
+/* ホバー時のアニメーション (位置のみ微調整) */
+.m3-article-pagination .m3-pagination__number:hover:not(.is-disabled):not(.is-current) {
+    transform: translateY(-2px);
+}
+
+/* 無効な状態 (First/Lastボタン用) */
+.m3-article-pagination .m3-pagination__number.is-disabled {
+    opacity: 0.3;
+    background: transparent;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* Page Selector Dropdown */
+.m3-pagination__select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 190px;
+    min-width: 0;
+    background: var(--md-sys-color-surface-container-high);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 20px;
+    padding: 0 16px;
+    margin-right: 12px;
+    height: 42px;
+}
+
+.m3-pagination__select {
+    width: 100%;
+    min-width: 0;
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--md-sys-color-on-surface);
+    font-weight: 800;
+    font-size: 0.9rem;
+    padding-right: 24px;
+    cursor: pointer;
+    outline: none;
+}
+
+.m3-pagination__select-wrapper .m3-select-chevron {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    font-size: 20px;
+    color: var(--md-sys-color-primary);
+}
+
+.m3-pagination__controls {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.m3-pagination__numbers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.m3-pagination__ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.m3-article__body-footer-clear {
+    clear: both;
+    display: block;
+    width: 100%;
+}
+
+/* --- Integrated Back-to-Top in Pagination --- */
+.m3-article__pagination-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--m3-spacing-xxl);
+    padding-top: var(--m3-spacing-xl);
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+    gap: 24px;
+}
+
+.m3-article__pagination-main-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.m3-article__pagination-secondary-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 12px 0;
+    background: var(--md-sys-color-surface-container-low);
+    border-radius: 24px;
+}
+
+.m3-article__pagination-row {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.m3-pagination-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.m3-article__pagination-row .m3-pagination--split {
+    margin: 0;
+    justify-content: flex-start;
+}
+
+.m3-pagination-top-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+    height: 48px;
+    background: #FF9900;
+    color: #ffffff;
+    border: none;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+}
+
+.m3-pagination-top-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(255, 153, 0, 0.4);
+    background: #FF7700;
+}
+
+.m3-pagination-top-btn:active {
+    transform: scale(0.95);
+}
+
+.m3-pagination-top-btn .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 1, 'wght' 600;
+}
+
+.m3-pagination-top-btn--toc .material-symbols-outlined {
+    font-size: 21px;
+}
+
+@media (max-width: 600px) {
+    .m3-article__pagination-container {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px 12px;
+        margin-top: 32px;
+        gap: 16px;
+        overflow-x: hidden;
+    }
+    .m3-article__pagination-main-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+    }
+    .m3-article__pagination-row {
+        width: 100%;
+        min-width: 0;
+    }
+    .m3-pagination--split {
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 0;
+        margin: 0;
+    }
+    .m3-pagination__label {
+        display: none;
+    }
+    .m3-pagination__controls {
+        width: 100%;
+        flex-wrap: nowrap;
+        justify-content: center;
+        gap: 6px;
+    }
+    .m3-pagination__select-wrapper {
+        flex: 0 0 64px;
+        width: 64px;
+        height: 34px;
+        padding: 0 8px;
+        margin-right: 0;
+    }
+    .m3-pagination__select {
+        font-size: 0.78rem;
+        padding-right: 16px;
+    }
+    .m3-pagination__select-wrapper .m3-select-chevron {
+        right: 7px;
+        font-size: 18px;
+    }
+    .m3-pagination__numbers {
+        flex-wrap: nowrap;
+        gap: 5px;
+    }
+    .m3-pagination__numbers > .m3-pagination__number--icon {
+        display: none;
+    }
+    .m3-article-pagination .m3-pagination__number,
+    .m3-article-pagination a.m3-pagination__number,
+    .m3-article-pagination span.m3-pagination__number {
+        width: 34px;
+        min-width: 34px;
+        height: 34px;
+        font-size: 0.82rem;
+    }
+    .m3-article-pagination .m3-pagination__number .material-symbols-outlined {
+        font-size: 18px;
+    }
+    .m3-article-pagination .m3-pagination__number.is-current {
+        transform: none;
+    }
+    .m3-pagination__ellipsis {
+        width: 12px;
+    }
+    .m3-pagination-action-buttons {
+        justify-content: center;
+        margin-top: 8px;
+    }
+    .m3-pagination-top-btn {
+        justify-content: center;
+    }
+    .m3-article__pagination-row .m3-pagination--split {
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-width: 380px) {
+    .m3-article__pagination-container {
+        padding-inline: 8px;
+    }
+
+    .m3-pagination__select-wrapper {
+        flex-basis: 60px;
+        width: 60px;
+    }
+
+    .m3-pagination__select {
+        font-size: 0.72rem;
+    }
+
+    .m3-pagination__numbers {
+        gap: 4px;
+    }
+
+    .m3-article-pagination .m3-pagination__number,
+    .m3-article-pagination a.m3-pagination__number,
+    .m3-article-pagination span.m3-pagination__number {
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        font-size: 0.76rem;
+    }
+
+    .m3-article-pagination .m3-pagination__number .material-symbols-outlined {
+        font-size: 16px;
+    }
+
+    .m3-pagination__ellipsis {
+        width: 10px;
+    }
+}
+
+/* --- Inline TOC (1-column layout) --- */
+.m3-inline-toc {
+    background: var(--md-sys-color-surface-container-low);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 24px;
+    padding: 24px 32px;
+    margin: 32px 0 48px;
+    box-shadow: var(--m3-elevation-1);
+}
+
+.m3-inline-toc__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--md-sys-color-on-surface);
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--md-sys-color-outline-variant);
+    padding-bottom: 16px;
+}
+
+.m3-inline-toc__header .material-symbols-outlined {
+    color: var(--md-sys-color-primary);
+}
+
+.m3-inline-toc__content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.m3-inline-toc__content li {
+    margin-bottom: 12px;
+}
+
+.m3-inline-toc__content a {
+    color: var(--md-sys-color-on-surface-variant);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s;
+    display: block;
+    line-height: 1.5;
+}
+
+.m3-inline-toc__content a:hover {
+    color: var(--md-sys-color-primary);
+}
+
+.m3-inline-toc__content .m3-toc-item--h3 { padding-left: 20px; font-size: 0.9rem; }
+.m3-inline-toc__content .m3-toc-item--h4 { padding-left: 40px; font-size: 0.85rem; }
+/* --- Pagination Quick TOC --- */
+.m3-pagination-toc {
+    margin-right: 12px;
+    flex: 1;
+    max-width: 200px;
+}
+
