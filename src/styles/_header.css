@@ -1599,7 +1599,8 @@
     }
 }
 
-/* 表示モード切替: タブレット UA で PHP 出力時のみ表示（幅では制御しない） */
+/* 表示モード切替: 全端末でヘッダーに常時表示（幅や UA では隠さない） */
+#m3-view-toggle,
 #m3-view-toggle.m3-view-toggle--tablet {
     display: inline-flex;
     align-items: center;

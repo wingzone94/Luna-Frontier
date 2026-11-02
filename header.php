@@ -281,12 +281,10 @@ declare(strict_types=1);
                 </button>
             </div>
 
-            <!-- View (Tablet UA のみ) -->
-            <?php if ( node_is_tablet_ua() ) : ?>
+            <!-- View: スマホ / タブレット / PC で常時表示 -->
             <button class="m3-icon-button m3-tooltip-target m3-view-toggle--tablet" id="m3-view-toggle" aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
                 <span class="material-symbols-outlined" id="m3-view-toggle-icon" aria-hidden="true">smartphone</span>
             </button>
-            <?php endif; ?>
 
         </div>
     </div>
