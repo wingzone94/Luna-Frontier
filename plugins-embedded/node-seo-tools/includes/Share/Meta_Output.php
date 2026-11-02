@@ -77,26 +77,35 @@ final class Meta_Output {
 	}
 
 	public function inject_ogp_tags(): void {
-		if ( ! is_singular( 'post' ) ) {
+		$is_front_page = is_front_page() && ! get_query_var( 'node_all_articles' ) && ! get_query_var( 'node_spotlight' );
+		if ( ! $is_front_page && ! is_singular( 'post' ) ) {
 			return;
 		}
 
 		$post_id = get_the_ID();
-		$image   = $this->resolve_image( $post_id );
+		// トップはヒーロースライダーと同じブランド画像を共有する。
+		$image   = $is_front_page
+			? array(
+				'url'    => get_theme_file_uri( 'assets/images/luminous-core-card-image-m3.webp' ),
+				'width'  => 1200,
+				'height' => 630,
+				'type'   => 'image/webp',
+			)
+			: $this->resolve_image( $post_id );
 		$ogp_url = $image['url'];
 		if ( '' === $ogp_url ) {
 			return;
 		}
 
-		$title          = get_the_title( $post_id );
-		$image_alt      = has_post_thumbnail( $post_id ) ? $title : 'Luminous Core';
-		$desc           = $this->build_share_description( $post_id );
-		$url            = get_permalink( $post_id );
+		$title          = $is_front_page ? get_bloginfo( 'name' ) : get_the_title( $post_id );
+		$image_alt      = ! $is_front_page && has_post_thumbnail( $post_id ) ? $title : 'Luminous Core';
+		$desc           = $is_front_page ? wp_strip_all_tags( get_bloginfo( 'description' ) ) : $this->build_share_description( $post_id );
+		$url            = $is_front_page ? home_url( '/' ) : get_permalink( $post_id );
 		$twitter_site   = (string) apply_filters( 'node_seo_twitter_site', '@Luminous_Core_' );
 		$twitter_domain = wp_parse_url( home_url(), PHP_URL_HOST );
 		$card_type      = 'summary_large_image';
 
-		echo '<meta property="og:type" content="article" />' . "\n";
+		echo '<meta property="og:type" content="' . ( $is_front_page ? 'website' : 'article' ) . '" />' . "\n";
 		echo '<meta property="og:title" content="' . esc_attr( $title ) . '" />' . "\n";
 		if ( $desc ) {
 			echo '<meta property="og:description" content="' . esc_attr( $desc ) . '" />' . "\n";
@@ -104,8 +113,10 @@ final class Meta_Output {
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
 		echo '<meta property="og:site_name" content="' . esc_attr( get_bloginfo( 'name' ) ) . '" />' . "\n";
 		echo '<meta property="og:locale" content="ja_JP" />' . "\n";
-		echo '<meta property="article:published_time" content="' . esc_attr( get_the_date( 'c', $post_id ) ) . '" />' . "\n";
-		echo '<meta property="article:modified_time" content="' . esc_attr( get_the_modified_date( 'c', $post_id ) ) . '" />' . "\n";
+		if ( ! $is_front_page ) {
+			echo '<meta property="article:published_time" content="' . esc_attr( get_the_date( 'c', $post_id ) ) . '" />' . "\n";
+			echo '<meta property="article:modified_time" content="' . esc_attr( get_the_modified_date( 'c', $post_id ) ) . '" />' . "\n";
+		}
 		echo '<meta property="og:image" content="' . esc_url( $ogp_url ) . '" />' . "\n";
 		if ( str_starts_with( $ogp_url, 'https://' ) ) {
 			echo '<meta property="og:image:secure_url" content="' . esc_url( $ogp_url ) . '" />' . "\n";
