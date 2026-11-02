@@ -44,7 +44,6 @@
 /* Specialized modules */
 @import './_blogcard-ai.css' layer(components);
 @import './_ai-summary.css' layer(components);
-@import './_notice.css' layer(components);
 @import './_fact-check.css' layer(components);
 @import './_adblock-modal.css' layer(components);
 @import './_writer-card.css' layer(components);
