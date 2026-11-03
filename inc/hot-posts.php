@@ -39,8 +39,13 @@ function node_home_get_featured_post_ids(): array {
 /**
  * Return recent day meta key.
  */
-function node_hot_day_meta_key( int $offset = 0 ): string {
-	return '_node_hot_views_' . wp_date( 'Ymd', strtotime( '-' . max( 0, $offset ) . ' days', current_time( 'timestamp' ) ) );
+function node_hot_day_meta_key( int $offset = 0, ?int $timestamp = null ): string {
+	// Work in the site timezone once; a WP local timestamp is not a Unix timestamp.
+	$day = current_datetime();
+	if ( null !== $timestamp ) {
+		$day = $day->setTimestamp( $timestamp );
+	}
+	return '_node_hot_views_' . $day->modify( '-' . max( 0, $offset ) . ' days' )->format( 'Ymd' );
 }
 
 /**
