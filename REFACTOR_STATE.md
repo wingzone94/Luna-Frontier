@@ -11,7 +11,7 @@
 | タスク | 内容 | 状態 | 変更ファイル | 検証結果 |
 |---|---|---|---|---|
 | タスクA | `twitter:card` の二重出力を直す | 完了 | `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` | `property="twitter:card"` 削除、トップ・記事とも `twitter:card` 1個、`og:*` / `twitter:*` 欠損なし (`a9ee9cd`) |
-| タスクB | Typekit（DIN 2014）の扱いを決めて実行する | 完了（現状維持） | なし（コード変更なし） | `.m3-logo-text` (`LUMINOUS CORE`) 1ルールのみ使用。Manrope代替で幅+15.91px (+8.9%) の差分が出るため現状維持 |
+| タスクB | Typekit（DIN 2014）の扱いを決めて実行する | 完了（維持で確定） | なし（コード変更なし） | `.m3-logo-text` (`LUMINOUS CORE`) 1ルールのみ使用。ロゴデザイン・タイポグラフィ保護のため人間判断により DIN 2014 維持で確定 |
 | タスクC | CSS の棚卸しと削減 | 完了 | `src/styles/style.css`, `src/styles/_header.css`, `src/styles/_article.css`, `src/styles/_article-layout.css`, `src/styles/_article-polish.css`, `src/styles/_hero-toc.css`, `src/styles/_spotlight.css`, `src/styles/_date-archive.css`, `src/styles/_search-results.css`, `src/styles/_footer-misc.css`, `src/styles/_theme-controls.css`, `assets/css/style.css` | パーシャル対応表作成、PHP/JS 0ヒットの未使用セレクタ 2,448行削除。`style.css` 333.3KB → 288.8KB (-44.5KB)、テーマCSS合計 425.7KB → 381.2KB (`edbbd49`) |
 | タスクD | 画像の `alt` を自動設定する | 完了 | `template-parts/luna/home-story.php`, `inc/hero-slider.php`, `template-parts/hero-slider.php`, `template-parts/single/hero.php`, `template-parts/single/related.php`, `template-parts/article-card.php`, `template-parts/legacy/article-card.php`, `template-parts/headline-carousel.php` | 既存 `_wp_attachment_image_alt` を保持しつつ未設定時に記事タイトル (`esc_attr`) を出力。トップ記事サムネイル alt 設定率 100% (`4eb4f47`) |
 
@@ -25,7 +25,7 @@
 
 ### タスクB: Typekit（DIN 2014）の扱いを決めて実行する
 - 使用箇所: `src/styles/_header.css:69` `.m3-logo-text`（ヘッダー・フッターのブランドロゴ文字 `LUMINOUS CORE`）の1ルールのみ。
-- 差分評価: DIN 2014（幅 178.56px）に対し、Manrope（幅 194.47px、+15.91px / +8.9%）、Inter（幅 203.38px、+24.82px）とコンデンス字形および文字幅の差分が目立つため、タスクB手順3に従い変更せず現状維持。
+- 差分評価: DIN 2014（幅 178.56px）に対し、Manrope（幅 194.47px、+15.91px / +8.9%）、Inter（幅 203.38px、+24.82px）とコンデンス字形および文字幅の差分が目立つため、ブランドアイデンティティとタイポグラフィ保護の観点から人間判断により「DIN 2014 維持（コード変更なし）」で正式確定。
 
 ### タスクC: CSS の棚卸しと削減
 - **1. パーシャル×テンプレート対応表**:
