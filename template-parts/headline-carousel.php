@@ -125,8 +125,10 @@ $headline_priority_assigned = false;
 				$has_image = has_post_thumbnail( $post_id );
 				$is_lcp    = ! $headline_priority_assigned && $has_image;
 
+				$thumb_id   = $has_image ? (int) get_post_thumbnail_id( $post_id ) : 0;
+				$saved_alt  = $thumb_id ? trim( (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) ) : '';
 				$thumb_attr = array(
-					'alt'     => '',
+					'alt'     => esc_attr( '' !== $saved_alt ? $saved_alt : get_the_title( $post_id ) ),
 					'class'   => 'c-headline-card__image',
 					'loading' => $is_lcp ? 'eager' : 'lazy',
 				);

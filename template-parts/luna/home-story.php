@@ -34,8 +34,10 @@ if ( $lf_terms && function_exists( 'node_get_category_label_props' ) && function
 		<div class="lf-home-story__visual">
 			<?php if ( has_post_thumbnail( $lf_story ) ) : ?>
 				<?php
+				$lf_thumb_id   = (int) get_post_thumbnail_id( $lf_story );
+				$lf_saved_alt  = $lf_thumb_id ? trim( (string) get_post_meta( $lf_thumb_id, '_wp_attachment_image_alt', true ) ) : '';
 				$lf_image_attr = array(
-					'alt'     => '',
+					'alt'     => esc_attr( '' !== $lf_saved_alt ? $lf_saved_alt : $lf_title ),
 					'loading' => 'news' === $lf_variant ? 'eager' : 'lazy',
 					'sizes'   => 'news' === $lf_variant
 						? node_get_home_news_image_sizes()

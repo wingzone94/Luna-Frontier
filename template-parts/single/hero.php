@@ -58,9 +58,12 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 	<?php if ( $lf_has_thumb ) : ?>
 		<div class="lf-article-header__media">
 			<?php
+			$lf_thumb_id  = (int) get_post_thumbnail_id( $lf_post_id );
+			$lf_saved_alt = $lf_thumb_id ? trim( (string) get_post_meta( $lf_thumb_id, '_wp_attachment_image_alt', true ) ) : '';
 			the_post_thumbnail(
 				'large',
 				array(
+					'alt'           => esc_attr( '' !== $lf_saved_alt ? $lf_saved_alt : get_the_title( $lf_post_id ) ),
 					'class'         => 'lf-article-header__image',
 					'decoding'      => 'async',
 					'fetchpriority' => 'high',

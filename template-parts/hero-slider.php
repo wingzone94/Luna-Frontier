@@ -71,7 +71,7 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 										<?php if ( $fallback_mobile ) : ?>
 											<source media="(max-width: 767px)" srcset="<?php echo esc_url( $fallback_mobile ); ?>">
 										<?php endif; ?>
-										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>"<?php echo $is_current ? ' fetchpriority="high"' : ''; ?>>
+										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>"<?php echo $is_current ? ' fetchpriority="high"' : ''; ?>>
 									</picture>
 								<?php else : ?>
 									<div class="lf-hero-slide__fallback"></div>
@@ -164,9 +164,9 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 			>
 				<span class="lf-hero-thumb__media" aria-hidden="true">
 					<?php if ( $slide['image_url'] ) : ?>
-						<img src="<?php echo esc_url( $slide['image_url'] ); ?>" alt="" loading="lazy">
+						<img src="<?php echo esc_url( $slide['image_url'] ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="lazy">
 					<?php elseif ( $fallback ) : ?>
-						<img src="<?php echo esc_url( $fallback_center ?: $fallback ); ?>" alt="" loading="lazy">
+						<img src="<?php echo esc_url( $fallback_center ?: $fallback ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="lazy">
 					<?php endif; ?>
 				</span>
 				<span class="lf-hero-thumb__label"><?php echo esc_html( $slide['title'] ); ?></span>

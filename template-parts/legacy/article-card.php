@@ -17,8 +17,10 @@ $image_loading       = ($args['image_loading'] ?? 'lazy') === 'eager' ? 'eager' 
 $image_fetchpriority = ($args['image_fetchpriority'] ?? '') === 'high' ? 'high' : '';
 
 $has_image = has_post_thumbnail($post_id);
+$thumb_id  = $has_image ? (int) get_post_thumbnail_id($post_id) : 0;
+$saved_alt = $thumb_id ? trim((string) get_post_meta($thumb_id, '_wp_attachment_image_alt', true)) : '';
 $thumbnail_attributes = [
-    'alt'   => get_the_title(),
+    'alt'   => esc_attr('' !== $saved_alt ? $saved_alt : get_the_title($post_id)),
     'class' => 'm3-card__image c-card__image',
     'loading' => $image_loading,
 ];

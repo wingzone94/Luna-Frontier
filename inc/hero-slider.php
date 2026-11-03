@@ -161,8 +161,10 @@ function lf_hero_slider_get_slides(): array {
 			$image_html = '';
 			$image_url  = '';
 			if ( $has_image ) {
+				$thumb_id   = (int) get_post_thumbnail_id( $post_id );
+				$saved_alt  = $thumb_id ? trim( (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) ) : '';
 				$thumb_attr = array(
-					'alt'     => '',
+					'alt'     => esc_attr( '' !== $saved_alt ? $saved_alt : get_the_title( $post_id ) ),
 					'class'   => 'lf-hero-slide__image',
 					'loading' => $is_lcp ? 'eager' : 'lazy',
 				);
@@ -171,7 +173,7 @@ function lf_hero_slider_get_slides(): array {
 					$priority_assigned           = true;
 				}
 				$image_html = get_the_post_thumbnail( $post_id, 'large', $thumb_attr );
-				$image_src  = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'medium' );
+				$image_src  = wp_get_attachment_image_src( $thumb_id, 'medium' );
 				$image_url  = is_array( $image_src ) ? (string) $image_src[0] : '';
 			}
 

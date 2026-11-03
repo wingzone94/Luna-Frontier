@@ -37,7 +37,16 @@ if ($related_query->have_posts()) :
                 <a href="<?php the_permalink(); ?>" class="m3-related-card">
                     <?php if (has_post_thumbnail()) : ?>
                         <div class="m3-related-card__image">
-                            <?php the_post_thumbnail('medium_large'); ?>
+                            <?php
+                            $lf_rel_thumb_id  = (int) get_post_thumbnail_id();
+                            $lf_rel_saved_alt = $lf_rel_thumb_id ? trim( (string) get_post_meta( $lf_rel_thumb_id, '_wp_attachment_image_alt', true ) ) : '';
+                            the_post_thumbnail(
+                                'medium_large',
+                                array(
+                                    'alt' => esc_attr( '' !== $lf_rel_saved_alt ? $lf_rel_saved_alt : get_the_title() ),
+                                )
+                            );
+                            ?>
                         </div>
                     <?php else : ?>
                         <div class="m3-related-card__image m3-related-card__image--placeholder" style="display: flex; align-items: center; justify-content: center; background: var(--md-sys-color-surface-container-high); aspect-ratio: 4/3;">
