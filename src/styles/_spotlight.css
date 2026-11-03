@@ -204,96 +204,6 @@
     .m3-headline-card__title {
         font-size: 0.85rem;
     }
-}
-
-/* --- SPOTLIGHT Archive (/spotlight/) --- */
-.m3-spotlight-archive-layout {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 var(--node-gutter-inline) var(--m3-spacing-xl);
-}
-
-.m3-spotlight-archive-header {
-    margin: var(--node-section-margin-block) var(--node-section-margin-inline);
-    padding: var(--node-section-padding);
-    border-radius: clamp(20px, 4vw, 32px);
-}
-
-.m3-spotlight-archive-header__row {
-    margin-bottom: 0;
-    padding: 0;
-}
-
-.m3-spotlight-archive-header__desc {
-    margin: 12px 0 0;
-    font-size: 0.92rem;
-    line-height: 1.6;
-    color: var(--md-sys-color-on-surface-variant);
-}
-
-.m3-spotlight-archive-catalog {
-    margin: 0 var(--node-section-margin-inline) var(--m3-spacing-m);
-    padding: clamp(14px, 3vw, 20px);
-    border-radius: clamp(20px, 4vw, 28px);
-}
-
-.m3-spotlight-archive-pills__title {
-    margin: 0 0 12px;
-    font-size: 0.82rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--md-sys-color-outline);
-}
-
-.m3-spotlight-archive-grid {
-    gap: clamp(12px, 2.5vw, 20px);
-}
-
-.m3-spotlight-archive-card {
-    min-height: 120px;
-    height: auto;
-    padding: clamp(16px, 3vw, 24px);
-}
-
-.m3-spotlight-archive-card .special-features__content {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
-    gap: 6px;
-    width: 100%;
-}
-
-.m3-spotlight-archive-card__count {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 10px;
-    border-radius: var(--m3-radius-full);
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(0, 0, 0, 0.18);
-}
-
-.m3-spotlight-archive-empty {
-    margin: 0 var(--node-section-margin-inline);
-    padding: 20px 16px;
-    text-align: center;
-    color: var(--md-sys-color-on-surface-variant);
-}
-
-@media (max-width: 600px) {
-    .special-features.m3-surface {
-        margin-left: var(--node-section-margin-inline);
-        margin-right: var(--node-section-margin-inline);
-        padding: var(--node-section-padding);
-    }
-
-    .special-features .special-features__pills {
-        margin-bottom: 0;
-        gap: 8px;
-    }
 
     /* R4: 見た目のかさは落としたまま、タップ領域だけ 44px を padding で確保する
        （13px + 18px + 13px = 44px / iOS HIG）。特集一覧ページのピルにも同じ値を効かせる。 */
@@ -301,31 +211,5 @@
     .m3-archive-spotlight-pills .m3-spotlight-badge {
         padding: 13px 14px;
         font-size: 0.9rem;
-    }
-
-    .m3-spotlight-archive-layout {
-        padding-left: var(--node-gutter-inline);
-        padding-right: var(--node-gutter-inline);
-    }
-
-    .m3-spotlight-archive-header,
-    .m3-spotlight-archive-catalog,
-    .m3-spotlight-archive-empty {
-        margin-left: 0;
-        margin-right: 0;
-    }
-
-    .m3-spotlight-archive-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .m3-spotlight-archive-card {
-        min-height: 96px;
-        padding: 14px 16px;
-        border-radius: 18px;
-    }
-
-    .m3-spotlight-archive-card .special-features__item-title {
-        font-size: 0.95rem;
     }
 }

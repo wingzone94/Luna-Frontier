@@ -1,72 +1,4 @@
 /* --- Article Layout (2-Column with Sidebar) --- */
-/* --- Floating TOC Card (FAB Triggered) --- */
-.m3-floating-toc-card {
-    position: fixed;
-    bottom: 24px; /* ボタンと高さを揃える */
-    right: 90px; /* ボタンの左側に配置 */
-    width: 340px;
-    max-height: 70vh;
-    background: var(--md-sys-color-surface-container-high);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 28px;
-    box-shadow: var(--m3-elevation-4);
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(30px) scale(0.9);
-    transform-origin: bottom right;
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@media (max-width: 600px) {
-    .m3-floating-toc-card {
-        right: 16px;
-        left: 16px;
-        bottom: 88px; /* FABの上 */
-        width: auto;
-        max-height: 60vh;
-        transform: translateY(20px) scale(0.98);
-        transform-origin: bottom center;
-        border-radius: 32px;
-    }
-}
-
-.m3-floating-toc-card.is-active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
-.m3-floating-toc-card__header {
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-}
-
-.m3-floating-toc-card__title {
-    font-size: 1rem;
-    font-weight: 700;
-    flex-grow: 1;
-}
-
-.m3-floating-toc-card__content {
-    padding: 16px;
-    overflow-y: auto;
-    flex-grow: 1;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-}
-
-.m3-floating-toc-card__content::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
-}
-
-
 /* --- TOC Card --- */
 .m3-toc-card {
     background: var(--md-sys-color-surface-container-low);
@@ -84,18 +16,6 @@
     font-weight: 800;
     margin: 0 0 16px 0;
     color: var(--md-sys-color-on-surface-variant);
-}
-
-.m3-toc-content {
-    max-height: 60vh;
-    overflow-y: auto;
-    font-size: 0.95rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.m3-toc-content::-webkit-scrollbar {
-    display: none;
 }
 
 /* TOC Dynamic Links */

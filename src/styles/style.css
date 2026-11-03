@@ -50,7 +50,6 @@
 @import './_game-card.css' layer(components);
 
 /* Utilities and compatibility patches */
-@import './_skeleton.css' layer(utilities);
 @import './_loading.css' layer(utilities);
 @import './_layout-fixes.css' layer(utilities);
 @import './_404-lite.css' layer(utilities);

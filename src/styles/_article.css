@@ -604,24 +604,6 @@
     }
 }
 
-.m3-ai-summary__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--m3-spacing-l);
-    color: var(--md-sys-color-on-surface);
-}
-
-.m3-ai-summary__title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: var(--m3-spacing-s);
-    color: var(--md-sys-color-primary);
-}
-
 .m3-article__tags .m3-article__footer-label {
     display: inline-flex;
     align-items: center;
@@ -680,74 +662,6 @@
     font-size: 18px;
 }
 
-.m3-ai-summary__content {
-    font-size: 1rem;
-    line-height: 1.8;
-    position: relative;
-    min-height: 100px;
-    padding-bottom: 32px;
-    /* スペースを確保して重なりを防止 */
-}
-
-.m3-ai-summary__text {
-    margin: 0;
-}
-
-.m3-ai-summary__footer {
-    position: absolute;
-    bottom: -8px;
-    right: -8px;
-    margin: 0;
-}
-
-.m3-ai-summary__footer span {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #FF9900;
-    background: rgba(255, 153, 0, 0.1);
-    padding: 4px 12px;
-    border-radius: 100px;
-    letter-spacing: 0.05em;
-    /* R3: 単色の親の上に乗るピルで、ぼかす対象が存在しないため backdrop-filter を削除。 */
-    border: 1px solid rgba(255, 153, 0, 0.2);
-}
-
-/* --- Shimmer Animation --- */
-.m3-ai-shimmer {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.m3-ai-shimmer__line {
-    height: 14px;
-    background: linear-gradient(90deg,
-            rgba(255, 255, 255, 0.1) 25%,
-            rgba(255, 255, 255, 0.3) 50%,
-            rgba(255, 255, 255, 0.1) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite linear;
-    border-radius: 4px;
-}
-
-[data-theme="light"] .m3-ai-shimmer__line {
-    background: linear-gradient(90deg,
-            rgba(0, 0, 0, 0.05) 25%,
-            rgba(0, 0, 0, 0.1) 50%,
-            rgba(0, 0, 0, 0.05) 75%);
-    background-size: 200% 100%;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-
-    100% {
-        background-position: -200% 0;
-    }
-}
-
 /* --- Article View (Single) --- */
 .article-view {
     padding: var(--node-header-content-offset) var(--node-gutter-inline) 0;
@@ -766,28 +680,6 @@
 @media (min-width: 768px) {
     .m3-article {
         padding: 0 var(--node-gutter-inline-lg) var(--m3-spacing-xxxl);
-    }
-}
-
-.m3-article__top-badges {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    z-index: 10;
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0;
-}
-
-@media (max-width: 599px) {
-    .m3-article__top-badges {
-        position: relative;
-        top: 0;
-        right: 0;
-        justify-content: center;
-        margin-bottom: 20px;
     }
 }
 
@@ -870,121 +762,6 @@
     font-size: 20px;
 }
 
-.m3-article__featured-image {
-    position: relative;
-    width: 100%;
-    height: auto;
-    aspect-ratio: var(--node-hero-media-ratio, 16 / 9);
-    /* 見切れ解消: 記事ごとの自然なアスペクト比で全体表示。
-       レターボックス（サイドパネル）は使わないため背景色は持たせない。 */
-    overflow: hidden;
-    border-radius: 32px 32px 0 0;
-    z-index: 1;
-}
-
-.m3-article__featured-gradient {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, var(--md-sys-color-surface-container-low) 0%, transparent 30%);
-    z-index: 2;
-    pointer-events: none;
-}
-
-[data-theme="dark"] .m3-article__featured-gradient {
-    background: linear-gradient(to top, var(--md-sys-color-surface-container-low) 0%, transparent 30%);
-}
-
-@media (max-width: 600px) {
-    .m3-article__featured-image {
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-        margin-top: 0;
-        margin-bottom: 16px;
-        border-radius: 24px 24px 0 0;
-    }
-
-    .m3-article__featured-image img,
-    .m3-article__featured-img {
-        border-radius: 24px 24px 0 0;
-    }
-}
-
-.m3-article__featured-image img,
-.m3-article__featured-img {
-    /* 幅に合わせて縮尺を自動調整し、自然なアスペクト比のまま全体を見せる。
-       contain＋背景色のレターボックス（サイドパネル）は違和感が強いため廃止。 */
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-/* Category labels positioned below the title, centered */
-.m3-article__cat-bottom-right {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
-    margin-bottom: 24px;
-}
-
-/* Base Category & Badge Style for Single */
-.m3-article__cat-bottom-right .m3-label--ai {
-    background: #FF9900 !important;
-    color: #ffffff !important;
-    border: none !important;
-    padding: 6px 20px;
-    border-radius: 100px;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
-}
-
-.m3-article__cat-bottom-right .m3-label--ai .material-symbols-outlined {
-    color: #ffffff !important;
-}
-
-.m3-article__cat-bottom-right .m3-label--category,
-.m3-article__cat-bottom-right .m3-label--sponsor,
-.m3-article__cat-bottom-right .m3-label--reading-time {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 18px;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    border: 1px solid var(--node-article-accent, #FF9900);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--node-article-accent, #FF9900) 20%, transparent);
-    transition: transform 0.2s ease, background-color 0.2s ease;
-    text-decoration: none;
-}
-
-.m3-article__cat-bottom-right .m3-label--category {
-    background: var(--node-article-accent, #FF9900);
-    color: var(--node-article-on-accent, #ffffff) !important;
-}
-
-/* Sponsor Bubble Positioning & Interactive Reveal */
-.m3-article__sponsor-bubble-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 8px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px) scale(0.95);
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* 弾むような出現 */
-    pointer-events: none;
-    /* ホバーの邪魔をしない */
-}
-
-/* タイトルまたはヘッダーをホバーした時に吹き出しを表示 */
-.m3-article__header:hover .m3-article__sponsor-bubble-wrapper {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
 .m3-card__sponsor-bubble-wrapper {
     display: flex;
     justify-content: flex-start;
@@ -992,7 +769,6 @@
     margin-bottom: 8px;
 }
 
-.m3-article__cat-bottom-right .m3-label--sponsor,
 .m3-card__meta-badges .m3-label--sponsor,
 .m3-label--sponsor {
     position: relative;
@@ -1020,91 +796,6 @@
     border-right: 8px solid transparent;
     border-top: 8px solid var(--md-sys-color-tertiary);
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
-}
-
-.m3-article__cat-bottom-right *:hover {
-    filter: brightness(0.95);
-    transform: translateY(-2px);
-}
-
-.m3-article__header {
-    text-align: center;
-    margin-bottom: var(--m3-spacing-xl);
-}
-
-
-
-@media (max-width: 600px) {
-    .m3-article__cat-top {
-        margin-bottom: 10px;
-    }
-}
-
-.m3-article__title {
-    font-size: clamp(2.2rem, 6vw, 3.8rem);
-    font-weight: 800;
-    line-height: 1.2;
-    margin: 0 auto;
-    color: #000000;
-    overflow-wrap: anywhere;
-    word-break: break-all;
-    max-width: 22em;
-    letter-spacing: -0.03em;
-    font-feature-settings: "palt";
-}
-
-.m3-article__title-icon {
-    font-size: 0.8em !important;
-    opacity: 0.3;
-    flex-shrink: 0;
-}
-
-/* New: Meta container for structured layout below title */
-.m3-article__meta-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    margin-top: 32px;
-}
-
-@media (max-width: 600px) {
-    .m3-article__meta-container {
-        margin-top: 12px;
-        gap: 8px;
-    }
-}
-
-@media (max-width: 599px) {
-    .m3-article__title {
-        max-width: 100%;
-        font-size: clamp(1.8rem, 8vw, 2.4rem);
-    }
-}
-
-.m3-article__title.is-medium {
-    font-size: clamp(1.8rem, 5vw, 3.2rem);
-}
-
-.m3-article__title.is-long {
-    font-size: clamp(1.5rem, 4vw, 2.6rem);
-}
-
-.m3-article__meta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--md-sys-color-outline);
-}
-
-.m3-article__meta-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 /* Reading Gauge Container in Meta */
@@ -1951,73 +1642,7 @@
     background-color: color-mix(in srgb, var(--category-color, #FF9900) 16%, var(--md-sys-color-surface-container-low, #25221b)) !important;
 }
 
-.m3-article__meta-info {
-    display: flex;
-    justify-content: center;
-    margin-bottom: var(--m3-spacing-xl);
-}
-
-.m3-article__header-card {
-    background-color: var(--md-sys-color-surface-container-low);
-    border-radius: var(--node-hero-card-radius);
-    padding: 0; /* Seamless image integration */
-    margin: var(--node-section-margin-block) auto var(--m3-spacing-xl);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    max-width: var(--node-content-max);
-    width: 100%;
-    position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-
-.m3-article__header--overlap {
-    border-radius: var(--node-hero-card-radius);
-    padding: var(--node-hero-padding-block) var(--node-hero-padding-inline);
-    position: relative;
-    z-index: 10;
-    margin-left: var(--node-gutter-inline);
-    margin-right: var(--node-gutter-inline);
-    margin-bottom: 16px;
-}
-
-/* 画像がある場合のみ上に重ねる */
-.has-thumbnail .m3-article__header--overlap {
-    margin-top: -60px;
-    background: var(--md-sys-color-surface-container-low);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    border: 1px solid var(--md-sys-color-outline-variant);
-}
-
-/* 画像がない場合は、内側のカードスタイルを解除して一体化させる */
-.m3-article:not(.has-post-thumbnail) .m3-article__header--overlap {
-    margin-top: 0;
-    background: transparent;
-    box-shadow: none;
-    border: none;
-    padding: var(--node-hero-padding-block) var(--node-hero-padding-inline) 32px; /* 上部にしっかり余白を確保 */
-}
-
-/* カード自体のパディング調整 */
-.m3-article:not(.has-post-thumbnail) .m3-article__header-card {
-    padding: 0;
-}
-
-.m3-article__cat-top {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-
 /* --- AI Disclosure Expressive (M3E) --- */
-.m3-article__ai-disclosure-wrapper {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    perspective: 1000px;
-}
-
 .m3-article__ai-disclosure-expressive {
     position: relative;
     display: inline-flex;
@@ -2083,67 +1708,6 @@
 }
 
 
-@media (min-width: 1024px) {
-    .m3-article__header-card {
-        /* タイトルカードを本文・画像カラムと同じ基準に揃える（ヒーロー張り出しを解除） */
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%;
-    }
-}
-
-/* フォールダブル等で本文が 680px に絞られる場合、カードも同じ幅に揃える
-   （_navigation.css の本文ルールより後に読み込まれる本ファイルで上書き） */
-@media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 4/5) {
-    .m3-article__header-card {
-        max-width: 680px;
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%;
-    }
-}
-
-@media (max-width: 600px) {
-    .m3-article__header-card {
-        padding: 0; /* Seamless */
-        border-radius: var(--node-hero-card-radius);
-        /* タイトルカードの左右端を本文テキスト・画像と同じガター基準に揃える */
-        margin: 8px 0 24px;
-        max-width: 100%;
-    }
-    .m3-article__header--overlap {
-        padding: clamp(28px, 7vw, 36px) clamp(18px, 5vw, 24px); /* 0.7.0 style */
-        margin-left: 0;
-        margin-right: 0;
-    }
-    .has-thumbnail .m3-article__header--overlap {
-        margin-top: -32px; /* Adjusted for mobile overlap */
-    }
-}
-
-.m3-article__meta-info .m3-label--category {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--node-article-accent, #FF9900);
-    color: var(--node-article-on-accent, #ffffff) !important;
-    padding: 10px 24px;
-    border-radius: var(--m3-radius-large);
-    font-size: 1.05rem;
-    font-weight: 800;
-    border: 1px solid var(--node-article-accent, #FF9900);
-    box-shadow: 0 6px 16px color-mix(in srgb, var(--node-article-accent, #FF9900) 24%, transparent);
-    text-decoration: none;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s, background 0.2s;
-}
-
-.m3-article__meta-info .m3-label--category:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-    background: color-mix(in srgb, var(--node-article-accent, #FF9900) 88%, #000000 12%);
-    color: var(--node-article-on-accent, #ffffff) !important;
-}
-
 /* --- AD Area Placeholder --- */
 .m3-ad-area {
     margin: var(--m3-spacing-xxxl) auto;
@@ -2184,87 +1748,6 @@
 
 .pswp__icn {
     color: var(--md-sys-color-on-surface) !important;
-}
-
-/* --- Expressive Pagination TOC --- */
-.m3-pagination-toc.expressive {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-right: 16px;
-}
-
-.m3-pagination-toc__header {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 12px;
-}
-
-.m3-pagination-toc__icon {
-    font-size: 20px;
-    color: var(--md-sys-color-primary);
-    z-index: 1;
-}
-
-.m3-pagination-toc__label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--md-sys-color-on-surface);
-    letter-spacing: 0.1em;
-    z-index: 1;
-}
-
-.m3-pagination-toc__icon-glow {
-    position: absolute;
-    top: 50%;
-    left: 12px;
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    background: var(--md-sys-color-primary-container);
-    filter: blur(8px);
-    opacity: 0.6;
-    border-radius: 50%;
-}
-
-.m3-pagination-toc.expressive .m3-pagination-toc__wrapper {
-    position: relative;
-    width: 160px;
-}
-
-.m3-pagination-toc__select {
-    width: 100%;
-    height: 40px;
-    background: var(--md-sys-color-secondary-container);
-    color: var(--md-sys-color-on-secondary-container);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 12px;
-    padding: 0 32px 0 12px;
-    font-size: 0.85rem;
-    font-weight: 800;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-    transition: all 0.2s ease;
-}
-
-.m3-pagination-toc__select:hover {
-    background: var(--md-sys-color-primary-container);
-    border-color: var(--md-sys-color-primary);
-}
-
-.m3-pagination-toc.expressive .m3-select-chevron {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 18px;
-    color: var(--md-sys-color-outline);
-    pointer-events: none;
 }
 
 .pswp__button--close:hover {
@@ -2507,69 +1990,14 @@
     width: 100%;
 }
 
-.m3-article__pagination-secondary-row {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    padding: 12px 0;
-    background: var(--md-sys-color-surface-container-low);
-    border-radius: 24px;
-}
-
 .m3-article__pagination-row {
     flex-grow: 1;
     min-width: 0;
 }
 
-.m3-pagination-action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 .m3-article__pagination-row .m3-pagination--split {
     margin: 0;
     justify-content: flex-start;
-}
-
-.m3-pagination-top-btn {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    min-width: 48px;
-    padding: 0;
-    height: 48px;
-    background: #FF9900;
-    color: #ffffff;
-    border: none;
-    border-radius: 24px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    white-space: nowrap;
-}
-
-.m3-pagination-top-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(255, 153, 0, 0.4);
-    background: #FF7700;
-}
-
-.m3-pagination-top-btn:active {
-    transform: scale(0.95);
-}
-
-.m3-pagination-top-btn .material-symbols-outlined {
-    font-size: 20px;
-    font-variation-settings: 'FILL' 1, 'wght' 600;
-}
-
-.m3-pagination-top-btn--toc .material-symbols-outlined {
-    font-size: 21px;
 }
 
 @media (max-width: 600px) {
@@ -2644,13 +2072,6 @@
     }
     .m3-pagination__ellipsis {
         width: 12px;
-    }
-    .m3-pagination-action-buttons {
-        justify-content: center;
-        margin-top: 8px;
-    }
-    .m3-pagination-top-btn {
-        justify-content: center;
     }
     .m3-article__pagination-row .m3-pagination--split {
         justify-content: center;
@@ -2746,12 +2167,6 @@
 
 .m3-inline-toc__content .m3-toc-item--h3 { padding-left: 20px; font-size: 0.9rem; }
 .m3-inline-toc__content .m3-toc-item--h4 { padding-left: 40px; font-size: 0.85rem; }
-/* --- Pagination Quick TOC --- */
-.m3-pagination-toc {
-    margin-right: 12px;
-    flex: 1;
-    max-width: 200px;
-}
 
 /* ===== Mobile Layout Fixes ===== */
 .m3-article__body pre,
