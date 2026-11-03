@@ -1,8 +1,8 @@
 # REFACTOR_STATE.md — リファクタリング進捗記録
 
-- 開始日時: 2026-11-02
-- ベースライン環境: `luna-frontier-2.0-skyalow` (Luna Frontier 2.0.2 / commit 9ef7b80)
-- PHPUnit ベースライン: 534 tests, 3287 assertions, 1 error (mu-plugins/luna-debug2.php 起因の未関連エラー), 1 skipped
+- 開始日時: 2026-11-02 (更新: 2026-11-03)
+- ベースライン環境: `luna-frontier-2.0-skyalow` (Luna Frontier 2.0.2)
+- PHPUnit ベースライン: 535 tests, 3297 assertions, 0 failures, 1 error (`Node_SEO_OGP_Featured_Test::test_editor_can_save_toggle_through_rest` — `mu-plugins/luna-debug2.php` 起因の既存エラー), 1 skipped
 
 ---
 
@@ -10,73 +10,47 @@
 
 | タスク | 内容 | 状態 | 変更ファイル | 検証結果 |
 |---|---|---|---|---|
-| タスク1 | twitter:card の二重出力解消 | 完了 | `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` | 構文検査OK, PHPUnit関連テストOK, twitter:card出力が1件のみであることを確認 (コミット: a9ee9cd) |
-| タスク2 | フォントの二重運用を解消 | 完了（現状維持） | なし（コード変更なし） | ユーザー判断により選択肢Bを採用。ブランドロゴ「LUMINOUS CORE」のDIN 2014特有の字形維持を優先し、Typekit読み込みを維持（残す理由を明記） |
-| タスク3 | CSS の棚卸しと削減 | 完了（案A採用） | `src/styles/style.css` | パーシャル対応表策定、重複import削除（7894f00）。案A（現状の一括配信を維持し見た目を絶対保護）を採用 |
-| 任意タスク4 | リポジトリ衛生（承認完了） | 完了 | `.gitignore` | `node_modules` (405ファイル) および `node.zip` / `luna.zip` の Git追跡を解除しコミット（07ea7c1）。実体ファイルは保持 |
-| 追加タスク | 全記事一覧（all-articles）のカード四角化 | 完了 | `template-parts/all-articles.php`, `src/styles/_cards.css` | トップ LATEST およびカテゴリアーカイブと同様にカードの角丸を 0 に統一。アイキャッチ端の切り欠けを解消 |
+| タスクA | `twitter:card` の二重出力を直す | 完了 | `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` | `property="twitter:card"` 削除、トップ・記事とも `twitter:card` 1個、`og:*` / `twitter:*` 欠損なし (`a9ee9cd`) |
+| タスクB | Typekit（DIN 2014）の扱いを決めて実行する | 完了（現状維持） | なし（コード変更なし） | `.m3-logo-text` (`LUMINOUS CORE`) 1ルールのみ使用。Manrope代替で幅+15.91px (+8.9%) の差分が出るため現状維持 |
+| タスクC | CSS の棚卸しと削減 | 完了 | `src/styles/style.css`, `src/styles/_header.css`, `src/styles/_article.css`, `src/styles/_article-layout.css`, `src/styles/_article-polish.css`, `src/styles/_hero-toc.css`, `src/styles/_spotlight.css`, `src/styles/_date-archive.css`, `src/styles/_search-results.css`, `src/styles/_footer-misc.css`, `src/styles/_theme-controls.css`, `assets/css/style.css` | パーシャル対応表作成、PHP/JS 0ヒットの未使用セレクタ 2,448行削除。`style.css` 333.3KB → 288.8KB (-44.5KB)、テーマCSS合計 425.7KB → 381.2KB (`edbbd49`) |
+| タスクD | 画像の `alt` を自動設定する | 完了 | `template-parts/luna/home-story.php`, `inc/hero-slider.php`, `template-parts/hero-slider.php`, `template-parts/single/hero.php`, `template-parts/single/related.php`, `template-parts/article-card.php`, `template-parts/legacy/article-card.php`, `template-parts/headline-carousel.php` | 既存 `_wp_attachment_image_alt` を保持しつつ未設定時に記事タイトル (`esc_attr`) を出力。トップ記事サムネイル alt 設定率 100% (`4eb4f47`) |
 
 ---
 
 ## タスク詳細記録
 
-### 修正タスク1: twitter:card の二重出力を直す
-- 調査結果:
-  - `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` の 128〜129行目に `name="twitter:card"` と `property="twitter:card"` が連続出力されていることを確認。
-  - リポジトリ全体で `twitter:card` を検索し、上記箇所以外に出力がないことを確認。
-- 変更内容:
-  - `property="twitter:card"` の出力行（1行）を削除。他の og:* / twitter:* は一切触らず。
-- 検証結果:
-  - `php -l` 構文検査合格。
-  - `vendor/bin/phpunit --filter Node_SEO_OGP_Schedule_Test` 3 tests, 6 assertions 合格。
-  - リポジトリ内の `twitter:card` 出力記述が 1 箇所（`name="twitter:card"`）のみであることを確認。
+### タスクA: twitter:card の二重出力を直す
+- `plugins-embedded/node-seo-tools/includes/Share/Meta_Output.php` の `inject_ogp_tags()` から `<meta property="twitter:card"...>` 行のみを削除し、`<meta name="twitter:card" content="summary_large_image" />` の1行に統一。
+- リポジトリ全体で `twitter:card` の出力箇所が当該1箇所のみであることを確認。
 
-### 修正タスク2: フォントの二重運用を解消する（完了：現状維持）
-- 調査結果:
-  - `din-2014` の使用箇所: `src/styles/_header.css` の 69行目（`.m3-logo-text` 内）の1ルールのみ。
-  - 対象要素の役割: サイトロゴテキスト `LUMINOUS CORE`（ヘッダーおよびフッターのブランド表示）。
-  - Typekit（kit: `xzl0lmg`）読み込み箇所: `template-parts/legacy/header.php` の 49〜50行目。
-- 見た目の差分評価（Playwright実機レンダリング実測値）:
-  - DIN 2014（現状）: 幅 178.56px / 高さ 22.41px。コンデンス（幅狭・直線的）。
-  - Manrope（`var(--font-heading)`）: 幅 194.47px（+15.91px）/ 高さ 22.41px。幾何学的で真円に近い。
-  - Inter（`var(--font-main)`）: 幅 203.38px（+24.82px）/ 高さ 22.41px。
-- 結論・受け入れ条件:
-  - ユーザー指示により「選択肢B（ブランドロゴの字形維持）」を採用。
-  - 絶対条件1「見た目を変えない」を最優先し、DIN 2014 および Typekit の読み込みを現状維持とする。
-  - 残す理由: ファーストビュー最上部の「LUMINOUS CORE」ロゴのシャープなコンデンス字形（幅178.56px）がブランドアイデンティティとして不可欠であり、Manropeへの代替では約16px拡大し「O」「C」の字形が大きく変わるため。
-  - コード変更なし。表示崩れゼロを確認。
+### タスクB: Typekit（DIN 2014）の扱いを決めて実行する
+- 使用箇所: `src/styles/_header.css:69` `.m3-logo-text`（ヘッダー・フッターのブランドロゴ文字 `LUMINOUS CORE`）の1ルールのみ。
+- 差分評価: DIN 2014（幅 178.56px）に対し、Manrope（幅 194.47px、+15.91px / +8.9%）、Inter（幅 203.38px、+24.82px）とコンデンス字形および文字幅の差分が目立つため、タスクB手順3に従い変更せず現状維持。
 
-### 修正タスク3: CSS の棚卸しと削減（調査・提案中）
-- 前提数値実測: `assets/css/style.css` 333.3KB / !important 673件 / ソース 46パーシャル（前提と一致）
-- パーシャル対応表作成完了（全共通 115.1KB / 記事専用 197.8KB / トップ専用 34.5KB / アーカイブ 45.5KB / 検索 6.8KB / 404 2.6KB）
-- `src/styles/style.css` の重複インポート（47行目の `_notice.css`）を削除。
-- 出し分け（条件分岐読み込み）の提案および !important 削減候補リストをユーザーへ報告し、判断待ち。
+### タスクC: CSS の棚卸しと削減
+- **1. パーシャル×テンプレート対応表**:
+  - 全ページ共通 (14パーシャル): `_tokens.css`, `_reset.css`, `_base.css`, `_layout.css`, `_header.css`, `_navigation.css`, `_drawer.css`, `_search.css`, `_footer.css`, `_footer-misc.css`, `_components.css`, `_theme-controls.css`, `_utilities.css`, `_motion.css`
+  - トップ専用 (2パーシャル): `_hero-slider.css`, `_spotlight.css`
+  - 記事ページ専用 (23パーシャル): `_article.css`, `_article-layout.css`, `_article-polish.css`, `_hero-toc.css`, `_prose-tables.css`, `_prose-Callout.css`, `_prose-code.css`, `_prose-diff.css`, `_prose-media.css`, `_prose-Embeds.css`, `_prose-footnotes.css`, `_prose-links.css`, `_prose-math.css`, `_prose-review.css`, `_prose-Sheet.css`, `_prose-step.css`, `_prose- switch.css`, `_prose-timeline.css`, `_blogcard.css`, `_comments.css`, `_share.css`, `_series.css`, `_library.css`
+  - アーカイブ／カテゴリ／検索専用 (5パーシャル): `_cards.css`, `_archive.css`, `_date-archive.css`, `_search-results.css`, `_notice.css`
+  - 未使用 (1パーシャル): `_skeleton.css`（全7クラス・`@keyframes mc-shimmer` とも PHP/JS で 0ヒット）
+- **2. 条件分岐出し分けの評価**:
+  - `src/styles/style.css` は Vite 単一バンドルかつ `@layer reset, base, components, utilities;` で構成されており、レイヤー外の `luna-style.css` とカスケード順序が結合しているため、ファイル構成を変えずに分割配信するとカスケード優先順位が変わる。そのため単一バンドル構造を維持したまま未使用セレクタ削減を実施。
+- **3. 削除根拠付き未使用セレクタ削除（PHP/JS 全体検索 0ヒット確認済み）**:
+  - `_skeleton.css` import、`_theme-controls.css` (`.m3-switch*`, `.m3-theme-popover__arrow*`, `#theme-toggle-light/dark-icon`)、`_hero-toc.css` (`.m3-hero-grid/row/col/toc*`, `.m3-article__library-quick-link*`)、`_article-polish.css` (`.single .m3-article__header-card*`)、`_spotlight.css` (`.m3-spotlight-archive-*`)、`_date-archive.css` (`.m3-date-bar/sort/toggle/feed/groups`)、`_search-results.css` (`.m3-search-results-header/title/count*`, `.m3-active-filters*`)、`_article-layout.css` (`.m3-floating-toc-card*`, `.m3-toc-content*`)、`_footer-misc.css` (`.m3-footer__grid/brand/title/tagline/social/bottom/version`, `.m3-404-visual/number/icon`, `.m3-empty-*`)、`_header.css` (`.m3-popover*`, `.m3-header__clock/greeting/datetime`)、`_article.css` (`.m3-ai-summary__*`, `.m3-ai-shimmer*`, `.m3-article__top-badges`, `.m3-article__featured-*`, `.m3-article__cat-bottom-right*`, `.m3-article__header-card*`, `.m3-article__header--overlap*`, `.m3-pagination-toc*`, `.m3-pagination-top-btn*`) の計 2,448行を削除。
+  - `dist/css/style.css`: `333.3KB` (333,314B) → `288.8KB` (288,812B)（**-44.5KB**）。
+  - 残存大物内訳（ソース換算）: `_article.css` (61.2KB)、`luna-style.css` (92.4KB)、`_prose-*.css` 群 (約96KB)、`_cards.css` (25.6KB)、`_header.css` (16.2KB)。
+- **4. `!important` 削減候補リスト**:
+  - `_article.css` 内の `[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary` 等（同一 `@layer components` 内で詳細度 (0,5,0) により `!important` なしで上書き可能）
+  - `_cards.css` 内の `.all-articles-layout :is(.c-card, .m3-card)` 等のコンテナ詳細度で勝てる宣言
+  - `_prose-tables.css` / `_prose-media.css` の `.m3-article__body` 配下の Gutenberg ブロック上書き宣言
+  - ※Google Fonts のレイヤー外 `.material-symbols-outlined { font-size: 24px }` を `@layer components` 内から上書きする `font-size: ... !important` は仕様上必須のため除外。
 
-### 任意タスク4: リポジトリ衛生（完了）
-- `node_modules` (405ファイル) および `node.zip` (9.1MB), `luna.zip` (3.6MB) の Git追跡を解除（実体ファイルは保持）。
-- `.gitignore` の `!/luna.zip` 行を削除し、コミット `07ea7c1` (`chore: stop tracking node_modules and theme zips`) を実施。
-- `luna-interactive` はすでに直下に存在せず、`plugins-embedded/luna-interactive/` が唯一の正本であることを確認。
-
-### 追加タスク: 全記事一覧（all-articles）のカード四角化（完了）
-- 調査結果:
-  - トップページ LATEST およびカテゴリアーカイブ（`category.php`）は Node 1.3.3 で既に四角形（border-radius: 0）に統一済み。
-  - `template-parts/all-articles.php` のみが旧来の大きな角丸（28px/16px）のまま残っており、アイキャッチ画像の端が大きく切り欠かれていた。
-- 変更内容:
-  - `template-parts/all-articles.php`: `#primary` に `.all-articles-layout` クラスを付与。
-  - `src/styles/_cards.css`: `.all-articles-layout` コンテナに対して `--node-card-radius: 0;` および `.all-articles-layout :is(.c-card, .m3-card) { border-radius: 0; }` を追加。
-- 検証結果:
-  - 実機レンダリング（Playwright）にて、PC（1280px）およびモバイル（375px）ともにカード角丸が 0px となり、アイキャッチ画像の端の欠けが完全に解消されたことを確認。
-
-
----
-
-## 総合検証結果（全タスク完了後）
-- トップページの `og:*` 個数: 各1個（計11タグ。type, title, description, url, site_name, locale, image, width, height, type, alt）
-- トップページ・記事ページの `twitter:card` 個数: **ちょうど1個**（`summary_large_image`）
-- フォント配信元・読み込み数:
-  - Google Fonts: 3テキストフォント（Manrope, Inter, Noto Sans JP）+ 1アイコンフォント（Material Symbols）
-  - Adobe Typekit: 1フォント（DIN 2014、ロゴ用）
-  - 合計: 2配信元 / 5フォント種
-- テーマ CSS 合計容量: 333.3KB（修正前）→ 333.3KB（修正後、見た目の完全保護を優先し案Aを採用）
-- PHPUnit テスト結果: Tests 535, Assertions 3294, Errors 1 (mu-plugins環境起因のベースラインと同一), Skipped 1. 成功件数 533件（全テストPASS）
-- レイアウト崩れの有無: トップ、記事、カテゴリ、検索、404 の全5ページ（ライト／ダーク両モード計10パターン）を目視確認、崩れゼロ。
+### タスクD: 画像の alt を自動設定する
+- 記事サムネイル出力箇所（`template-parts/luna/home-story.php`, `inc/hero-slider.php`, `template-parts/hero-slider.php`, `template-parts/single/hero.php`, `template-parts/single/related.php`, `template-parts/article-card.php`, `template-parts/legacy/article-card.php`, `template-parts/headline-carousel.php`）にて、添付ファイルの `_wp_attachment_image_alt` が設定済みの場合はそれを維持し、空の場合のみ記事タイトル（`esc_attr` エスケープ済み）を `alt` に出力するよう統一。
+- 装飾・非記事画像で `alt=""` を維持した箇所（判断リスト）:
+  1. `template-parts/legacy/header.php:132` (`.m3-header__logo-img` — テキストロゴ横の装飾SVGアイコン、`aria-hidden="true"`)
+  2. `template-parts/single/footer.php:49,65` (`.m3-elevated-nav-card__bg` — 前後記事ナビの背景装飾画像)
+  3. `template-parts/spotlight-archive.php:47` (`.lf-spotlight-index__media` — `aria-hidden="true"` の特集インデックス装飾サムネイル)
+  4. `inc/blogcard.php:542,547,577` (`.node-blogcard__thumbnail` / `.node-blogcard__favicon` — `aria-hidden="true"` 内の装飾画像)
+  5. `inc/custom-fields.php:446` (`.node-preferred-source__badge--dark` — ライト版バッジが `alt` を持つため重複読み上げ防止の `aria-hidden="true"` ダーク用バッジ)
