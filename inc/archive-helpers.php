@@ -18,6 +18,16 @@ function node_get_category_archive_icon( $term ) {
 }
 
 /**
+ * Material icon for a tag archive header.
+ *
+ * @param WP_Term|null $term Tag term.
+ * @return string Material Symbols icon name.
+ */
+function node_get_tag_archive_icon( $term ) {
+	return 'sell';
+}
+
+/**
  * Build archive header context for the current query.
  *
  * @return array<string, mixed>
@@ -52,7 +62,7 @@ function node_get_archive_context() {
 		$context['type']        = 'tag';
 		$context['title']       = single_tag_title( '', false );
 		$context['subtitle']    = __( 'タグ', 'node' );
-		$context['icon']        = 'folder';
+		$context['icon']        = node_get_tag_archive_icon( $term );
 		$context['description'] = $term ? term_description( $term->term_id, 'post_tag' ) : '';
 	} elseif ( is_author() ) {
 		$author_id = get_queried_object_id();
