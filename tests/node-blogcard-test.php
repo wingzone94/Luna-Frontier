@@ -562,6 +562,84 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 		delete_transient( 'node_nintendo_soft_' . md5( 'D70010000000964' ) );
 	}
 
+	public function test_nintendo_lookup_filters_by_numeric_id_without_d_prefix(): void {
+		// 実応答は id / nsuid が D なしの14桁。キーワード検索（q=D7001...）は 0 件になる。
+		$cases = array(
+			'https://store-jp.nintendo.com/item/software/D70010000096733' => array(
+				'id'    => '70010000096733',
+				'title' => 'FINAL FANTASY VII REMAKE INTERGRADE',
+			),
+			'https://store-jp.nintendo.com/item/software/D70010000112479' => array(
+				'id'    => '70010000112479',
+				'title' => 'FINAL FANTASY VII REBIRTH',
+			),
+		);
+
+		foreach ( $cases as $url => $case ) {
+			$calls   = 0;
+			$seen    = '';
+			$payload = array(
+				'result' => array(
+					'total' => 1,
+					'items' => array(
+						array(
+							'id'    => $case['id'],
+							'nsuid' => $case['id'],
+							'title' => $case['title'],
+							'iurl'  => '833214b25828c4b093c4abde2564f399991438c9498594b3d88f3fc54dad4d75',
+						),
+					),
+				),
+			);
+
+			$callback = static function ( $preempt, $args, $request_url ) use ( $payload, &$calls, &$seen ) {
+				unset( $preempt, $args );
+				if ( ! str_contains( (string) $request_url, 'search.nintendo.jp' ) ) {
+					return array(
+						'headers'  => array( 'content-type' => 'text/html' ),
+						'body'     => '<html><head><title>Access Denied</title></head></html>',
+						'response' => array(
+							'code'    => 403,
+							'message' => 'Forbidden',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				++$calls;
+				$seen = (string) $request_url;
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => (string) wp_json_encode( $payload ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			};
+
+			add_filter( 'pre_http_request', $callback, 10, 3 );
+			delete_transient( 'node_ogp_' . md5( $url ) );
+			delete_transient( 'node_nintendo_soft_' . md5( 'D' . $case['id'] ) );
+
+			$html = node_render_blogcard( $url );
+
+			remove_filter( 'pre_http_request', $callback, 10 );
+
+			$this->assertStringContainsString( $case['title'], $html, $url );
+			$this->assertStringNotContainsString( 'm3-blogcard__title">ニンテンドーストア', $html, $url );
+			$this->assertStringContainsString( 'fq=id:' . $case['id'], $seen, $url );
+			$this->assertStringNotContainsString( 'q=D' . $case['id'], $seen, $url );
+			$this->assertSame( 1, $calls, $url );
+
+			delete_transient( 'node_ogp_' . md5( $url ) );
+			delete_transient( 'node_nintendo_soft_' . md5( 'D' . $case['id'] ) );
+		}
+	}
+
 	public function test_nintendo_lookup_ignores_items_with_different_id(): void {
 		// 誤った題名を載せるくらいなら、カード化しない。
 		$url     = 'https://store-jp.nintendo.com/item/software/D70010000000964';

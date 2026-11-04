@@ -266,10 +266,13 @@ function node_nintendo_store_lookup( string $url ): array {
 		return $empty;
 	}
 
+	// タイトル ID をキーワード（q）に渡すと、検索側が数字を全角へ正規化して 0 件になる。
+	// インデックス上の id は D なしの14桁なので、fq でその値だけを指定する。
 	$response = wp_safe_remote_get(
 		add_query_arg(
 			array(
-				'q'     => $id,
+				'q'     => '',
+				'fq'    => 'id:' . ltrim( $id, 'D' ),
 				'limit' => 5,
 			),
 			'https://search.nintendo.jp/nintendo_soft/search.json'
