@@ -32,7 +32,7 @@
       throw new Error("数値は±1,000兆の範囲にしてください。");
     return n;
   }
-  function csv(text) {
+  function csv(text, delimiter = ",") {
     text = text.replace(/^\uFEFF/, "");
     const rows = [];
     let row = [],
@@ -57,11 +57,11 @@
         quoted = true;
         continue;
       }
-      if (c === "," || c === "\n" || c === "\r") {
+      if (c === delimiter || c === "\n" || c === "\r") {
         row.push(cell);
         cell = "";
         closed = false;
-        if (c !== ",") {
+        if (c !== delimiter) {
           rows.push(row);
           row = [];
           if (c === "\r" && text[i + 1] === "\n") i++;
@@ -183,6 +183,16 @@
     if (isoDate(s)) return Number(s.slice(5, 7)) + "/" + Number(s.slice(8, 10));
     return s.length > 10 ? s.slice(0, 9) + "…" : s;
   }
+  function niceCeiling(value) {
+    // 縦軸の自動上限を「キリの良い刻み」に切り上げる（例: 37→40、88→100、100→100）。
+    // およそ6分割になる刻みを採用し、tick生成（maxTicksLimit 6）と喧嘩しない。
+    if (!Number.isFinite(value) || value <= 0) return null;
+    const raw = value / 6;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+    const digits = Math.ceil(raw / magnitude - 1e-9);
+    const step = (digits <= 1 ? 1 : digits <= 2 ? 2 : digits <= 5 ? 5 : 10) * magnitude;
+    return Math.ceil(value / step - 1e-9) * step;
+  }
   function themeColors(dark) {
     return dark
       ? {
@@ -214,13 +224,26 @@
     const dark = !!opt.dark;
     const colors = opt.colors || themeColors(dark);
     const pie = spec.type === "pie";
-    const yMin = finiteOrNull(opt.yMin);
-    const yMax = finiteOrNull(opt.yMax);
+    const yMin = finiteOrNull(opt.yMin ?? spec.yMin);
+    const yMax = finiteOrNull(opt.yMax ?? spec.yMax);
+    // 縦軸上限の未設定時（yMin/yMax の明示設定がない場合のみ従来動作）は、
+    // データ最大値をキリの良い天井に丸めて渡す（grace由来の150など誇張表示を防ぐ）。
+    const dataMax = !pie
+      ? (spec.datasets || []).reduce((max, d) => {
+          const values = (d.data || []).filter((v) => v != null);
+          return values.length ? Math.max(max, ...values) : max;
+        }, -Infinity)
+      : null;
+    const autoYMax = !pie && yMax == null && Number.isFinite(dataMax) && dataMax > 0
+      ? niceCeiling(dataMax)
+      : null;
+    const numericX = !pie && spec.xScale === "linear" && spec.labels.every((label) =>
+      String(label).trim() !== "" && Number.isFinite(Number(label)));
     const limited = !pie && (yMin != null || yMax != null);
     const dense = (spec.labels || []).length > 48;
     const yScale = {
       beginAtZero: !limited,
-      grace: limited ? 0 : "6%",
+      grace: !limited && autoYMax == null ? "6%" : 0,
       ticks: {
         color: colors.muted,
         maxTicksLimit: 6,
@@ -234,6 +257,7 @@
     };
     if (yMin != null) yScale.min = yMin;
     if (yMax != null) yScale.max = yMax;
+    else if (autoYMax != null) yScale.max = autoYMax;
     return {
       type: spec.type || "bar",
       data: {
@@ -396,6 +420,7 @@
     formatAxis,
     formatTickLabel,
     themeColors,
+    niceCeiling,
   };
   if (typeof module !== "undefined") module.exports = root.LunaGraph;
 })(typeof window === "undefined" ? globalThis : window);

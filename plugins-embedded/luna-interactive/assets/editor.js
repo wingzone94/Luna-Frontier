@@ -57,6 +57,7 @@
       [drafts, setDrafts] = useState({}),
       [hiddenSeries, setHiddenSeries] = useState([]),
       [hiddenItems, setHiddenItems] = useState([]),
+      [paste, setPaste] = useState(""),
       [previewImages, setPreviewImages] = useState({});
     const ref = useRef(null),
       pieRefs = useRef([]),
@@ -160,6 +161,21 @@
       setPage(0);
       setDrafts({});
       setError("");
+    }
+    // タスク3: CSV / TSV テキストの貼り付けで現在の行データを置き換える。
+    // 区切りは貼り付けテキストの先頭行で判定（タブがあればTSV、なければカンマ）。
+    // 解釈できない場合は applyRows が例外を出し、データは変更せず Notice に表示する。
+    function applyPastedText() {
+      const text = paste;
+      if (!text.trim()) return;
+      const firstLine = text.split(/\r?\n/).find((line) => line.trim() !== "") ?? "";
+      try {
+        const rows = G.csv(text, firstLine.includes("\t") ? "\t" : ",");
+        applyRows(rows, "貼り付けデータ");
+        setPaste("");
+      } catch (err) {
+        setError(err.message);
+      }
     }
     async function onFile(e) {
       const file = e.target.files[0];
@@ -471,6 +487,31 @@
             "p",
             { className: "luna-editor-note" },
             "空欄は欠損値として保持します。日付で絞り込む場合は項目名を YYYY-MM-DD にしてください。",
+          ),
+          h(
+            "p",
+            { className: "luna-editor-note" },
+            "CSV / TSVテキストを貼り付けると、現在の行データを置き換えます。1行目に列名、1列目に項目、2列目以降に数値を入力してください。カンマ区切り・タブ区切りに対応します。",
+          ),
+          h(TextareaControl, {
+            label: "CSV / TSVテキストを貼り付け",
+            rows: 6,
+            placeholder: "分,バッテリー残量(%)\n0,100\n5,92\n10,80",
+            value: paste,
+            onChange: setPaste,
+          }),
+          h(
+            "div",
+            { className: "luna-editor-toolbar" },
+            h(
+              Button,
+              {
+                variant: "secondary",
+                disabled: !paste.trim() || busy,
+                onClick: applyPastedText,
+              },
+              "貼り付けデータで置き換える",
+            ),
           ),
           h(
             "div",
