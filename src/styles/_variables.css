@@ -117,6 +117,11 @@
     --m3-elevation-3: 0 8px 24px rgba(0, 0, 0, 0.2);
     --m3-elevation-4: 0 16px 40px rgba(0, 0, 0, 0.24);
 
+    /* 要素の style 属性で上書きする。未設定でも color-mix が無効にならない既定。 */
+    --ai-vibe-color: #FF9800;
+    --node-category-nav-color: var(--md-sys-color-primary);
+    --spotlight-color: var(--md-sys-color-primary);
+
     /* --- Material 3 Motion --- */
     --m3-motion-duration: 500ms;
     --m3-motion-easing: cubic-bezier(0.2, 0, 0, 1);
