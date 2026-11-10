@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Luna Interactive
  * Description: データ編集・絞り込み・動的／静的切り替えに対応する「グラフ」ブロック。
- * Version: 1.4.0
+ * Version: 1.5.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Luminous Core
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 // テーマ同梱版が先に読み込まれたリクエストで単独版を有効化する場合、
 // 同じ関数を二重定義しない。次のリクエストから単独版が先に読み込まれる。
 if ( ! function_exists( 'luna_interactive_register_block' ) ) {
-define( 'LUNA_INTERACTIVE_VERSION', '1.4.0' );
+define( 'LUNA_INTERACTIVE_VERSION', '1.5.0' );
 define( 'LUNA_INTERACTIVE_URL', defined( 'LUNA_INTERACTIVE_EMBEDDED' ) && LUNA_INTERACTIVE_EMBEDDED
  ? get_template_directory_uri() . '/plugins-embedded/luna-interactive/'
  : plugin_dir_url( __FILE__ ) );
