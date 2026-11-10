@@ -106,10 +106,11 @@ declare(strict_types=1);
 <!-- node-build-id: 20260613-180500 -->
     <?php wp_head(); ?>
 </head>
-<body <?php body_class(); ?>>
+<body <?php body_class(); ?><?php echo ( function_exists( 'node_is_native_app' ) && node_is_native_app() ) ? ' data-native-app="1"' : ''; ?>>
 <?php wp_body_open(); ?>
 
 <div class="m3-page-container">
+<?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
 
 <!-- 1. Header Section -->
 <header id="masthead" class="m3-header">
@@ -470,3 +471,4 @@ declare(strict_types=1);
         </div>
     </div>
 </dialog>
+<?php endif; ?>

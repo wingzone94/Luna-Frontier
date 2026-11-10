@@ -214,3 +214,31 @@ body.is-single-header-sticky .m3-page-container {
     }
 }
 /* ===== End Mobile Header Sticky Guard ===== */
+
+/* Flutter native=1: 固定ヘッダー分の空きだけを戻す。色トークンは変えない。 */
+html.is-native-app {
+    --node-header-content-offset: calc(var(--safe-area-top) + 12px);
+}
+
+html.is-native-app .m3-home-layout,
+html.is-native-app .m3-archive-layout,
+html.is-native-app .m3-date-archive,
+html.is-native-app .m3-all-articles-layout,
+html.is-native-app .m3-spotlight-archive-layout,
+html.is-native-app .site-main.m3-search-layout,
+html.is-native-app body.search.m3-search-suggestions-is-active .site-main.m3-archive-layout.m3-search-layout {
+    padding-top: calc(var(--safe-area-top) + 12px);
+}
+
+html.is-native-app .m3-header,
+html.is-native-app .m3-footer,
+html.is-native-app .m3-action-stack,
+html.is-native-app .m3-breadcrumbs,
+html.is-native-app #m3-reading-progress,
+html.is-native-app #m3-advanced-search-modal,
+html.is-native-app #ns-adblock-modal,
+html.is-native-app #m3-sticky-toc,
+html.is-native-app .m3-view-suggest,
+html.is-native-app .m3-share-section {
+    display: none;
+}

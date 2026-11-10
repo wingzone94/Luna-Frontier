@@ -153,6 +153,7 @@ get_header();
 
         </article>
 
+        <?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
         <?php get_template_part('template-parts/single/related'); ?>
 
         <?php if (comments_open() || get_comments_number()) : ?>
@@ -161,6 +162,7 @@ get_header();
                 comments_template();
             ?>
         </section>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php get_template_part('template-parts/single/toc'); ?>

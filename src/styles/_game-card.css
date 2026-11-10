@@ -519,10 +519,10 @@
     max-width: 320px;
     margin: auto;
     padding: 20px;
-    border: 1px solid var(--md-sys-color-outline-variant);
+    border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
     border-radius: 8px;
-    background: var(--md-sys-color-surface-container-high);
-    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface, #fff4e5));
+    color: var(--md-sys-color-on-surface, #2b1700);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
@@ -555,12 +555,12 @@
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--md-sys-color-on-surface, #2b1700);
     cursor: pointer;
 }
 
 .m3-platform-qr-close:hover {
-    background: var(--md-sys-color-surface-container-highest);
+    background: var(--md-sys-color-surface-container-highest, var(--md-sys-color-surface-container, #ffe8d1));
 }
 
 .m3-platform-qr-canvas {
@@ -568,11 +568,13 @@
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+    background: #ffffff;
+    color-scheme: light;
 }
 
 .m3-platform-qr-status {
     font-size: 0.8rem;
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--md-sys-color-on-surface, #2b1700);
 }
 
 .m3-platform-qr-link-row {
@@ -601,10 +603,10 @@
     flex-shrink: 0;
     min-height: 36px;
     padding: 0 10px;
-    border: 1px solid var(--md-sys-color-outline-variant);
+    border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
     border-radius: 18px;
-    background: var(--md-sys-color-surface-container-highest);
-    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface-container-highest, var(--md-sys-color-surface-container, #ffe8d1));
+    color: var(--md-sys-color-on-surface, #2b1700);
     font-size: 0.76rem;
     font-weight: 700;
     white-space: nowrap;
@@ -617,7 +619,7 @@
 
 .m3-platform-qr-copy-status {
     min-height: 1.2em;
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--md-sys-color-on-surface, #2b1700);
     font-size: 0.72rem;
 }
 

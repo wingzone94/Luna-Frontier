@@ -924,7 +924,7 @@
 .m3-textfield-wrapper, .m3-select-wrapper, .m3-date-input-wrapper { position: relative; width: 100%; }
 .m3-text-input, .m3-select, .m3-date-input {
     width: 100%; height: 60px; padding: 0 24px; border-radius: 30px; 
-    border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-highest); 
+    border: 1px solid var(--md-sys-color-outline-variant); background: var(--md-sys-color-surface-container-highest, #ffffff); 
     color: var(--md-sys-color-on-surface); font-size: 1.05rem; font-weight: 800; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     appearance: none;
 }
@@ -1041,7 +1041,7 @@
 
 .m3-modal__footer {
     padding: 16px 24px calc(24px + env(safe-area-inset-bottom));
-    background: rgba(var(--md-sys-color-surface-container-low-rgb, 255, 255, 255), 0.9);
+    background: color-mix(in srgb, var(--md-sys-color-surface-container-low, #ffffff) 90%, transparent);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--md-sys-color-outline-variant);
     display: flex;
@@ -1074,7 +1074,7 @@
 }
 .m3-radio-item input:checked + .m3-radio-label { 
     background: var(--md-sys-color-secondary-container); 
-    color: var(--md-sys-color-on-secondary-container); 
+    color: var(--md-sys-color-on-secondary-container, var(--md-sys-color-on-primary-container, #2b1700)); 
     border-color: var(--md-sys-color-secondary);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: scale(1.05);
@@ -1486,7 +1486,7 @@
     cursor: pointer;
     user-select: none;
     font-weight: 700;
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--md-sys-color-on-surface, #2b1700);
     transition: color 0.3s ease;
 }
 
@@ -1505,8 +1505,8 @@
 .m3-checkbox-custom {
     height: 24px;
     width: 24px;
-    background-color: var(--md-sys-color-surface-container-highest);
-    border: 2px solid var(--md-sys-color-outline);
+    background-color: var(--md-sys-color-surface-container-highest, var(--md-sys-color-surface-container-low, #ffffff));
+    border: 2px solid var(--md-sys-color-outline, var(--md-sys-color-outline-variant, #d6c2b1));
     border-radius: 6px;
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

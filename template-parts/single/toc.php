@@ -13,6 +13,7 @@ $node_article_toc_items = function_exists( 'node_get_article_toc_export_items' )
 <script type="application/json" id="m3-article-toc-data">
 <?php echo wp_json_encode( $node_article_toc_items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>
 </script>
+<?php if ( function_exists( 'node_is_native_app' ) && node_is_native_app() ) { return; } ?>
 <div id="m3-sticky-toc" class="m3-sticky-toc" aria-hidden="true">
     <div class="m3-sticky-toc__header">
         <span class="material-symbols-outlined m3-toc-icon" aria-hidden="true">toc</span>

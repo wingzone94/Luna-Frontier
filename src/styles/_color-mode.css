@@ -67,3 +67,112 @@
     opacity: 1;
     transform: translateY(0);
 }
+
+/* 表示モード不一致の提案。自動消滅の同期通知とは別に、操作と閉じるを持つ。 */
+.m3-view-suggest {
+    position: fixed;
+    z-index: 10040;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
+    border-radius: 20px;
+    background: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface, #fff4e5));
+    color: var(--md-sys-color-on-surface, #2b1700);
+    box-shadow: var(--m3-elevation-3, 0 8px 24px rgba(0, 0, 0, 0.2));
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+        opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+        transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-view-suggest.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.m3-view-suggest--header {
+    top: calc(var(--safe-area-top, 0px) + 76px);
+    right: 16px;
+    width: min(440px, calc(100vw - 32px));
+}
+
+.m3-view-suggest--mobile {
+    left: 12px;
+    right: 84px;
+    bottom: calc(12px + var(--safe-area-bottom, 0px));
+}
+
+.m3-view-suggest__text {
+    flex: 1 1 180px;
+    margin: 0;
+}
+
+.m3-view-suggest__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.m3-view-suggest__apply,
+.m3-view-suggest__dismiss {
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.m3-view-suggest__apply {
+    border: 0;
+    background: var(--md-sys-color-primary, #ff9900);
+    color: #ffffff;
+}
+
+.m3-view-suggest__dismiss {
+    border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
+    background: transparent;
+    color: var(--md-sys-color-on-surface, #2b1700);
+}
+
+.m3-view-suggest__apply:focus-visible,
+.m3-view-suggest__dismiss:focus-visible {
+    outline: 3px solid var(--md-sys-color-primary, #ff9900);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m3-view-suggest {
+        transition: none;
+        transform: none;
+    }
+}
+
+@media print {
+    .m3-view-suggest {
+        display: none;
+    }
+}
+
+/* CERO Z はプラグインのインライン CSS。未定義の on-surface-variant を使っているため、
+   詳細度の高いセレクタで既存トークンへ寄せる。警告アイコンの primary は維持する。 */
+#cero-z-dialog {
+    background: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface, #fff4e5));
+    color: var(--md-sys-color-on-surface, #2b1700);
+}
+
+#cero-z-dialog .m3-dialog__content {
+    color: var(--md-sys-color-on-surface, #2b1700);
+}
+
+#cero-z-dialog .m3-dialog__icon {
+    color: var(--md-sys-color-primary, #ff9900);
+}

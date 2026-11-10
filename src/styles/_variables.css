@@ -133,4 +133,17 @@
     --md-sys-color-outline: #9F8E7D;
     --md-sys-color-outline-variant: #524437;
 }
+
+/* ネイティブ <dialog> と AdBlock カードの入力欄・スクロールバー・Canvas を
+   サイトの data-theme に合わせる。html 全体には付けない（本文フォームや
+   スクロールバーの見た目を変えないため）。 */
+dialog,
+.ns-adblock-card {
+    color-scheme: light;
+}
+
+[data-theme="dark"] dialog,
+[data-theme="dark"] .ns-adblock-card {
+    color-scheme: dark;
+}
  

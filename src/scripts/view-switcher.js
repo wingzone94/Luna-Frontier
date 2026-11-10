@@ -1,5 +1,6 @@
 import { storage } from '../storage';
 import { isPhoneLikeDevice, isTabletLikeDevice } from './device-mode';
+import { initViewModeSuggest } from './view-mode-suggest';
 
 const VIEW_MODE_ICON = {
     pc: 'computer',
@@ -46,6 +47,7 @@ export function initViewSwitcher() {
     if (!btn) return;
 
     syncViewToggleUI(btn);
+    initViewModeSuggest();
 
     btn.addEventListener('click', () => {
         const current = getViewMode();

@@ -175,6 +175,10 @@ add_action( 'wp_head', 'node_seo_meta_description', 1 );
  * 3. パンくずリスト生成関数
  */
 function node_the_breadcrumbs() {
+    if ( function_exists( 'node_is_native_app' ) && node_is_native_app() ) {
+        return;
+    }
+
     if ( is_front_page() || is_home() ) {
         return;
     }
