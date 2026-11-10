@@ -35,7 +35,12 @@
     --md-sys-color-on-surface: #2b1700;
     --md-sys-color-surface-container-low: #ffffff;
     --md-sys-color-surface-container: #ffe8d1;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-variant: #E8D5C2;
     --md-sys-color-outline-variant: #d6c2b1;
+    --md-sys-color-tertiary: #F57C00;
+    --md-sys-color-tertiary-container: #ffe0b3;
+    --md-sys-color-on-tertiary-container: #2b1700;
 
     /* 見出しだけ Manrope、本文は Inter（2026-08-08 ユーザー決定）。
        Manrope は字幅が広く丸いのでタイトルのブランド感が出る一方、
@@ -105,6 +110,13 @@
     --node-card-grid-featured-gap: calc(var(--m3-spacing-xl) + var(--m3-spacing-s));
     --node-card-grid-section-gap: var(--m3-spacing-xxl);
  
+    /* --- Material 3 Elevation ---
+       1→4 で影を強くする。3 は既存フォールバック 0 8px 24px rgba(0,0,0,0.2) と同じ。 */
+    --m3-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --m3-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.16);
+    --m3-elevation-3: 0 8px 24px rgba(0, 0, 0, 0.2);
+    --m3-elevation-4: 0 16px 40px rgba(0, 0, 0, 0.24);
+
     /* --- Material 3 Motion --- */
     --m3-motion-duration: 500ms;
     --m3-motion-easing: cubic-bezier(0.2, 0, 0, 1);
@@ -130,8 +142,18 @@
     --md-sys-color-surface-container: #2A261F;
     --md-sys-color-surface-container-high: #322E26;
     --md-sys-color-surface-container-highest: #3D372E;
+    --md-sys-color-surface-container-lowest: #2A261F;
+    --md-sys-color-surface-variant: #4A4036;
     --md-sys-color-outline: #9F8E7D;
     --md-sys-color-outline-variant: #524437;
+    --md-sys-color-tertiary: #ff9f0a;
+    --md-sys-color-tertiary-container: #86550c;
+    --md-sys-color-on-tertiary-container: #ffdcbe;
+    /* 暗い面では同じ rgba の黒影が消えるため、段差は維持して不透明度だけ上げる。 */
+    --m3-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.45);
+    --m3-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --m3-elevation-3: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --m3-elevation-4: 0 16px 40px rgba(0, 0, 0, 0.6);
 }
 
 /* ネイティブ <dialog> と AdBlock カードの入力欄・スクロールバー・Canvas を

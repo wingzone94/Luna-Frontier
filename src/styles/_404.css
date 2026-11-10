@@ -305,7 +305,7 @@
     padding: 48px;
     border-radius: 48px;
     text-align: left;
-    box-shadow: var(--md-sys-shadow-l);
+    box-shadow: var(--m3-elevation-4);
     border: 1px solid var(--md-sys-color-outline-variant);
     max-width: 500px;
     width: 90%;
@@ -331,7 +331,7 @@
     font-size: 3rem;
     font-weight: 800;
     margin: 0 0 16px;
-    font-family: var(--m3-font-display);
+    font-family: var(--font-heading);
     line-height: 1.1;
 }
 
@@ -358,7 +358,7 @@
     font-size: 5rem;
     font-weight: 700;
     opacity: 0.1;
-    font-family: var(--m3-font-display);
+    font-family: var(--font-heading);
     transform: rotate(-5deg);
 }
 
@@ -372,7 +372,7 @@
     font-size: 1.1rem;
     font-weight: 700;
     min-width: 200px;
-    box-shadow: var(--md-sys-shadow-m);
+    box-shadow: var(--m3-elevation-2);
 }
 
 /* ==========================================================================
