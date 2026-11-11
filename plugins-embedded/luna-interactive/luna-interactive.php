@@ -20,9 +20,10 @@ define( 'LUNA_INTERACTIVE_URL', defined( 'LUNA_INTERACTIVE_EMBEDDED' ) && LUNA_I
 require_once __DIR__ . '/includes/static.php';
 function luna_interactive_attributes() {
  $result = array();
- foreach (array('title'=>'','caption'=>'','source'=>'','sourceUrl'=>'','chartType'=>'bar','mode'=>'dynamic','fileName'=>'','staticUrl'=>'') as $key=>$value) { $result[$key]=array('type'=>'string','default'=>$value); }
+ foreach (array('title'=>'','caption'=>'','source'=>'','sourceUrl'=>'','chartType'=>'bar','mode'=>'dynamic','fileName'=>'','staticUrl'=>'','xScale'=>'category') as $key=>$value) { $result[$key]=array('type'=>'string','default'=>$value); }
  $result['labels']=array('type'=>'array','default'=>array());
  $result['datasets']=array('type'=>'array','default'=>array());
+ foreach (array('xMin','xMax') as $key) { $result[$key]=array('type'=>'number'); }
  $result['allowedTypes']=array('type'=>'array','default'=>array('bar','line','pie'));
  $result['height']=array('type'=>'number','default'=>320);
  $result['staticId']=array('type'=>'number','default'=>0);
@@ -49,7 +50,13 @@ function luna_interactive_clean_spec($a) {
   foreach($labels as $j=>$_){$v=$values[$j]??null;$data[]=is_numeric($v)&&is_finite((float)$v)&&abs((float)$v)<=1e15?(float)$v:null;}
   $datasets[]=array('label'=>is_scalar($d['label']??null)?sanitize_text_field((string)$d['label']):'系列 '.($i+1),'data'=>$data);
  }
- return array('type'=>in_array($a['chartType']??'',array('bar','line','pie'),true)?$a['chartType']:'bar','labels'=>$labels,'datasets'=>$datasets);
+ $spec=array('type'=>in_array($a['chartType']??'',array('bar','line','pie'),true)?$a['chartType']:'bar','labels'=>$labels,'datasets'=>$datasets,
+  // 横軸の数値デフォルト: 属性がlinearの場合だけ数値軸として扱い、範囲は数値として通す。
+  // 非数値ラベルが混ざる場合はJS側の再検査(numericX)とSVG側の再検査(static.php)でcategoryに戻る。
+  'xScale'=>($a['xScale']??'')==='linear'?'linear':'category');
+ foreach(array('xMin','xMax') as $key){$v=$a[$key]??null;if(is_numeric($v)&&is_finite((float)$v)&&abs((float)$v)<=1e15)$spec[$key]=(float)$v;}
+ if(isset($spec['xMin'],$spec['xMax'])&&$spec['xMin']>=$spec['xMax'])unset($spec['xMin'],$spec['xMax']);
+ return $spec;
 }
 function luna_interactive_allowed_types($a) {
  $valid=array('bar','line','pie');

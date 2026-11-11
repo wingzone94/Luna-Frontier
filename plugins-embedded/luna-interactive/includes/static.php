@@ -52,14 +52,24 @@ function luna_interactive_static_svg($s,$title,$height=320){
  {
   $min=0;$max=0;foreach($s['datasets'] as $d)foreach($d['data'] as $v){if($v!==null){$min=min($min,$v);$max=max($max,$v);}}
   if($max===$min)$max=$min+1;$left=72;$right=784;$top=16;$bottom=$h-36;$width=$right-$left;
+  // 横軸の数値デフォルト: 属性がlinearで、かつラベルがすべて有限数値のときだけ
+  // 数値位置(xpos)で描画する。非数値が混ざる場合は従来どおり等間隔に戻す。
+  $numeric=($s['xScale']??'')==='linear';
+  if($numeric){foreach($s['labels'] as $label)if(!is_numeric($label)||!is_finite((float)$label))$numeric=false;}
+  $xmin=$numeric?($s['xMin']??min(array_map('floatval',$s['labels']))):0;
+  $xmax=$numeric?($s['xMax']??max(array_map('floatval',$s['labels']))):1;if($xmax<=$xmin){if(isset($s['xMax'])&&!isset($s['xMin']))$xmin=$xmax-1;else $xmax=$xmin+1;}
+  $xpos=static function($i)use($s,$numeric,$xmin,$xmax,$left,$width,$n){return $numeric?$left+((float)$s['labels'][$i]-$xmin)/($xmax-$xmin)*$width:$left+($i+.5)*$width/$n;};
   $y=static function($v)use($min,$max,$top,$bottom){return $bottom-($v-$min)/($max-$min)*($bottom-$top);};
   for($tick=0;$tick<=4;$tick++){$v=$min+($max-$min)*$tick/4;$yy=$y($v);$out.='<line x1="'.$left.'" x2="'.$right.'" y1="'.$yy.'" y2="'.$yy.'" stroke="currentColor" opacity=".16"/><text x="'.($left-8).'" y="'.($yy+4).'" text-anchor="end" fill="currentColor" font-size="12">'.esc_html(sprintf('%.4g',$v)).'</text>';}
   $step=$width/$n;$stride=max(1,(int)ceil($n/8));
-  foreach($s['labels'] as $i=>$label){$x=$left+($i+.5)*$step;if($i%$stride===0)$out.='<text x="'.$x.'" y="'.($h-14).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(luna_interactive_axis_label($label)).'</text>';}
-  foreach($s['datasets'] as $j=>$d){$color=$p[$j%8];$previous=null;foreach($d['data'] as $i=>$v){if($v===null){$previous=null;continue;}$x=$left+($i+.5)*$step;$yy=$y($v);
-    if($s['type']==='bar'){$bw=max(1,$step*.78/$k);$bx=$left+$i*$step+$step*.11+$j*$bw;$by=min($yy,$y(0));$bh=max(0.5,abs($yy-$y(0)));$out.='<rect x="'.$bx.'" y="'.$by.'" width="'.$bw.'" height="'.$bh.'" rx="3" fill="'.$color.'"/>';}
+  if($numeric){for($tick=0;$tick<=4;$tick++){$v=$xmin+($xmax-$xmin)*$tick/4;$x=$left+$width*$tick/4;$out.='<text x="'.$x.'" y="'.($bottom+22).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(sprintf('%.4g',$v)).'</text>';}}
+  else foreach($s['labels'] as $i=>$label){$x=$xpos($i);if($i%$stride===0)$out.='<text x="'.$x.'" y="'.($h-14).'" text-anchor="middle" fill="currentColor" font-size="12">'.esc_html(luna_interactive_axis_label($label)).'</text>';}
+  $clip=wp_unique_id('luna-plot-clip-');$out.='<defs><clipPath id="'.esc_attr($clip).'"><rect x="'.$left.'" y="'.$top.'" width="'.$width.'" height="'.($bottom-$top).'"/></clipPath></defs><g clip-path="url(#'.esc_attr($clip).')">';
+  if($numeric&&$n>1){$gap=INF;for($i=1;$i<$n;$i++)$gap=min($gap,abs($xpos($i)-$xpos($i-1)));$step=max(1,$gap);}
+  foreach($s['datasets'] as $j=>$d){$color=$p[$j%8];$previous=null;foreach($d['data'] as $i=>$v){if($v===null){$previous=null;continue;}$x=$xpos($i);$yy=$y($v);
+    if($s['type']==='bar'){$bw=max(1,$step*.78/$k);$bx=$x-$step*.39+$j*$bw;$by=min($yy,$y(0));$bh=max(0.5,abs($yy-$y(0)));$out.='<rect x="'.$bx.'" y="'.$by.'" width="'.$bw.'" height="'.$bh.'" rx="3" fill="'.$color.'"/>';}
     else{if($previous)$out.='<line x1="'.$previous[0].'" y1="'.$previous[1].'" x2="'.$x.'" y2="'.$yy.'" stroke="'.$color.'" stroke-width="2.5" stroke-linecap="round"/>';$out.='<circle cx="'.$x.'" cy="'.$yy.'" r="2.5" fill="'.$color.'"/>';$previous=array($x,$yy);}
-  }}
+  }}$out.='</g>';
  }
  return $out.'</svg>';
 }

@@ -101,7 +101,17 @@
         }
       }),
     }));
-    return { labels, datasets };
+    const numeric = labels.length > 1 && labels.every((label) =>
+      label.trim() !== "" && Number.isFinite(Number(label))) &&
+      labels.every((label, i) => i === 0 || Number(label) > Number(labels[i - 1]));
+    return {
+      labels, datasets,
+      // 横軸の数値デフォルト: 項目名がすべて昇順の数値のときは数値軸（linear）にし、
+      // 時間間隔を座標に反映する。空欄・非数値が混ざる場合は従来どおり等間隔（category）。
+      xScale: numeric ? "linear" : "category",
+      xMin: numeric ? Math.min(...labels.map(Number)) : undefined,
+      xMax: numeric ? Math.max(...labels.map(Number)) : undefined,
+    };
   }
   function isoDate(s) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -141,6 +151,7 @@
         return true;
       });
     return {
+      ...spec,
       type: spec.type,
       labels: indices.map((i) => spec.labels[i]),
       datasets: selected.map((j) => ({
@@ -274,7 +285,7 @@
             label: d.label,
             data: pie
               ? d.data.map((v) => (v == null || v < 0 ? null : v))
-              : d.data,
+              : numericX ? d.data.map((y, index) => ({ x: Number(spec.labels[index]), y })) : d.data,
             sourceData: d.data,
             backgroundColor: sliceColors,
             borderColor: pie ? (opt.plotColor || colors.pointStroke) : color,
@@ -314,7 +325,8 @@
         },
         interaction: {
           mode: "nearest",
-          intersect: true,
+          intersect: !numericX,
+          axis: numericX ? "x" : "xy",
         },
         layout: { padding: pie ? 2 : { top: 12, right: 12, bottom: 4, left: 4 } },
         plugins: {
@@ -339,8 +351,9 @@
             titleMarginBottom: 2,
             callbacks: {
               title(items) {
-                const label = items[0] ? items[0].label : "";
-                return String(label ?? "");
+                const item = items[0];
+                const label = item ? (numericX ? spec.labels[item.dataIndex] : item.label) : "";
+                return (spec.xTitle ? spec.xTitle + ": " : "") + String(label ?? "");
               },
               label(ctx) {
                 const name = ctx.dataset?.label || "";
@@ -368,6 +381,10 @@
           ? {}
           : {
               x: {
+                type: numericX ? "linear" : "category",
+                ...(numericX && finiteOrNull(spec.xMin) != null ? { min: Number(spec.xMin) } : {}),
+                ...(numericX && finiteOrNull(spec.xMax) != null ? { max: Number(spec.xMax) } : {}),
+                title: { display: !!spec.xTitle, text: spec.xTitle, color: colors.muted },
                 ticks: {
                   color: colors.muted,
                   maxRotation: 0,
@@ -375,6 +392,7 @@
                   autoSkipPadding: 10,
                   maxTicksLimit: (spec.labels || []).length > 14 ? 8 : 12,
                   callback(value) {
+                    if (numericX) return formatAxis(Number(value));
                     const label = this.getLabelForValue
                       ? this.getLabelForValue(value)
                       : value;

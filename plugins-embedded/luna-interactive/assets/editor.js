@@ -32,6 +32,9 @@
     staticUrl: { type: "string", default: "" },
     staticId: { type: "number", default: 0 },
     height: { type: "number", default: 320 },
+    xScale: { type: "string", default: "category" },
+    xMin: { type: "number" },
+    xMax: { type: "number" },
   };
   function Edit({ attributes: a, setAttributes, clientId }) {
     const types = [
@@ -71,7 +74,13 @@
         request.current++;
       };
     }, []);
-    const hasInvalid = Object.values(drafts).some((v) => {
+    // 横軸が数値軸のとき、最小値／最大値の指定が逆転していては保存できない。
+    const invalidAxes =
+      initialType !== "pie" &&
+      a.xScale === "linear" &&
+      a.xMin != null && a.xMax != null &&
+      a.xMin >= a.xMax;
+    const hasInvalid = invalidAxes || Object.values(drafts).some((v) => {
       try {
         G.number(v);
         return false;
@@ -97,7 +106,7 @@
             explicit === "dark" ||
             (explicit !== "light" &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
-          const spec = { type: initialType, labels: a.labels, datasets: a.datasets };
+          const spec = { ...a, type: initialType };
           const items = a.labels.map((_, i) => i).filter((i) => !hiddenItems.includes(i));
           const series = a.datasets.map((_, i) => i).filter((i) => !hiddenSeries.includes(i));
           const entries = initialType === "pie"
@@ -120,7 +129,7 @@
       return () => {
         charts.forEach((chart) => chart.destroy());
       };
-    }, [a.labels, a.datasets, initialType, a.height, a.mode, hiddenSeries, hiddenItems]);
+    }, [a.labels, a.datasets, a.xScale, a.xMin, a.xMax, initialType, a.height, a.mode, hiddenSeries, hiddenItems]);
     function toggleType(value, checked) {
       if (value === "pie" && checked && a.datasets.length > G.limits.pieSeries) {
         setError("円グラフを許可する場合、系列は5つ以下にしてください。");
@@ -343,6 +352,24 @@
           }),
           control("出典名", "source"),
           control("出典URL（https://…）", "sourceUrl"),
+        ),
+        h(PanelBody, { title: "軸の設定", initialOpen: true },
+          h("p", null, "ファイル読み込み時に範囲を自動設定します。空欄の範囲は自動です。円グラフには適用されません。"),
+          h(SelectControl, {
+            label: "横軸の種類", value: a.xScale,
+            options: [{ label: "項目（等間隔）", value: "category" }, { label: "数値（時間間隔を反映）", value: "linear" }],
+            onChange: (v) => set({ xScale: v }),
+          }),
+          ["xMin", "xMax"].map((key, index) => h(TextControl, {
+            key, label: ["横軸の最小値", "横軸の最大値"][index],
+            type: "number", step: "any", value: a[key] ?? "",
+            disabled: a.xScale !== "linear",
+            onChange: (v) => {
+              if (v === "") set({ [key]: undefined });
+              else if (Number.isFinite(Number(v))) set({ [key]: Number(v) });
+            },
+          })),
+          invalidAxes && h(Notice, { status: "error", isDismissible: false }, "軸の最小値は最大値より小さくしてください。"),
         ),
       ),
       h(
