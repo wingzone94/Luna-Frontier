@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Luna Products
  * Description: 商品画像・価格比較・複数ストア導線に対応する「商品カード」ブロック。
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Luminous Core
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'luna_products_register_block' ) ) {
 
-	define( 'LUNA_PRODUCTS_VERSION', '1.0.0' );
+	define( 'LUNA_PRODUCTS_VERSION', '1.1.0' );
 	define(
 		'LUNA_PRODUCTS_URL',
 		defined( 'LUNA_PRODUCTS_EMBEDDED' ) && LUNA_PRODUCTS_EMBEDDED
@@ -93,6 +93,14 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 			'before'
 		);
 
+		wp_register_script(
+			'luna-products-view',
+			$url . 'assets/view.js',
+			array(),
+			$v,
+			true
+		);
+
 		wp_register_style(
 			'luna-products-style',
 			$url . 'assets/style.css',
@@ -114,6 +122,7 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 				'editor_script'   => 'luna-products-editor',
 				'editor_style'    => 'luna-products-editor',
 				'style'           => 'luna-products-style',
+				'view_script'     => 'luna-products-view',
 				'attributes'      => luna_products_attributes(),
 				'render_callback' => 'luna_products_render_card',
 				'supports'        => array(
@@ -131,6 +140,8 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 	 * @return string 描画された HTML。
 	 */
 	function luna_products_render_card( array $attributes ): string {
+		static $coupon_seq = 0;
+
 		$title      = trim( wp_strip_all_tags( (string) ( $attributes['title'] ?? '' ) ) );
 		$spec       = trim( wp_strip_all_tags( (string) ( $attributes['spec'] ?? '' ) ) );
 		$asin       = trim( wp_strip_all_tags( (string) ( $attributes['asin'] ?? '' ) ) );
@@ -161,6 +172,7 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 		$rows        = $prepared['rows'];
 		$has_amazon  = $prepared['has_amazon'];
 		$has_rakuten = $prepared['has_rakuten'];
+		$has_price   = ! empty( $prepared['has_price'] );
 
 		if ( empty( $rows ) && '' === $title && '' === $image_url ) {
 			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -169,7 +181,7 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 			return '';
 		}
 
-		$wrapper_attributes = function_exists( 'get_block_wrapper_attributes' ) && ( function_exists( 'has_blocks' ) && isset( $GLOBALS['wp_current_filter'] ) )
+		$wrapper_attributes = function_exists( 'get_block_wrapper_attributes' )
 			? get_block_wrapper_attributes( array( 'class' => 'luna-product-card-container' ) )
 			: 'class="wp-block-luna-products-card luna-product-card-container"';
 
@@ -248,6 +260,51 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 										<?php if ( '' !== $row['sale_note'] ) : ?>
 											<p class="luna-product-store__sale-note"><?php echo esc_html( $row['sale_note'] ); ?></p>
 										<?php endif; ?>
+
+										<?php if ( ! empty( $row['coupon_code'] ) ) :
+											$panel_id = function_exists( 'wp_unique_id' )
+												? wp_unique_id( 'luna-product-coupon-' )
+												: 'luna-product-coupon-' . ( ++$coupon_seq );
+											$coupon_btn_text = '' !== $row['coupon_label']
+												? $row['coupon_label'] . 'クーポン'
+												: 'クーポン';
+											?>
+											<div class="luna-product-coupon" data-coupon>
+												<button
+													type="button"
+													class="luna-product-coupon__toggle"
+													data-coupon-toggle
+													aria-expanded="false"
+													aria-controls="<?php echo esc_attr( $panel_id ); ?>"
+												>
+													<svg class="luna-product-coupon__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2V6c0-1.1-.9-2-2-2zm0 4.54c-1.19.69-2 1.99-2 3.46s.81 2.77 2 3.46V18H4v-2.54c1.19-.69 2-1.99 2-3.46 0-1.48-.8-2.77-2-3.46V6h16v2.54zM9 8h2v8H9V8zm4 0h2v8h-2V8z"/></svg>
+													<span class="luna-product-coupon__label"><?php echo esc_html( $coupon_btn_text ); ?></span>
+												</button>
+												<div
+													id="<?php echo esc_attr( $panel_id ); ?>"
+													class="luna-product-coupon__panel"
+													data-coupon-panel
+													hidden
+												>
+													<div class="luna-product-coupon__controls">
+														<input
+															type="text"
+															class="luna-product-coupon__code"
+															data-coupon-code
+															value="<?php echo esc_attr( $row['coupon_code'] ); ?>"
+															readonly
+															aria-label="<?php echo esc_attr( __( 'クーポンコード', 'luna-products' ) ); ?>"
+														/>
+														<button
+															type="button"
+															class="luna-product-coupon__copy"
+															data-coupon-copy
+														><?php echo esc_html__( 'コピー', 'luna-products' ); ?></button>
+													</div>
+													<p class="luna-product-coupon__status" data-coupon-status aria-live="polite"></p>
+												</div>
+											</div>
+										<?php endif; ?>
 									</div>
 
 									<?php if ( '' !== $row['url'] ) : ?>
@@ -269,7 +326,9 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 						</div>
 					<?php endif; ?>
 
-					<p class="luna-product-card__note"><?php echo esc_html( $note_text ); ?></p>
+					<?php if ( $has_price ) : ?>
+						<p class="luna-product-card__note"><?php echo esc_html( $note_text ); ?></p>
+					<?php endif; ?>
 				</div>
 			</div>
 

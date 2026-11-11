@@ -73,3 +73,70 @@
      - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/mobile-360-dark.png`
 5. **既存機能への非干渉**:
    - 同一テスト投稿内で Luna Interactive のグラフブロック（`luna-interactive/chart` → `.luna-chart`）および Luminous Nexus の `[product_card]` ショートコード（`.m3-product-card`）が従来どおり正常表示されることを確認。
+
+---
+
+## 1.1.0（2026-11-12）
+
+### 確認手順
+
+1. **構文検査**
+   ```bash
+   php -l luna-products/luna-products.php
+   php -l luna-products/includes/stores.php
+   php -l luna-products/includes/settings.php
+   node --check luna-products/assets/editor.js
+   node --check luna-products/assets/view.js
+   ```
+2. **回帰テスト・CSS変数監査・レイアウト検証**
+   ```bash
+   node luna-products/tests/local-regression.cjs
+   ```
+
+### 静的検証結果
+
+- **PHP 構文検査（`php -l`）**:
+  - `luna-products/luna-products.php` — No syntax errors detected
+  - `luna-products/includes/stores.php` — No syntax errors detected
+  - `luna-products/includes/settings.php` — No syntax errors detected
+- **JavaScript 構文検査（`node --check`）**:
+  - `luna-products/assets/editor.js` — 構文エラーなし
+  - `luna-products/assets/view.js` — 構文エラーなし
+- **回帰テスト（`luna-products/tests/local-regression.cjs`）**:
+  - クーポンあり行でのみトグル（`.luna-product-coupon__toggle`）・パネル（`.luna-product-coupon__panel`）・コード入力欄（`.luna-product-coupon__code`）が出力され、クーポンなし行では一切出力されないことを確認。
+  - `couponCode` のサニタイズ（HTMLタグ除去・空白および改行除去・64文字切り詰め）と、`couponLabel` が空の場合の「クーポン」フォールバック表示を確認。
+  - **M1**: `$wrapper_attributes` が `function_exists( 'get_block_wrapper_attributes' )` の単純判定で動作することを確認。
+  - **M2**: 価格なし（`price === 0`）行のみのカードでは `.luna-product-card__note`（税込・時点注記）が出力されないことを確認。
+  - **M3**: 価格のみ・最終 URL なしの Amazon／楽天行では `has_amazon` / `has_rakuten` が立たず、ディスクロージャーが出力されないこと（価格行自体の描画は維持）を確認。
+  - **M4**: Steam プリセットの色が `#171A21`（`brand_var: ''`）であり、`.luna-product-btn--steam` の計算済み背景色が `rgb(23, 26, 33)` になることを確認。
+  - `assets/view.js` の静的検査：`navigator.clipboard.writeText` の第一手段、`document.execCommand("copy")` のフォールバック、`1600`ms の `setTimeout` 自動クローズ、`aria-expanded` の `true` / `false` 切替が含まれることを確認。
+  - CSS トークン実在監査（参照先：`luna-frontier-2.0-skyalow:src/styles/_variables.css`）：未定義変数参照 **0件**、`color-mix` 残存 **0件** を維持していることを確認。
+
+### ローカル実機テスト記録（LocalWP `http://cybernode.local`、2026-11-12）
+
+1. **有効化の確認**: **PASS**
+   - 1.1.0 に更新したプラグインを `/wp-content/plugins/luna-products/` に配置し、管理画面（`/wp-admin/options-general.php?page=luna-products`）および公開側ページが致命的エラーや PHP Warning なく HTTP 200 で開くことを確認。
+2. **後方互換**: **PASS**
+   - `couponCode` / `couponLabel` 属性を持たない 1.0.0 保存済みブロックがエラーなく従来どおり表示され、不要なクーポン UI が出ないことを確認。
+3. **クーポンの入力と描画**: **PASS**
+   - ①Amazon 行（`couponCode: "ANKER10"`, `couponLabel: "10%OFF"`）→ トグル「10%OFFクーポン」表示・初期パネル `hidden`・コード値 `ANKER10`。
+   - ②楽天行（`couponCode: ""`）→ クーポン UI なし。
+   - ③カスタム行（`couponCode: "EAR500"`, `couponLabel: ""`）→ トグル「クーポン」表示・初期パネル `hidden`・コード値 `EAR500`。
+4. **コピーの通し動作（実ブラウザクリック検証）**: **PASS**
+   - トグルクリックでパネル展開（`hidden` 解除、`aria-expanded="true"`、他行のパネルは閉じたまま独立動作）→「コピー」クリックでクリップボードへ `ANKER10` がコピーされたことを実照合 → ボタン表示が「コピーしました」・ステータスが「クーポンコードをコピーしました」に変化 → 約1.6秒後にパネルが自動で閉じ（`hidden` 復帰、`aria-expanded="false"`）、ボタン表示が「コピー」に戻り、フォーカスがトグルボタンへ返ることを確認。
+   - **コピー成立経路**: `http://cybernode.local` は非セキュアコンテキスト（HTTP）のため、設計どおり **フォールバック経路（readonly input の `select()` ＋ `document.execCommand('copy')`、`data-last-copy-method="execCommand"`）** にてコピーが成立したことを確認。
+   - **コピー失敗時の挙動確認**: コピー失敗をシミュレートした際、1.6秒経過後もパネルが閉じず、ステータスに「コピーできませんでした。コードを選択してコピーしてください」が表示され、コード欄の文字列（`EAR500`）が選択状態になることを確認。
+5. **M1〜M4 の実機確認**: **PASS**
+   - M2：価格なし行のみのカードで `.luna-product-card__note` が出力されないことを確認。
+   - M3：価格のみ・URLなしの Amazon 行のみのカードで価格（`2,500円`）と税込注記は出つつ、ディスクロージャーが出力されないことを確認。
+   - M4：`.luna-product-btn--steam` の計算済みスタイル `backgroundColor` が `rgb(23, 26, 33)`（`#171A21`）であることを実測確認。
+6. **表示確認（5条件スクリーンショット）**: **PASS**
+   - 1280px ライト／ダーク、360px ライト／ダーク、および **360px ライト（クーポンパネル展開状態）** の計5枚を撮影し、はみ出し・重なり・ボタンの潰れがないことを目視確認。
+   - 保存パス（リポジトリ外アーティファクトディレクトリ）：
+     - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/desktop-1280-light.png`
+     - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/desktop-1280-dark.png`
+     - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/mobile-360-light.png`
+     - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/mobile-360-dark.png`
+     - `/Users/saitoutatsuya/.gemini/antigravity/brain/128263d8-ea75-4168-8fa8-53c70204a6f2/screenshots/mobile-360-light-coupon-open.png`
+7. **既存機能への非干渉**: **PASS**
+   - 同一ページ内で Luna Interactive のグラフブロック（`.luna-chart`）と Luminous Nexus の `[product_card]` ショートコード（`.m3-product-card`）が従来どおり正常表示され、既存の価格整形・OFFバッジ・最安／公式チップ・Nexus フォールバック・ディスクロージャー制御がすべて正常に動作していることを確認。

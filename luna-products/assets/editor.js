@@ -26,7 +26,7 @@
     { id: "apple", label: "Apple Store", color: "#333333", tier: 2 },
     { id: "microsoft", label: "Microsoft Store", color: "#107C10", tier: 2 },
     { id: "playstation", label: "PlayStation Store", color: "#003087", tier: 2 },
-    { id: "steam", label: "Steam", color: "#00BCF2", tier: 2 },
+    { id: "steam", label: "Steam", color: "#171A21", tier: 2 },
     { id: "yodobashi", label: "ヨドバシカメラ", color: "#CC0000", tier: 3 },
     { id: "biccamera", label: "ビックカメラ", color: "#E60012", tier: 3 },
     { id: "joshin", label: "Joshin", color: "#004098", tier: 3 },
@@ -53,6 +53,8 @@
             listPrice: 0,
             saleNote: "",
             official: false,
+            couponCode: "",
+            couponLabel: "",
           },
           {
             preset: "rakuten",
@@ -63,6 +65,8 @@
             listPrice: 0,
             saleNote: "",
             official: false,
+            couponCode: "",
+            couponLabel: "",
           },
         ];
 
@@ -82,6 +86,8 @@
       listPrice: Number.isFinite(Number(r.listPrice)) ? Math.max(0, Math.trunc(Number(r.listPrice))) : 0,
       saleNote: typeof r.saleNote === "string" ? r.saleNote : "",
       official: Boolean(r.official),
+      couponCode: typeof r.couponCode === "string" ? r.couponCode : "",
+      couponLabel: typeof r.couponLabel === "string" ? r.couponLabel : "",
     };
   }
 
@@ -135,6 +141,8 @@
           listPrice: 0,
           saleNote: "",
           official: false,
+          couponCode: "",
+          couponLabel: "",
         }),
       ];
       setAttributes({ stores: next });
@@ -299,6 +307,18 @@
                 help: "例：11月7日まで",
                 value: store.saleNote,
                 onChange: (v) => updateStore(index, { saleNote: v }),
+              }),
+              h(TextControl, {
+                label: "クーポンコード（任意）",
+                help: "入力すると公開側のその行にクーポンアイコンが表示されます",
+                value: store.couponCode,
+                onChange: (v) => updateStore(index, { couponCode: v }),
+              }),
+              h(TextControl, {
+                label: "クーポンの説明（任意）",
+                help: "例：10%OFF／500円OFF。空欄なら「クーポン」と表示されます",
+                value: store.couponLabel,
+                onChange: (v) => updateStore(index, { couponLabel: v }),
               }),
               h(ToggleControl, {
                 label: "「公式」チップを表示",

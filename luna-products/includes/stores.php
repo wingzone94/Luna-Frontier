@@ -85,8 +85,8 @@ function luna_products_store_presets(): array {
 		'steam'       => array(
 			'id'        => 'steam',
 			'label'     => 'Steam',
-			'color'     => '#00BCF2',
-			'brand_var' => '--brand-windows',
+			'color'     => '#171A21',
+			'brand_var' => '',
 			'tier'      => 2,
 			'affiliate' => false,
 		),
@@ -151,24 +151,28 @@ function luna_products_store_presets(): array {
 function luna_products_default_stores(): array {
 	return array(
 		array(
-			'preset'    => 'amazon',
-			'label'     => '',
-			'color'     => '',
-			'url'       => '',
-			'price'     => 0,
-			'listPrice' => 0,
-			'saleNote'  => '',
-			'official'  => false,
+			'preset'      => 'amazon',
+			'label'       => '',
+			'color'       => '',
+			'url'         => '',
+			'price'       => 0,
+			'listPrice'   => 0,
+			'saleNote'    => '',
+			'official'    => false,
+			'couponCode'  => '',
+			'couponLabel' => '',
 		),
 		array(
-			'preset'    => 'rakuten',
-			'label'     => '',
-			'color'     => '',
-			'url'       => '',
-			'price'     => 0,
-			'listPrice' => 0,
-			'saleNote'  => '',
-			'official'  => false,
+			'preset'      => 'rakuten',
+			'label'       => '',
+			'color'       => '',
+			'url'         => '',
+			'price'       => 0,
+			'listPrice'   => 0,
+			'saleNote'    => '',
+			'official'    => false,
+			'couponCode'  => '',
+			'couponLabel' => '',
 		),
 	);
 }
@@ -203,6 +207,27 @@ function luna_products_sanitize_hex_color( string $color ): string {
 		return $color;
 	}
 	return '';
+}
+
+/**
+ * クーポンコード・クーポン説明文字列をサニタイズする。
+ *
+ * タグ除去・改行および前後空白の除去・最大64文字への切り詰めを行う。
+ *
+ * @param string $value 入力文字列。
+ * @return string サニタイズ済み文字列。
+ */
+function luna_products_sanitize_coupon_code( string $value ): string {
+	$clean = wp_strip_all_tags( $value );
+	$clean = (string) preg_replace( '/[\r\n\t]+/u', '', $clean );
+	$clean = trim( $clean );
+	if ( '' === $clean ) {
+		return '';
+	}
+	if ( function_exists( 'mb_substr' ) ) {
+		return mb_substr( $clean, 0, 64, 'UTF-8' );
+	}
+	return substr( $clean, 0, 64 );
 }
 
 /**
@@ -324,16 +349,26 @@ function luna_products_prepare_rows(
 			: '';
 		$official  = ! empty( $item['official'] );
 
+		$coupon_code = isset( $item['couponCode'] ) && is_string( $item['couponCode'] )
+			? luna_products_sanitize_coupon_code( $item['couponCode'] )
+			: '';
+		$coupon_label = isset( $item['couponLabel'] ) && is_string( $item['couponLabel'] )
+			? luna_products_sanitize_coupon_code( $item['couponLabel'] )
+			: '';
+
 		$off_percent = luna_products_calc_off_percent( $price, $list_price );
 
 		if ( $price > 0 && ( null === $min_price || $price < $min_price ) ) {
 			$min_price = $price;
 		}
 
-		if ( 'amazon' === $preset_id ) {
-			$has_amazon = true;
-		} elseif ( 'rakuten' === $preset_id ) {
-			$has_rakuten = true;
+		// 最終 URL が空でない行でのみネットワーク使用フラグを立てる（価格のみ・URLなし行ではディスクロージャーを出さない）
+		if ( '' !== $final_url ) {
+			if ( 'amazon' === $preset_id ) {
+				$has_amazon = true;
+			} elseif ( 'rakuten' === $preset_id ) {
+				$has_rakuten = true;
+			}
 		}
 
 		$rows[] = array(
@@ -346,6 +381,8 @@ function luna_products_prepare_rows(
 			'sale_note'    => $sale_note,
 			'official'     => $official,
 			'custom_color' => $custom_color,
+			'coupon_code'  => $coupon_code,
+			'coupon_label' => $coupon_label,
 			'is_cheapest'  => false,
 		);
 	}
@@ -364,5 +401,6 @@ function luna_products_prepare_rows(
 		'rows'        => $rows,
 		'has_amazon'  => $has_amazon,
 		'has_rakuten' => $has_rakuten,
+		'has_price'   => null !== $min_price,
 	);
 }

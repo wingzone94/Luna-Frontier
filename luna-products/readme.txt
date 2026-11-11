@@ -4,7 +4,7 @@ Tags: blocks, product-card, affiliate, ecommerce, material-design
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 4. ブロックエディターで「商品カード（Luna Products）」（`luna-products/card`）ブロックを挿入して編集します。
 
 == Changelog ==
+
+= 1.1.0 =
+* ストア行ごとのクーポンコード表示・ワンクリックコピー機能（トグル展開、Clipboard API＋`execCommand('copy')` フォールバック、1.6秒後自動クローズ、`assets/view.js`）を追加。
+* ブロックラッパー属性判定（`get_block_wrapper_attributes()`）の単純化（M1）。
+* 価格入力行が1つ以上ある場合のみ税込・時点注記を出力するよう改善（M2）。
+* 最終 URL が存在する行でのみネットワーク別ディスクロージャーを出力するよう改善（M3）。
+* Steam プリセットのボタン色を専用ダークネイビー（`#171A21`）へ変更（M4）。
 
 = 1.0.0 =
 * 初回リリース。C案ベースの商品カードブロック `luna-products/card`、Tier 1〜3 ストアプリセットレジストリ、アフィリエイト設定画面、最小回帰テストを実装。
