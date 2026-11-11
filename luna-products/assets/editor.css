@@ -1,0 +1,82 @@
+/* Luna Products — ブロックエディター用スタイル
+   テーマ側の実在 M3 トークン（_variables.css）のみを参照する。 */
+
+.luna-products-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m3-spacing-m);
+  padding: var(--m3-spacing-m);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--m3-radius-medium);
+}
+
+.luna-products-editor__canvas-controls {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--m3-spacing-m);
+  align-items: start;
+  padding: var(--m3-spacing-m);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--m3-radius-small);
+}
+
+.luna-products-editor__media-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--m3-spacing-xs);
+}
+
+.luna-products-editor__thumb {
+  width: 96px;
+  height: 96px;
+  background: #fff;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--m3-radius-small);
+  padding: var(--m3-spacing-xs);
+  object-fit: contain;
+  display: block;
+}
+
+.luna-products-editor__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--m3-spacing-s);
+  min-width: 0;
+}
+
+.luna-products-editor__preview .luna-product-card-container {
+  margin: 0;
+}
+
+.luna-products-editor__preview a.luna-product-btn {
+  pointer-events: none;
+}
+
+.luna-products-inspector-store {
+  padding: var(--m3-spacing-m);
+  margin-bottom: var(--m3-spacing-m);
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--m3-radius-small);
+  display: flex;
+  flex-direction: column;
+  gap: var(--m3-spacing-s);
+}
+
+.luna-products-inspector-store__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--m3-spacing-xs);
+  font-weight: 700;
+}
+
+.luna-products-inspector-store__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--m3-spacing-xs);
+}
