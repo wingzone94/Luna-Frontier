@@ -44,7 +44,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 
 		$style = $this->contents( $this->theme_zip(), self::THEME_ROOT . 'style.css' );
 		$this->assertSame( 1, preg_match( '/^Version:\s*(\S+)/m', $style, $version_match ) );
-		$this->assertSame( '2.0.2', $version_match[1] );
+		$this->assertSame( '2.0.3', $version_match[1] );
 		$build = json_decode( $this->contents( $this->theme_zip(), self::THEME_ROOT . 'build.json' ), true );
 		$this->assertIsArray( $build );
 		$this->assertSame( $version_match[1], (string) ( $build['version'] ?? '' ) );
@@ -66,11 +66,12 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 				continue;
 			}
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( $header, 0, 1200 ), $name );
-			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*1\.4\.0\s*$/m', substr( $header, 0, 1200 ), $name );
+			$expected_version = str_contains( $name, '/luna-interactive/' ) ? '1.5.0' : '1.4.0';
+			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( $header, 0, 1200 ), $name );
 			$found++;
 		}
 		$zip->close();
-		$this->assertSame( 13, $found, 'Lunaブランド・1.4.0の埋め込みプラグイン数' );
+		$this->assertSame( 13, $found, 'Lunaブランドの埋め込みプラグイン数（luna-interactive は 1.5.0、他は 1.4.0）' );
 	}
 
 	public function test_standalone_plugin_archives_keep_slug_and_luna_140_header(): void {
