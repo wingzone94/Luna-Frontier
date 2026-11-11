@@ -8,12 +8,22 @@ const { chromium } = require('playwright');
 const repoRoot = path.resolve(__dirname, '../..');
 const pluginDir = path.resolve(__dirname, '..');
 
+function getSkyalowVariablesCss() {
+  return execFileSync(
+    'git',
+    ['show', 'luna-frontier-2.0-skyalow:src/styles/_variables.css'],
+    { cwd: repoRoot, encoding: 'utf8' }
+  );
+}
+
 function runPhpRenderTests() {
   const phpScript = `
     define('ABSPATH', ${JSON.stringify(repoRoot + '/')});
     $GLOBALS['mock_options'] = array(
       'luna_products_amazon_id' => 'luminous-22',
       'luna_products_rakuten_id' => '',
+      'luminous_nexus_amazon_id' => 'nexus-fallback-22',
+      'luminous_nexus_rakuten_id' => '',
       'luna_products_disclosure_amazon' => 'Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。',
       'luna_products_disclosure_rakuten' => '当メディアは、楽天アフィリエイト・プログラムの参加者です。',
     );
@@ -146,9 +156,44 @@ function runPhpRenderTests() {
       ),
     ));
 
+    // Case 3: Luna Products の Amazon ID が空の場合、luminous_nexus_amazon_id にフォールバックすることを確認
+    $GLOBALS['mock_options']['luna_products_amazon_id'] = '';
+    $GLOBALS['mock_options']['luminous_nexus_amazon_id'] = 'nexus-fallback-22';
+    $case3 = luna_products_render_card(array(
+      'title'     => 'Nexus フォールバック検証',
+      'spec'      => '',
+      'imageId'   => 0,
+      'imageUrl'  => '',
+      'asin'      => 'B0FALLBACK1',
+      'checkedAt' => '',
+      'stores'    => array(
+        array(
+          'preset'    => 'amazon',
+          'label'     => '',
+          'color'     => '',
+          'url'       => '',
+          'price'     => 1980,
+          'listPrice' => 0,
+          'saleNote'  => '',
+          'official'  => false,
+        ),
+        array(
+          'preset'    => 'rakuten',
+          'label'     => '',
+          'color'     => '',
+          'url'       => 'https://item.rakuten.co.jp/shop/item-01/',
+          'price'     => 2180,
+          'listPrice' => 0,
+          'saleNote'  => '',
+          'official'  => false,
+        ),
+      ),
+    ));
+
     echo json_encode(array(
       'case1'   => $case1,
       'case2'   => $case2,
+      'case3'   => $case3,
       'presets' => array_values(luna_products_store_presets()),
     ), JSON_UNESCAPED_UNICODE);
   `;
@@ -157,19 +202,27 @@ function runPhpRenderTests() {
   return JSON.parse(raw);
 }
 
-function runCssVariableAudit() {
-  const varsCss = fs.readFileSync(
-    path.join(repoRoot, 'src/styles/_variables.css'),
-    'utf8'
-  );
+function runCssVariableAudit(varsCss) {
   const definedVars = new Set(
     [...varsCss.matchAll(/(--[a-zA-Z0-9_-]+)\s*:/g)].map((m) => m[1])
+  );
+  assert.ok(
+    definedVars.has('--md-sys-color-on-surface-variant'),
+    'skyalow ブランチの _variables.css に --md-sys-color-on-surface-variant が定義されている'
   );
 
   for (const rel of ['assets/style.css', 'assets/editor.css']) {
     const css = fs.readFileSync(path.join(pluginDir, rel), 'utf8');
+    assert.ok(
+      !css.includes('color-mix('),
+      `${rel} に color-mix の記述が残っていないこと`
+    );
     const usedVars = new Set(
       [...css.matchAll(/var\(\s*(--[a-zA-Z0-9_-]+)/g)].map((m) => m[1])
+    );
+    assert.ok(
+      usedVars.has('--md-sys-color-on-surface-variant'),
+      `${rel} が --md-sys-color-on-surface-variant を実トークン参照していること`
     );
     const missing = [...usedVars].filter((v) => !definedVars.has(v));
     assert.deepEqual(
@@ -182,11 +235,11 @@ function runCssVariableAudit() {
 
 (async () => {
   // 1. PHP 描画とプリセット検証
-  const { case1, case2, presets } = runPhpRenderTests();
+  const { case1, case2, case3, presets } = runPhpRenderTests();
 
   assert.equal(presets.length, 14, 'プリセットレジストリは全14種（Tier1:2 + Tier2:6 + Tier3:6）');
 
-  // Case 1: 価格整形・OFFバッジ・最安チップ・rel属性・ディスクロージャー・上限4行
+  // Case 1: 価格整形・OFFバッジ・最安チップ・rel属性・ディスクロージャー・上限4行・Luna Products ID 優先
   assert.ok(case1.includes('2,790円'), '価格が3桁カンマ＋円で整形される');
   assert.ok(case1.includes('定価3,990円'), '定価が3桁カンマ＋円で整形される');
   assert.ok(case1.includes('30% OFF'), 'OFF率が (1 - 2790/3990) の切り捨てで 30% OFF になる');
@@ -205,7 +258,7 @@ function runCssVariableAudit() {
   );
   assert.ok(
     case1.includes('https://www.amazon.co.jp/dp/B0EXAMPLE1?tag=luminous-22'),
-    'ASIN とトラッキング ID から Amazon URL が構築される'
+    'Luna Products 側に Amazon ID がある場合はそちらが優先される'
   );
   const relMatches = case1.match(/rel="sponsored noopener noreferrer"/g) || [];
   assert.equal(relMatches.length, 4, '全4行の外部リンクに rel="sponsored noopener noreferrer" が付く');
@@ -263,14 +316,21 @@ function runCssVariableAudit() {
     '使用された Amazon のディスクロージャーのみ出力される'
   );
 
-  // 2. CSS 変数監査（未定義変数ゼロの確認）
-  runCssVariableAudit();
+  // Case 3: Nexus 設定値へのフォールバックと楽天 ID 未設定時の素の URL 出力
+  assert.ok(
+    case3.includes('https://www.amazon.co.jp/dp/B0FALLBACK1?tag=nexus-fallback-22'),
+    'Luna Products の Amazon ID が空の場合、luminous_nexus_amazon_id へフォールバックする'
+  );
+  assert.ok(
+    case3.includes('href="https://item.rakuten.co.jp/shop/item-01/"'),
+    '楽天 ID が両方空の場合は素の URL がそのまま出力される'
+  );
+
+  // 2. CSS 変数監査（luna-frontier-2.0-skyalow ブランチの src/styles/_variables.css を正として未定義変数ゼロを確認）
+  const skyalowVarsCss = getSkyalowVariablesCss();
+  runCssVariableAudit(skyalowVarsCss);
 
   // 3. Chromium によるデスクトップ（1280px）・モバイル（360px）レイアウト検証
-  const varsCss = fs.readFileSync(
-    path.join(repoRoot, 'src/styles/_variables.css'),
-    'utf8'
-  );
   const pluginCss = fs.readFileSync(
     path.join(pluginDir, 'assets/style.css'),
     'utf8'
@@ -280,7 +340,7 @@ function runCssVariableAudit() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>${varsCss}\nbody { margin: 0; padding: 16px; background: var(--md-sys-color-surface); }\n${pluginCss}</style>
+<style>${skyalowVarsCss}\nbody { margin: 0; padding: 16px; background: var(--md-sys-color-surface); }\n${pluginCss}</style>
 </head>
 <body>
 <main style="max-width: 864px; margin: 0 auto;">${case1}</main>
@@ -295,16 +355,19 @@ function runCssVariableAudit() {
     const desktopLayout = await page.evaluate(() => {
       const media = document.querySelector('.luna-product-card__media').getBoundingClientRect();
       const body = document.querySelector('.luna-product-card__body').getBoundingClientRect();
+      const specColor = getComputedStyle(document.querySelector('.luna-product-card__spec')).color;
       return {
         mediaWidth: Math.round(media.width),
         mediaHeight: Math.round(media.height),
         sideBySide: body.left >= media.right,
         overflow: document.documentElement.scrollWidth > window.innerWidth,
+        specColor,
       };
     });
     assert.ok(desktopLayout.sideBySide, 'デスクトップ幅（1280px）で左に画像・右に本文が横並びになる');
     assert.equal(desktopLayout.mediaWidth, desktopLayout.mediaHeight, '商品画像パネルが 1:1 の正方形');
     assert.equal(desktopLayout.overflow, false, 'デスクトップ幅で横はみ出しなし');
+    assert.equal(desktopLayout.specColor, 'rgb(107, 90, 74)', 'skyalow の --md-sys-color-on-surface-variant (#6B5A4A) が適用される');
 
     await page.setViewportSize({ width: 360, height: 800 });
     const mobileLayout = await page.evaluate(() => {
@@ -335,7 +398,7 @@ function runCssVariableAudit() {
   }
 
   console.log(
-    'Luna Products: 価格整形・OFFバッジ・最安チップ・rel属性・ディスクロージャー・CSS変数監査・1280px/360pxレイアウト OK'
+    'Luna Products: 価格整形・OFFバッジ・最安チップ・rel属性・ディスクロージャー・Nexusフォールバック・skyalow CSS変数監査・1280px/360pxレイアウト OK'
   );
 })().catch((error) => {
   console.error(error);

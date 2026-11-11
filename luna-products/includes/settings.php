@@ -28,6 +28,36 @@ function luna_products_default_disclosure_rakuten(): string {
 }
 
 /**
+ * 有効な Amazon トラッキング ID を返す。
+ *
+ * 解決順: Luna Products の設定値 → 空なら luminous_nexus_amazon_id。
+ *
+ * @return string
+ */
+function luna_products_get_amazon_id(): string {
+	$id = trim( (string) get_option( 'luna_products_amazon_id', '' ) );
+	if ( '' === $id ) {
+		$id = trim( (string) get_option( 'luminous_nexus_amazon_id', '' ) );
+	}
+	return $id;
+}
+
+/**
+ * 有効な楽天アフィリエイト ID を返す。
+ *
+ * 解決順: Luna Products の設定値 → 空なら luminous_nexus_rakuten_id。
+ *
+ * @return string
+ */
+function luna_products_get_rakuten_id(): string {
+	$id = trim( (string) get_option( 'luna_products_rakuten_id', '' ) );
+	if ( '' === $id ) {
+		$id = trim( (string) get_option( 'luminous_nexus_rakuten_id', '' ) );
+	}
+	return $id;
+}
+
+/**
  * 設定項目を WordPress に登録する。
  *
  * @return void

@@ -81,8 +81,12 @@
   gap: var(--m3-spacing-xs);
 }
 
-.luna-product-card__title {
+.luna-product-card__title,
+.luna-product-card-container .luna-product-card .luna-product-card__title {
   margin: 0;
+  padding: 0;
+  border: 0;
+  width: auto;
   font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 800;
@@ -94,7 +98,7 @@
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 72%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* ストア行リスト */
@@ -114,8 +118,12 @@
 }
 
 .luna-product-store--cheapest {
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 36%, transparent);
+  background: var(--md-sys-color-surface);
   border-radius: var(--m3-radius-small);
+}
+
+[data-theme="dark"] .luna-product-store--cheapest {
+  background: var(--md-sys-color-surface-container-high);
 }
 
 .luna-product-store__info {
@@ -165,7 +173,7 @@
 
 .luna-product-store__list-price {
   font-size: 0.8125rem;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 64%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
   text-decoration: line-through;
   font-variant-numeric: tabular-nums;
 }
@@ -195,8 +203,8 @@
 }
 
 .luna-product-badge--off {
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
 }
 
 /* セール期限・条件文 */
@@ -205,7 +213,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.4;
-  color: var(--md-sys-color-error);
+  color: var(--md-sys-color-accent-text);
 }
 
 /* CTA ボタン */
@@ -331,13 +339,13 @@
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.5;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 64%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .luna-product-card__empty {
   margin: 0;
   font-size: 0.875rem;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 70%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* カード下ディスクロージャー */
@@ -354,7 +362,7 @@
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.4;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 64%, transparent);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* モバイル（640px 以下）：縦積み、左寄せ維持、ストア行は横並びで価格＋CTA を収める */

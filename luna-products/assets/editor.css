@@ -73,6 +73,11 @@
   justify-content: space-between;
   gap: var(--m3-spacing-xs);
   font-weight: 700;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.luna-products-editor .components-base-control__help {
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .luna-products-inspector-store__actions {

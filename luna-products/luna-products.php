@@ -148,8 +148,8 @@ if ( ! function_exists( 'luna_products_register_block' ) ) {
 			$image_url = trim( $attributes['imageUrl'] );
 		}
 
-		$amazon_id    = (string) get_option( 'luna_products_amazon_id', '' );
-		$rakuten_id   = (string) get_option( 'luna_products_rakuten_id', '' );
+		$amazon_id    = luna_products_get_amazon_id();
+		$rakuten_id   = luna_products_get_rakuten_id();
 		$disc_amazon  = trim( (string) get_option( 'luna_products_disclosure_amazon', luna_products_default_disclosure_amazon() ) );
 		$disc_rakuten = trim( (string) get_option( 'luna_products_disclosure_rakuten', luna_products_default_disclosure_rakuten() ) );
 
