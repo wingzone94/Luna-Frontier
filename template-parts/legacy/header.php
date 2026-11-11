@@ -116,10 +116,11 @@ declare(strict_types=1);
 <!-- node-build-id: 20260613-180500 -->
     <?php wp_head(); ?>
 </head>
-<body <?php body_class(); ?>>
+<body <?php body_class(); ?><?php echo ( function_exists( 'node_is_native_app' ) && node_is_native_app() ) ? ' data-native-app="1"' : ''; ?>>
 <?php wp_body_open(); ?>
 
 <div class="m3-page-container">
+<?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
 
 <!-- 1. Header Section -->
 <header id="masthead" class="m3-header">
@@ -294,8 +295,8 @@ declare(strict_types=1);
                 </button>
             </div>
 
-            <!-- View: 端末判定は JS で行い、PC 表示中もモバイルへ戻れるようにする。 -->
-            <button class="m3-icon-button m3-tooltip-target" id="m3-view-toggle" type="button" hidden aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
+            <!-- View: スマホ / タブレット / PC で常時表示 -->
+            <button class="m3-icon-button m3-tooltip-target m3-view-toggle--tablet" id="m3-view-toggle" type="button" aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
                 <span class="material-symbols-outlined" id="m3-view-toggle-icon" aria-hidden="true">smartphone</span>
             </button>
 
@@ -483,3 +484,4 @@ declare(strict_types=1);
         </div>
     </div>
 </dialog>
+<?php endif; ?>

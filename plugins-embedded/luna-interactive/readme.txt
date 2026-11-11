@@ -3,7 +3,7 @@ Contributors: luminouscore
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPL-2.0-or-later
 
 WordPressプラグイン「Luna interactive」。ブロック名は「グラフ」です。
@@ -58,6 +58,11 @@ Node 1.4.0には同梱されています。単独版が有効な場合は単独�
 Chart.js 4.4.3 (MIT、編集画面のプレビューと公開グラフ用) / SheetJS CE 0.20.3 (Apache-2.0)
 ライブラリを同梱し、通常の閲覧・編集で外部CDNへ接続しません。
 著作権・ライセンスは assets/vendor/ 内を参照してください。
+
+== 1.5.0 ==
+・縦軸の自動最大値にniceCeilingを導入し、目盛りの端数を解消。最大値を明示設定した場合は従来どおり不変。
+・CSVとTSVの貼り付けによるデータ取り込みを追加。
+・横軸の数値デフォルトに対応。1.4.0時点で実装済みのため挙動は不変。
 
 == 1.4.0 ==
 ・Node 1.4.0への同梱に対応。単独版が有効なサイトでは二重登録せず、同梱版はテーマ内のURLからアセットを読み込みます。

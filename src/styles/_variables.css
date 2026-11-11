@@ -17,6 +17,7 @@
     --md-sys-color-secondary: #FF9900;
     --md-sys-color-on-secondary: #2b1700;
     --md-sys-color-secondary-container: #fedcbe;
+    --md-sys-color-on-secondary-container: #2b1700;
     --m3-radius-small: 12px;
     --m3-radius-medium: 16px;
     --m3-radius-large: 28px;
@@ -36,12 +37,18 @@
     /* --- Material 3 Surface Colors (Light) --- */
     --md-sys-color-surface: #FFF4E5; /* Warm Orange Background */
     --md-sys-color-on-surface: #2b1700;
+    --md-sys-color-inverse-surface: #2f2923;
+    --md-sys-color-inverse-on-surface: #ffffff;
+    --md-sys-color-error: #ba1a1a;
+    --md-sys-color-on-error: #ffffff;
     /* R2: 副文・日付・抜粋を本文より弱く見せるトーン。
        白カード 6.59:1 / クリーム地 6.06:1 / container-high 5.06:1 でいずれも AA。
        未定義だった間は color 宣言が無効化され、親（本文色）を継承して階層が消えていた。 */
     --md-sys-color-on-surface-variant: #6B5A4A;
     --md-sys-color-surface-container-low: #ffffff;
     --md-sys-color-surface-container: #ffe8d1;
+    --md-sys-color-surface-container-lowest: #ffffff;
+    --md-sys-color-surface-variant: #E8D5C2;
     /* R2: surface 系の正本をこのファイルへ一本化した（旧: inc/utilities.php のインライン）。
        container-high と outline はインライン側にしか無く、CSS だけ見ると診断を誤る状態だった。 */
     --md-sys-color-surface-container-high: #f7ddc6;
@@ -49,6 +56,9 @@
     --md-sys-color-surface-container-highest: #efd2bb;
     --md-sys-color-outline: #857362;
     --md-sys-color-outline-variant: #d6c2b1;
+    --md-sys-color-tertiary: #F57C00;
+    --md-sys-color-tertiary-container: #ffe0b3;
+    --md-sys-color-on-tertiary-container: #2b1700;
 
     /* 見出しだけ Manrope、本文は Inter（2026-08-08 ユーザー決定）。
        Manrope は字幅が広く丸いのでタイトルのブランド感が出る一方、
@@ -117,6 +127,11 @@
     --node-card-grid-gap: var(--m3-spacing-xl);
     --node-card-grid-featured-gap: calc(var(--m3-spacing-xl) + var(--m3-spacing-s));
     --node-card-grid-section-gap: var(--m3-spacing-xxl);
+
+    /* 要素の style 属性で上書きする。未設定でも color-mix が無効にならない既定。 */
+    --ai-vibe-color: #FF9800;
+    --node-category-nav-color: var(--md-sys-color-primary);
+    --spotlight-color: var(--md-sys-color-primary);
  
     /* --- Material 3 Motion --- */
     --m3-motion-duration: 500ms;
@@ -142,12 +157,34 @@
        揃えてある（見た目を変えないための移設であり、色の変更ではない）。 */
     --md-sys-color-surface: #1e1b16; /* Deeper, richer dark brown */
     --md-sys-color-on-surface: #ebe0d9;
+    --md-sys-color-inverse-surface: #FFF4E5;
+    --md-sys-color-inverse-on-surface: #2b1700;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #2b1700;
     --md-sys-color-on-surface-variant: #D6C6B8;
     --md-sys-color-surface-container-low: #25221b;
     --md-sys-color-surface-container: #2a2720;
     --md-sys-color-surface-container-high: #322f28;
     --md-sys-color-surface-container-highest: #3D372E;
+    --md-sys-color-surface-container-lowest: #25221b;
+    --md-sys-color-surface-variant: #4A4036;
     --md-sys-color-outline: #9F8E7D;
     --md-sys-color-outline-variant: #524437;
+    --md-sys-color-tertiary: #ff9f0a;
+    --md-sys-color-tertiary-container: #86550c;
+    --md-sys-color-on-tertiary-container: #ffdcbe;
+}
+
+/* ネイティブ <dialog> と AdBlock カードの入力欄・スクロールバー・Canvas を
+   サイトの data-theme に合わせる。html 全体には付けない（本文フォームや
+   スクロールバーの見た目を変えないため）。 */
+dialog,
+.ns-adblock-card {
+    color-scheme: light;
+}
+
+[data-theme="dark"] dialog,
+[data-theme="dark"] .ns-adblock-card {
+    color-scheme: dark;
 }
  

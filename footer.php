@@ -15,8 +15,13 @@ declare( strict_types=1 );
  * @package LunaFrontier
  */
 
-node_the_ad_template( 'article' );
+$node_native_app = function_exists( 'node_is_native_app' ) && node_is_native_app();
+
+if ( ! $node_native_app ) {
+	node_the_ad_template( 'article' );
+}
 ?>
+<?php if ( ! $node_native_app ) : ?>
 	<footer class="m3-footer lf-footer">
 		<div class="m3-footer__main lf-footer__main">
 			<div class="lf-footer__grid">
@@ -71,9 +76,12 @@ node_the_ad_template( 'article' );
 			</div>
 		</div>
 	</footer>
+<?php endif; ?>
 </div><!-- .m3-page-container -->
 
+<?php if ( ! $node_native_app ) : ?>
 <?php get_template_part( 'template-parts/components/floating-actions' ); ?>
+<?php endif; ?>
 
 <div id="m3-ogp-tooltip" class="m3-dynamic-tooltip"></div>
 <?php wp_footer(); ?>

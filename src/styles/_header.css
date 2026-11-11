@@ -1211,10 +1211,13 @@
 .m3-char-input { text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; background: var(--md-sys-color-surface-container-low) !important; }
 .m3-platform-chip:hover span { background: var(--md-sys-color-surface-container-highest); transform: translateY(-2px); }
 
-.m3-button--filled.is-error-shake {
+/* エラー状態は通常・ダーク側の filled ボタン配色より優先する。 */
+.m3-button--filled.is-error-shake,
+:root .m3-button.m3-button--filled.is-error-shake {
     background-color: var(--md-sys-color-error, #ba1a1a) !important;
     color: var(--md-sys-color-on-error, #ffffff) !important;
-    box-shadow: 0 0 20px rgba(186, 26, 26, 0.4);
+    border-color: var(--md-sys-color-error, #ba1a1a) !important;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--md-sys-color-error, #ba1a1a) 40%, transparent);
 }
 
 /* --- Brand Colors (Expressive Filled) --- */
@@ -1490,7 +1493,9 @@
     display: none;
 }
 
-/* 表示モード切替: スマートフォン / タブレットでは PC 表示中も表示する。 */
+/* 表示モード切替: 全端末でヘッダーに常時表示（幅や UA では隠さない） */
+#m3-view-toggle,
+#m3-view-toggle.m3-view-toggle--tablet,
 #m3-view-toggle:not([hidden]) {
     display: inline-flex;
     align-items: center;

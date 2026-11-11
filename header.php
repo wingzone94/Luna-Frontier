@@ -12,4 +12,6 @@ declare( strict_types=1 );
 
 require get_stylesheet_directory() . '/template-parts/legacy/header.php';
 
-get_template_part( 'template-parts/luna/topic-nav' );
+if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) {
+	get_template_part( 'template-parts/luna/topic-nav' );
+}

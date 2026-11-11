@@ -1,4 +1,4 @@
-/* Luna Interactive 1.4.0 — shared data and chart logic, GPL-2.0-or-later.
+/* Luna Interactive 1.5.0 — shared data and chart logic, GPL-2.0-or-later.
    Series palette is intentionally separate from the Luna Frontier brand orange. */
 (function (root) {
   "use strict";

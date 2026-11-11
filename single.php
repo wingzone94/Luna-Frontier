@@ -50,12 +50,14 @@ get_header();
 
         </article>
 
+        <?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
         <?php get_template_part( 'template-parts/single/related' ); ?>
 
         <?php if ( comments_open() || get_comments_number() ) : ?>
             <section id="comments-section" class="m3-comments-section m3-reveal" aria-label="<?php esc_attr_e( 'コメント', 'node' ); ?>">
                 <?php comments_template(); ?>
             </section>
+        <?php endif; ?>
         <?php endif; ?>
 
         <?php get_template_part( 'template-parts/single/toc' ); ?>

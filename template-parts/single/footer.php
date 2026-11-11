@@ -24,7 +24,9 @@ declare(strict_types=1);
         </section>
     <?php endif; ?>
 
+    <?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
     <?php get_template_part('template-parts/social-share'); ?>
+    <?php endif; ?>
     
     <?php get_template_part('template-parts/card-writer'); ?>
     

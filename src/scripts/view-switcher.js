@@ -1,5 +1,6 @@
 import { storage } from '../storage';
 import { isPhoneLikeDevice, isTabletLikeDevice } from './device-mode';
+import { initViewModeSuggest } from './view-mode-suggest';
 
 const VIEW_MODE_ICON = {
     pc: 'computer',
@@ -29,16 +30,6 @@ function getViewMode() {
 function syncViewToggleUI(btn) {
     const mode = getViewMode();
     const icon = document.getElementById('m3-view-toggle-icon');
-    const isMobileToggle = isPhoneLikeDevice() || isTabletLikeDevice()
-        || window.matchMedia('(max-width: 767px)').matches
-        || document.documentElement.dataset.deviceClass === 'phone'
-        || document.documentElement.dataset.deviceClass === 'tablet'
-        || storage.get('view-mode') === 'mobile';
-
-    if (!isMobileToggle) {
-        btn.hidden = true;
-        return;
-    }
 
     document.documentElement.dataset.viewMode = mode;
     btn.hidden = false;
@@ -57,6 +48,7 @@ export function initViewSwitcher() {
     if (!btn) return;
 
     syncViewToggleUI(btn);
+    initViewModeSuggest();
 
     btn.addEventListener('click', () => {
         const current = getViewMode();
