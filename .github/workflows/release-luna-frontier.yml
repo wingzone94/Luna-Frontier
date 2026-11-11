@@ -1,0 +1,196 @@
+name: Release Luna Frontier
+
+# Luna Frontier（配布ブランチ luna-frontier-2.0-skyalow）の不変タグ
+# luna-frontier-v{version}-{build_id} に対する Release を作る。
+#
+# - push では動かない。ブランチ HEAD は ZIP の配信元にしない。
+# - Asset は luna.zip とその sha256 を持つ luna-release.json の2つ。
+#   sha256 を ZIP 内 build.json に書くと自己言及になり一致しないため、必ず luna-release.json のみが保持する。
+# - タグの再作成・移動はしない（既存タグがあれば失敗終了）。
+# - node.zip はここに上げない。Node 安定版は別チャンネル（HOW_TO_RELEASE.md 第2部）。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-luna-frontier
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip, mbstring, dom, libxml, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # luna-release-package-test が WP テストスイート（WP_UnitTestCase）を必要とするため、
+      # tests.yml と同じ手順で WordPress 本体と MySQL を用意する。
+      - name: Resolve WordPress core version
+        id: wp
+        run: |
+          series="$(php -r '
+            $lock = json_decode(file_get_contents("composer.lock"), true);
+            $packages = array_merge($lock["packages"] ?? [], $lock["packages-dev"] ?? []);
+            foreach ($packages as $p) {
+              if ("wp-phpunit/wp-phpunit" === $p["name"]) {
+                $parts = explode(".", ltrim($p["version"], "v"));
+                echo $parts[0] . "." . ($parts[1] ?? "0");
+                exit;
+              }
+            }
+          ')"
+          if [ -z "$series" ]; then
+            echo "wp-phpunit のバージョンを composer.lock から解決できませんでした"
+            exit 1
+          fi
+          echo "series=$series" >> "$GITHUB_OUTPUT"
+
+      - name: Download WordPress core
+        run: |
+          series="${{ steps.wp.outputs.series }}"
+          url="https://wordpress.org/wordpress-${series}.tar.gz"
+
+          if ! curl -fsSL -o /tmp/wp.tar.gz "$url"; then
+            echo "$url を取得できないため latest へフォールバックします"
+            curl -fsSL -o /tmp/wp.tar.gz "https://wordpress.org/latest.tar.gz"
+          fi
+
+          mkdir -p /tmp/wp-core
+          tar xzf /tmp/wp.tar.gz -C /tmp/wp-core --strip-components=1
+          test -f /tmp/wp-core/wp-settings.php
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "MySQL ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL が起動しませんでした"
+          exit 1
+
+      - name: PHP syntax check
+        run: |
+          set -e
+          for file in inc/ajax.php inc/theme-setup.php inc/admin-settings.php inc/luna/bootstrap.php src/Setup/ThemeSupport.php; do
+            php -l "$file"
+          done
+
+      - name: Build dist (bun) and install runtime deps
+        run: |
+          bun install --frozen-lockfile || bun install
+          bun run build
+
+      - name: Update build.json
+        run: |
+          printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\n' \
+            "$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)" \
+            "$(date -u +%FT%TZ)" \
+            "$(grep -m1 '^Version:' style.css | awk '{print $2}')" > build.json
+
+      - name: Create luna.zip
+        run: bash scripts/build-luna-zip.sh
+
+      - name: Verify release package (phpunit)
+        env:
+          NODE_TEST_DB_HOST: 127.0.0.1:3306
+          NODE_TEST_DB_NAME: wordpress_test
+          NODE_TEST_DB_USER: root
+          NODE_TEST_DB_PASSWORD: root
+          NODE_TEST_WP_CORE_DIR: /tmp/wp-core
+        run: vendor/bin/phpunit --filter Luna_Release_Package_Test
+
+      - name: Create luna-release.json
+        id: meta
+        run: |
+          version="$(grep -m1 '^Version:' style.css | awk '{print $2}')"
+          build_id="$(php -r 'echo json_decode(file_get_contents("build.json"), true)["build_id"];')"
+          sha256="$(shasum -a 256 luna.zip | awk '{print $1}')"
+          tag="luna-frontier-v${version}-${build_id}"
+
+          if ! echo "$sha256" | grep -Eq '^[a-f0-9]{64}$'; then
+            echo "sha256 is not a 64-hex digest: $sha256"
+            exit 1
+          fi
+
+          jq -n \
+            --arg tag "$tag" \
+            --arg version "$version" \
+            --arg build_id "$build_id" \
+            --arg sha256 "$sha256" \
+            '{tag: $tag, version: $version, build_id: $build_id, asset: "luna.zip", sha256: $sha256}' \
+            > luna-release.json
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if tag already exists
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "refs/tags/$TAG$"; then
+            echo "タグは不変です。既存タグの再利用・移動はしない: $TAG"
+            exit 1
+          fi
+
+      - name: Create annotated tag
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "release: Luna Frontier $TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          gh release create "$TAG" \
+            luna.zip luna-release.json \
+            --repo wingzone94/Luna-Frontier \
+            --title "Luna Frontier $TAG" \
+            --notes "Luna Frontier release asset. sha256 は luna-release.json を参照してください。"
