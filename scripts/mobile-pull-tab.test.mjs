@@ -98,3 +98,23 @@ test('src/scripts/floating-actions.js: pull tab state management logic', async (
         'Script must manage tabindex for accessibility when collapsed'
     );
 });
+
+test('src/scripts/floating-actions.js: viewport resize accessibility synchronization logic', async () => {
+    const jsContent = await readFile(
+        join(repoRoot, 'src/scripts/floating-actions.js'),
+        'utf-8'
+    );
+
+    assert.ok(
+        jsContent.includes("window.matchMedia('(min-width: 1001px)')"),
+        'Script must check min-width: 1001px matching CSS breakpoint'
+    );
+    assert.ok(
+        jsContent.includes('syncPullTabA11y'),
+        'Script must define a synchronization function'
+    );
+    assert.ok(
+        jsContent.includes('!isDesktop && isCollapsed'),
+        'Only hide accessibility attributes when NOT desktop and collapsed'
+    );
+});
