@@ -3,7 +3,7 @@ import './scripts/share-actions';
 import './scripts/blogcard-actions';
 import { initSearchBar } from './scripts/search-bar';
 import { initArticleNavigation } from './scripts/article-navigation';
-import { initHeroInfoBubble, initSectionArchiveLinks } from './scripts/home-layout';
+import { initHeroInfoBubble, initHomeDateTabs, initSectionArchiveLinks } from './scripts/home-layout';
 import { initHeadlineCarousel } from './scripts/headline-carousel';
 import { initExpressiveFloatingTOC } from './scripts/expressive-toc';
 import { initHeroTOC } from './scripts/hero-toc';
@@ -463,6 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         initRippleEffect,
         initReadingProgressSingleOnly,
         initSectionArchiveLinks,
+        initHomeDateTabs,
         initHeadlineCarousel,
         initArticleNavigation,
         initHeroInfoBubble,
