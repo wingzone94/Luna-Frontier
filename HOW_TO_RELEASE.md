@@ -1,6 +1,6 @@
 # Luna Frontier 2.0 リリース手順
 
-このドキュメントでは、WordPressテーマ **Luna Frontier 2.0**（独立テーマ）の配布用ZIP (`luna.zip`) を生成し、GitHubの配布ブランチ（`luna-frontier-2.0-skyalow`）へ安全にリリースするまでの手順を説明します。
+このドキュメントでは、WordPressテーマ **Luna Frontier**（独立テーマ）の配布用ZIP (`luna.zip`) を生成し、GitHub Release として公開するまでの手順を説明します。ZIP は配布ブランチへコミットしません。
 
 ---
 
@@ -31,14 +31,15 @@ Theme URI: https://luminous-core.net/
 Author: Luminous Core Teams
 Author URI: https://luminous-core.net/
 Description: Luna Frontier for Luminous Core. Independent theme descended from Node 1.x. Not a child theme.
-Version: 2.0.0
+Version: 2.0.3
 Text Domain: node
 */
 ```
 
 - `Theme Name` は **Luna Frontier** であること。
 - `Template:` ヘッダーが存在しないこと。
-- バージョン番号がリリース対象と一致していること。
+- バージョン番号が、切ろうとしているリリースの `style.css` と一致していること。上の `2.0.3` は 2026-11-11 時点の現行ヘッダーであり、次の版を切るときはその版の値に読み替える。
+- ブランチにコミットされている `build.json` の `version` / `build_id` は、公開済み Release の値とは別に残りうる。更新判定は Release の `luna-release.json` を見る。`build_id` を文書の都合で書き換えない。
 
 ## 2. アセットのビルド
 
@@ -49,8 +50,7 @@ bun run build
 ```
 
 ### 注意事項
-- `vite.config.js` の `clean-hashed-bundles` プラグインにより、古いハッシュ付きバンドルは自動削除されます。
-- `assets/.vite/manifest.json` と生成された JS/CSS のハッシュが一致していることを確認してください。
+- `vite.config.js` の出力先は `dist/`。PHP は `dist/.vite/manifest.json` を優先し、契約を満たさないときだけ `assets/.vite/manifest.json` へ戻る。
 - フォント（`NotoSansJP-VF.ttf`, `Inter-Regular.ttf` 等）はCDNから取得するため、テーマ内には同梱しません。
 
 ## 3. テストと動作検証
@@ -177,31 +177,25 @@ rm -rf "$tmpdir"
    vendor/bin/phpunit tests/luna-release-package-test.php
    ```
 
-## 6. Gitへのコミットと配布チャンネルへの反映
+## 6. 配布ブランチへの反映と GitHub Release
 
-1. 変更内容をステージングしてコミットします。
-   ```bash
-   git add -A
-   git commit -m "chore: package Luna Frontier <version>"
-   ```
-2. 専用作業ブランチから `luna-frontier-2.0-skyalow` 宛てにPRを作成・レビューしてマージします（または指示された手順で配布ブランチへ反映）。
-3. **注意**: `master` への直接 push は絶対に行わないでください。
+1. ソースの変更だけをコミットする。`luna.zip` は `.gitignore` 済みで、Git に戻さない。
+2. 作業ブランチから `luna-frontier-2.0-skyalow` へ PR を作り、Tests が成功してからマージする。
+3. `master` へ直接 push しない。`node.zip` も触らない。
+4. マージ後、配布ブランチ上で Actions の **Release Luna Frontier**（`workflow_dispatch`）を実行する。このワークフローが `dist` のビルド、`build.json` の刻印、`luna.zip`、PHPUnit のパッケージ検査、不変タグ、Release を行う。
+5. タグは `luna-frontier-v{version}-{build_id}`。既存タグは動かさない。Asset は `luna.zip` と `luna-release.json` の2つ。sha256 は `luna-release.json` だけが持つ。
+6. 承認なしにこのワークフローを実行しない。
 
 ## 7. 更新判定の整合性確認
 
-Luna Frontier 2.0 の管理画面は、以下のRaw URLを参照して更新を判定します：
-- バージョン確認: `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/style.css`
-- ビルド確認: `https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/build.json`
-- ZIP取得: `https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/luna-frontier-2.0-skyalow/luna.zip`
+Luna Settings の更新確認は、ブランチ HEAD の `style.css` / `build.json` / `luna.zip` を読まない。GitHub Releases の不変タグから `luna-release.json` と `luna.zip` を取り、sha256 と版を照合する（`inc/ajax.php`）。
 
-確認コマンド:
-```bash
-curl -L -s https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/style.css | head -n 12
-curl -L -s https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/build.json
-curl -L -s -o /tmp/luna-remote.zip https://github.com/wingzone94/Luna-Frontier/raw/refs/heads/luna-frontier-2.0-skyalow/luna.zip
-unzip -p /tmp/luna-remote.zip luna-frontier/style.css | head -n 12
-unzip -p /tmp/luna-remote.zip luna-frontier/build.json
-```
+2026-11-12 時点で公開済みの最新 Release は次のとおり。これは記録であり、新しい build_id の発行ではない。
+
+- タグ: `luna-frontier-v2.0.3-20261111T103054Z-0941737`
+- https://github.com/wingzone94/Luna-Frontier/releases/tag/luna-frontier-v2.0.3-20261111T103054Z-0941737
+
+ブランチ上の `build.json` は、その Release より前にコミットされた `version: 2.0.2` / `build_id: 20261104T230119Z-1368777` のまま残している。Release ワークフローはジョブ内で `style.css` の Version に合わせて刻み直すが、その結果はコミットしない。
 
 ---
 
