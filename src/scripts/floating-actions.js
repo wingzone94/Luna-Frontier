@@ -14,6 +14,7 @@ export function initFloatingActions() {
     const tocTrigger = document.getElementById('m3-toc-trigger');
     const tocPanel = document.getElementById('m3-sticky-toc');
     const readingBody = document.querySelector('.m3-article__body');
+    const pullTab = document.getElementById('m3-action-pull-tab');
 
     backToTop?.addEventListener('click', (event) => {
         event.preventDefault();
@@ -21,12 +22,47 @@ export function initFloatingActions() {
     });
 
     if (!isSingle) {
+        pullTab?.remove();
         tocTrigger?.remove();
         tocPanel?.classList.remove('is-active');
         tocPanel?.remove();
         document.querySelector('.m3-toc-scrim')?.remove();
         actionStack.classList.remove('is-has-toc');
         document.body.classList.remove('is-active-toc');
+    }
+
+    if (isSingle && pullTab) {
+        actionStack.classList.add('has-pull-tab');
+
+        let isCollapsed = false;
+
+        const setCollapsed = (collapsed) => {
+            isCollapsed = collapsed;
+            actionStack.classList.toggle('is-collapsed', isCollapsed);
+            pullTab.setAttribute('aria-expanded', String(!isCollapsed));
+            pullTab.setAttribute(
+                'aria-label',
+                isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
+            );
+
+            if (isCollapsed) {
+                backToTop?.setAttribute('tabindex', '-1');
+                tocTrigger?.setAttribute('tabindex', '-1');
+                backToTop?.setAttribute('aria-hidden', 'true');
+                tocTrigger?.setAttribute('aria-hidden', 'true');
+            } else {
+                backToTop?.removeAttribute('tabindex');
+                tocTrigger?.removeAttribute('tabindex');
+                backToTop?.removeAttribute('aria-hidden');
+                tocTrigger?.removeAttribute('aria-hidden');
+            }
+        };
+
+        pullTab.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setCollapsed(!isCollapsed);
+        });
     }
 
     const updateVisibility = () => {
