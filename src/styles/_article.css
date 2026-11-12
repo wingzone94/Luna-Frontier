@@ -1612,34 +1612,28 @@
     transform: translateY(-2px);
 }
 
-/* シングルヒーロー: プライマリ（先頭）は塗りのまま、その他はアウトラインピル。
- * 文字・枠はカテゴリカラーを黒/白と混色してコントラストを確保（薄色対策）。
- * _cards.css の !important（背景・白文字・border:none）をより高い詳細度で上書きする。 */
+/* シングルの非プライマリは Tonal Filled。枠は出さない。ホバーは淡色を少し強めるだけ。
+ * 角丸は従来のピルのまま。高さ・文字サイズ・余白はこの規則では変えない。
+ * 実際の勝敗は inc/luna/category-label.php の @layer reset（important）が持つ。 */
 .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary,
 .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:visited,
 .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:hover,
 .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:focus-visible {
-    background-color: var(--md-sys-color-surface-container-low, #ffffff) !important;
-    color: color-mix(in srgb, var(--category-color, #FF9900) 58%, black) !important;
-    border: 1.5px solid color-mix(in srgb, var(--category-color, #FF9900) 54%, black) !important;
+    background-color: color-mix(in srgb, var(--category-color, #FF9900) 16%, var(--md-sys-color-surface-container-low, #ffffff)) !important;
+    color: color-mix(in srgb, var(--category-color, #FF9900) 46%, var(--md-sys-color-on-surface, #1c1b1f)) !important;
+    border: none !important;
     border-radius: 999px;
     box-shadow: none;
 }
 
 .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:hover {
-    background-color: color-mix(in srgb, var(--category-color, #FF9900) 10%, var(--md-sys-color-surface-container-low, #ffffff)) !important;
+    background-color: color-mix(in srgb, var(--category-color, #FF9900) 28%, var(--md-sys-color-surface-container-low, #ffffff)) !important;
+    border: none !important;
 }
 
-[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary,
-[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:visited,
-[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:hover,
-[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:focus-visible {
-    color: color-mix(in srgb, var(--category-color, #FF9900) 62%, white) !important;
-    border-color: color-mix(in srgb, var(--category-color, #FF9900) 55%, white) !important;
-}
-
-[data-theme="dark"] .m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:hover {
-    background-color: color-mix(in srgb, var(--category-color, #FF9900) 16%, var(--md-sys-color-surface-container-low, #25221b)) !important;
+.m3-article__category-group:not(.is-card) .m3-label--category.is-secondary:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary, #FF9900);
+    outline-offset: 2px;
 }
 
 /* --- AI Disclosure Expressive (M3E) --- */

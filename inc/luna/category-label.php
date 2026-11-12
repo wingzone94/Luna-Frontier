@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v4';
+const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v5';
 
 /**
  * 「押せる場所」の面と文字。
@@ -138,10 +138,10 @@ function luna_frontier_primary_category_face(): string {
 }
 
 /**
- * カードのカテゴリチップを描画する（主カテゴリだけ塗り、以降は枠線）。
+ * カードのカテゴリチップを描画する（主カテゴリは塗り、以降は淡色）。
  *
  * 既存の node_the_category_labels() は、シングルでは
- *   「先頭（＝主カテゴリ）のみ塗り、以降は .is-secondary で枠線」
+ *   「先頭（＝主カテゴリ）のみ塗り、以降は .is-secondary の淡色」
  * という出し分けを既に持っているが、カード（$is_card）ではそれを無効にして
  * 全部を塗りにしている。その結果、色付きカテゴリを設定するとカード 1 枚に
  * 塗りチップが 2〜3 個並び、どれが主カテゴリか読めなくなった。
@@ -249,7 +249,7 @@ function luna_frontier_build_category_css(): string {
 	 * ai-disclosure）にもあり、面が同じ #FF9900 なので一緒に直す。
 	 */
 	/*
-	 * .is-secondary（記事ヘッダーの枠線タイプ）は除外する。
+	 * .is-secondary（非プライマリの淡色チップ）は除外する。
 	 * こちらは面が白で、既存 CSS が color-mix(--category-color 72%, black) で文字色を
 	 * 導出している。ここに白を強制すると白地に白文字（1.00:1）になって消える。
 	 * --category-color は下で深いオレンジに差し替えるので、既存の導出結果も
@@ -306,16 +306,16 @@ function luna_frontier_build_category_css(): string {
 		);
 	}
 
-	// Outlined category text follows the surface's ink in both color modes.
-	// Keep the category hue, while avoiding dark ink on dark card surfaces.
-	$outline_face = 'var(--category-color, ' . LUNA_FRONTIER_BRAND_FACE . ')';
-	$outline_ink  = 'color-mix(in srgb,' . $outline_face . ' 20%,var(--md-sys-color-on-surface))';
-	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary{background-color:var(--md-sys-color-surface-container-low)!important;border:1.5px solid ' . $outline_ink . '!important;color:' . $outline_ink . '!important}';
-	$rules[] = sprintf(
-		'@media (hover: hover) and (pointer: fine){body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:hover{background-color:%1$s!important;border-color:%1$s!important;color:var(--category-on-color,%2$s)!important}}',
-		$outline_face,
-		LUNA_FRONTIER_BRAND_ON
-	);
+	// 非プライマリは Tonal Filled。通常時は枠線なし。ホバーは淡色を少し強めるだけで、濃い塗りにはしない。
+	// 角丸・高さ・文字サイズ・余白は主カテゴリの既存ルールに任せ、ここでは色だけを変える。
+	// 色未設定でも --category-color がブランドオレンジへ落ちる（上の :not([data-color])）。
+	$tone          = 'var(--category-color, ' . LUNA_FRONTIER_BRAND_FACE . ')';
+	$tonal_bg      = 'color-mix(in srgb,' . $tone . ' 16%,var(--md-sys-color-surface-container-low))';
+	$tonal_bg_hover = 'color-mix(in srgb,' . $tone . ' 28%,var(--md-sys-color-surface-container-low))';
+	$tonal_ink     = 'color-mix(in srgb,' . $tone . ' 46%,var(--md-sys-color-on-surface))';
+	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary{background-color:' . $tonal_bg . '!important;border:none!important;box-shadow:none!important;color:' . $tonal_ink . '!important}';
+	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:focus-visible{outline:2px solid var(--md-sys-color-primary,' . LUNA_FRONTIER_BRAND_FACE . ')!important;outline-offset:2px}';
+	$rules[] = '@media (hover: hover) and (pointer: fine){body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:hover{background-color:' . $tonal_bg_hover . '!important;border:none!important;color:' . $tonal_ink . '!important}}';
 
 	/*
 	 * 4) 塗りボタンと FAB を「プライマリカテゴリラベルの色」へ同期させる。
