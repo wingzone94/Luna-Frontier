@@ -531,7 +531,13 @@ function node_render_settings_page() {
                                         $('#luminous-install-update').text('同じバージョンを再インストール').show();
                                     }
                                 } else {
-                                    var status = (!response.data.remote_build || !response.data.local_build) ? 'ビルド情報を取得できないため、最新かどうか確認できませんでした。時間をおいて再確認してください。' : response.data.remote_build_behind ? '配布情報が反映中です。現在のビルドは取得した配布情報より新しいため、更新は不要です。' : '最新バージョン・最新ビルドです (v' + local + ' / ' + (response.data.local_build || '不明') + ')。';
+                                    var status = !remote && !response.data.remote_build
+                                        ? '現在インストール可能な新しいリリースはありません (v' + local + (response.data.local_build ? ' / ' + response.data.local_build : '') + ')。'
+                                        : response.data.remote_build_behind
+                                            ? '現在のビルドは配布中のビルドより新しいため、更新は不要です。'
+                                            : (!response.data.remote_build || !response.data.local_build)
+                                                ? '配布ビルドと現在のビルドを比較できませんでした。'
+                                                : '最新バージョン・最新ビルドです (v' + local + ' / ' + response.data.local_build + ')。';
                                     $('#update-check-result').empty().append($('<p>').css('color', '#4CAF50').text(status));
                                     $('#luminous-install-update').hide();
                                 }
