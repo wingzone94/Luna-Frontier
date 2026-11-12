@@ -1,0 +1,47 @@
+/*
+ * コード／コマンド表示のフォントだけ。
+ * 色、余白、枠、背景、折り返し、コピー UI はここでは変えない。
+ *
+ * 英数字は JetBrains Mono、日本語は M PLUS 1 Code。
+ * 開発コマンドとマイクラのコマンド（長い1行、@p、~、^、{}、[]）を
+ * そのまま読めるようにする。
+ *
+ * JetBrains Mono の -> や == は合字（calt）なので切る。
+ * 切らないと矢印や二重等号に見えて、コマンドを誤読する。
+ */
+
+:root,
+body.lf-theme {
+    --font-code: "JetBrains Mono", "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+code,
+kbd,
+samp,
+pre,
+.wp-block-code,
+.wp-block-preformatted,
+.wp-block-verse {
+    font-family: "JetBrains Mono", "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0, "calt" 0;
+    -webkit-font-feature-settings: "liga" 0, "calt" 0;
+    font-kerning: none;
+    font-synthesis: none;
+    /* 本文の letter-spacing を受け継ぐと等幅の桁がずれる。 */
+    letter-spacing: 0;
+    line-height: 1.7;
+}
+
+/* インラインの code だけ本文より少し小さく。pre の中はブロックのサイズのまま。 */
+code {
+    font-size: 0.85em;
+}
+
+pre code,
+.wp-block-code code,
+.wp-block-preformatted code,
+.wp-block-verse code {
+    font-size: 1em;
+    line-height: inherit;
+}
