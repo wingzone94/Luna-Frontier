@@ -17,4 +17,8 @@ declare(strict_types=1);
         <span class="m3-fab-label-top">目次を表示</span>
     </button>
     <?php endif; ?>
+    <!-- Mobile-only pull tab, positioned above the TOC action -->
+    <button type="button" id="m3-mobile-actions-toggle" class="m3-mobile-actions-toggle" aria-expanded="true" aria-controls="m3-back-to-top m3-toc-trigger" aria-label="追従ボタンを折りたたむ" hidden>
+        <span class="material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+    </button>
 </div>

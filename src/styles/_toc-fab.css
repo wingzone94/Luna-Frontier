@@ -568,3 +568,43 @@ body.is-active-toc #m3-sticky-toc {
     border-top-color: #FF9900;
 }
 /* ===== End Sticky FAB Production Color Lock ===== */
+
+/* Mobile phones only: the floating action pull tab sits directly above TOC. */
+@media screen and (max-width: 600px) {
+    .m3-action-stack #m3-mobile-actions-toggle {
+        display: flex !important;
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 8px);
+        width: 48px;
+        height: 40px;
+        padding: 0;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px 20px 12px 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface);
+        box-shadow: var(--m3-elevation-1);
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 2;
+    }
+    .m3-action-stack #m3-mobile-actions-toggle .material-symbols-outlined {
+        font-size: 28px;
+        line-height: 1;
+    }
+    .m3-action-stack.is-mobile-collapsed > .m3-fab {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transform: scale(.8) !important;
+    }
+    .m3-action-stack #m3-mobile-actions-toggle:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary);
+        outline-offset: 3px;
+    }
+}
+@media screen and (min-width: 601px) {
+    #m3-mobile-actions-toggle { display: none !important; }
+}
