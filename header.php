@@ -38,7 +38,11 @@ declare(strict_types=1);
 
     <!-- High Performance Font Loading Pattern -->
     <!-- 本文フォント: 非同期ロード + swap (テキストのFOUTは許容) -->
+    <?php $node_code_font_url = node_get_code_font_stylesheet_url(); ?>
+    <?php $node_mplus_code_font_url = node_get_mplus_code_font_stylesheet_url(); ?>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+    <link rel="preload" as="style" href="<?php echo esc_url( $node_code_font_url ); ?>">
+    <link rel="preload" as="style" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>">
     <!-- アイコンフォント: display=block + レンダーブロッキングで、グリフ到着前にリガチャ文字が出ないようにする。
          使うアイコンだけを icon_names= で要求する（全アイコンだと 3,874KB）。一覧は inc/icon-font.php。 -->
     <?php $node_icon_font_url = node_get_icon_font_url(); ?>
@@ -48,9 +52,13 @@ declare(strict_types=1);
     <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>" media="print" onload="this.media='all'">
 
     <noscript>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+        <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>">
+        <link rel="stylesheet" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>">
         <style>
             body { opacity: 1 !important; visibility: visible !important; }
         </style>
