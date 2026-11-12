@@ -91,6 +91,44 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'wght@400;500;700', $header );
 	}
 
+	/**
+	 * コード用フォントは本文と分け、400 と 700 だけ、display=swap。
+	 * 日本語の字幅合わせ CSS もヘッダーから読む。
+	 */
+	public function test_code_font_is_jetbrains_400_700_swap_only() {
+		$url = node_get_code_font_stylesheet_url();
+
+		$this->assertSame(
+			'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap',
+			$url
+		);
+		$this->assertStringNotContainsString( 'Manrope', $url );
+		$this->assertStringNotContainsString( 'Noto+Sans', $url );
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/code-font.css' );
+		$this->assertStringContainsString( '"JetBrains Mono", "M PLUS 1 Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace', $css );
+		$this->assertStringContainsString( 'font-variant-ligatures: none;', $css );
+		$this->assertStringContainsString( '"calt" 0', $css );
+		$this->assertStringContainsString( 'font-size: 0.85em;', $css );
+		$this->assertStringContainsString( 'line-height: 1.7;', $css );
+		$this->assertStringNotContainsString( 'background', $css );
+		$this->assertStringNotContainsString( 'padding', $css );
+		$this->assertStringNotContainsString( 'color:', $css );
+
+		$mplus = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/mplus-1-code.css' );
+		$this->assertStringContainsString( "font-family: 'M PLUS 1 Code';", $mplus );
+		$this->assertStringContainsString( 'font-display: swap;', $mplus );
+		$this->assertStringContainsString( 'size-adjust: 120%;', $mplus );
+		$this->assertStringContainsString( 'font-weight: 400;', $mplus );
+		$this->assertStringContainsString( 'font-weight: 700;', $mplus );
+		$this->assertStringNotContainsString( 'font-weight: 500;', $mplus );
+		$this->assertStringNotContainsString( 'font-weight: 800;', $mplus );
+
+		$header = (string) file_get_contents( dirname( __DIR__ ) . '/template-parts/legacy/header.php' );
+		$this->assertStringContainsString( 'node_get_code_font_stylesheet_url()', $header );
+		$this->assertStringContainsString( 'node_get_mplus_code_font_stylesheet_url()', $header );
+	}
+
 	public function test_filter_can_add_icons() {
 		add_filter(
 			'node_icon_font_names',

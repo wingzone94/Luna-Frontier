@@ -226,3 +226,67 @@ if ( ! function_exists( 'node_get_text_font_stylesheet_url' ) ) {
 		return 'https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Inter:wght@400..700&family=Noto+Sans+JP:wght@400..700&display=swap';
 	}
 }
+
+if ( ! function_exists( 'node_get_code_font_stylesheet_url' ) ) {
+	/**
+	 * コード／コマンド用の英数字フォント（JetBrains Mono）だけ。
+	 *
+	 * 本文フォントの URL には足さない。ウェイトは 400 と 700 のみ。
+	 * `display=swap` で、フォント待ちでコマンドが空白にならないようにする。
+	 * 日本語は別ファイル（M PLUS 1 Code。字幅を JetBrains Mono に合わせてある）。
+	 *
+	 * @return string
+	 */
+	function node_get_code_font_stylesheet_url(): string {
+		return 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap';
+	}
+}
+
+if ( ! function_exists( 'node_get_mplus_code_font_stylesheet_url' ) ) {
+	/**
+	 * コード内の日本語（M PLUS 1 Code）のスタイルシート。
+	 *
+	 * Google Fonts の 400 / 700・display=swap を、半角が JetBrains Mono と
+	 * 同じ 600 単位になるよう size-adjust したもの。ファイルは assets/css。
+	 *
+	 * @return string
+	 */
+	function node_get_mplus_code_font_stylesheet_url(): string {
+		$relative = '/assets/css/mplus-1-code.css';
+		$url      = get_template_directory_uri() . $relative;
+		$path     = get_template_directory() . $relative;
+
+		if ( is_readable( $path ) ) {
+			$url .= '?ver=' . (string) filemtime( $path );
+		}
+
+		return $url;
+	}
+}
+
+if ( ! function_exists( 'node_enqueue_code_font_stylesheet' ) ) {
+	/**
+	 * code / pre / kbd / samp へフォント指定だけを載せる。
+	 * テーマ本体の CSS より後。色や余白は触らない。
+	 */
+	function node_enqueue_code_font_stylesheet(): void {
+		if ( is_admin() ) {
+			return;
+		}
+
+		$relative = 'assets/css/code-font.css';
+		$path     = get_template_directory() . '/' . $relative;
+
+		wp_enqueue_style(
+			'node-code-font',
+			get_template_directory_uri() . '/' . $relative,
+			array(),
+			is_readable( $path ) ? (string) filemtime( $path ) : null
+		);
+	}
+}
+
+if ( function_exists( 'add_action' ) ) {
+	add_action( 'wp_enqueue_scripts', 'node_enqueue_code_font_stylesheet', 30 );
+}
+

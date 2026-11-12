@@ -39,7 +39,11 @@ declare(strict_types=1);
     <!-- 本文フォント: 可変軸の CSS を非同期で読む。静的ウェイトの重複列挙はしない。
          フォントファイルと display=swap は維持する。URL は inc/icon-font.php。 -->
     <?php $node_text_font_url = node_get_text_font_stylesheet_url(); ?>
+    <?php $node_code_font_url = node_get_code_font_stylesheet_url(); ?>
+    <?php $node_mplus_code_font_url = node_get_mplus_code_font_stylesheet_url(); ?>
     <link rel="preload" as="style" href="<?php echo esc_url( $node_text_font_url ); ?>">
+    <link rel="preload" as="style" href="<?php echo esc_url( $node_code_font_url ); ?>">
+    <link rel="preload" as="style" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>">
     <!-- アイコンフォント: display=block + レンダーブロッキングで、グリフ到着前にリガチャ文字が出ないようにする。
          使うアイコンだけを icon_names= で要求する（全アイコンだと 3,874KB）。一覧は inc/icon-font.php。 -->
     <?php $node_icon_font_url = node_get_icon_font_url(); ?>
@@ -50,9 +54,13 @@ declare(strict_types=1);
     <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
 
     <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>" media="print" onload="this.media='all'">
 
     <noscript>
         <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>">
+        <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>">
+        <link rel="stylesheet" href="<?php echo esc_url( $node_mplus_code_font_url ); ?>">
         <style>
             body { opacity: 1 !important; visibility: visible !important; }
         </style>
