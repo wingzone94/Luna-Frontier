@@ -227,6 +227,13 @@ if ( ! function_exists( 'node_get_text_font_stylesheet_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'node_code_font_is_enabled' ) ) {
+    /** 既存記事に影響しないよう、コード専用フォントは初期値オン。 */
+    function node_code_font_is_enabled(): bool {
+        return '0' !== (string) get_option( 'node_code_font_enabled', '1' );
+    }
+}
+
 if ( ! function_exists( 'node_get_code_font_stylesheet_url' ) ) {
 	/**
 	 * コード／コマンド用の英数字フォント（JetBrains Mono）だけ。
@@ -270,7 +277,7 @@ if ( ! function_exists( 'node_enqueue_code_font_stylesheet' ) ) {
 	 * テーマ本体の CSS より後。色や余白は触らない。
 	 */
 	function node_enqueue_code_font_stylesheet(): void {
-		if ( is_admin() ) {
+		if ( is_admin() || ! node_code_font_is_enabled() ) {
 			return;
 		}
 
