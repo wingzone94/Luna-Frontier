@@ -570,17 +570,17 @@ body.is-active-toc #m3-sticky-toc {
     display: none;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 600px) {
     /* JSが有効で .has-pull-tab が付与された場合のみ表示（プログレッシブエンハンスメント） */
     .m3-action-stack.has-pull-tab .m3-action-pull-tab {
         display: flex;
         align-items: center;
         justify-content: center;
         position: absolute;
-        bottom: calc(var(--node-action-size, 48px) * 2 + 12px + 6px);
+        bottom: calc(100% + 8px);
         right: 0;
-        width: 36px;
-        height: 28px;
+        width: 44px;
+        height: 40px;
         padding: 0;
         border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
         border-radius: var(--m3-radius-small, 10px);
@@ -624,7 +624,7 @@ body.is-active-toc #m3-sticky-toc {
         transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    /* 折りたたみ状態：アイコンを内側（展開方向）へ反転 */
+    /* 展開時は上向き、収納時は下向きの矢印 */
     .m3-action-stack.is-collapsed .m3-action-pull-tab__icon {
         transform: rotate(180deg);
     }
@@ -638,12 +638,12 @@ body.is-active-toc #m3-sticky-toc {
                     box-shadow 0.2s ease;
     }
 
-    /* 折りたたみ状態：ボタン群をまとめて収納（右へスライド＋フェードアウト） */
+    /* 折りたたみ状態：ボタン群をまとめて収納（フェードアウト） */
     .m3-action-stack.has-pull-tab.is-collapsed .m3-fab {
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
-        transform: translateX(calc(100% + 24px)) scale(0.85) !important;
+        transform: scale(0.85) !important;
     }
 
     /* 目次パネル展開中はプルタブも非表示にして邪魔しない */
