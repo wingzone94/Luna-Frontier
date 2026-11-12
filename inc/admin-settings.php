@@ -103,6 +103,15 @@ function node_register_settings() {
     // --- X (Twitter) 連携設定 ---
     // node-connect プラグイン（設定 → 外部連携）へ移設。オプション名は node_x_* のまま互換維持。
 
+    // --- コード表示用フォント ---
+    register_setting( 'node_settings_group', 'node_code_font_enabled', array(
+        'type' => 'string',
+        'default' => '1',
+        'sanitize_callback' => static function ( $value ) {
+            return '0' === (string) $value ? '0' : '1';
+        },
+    ) );
+
     // --- OGP設定 ---
     register_setting( 'node_settings_group', 'node_ogp_enabled', array(
         'sanitize_callback' => 'node_sanitize_checkbox_flag',
@@ -232,6 +241,27 @@ function node_render_settings_page() {
                 <p class="description" style="margin-top:0;">
                     ライター（投稿権限のあるユーザー）は <strong>ユーザー → プロフィール</strong> から、各自の API キーを設定してください。
                 </p>
+            </div>
+
+            <!-- コード／コマンド表示設定 -->
+            <div class="m3-admin-card" style="background: #fff; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <h2 style="margin-top: 0; color: #FF9900; display: flex; align-items: center; gap: 10px;">
+                    <span class="dashicons dashicons-editor-code"></span> コード・コマンド表示
+                </h2>
+                <p class="description">コードブロックやインラインコードの文字だけを変更します。本文フォント、色、背景、余白、コピーボタンは変更しません。</p>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">コード表示用フォント</th>
+                        <td>
+                            <input type="hidden" name="node_code_font_enabled" value="0" />
+                            <label>
+                                <input type="checkbox" name="node_code_font_enabled" value="1" <?php checked( node_code_font_is_enabled() ); ?> />
+                                JetBrains Mono（英数字）＋ M PLUS 1 Code（日本語）を使用する
+                            </label>
+                            <p class="description">既定は有効です。無効にするとシステム等幅フォントへ戻し、専用フォントの読み込みを停止します。</p>
+                        </td>
+                    </tr>
+                </table>
             </div>
 
             <!-- ライブラリ設定 -->
