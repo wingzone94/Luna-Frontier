@@ -247,3 +247,40 @@ body.lf-theme .m3-article__body pre {
 	overflow-x: auto;
 	max-inline-size: 100%;
 }
+
+.lf-table-guide:not([hidden]) {
+	display: flex;
+	align-items: center;
+	gap: .45em;
+	width: fit-content;
+	max-width: 100%;
+	margin: .5rem 0;
+	padding: .3em .8em;
+	border-radius: 100vmax;
+	background: var(--md-sys-color-surface-container-high);
+	color: var(--md-sys-color-on-surface);
+	font-size: .8125rem;
+	line-height: 1.5;
+	transition: opacity 160ms ease-out;
+}
+
+.lf-table-guide::before {
+	content: "";
+	flex: 0 0 1.25em;
+	height: 1.25em;
+	background: var(--md-sys-color-primary);
+	mask: url("../swipe.svg") center / contain no-repeat;
+}
+
+.lf-table-guide.is-dismissed {
+	opacity: 0;
+	pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+	.lf-table-guide:not([hidden]) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lf-table-guide:not([hidden]) { transition: none; }
+}

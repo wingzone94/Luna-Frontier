@@ -10,6 +10,8 @@
  * しない。JS が失敗してもスタイルは適用される状態を保つため。
  */
 
+import { setupTableGuides } from './table-guides';
+
 /**
  * 脚注を Reading Aside（右カラム）へ移す。
  *
@@ -635,6 +637,7 @@ function init() {
   setupHomePopularPeriod();
   setupCalendarMonth();
   setupFootnoteRelocation();
+  setupTableGuides();
   setupTitleAutoFit();
   setupHeadingTocAccess();
   setupAsideTocProgress();
