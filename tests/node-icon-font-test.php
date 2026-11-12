@@ -119,6 +119,16 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 	 * コード用フォントは本文と分け、400 と 700 だけ、display=swap。
 	 * 日本語の字幅合わせ CSS もヘッダーから読む。
 	 */
+	public function test_code_font_setting_defaults_on_and_can_be_disabled() {
+        delete_option( 'node_code_font_enabled' );
+        $this->assertTrue( node_code_font_is_enabled() );
+        update_option( 'node_code_font_enabled', '0' );
+        $this->assertFalse( node_code_font_is_enabled() );
+        update_option( 'node_code_font_enabled', '1' );
+        $this->assertTrue( node_code_font_is_enabled() );
+        delete_option( 'node_code_font_enabled' );
+    }
+
 	public function test_code_font_is_jetbrains_400_700_swap_only() {
 		$url = node_get_code_font_stylesheet_url();
 
