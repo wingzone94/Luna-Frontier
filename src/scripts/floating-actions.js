@@ -13,6 +13,24 @@ export function initFloatingActions() {
     const backToTop = document.getElementById('m3-back-to-top');
     const tocTrigger = document.getElementById('m3-toc-trigger');
     const tocPanel = document.getElementById('m3-sticky-toc');
+    const mobileToggle = document.getElementById('m3-mobile-actions-toggle');
+
+    // The mobile pull tab folds the whole floating action area, not the TOC panel.
+    // Keep its icon and accessible state synchronized with the actual stack state.
+    if (mobileToggle) {
+        const syncMobileToggle = () => {
+            const collapsed = actionStack.classList.contains('is-mobile-collapsed');
+            mobileToggle.setAttribute('aria-expanded', String(!collapsed));
+            mobileToggle.setAttribute('aria-label', collapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ');
+            const icon = mobileToggle.querySelector('.material-symbols-outlined');
+            if (icon) icon.textContent = collapsed ? 'keyboard_arrow_down' : 'keyboard_arrow_up';
+        };
+        mobileToggle.addEventListener('click', () => {
+            actionStack.classList.toggle('is-mobile-collapsed');
+            syncMobileToggle();
+        });
+        syncMobileToggle();
+    }
 
     const lunaCharts = document.querySelectorAll('.luna-chart');
     if (lunaCharts.length && 'IntersectionObserver' in window) {
