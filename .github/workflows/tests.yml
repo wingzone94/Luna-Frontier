@@ -160,3 +160,6 @@ jobs:
 
       - name: Run icon / topic-nav unit tests
         run: npm run verify:icons:tests
+
+      - name: Run hero CSS sync test
+        run: npm run verify:hero-css
