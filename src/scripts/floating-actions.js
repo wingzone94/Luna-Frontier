@@ -31,21 +31,18 @@ export function initFloatingActions() {
         document.body.classList.remove('is-active-toc');
     }
 
+    let syncPullTabA11y = () => {};
+
     if (isSingle && pullTab) {
         actionStack.classList.add('has-pull-tab');
 
         let isCollapsed = false;
 
-        const setCollapsed = (collapsed) => {
-            isCollapsed = collapsed;
-            actionStack.classList.toggle('is-collapsed', isCollapsed);
-            pullTab.setAttribute('aria-expanded', String(!isCollapsed));
-            pullTab.setAttribute(
-                'aria-label',
-                isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
-            );
+        syncPullTabA11y = () => {
+            const isDesktop = window.matchMedia('(min-width: 1001px)').matches;
+            const shouldHide = !isDesktop && isCollapsed;
 
-            if (isCollapsed) {
+            if (shouldHide) {
                 backToTop?.setAttribute('tabindex', '-1');
                 tocTrigger?.setAttribute('tabindex', '-1');
                 backToTop?.setAttribute('aria-hidden', 'true');
@@ -58,14 +55,34 @@ export function initFloatingActions() {
             }
         };
 
+        const setCollapsed = (collapsed) => {
+            isCollapsed = collapsed;
+            actionStack.classList.toggle('is-collapsed', isCollapsed);
+            pullTab.setAttribute('aria-expanded', String(!isCollapsed));
+            pullTab.setAttribute(
+                'aria-label',
+                isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
+            );
+            syncPullTabA11y();
+        };
+
         pullTab.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
             setCollapsed(!isCollapsed);
         });
+
+        const desktopMedia = window.matchMedia('(min-width: 1001px)');
+        if (typeof desktopMedia.addEventListener === 'function') {
+            desktopMedia.addEventListener('change', syncPullTabA11y);
+        } else if (typeof desktopMedia.addListener === 'function') {
+            desktopMedia.addListener(syncPullTabA11y);
+        }
     }
 
     const updateVisibility = () => {
+        syncPullTabA11y();
+
         if (!showBackToTopContext) {
             actionStack.classList.remove('is-visible');
             return;
