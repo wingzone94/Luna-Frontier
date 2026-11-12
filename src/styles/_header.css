@@ -144,12 +144,13 @@
     }
 
     .m3-header .m3-logo-text {
-        /* 3つの操作ボタンと並べても詰まらないよう、ブランド名を2行にする。 */
-        max-width: 6em;
-        overflow: visible;
-        text-overflow: clip;
+        /* 操作ボタンと並べても詰まらないよう、ブランド名を2行（LUMINOUS / CORE）にする。 */
+        max-width: 8.5em;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: normal;
-        font-size: 1rem;
+        word-break: normal;
+        font-size: clamp(0.85rem, 3.2vw, 1rem);
         line-height: 1.15;
         letter-spacing: 0.045em;
     }
@@ -167,35 +168,54 @@
         flex-basis: 48px;
     }
 
-    .m3-social-button, .m3-rss-button {
+    .m3-social-button {
         display: none !important;
     }
 }
 
 @media (max-width: 360px) {
     .m3-header__inner {
-        padding: 0 10px;
-        gap: 8px;
+        padding: 0 8px;
+        gap: 6px;
+    }
+
+    .m3-header__left {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .site-branding {
+        min-width: 0;
     }
 
     .m3-header__logo-link {
-        gap: 8px;
+        gap: 6px;
+        min-width: 0;
     }
 
     .m3-header__logo-img {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
     }
 
-    .m3-logo-text {
-        max-width: 48vw;
-        font-size: 1rem;
-        letter-spacing: 0.045em;
+    .m3-logo-text,
+    .m3-header .m3-logo-text {
+        max-width: 8.5em;
+        min-width: 0;
+        font-size: clamp(0.72rem, 2.7vw, 0.85rem);
+        line-height: 1.1;
+        letter-spacing: 0.03em;
+        white-space: normal;
+        word-break: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .m3-header__actions {
         margin-left: auto;
         gap: 2px;
+        flex: 0 0 auto;
     }
 
     .m3-header__actions .m3-icon-button,
@@ -203,6 +223,33 @@
         width: 48px;
         height: 48px;
         flex-basis: 48px;
+    }
+}
+
+@media (max-width: 320px) {
+    .m3-header__inner {
+        padding: 0 6px;
+        gap: 4px;
+    }
+
+    .m3-header__logo-link {
+        gap: 4px;
+    }
+
+    .m3-header__logo-img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .m3-logo-text,
+    .m3-header .m3-logo-text {
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        line-height: 1.08;
+    }
+
+    .m3-header__actions {
+        gap: 1px;
     }
 }
 
