@@ -196,6 +196,15 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	body.lf-theme.single-post .m3-page-container {
 		padding-block-end: calc(64px + env(safe-area-inset-bottom));
 	}
+
+	body.lf-theme.single-post .m3-action-pull-tab {
+		right: 0;
+		bottom: 114px;
+	}
+
+	body.lf-theme.single-post.is-mobile-actions-collapsed .m3-page-container {
+		padding-block-end: 0;
+	}
 }
 
 /* ---------------------------------------------------------------------

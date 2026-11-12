@@ -572,13 +572,13 @@ body.is-active-toc #m3-sticky-toc {
 
 @media (max-width: 1000px) {
     /* JSが有効で .has-pull-tab が付与された場合のみ表示（プログレッシブエンハンスメント） */
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab {
+    .m3-action-stack.has-pull-tab + .m3-action-pull-tab {
         display: flex;
         align-items: center;
         justify-content: center;
-        position: absolute;
-        bottom: calc(var(--node-action-size, 48px) * 2 + 12px + 6px);
-        right: 0;
+        position: fixed;
+        bottom: calc(24px + env(safe-area-inset-bottom) + 114px);
+        right: calc(8px + env(safe-area-inset-right));
         width: 36px;
         height: 28px;
         padding: 0;
@@ -591,7 +591,7 @@ body.is-active-toc #m3-sticky-toc {
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
         pointer-events: auto;
-        z-index: 10;
+        z-index: 9999;
         transition: background-color 0.2s ease,
                     border-color 0.2s ease,
                     color 0.2s ease,
@@ -599,7 +599,7 @@ body.is-active-toc #m3-sticky-toc {
     }
 
     /* タップ領域最低44×44pxを確保 */
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab::before {
+    .m3-action-stack.has-pull-tab + .m3-action-pull-tab::before {
         content: '';
         position: absolute;
         inset: -8px -6px;
@@ -607,13 +607,13 @@ body.is-active-toc #m3-sticky-toc {
         min-height: 44px;
     }
 
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab:hover {
+    .m3-action-stack.has-pull-tab + .m3-action-pull-tab:hover {
         background: var(--md-sys-color-surface-container-highest, #efd2bb);
         color: var(--md-sys-color-on-surface, #2b1700);
         box-shadow: var(--m3-elevation-2);
     }
 
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab:active {
+    .m3-action-stack.has-pull-tab + .m3-action-pull-tab:active {
         transform: scale(0.92);
     }
 
@@ -624,44 +624,20 @@ body.is-active-toc #m3-sticky-toc {
         transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    /* 折りたたみ状態：アイコンを内側（展開方向）へ反転 */
-    .m3-action-stack.is-collapsed .m3-action-pull-tab__icon {
-        transform: rotate(180deg);
-    }
-
-    /* ボタン群のトランジション定義 */
-    .m3-action-stack.has-pull-tab .m3-fab {
-        transition: transform 0.24s cubic-bezier(0.2, 0, 0, 1),
-                    opacity 0.2s ease,
-                    visibility 0.24s,
-                    background-color 0.2s ease,
-                    box-shadow 0.2s ease;
-    }
-
-    /* 折りたたみ状態：ボタン群をまとめて収納（右へスライド＋フェードアウト） */
-    .m3-action-stack.has-pull-tab.is-collapsed .m3-fab {
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        transform: translateX(calc(100% + 24px)) scale(0.85) !important;
-    }
-
-    /* 目次パネル展開中はプルタブも非表示にして邪魔しない */
-    body.is-active-toc .m3-action-stack .m3-action-pull-tab {
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
+    .m3-action-stack[hidden],
+    .m3-action-stack.has-pull-tab + .m3-action-pull-tab[hidden] {
+        display: none;
     }
 }
 
 /* ダークモード対応 */
-[data-theme="dark"] .m3-action-stack.has-pull-tab .m3-action-pull-tab {
+[data-theme="dark"] .m3-action-stack.has-pull-tab + .m3-action-pull-tab {
     background: var(--md-sys-color-surface-container-high, #322E26);
     border-color: var(--md-sys-color-outline-variant, #524437);
     color: var(--md-sys-color-on-surface-variant, #d6c2b1);
 }
 
-[data-theme="dark"] .m3-action-stack.has-pull-tab .m3-action-pull-tab:hover {
+[data-theme="dark"] .m3-action-stack.has-pull-tab + .m3-action-pull-tab:hover {
     background: var(--md-sys-color-surface-container-highest, #3D372E);
     color: var(--md-sys-color-on-surface, #F5EFEB);
 }

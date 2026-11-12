@@ -29,8 +29,8 @@ test('template-parts/components/floating-actions.php: pull tab markup exists wit
         'Initial aria-expanded must be true'
     );
     assert.ok(
-        phpContent.includes('aria-controls="m3-back-to-top m3-toc-trigger"'),
-        'aria-controls must target both back-to-top and toc-trigger'
+        phpContent.includes('aria-controls="m3-action-stack"'),
+        'aria-controls must target the entire action container'
     );
     assert.ok(
         phpContent.includes('chevron_right'),
@@ -49,19 +49,15 @@ test('src/styles/_toc-fab.css: pull tab responsive & collapsed rules exist', asy
         'Pull tab must be hidden by default on PC'
     );
     assert.ok(
-        cssContent.includes('.m3-action-stack.has-pull-tab .m3-action-pull-tab'),
+        cssContent.includes('.m3-action-stack.has-pull-tab + .m3-action-pull-tab'),
         'Mobile display rule must require .has-pull-tab'
     );
     assert.ok(
-        cssContent.includes('.m3-action-stack.has-pull-tab.is-collapsed .m3-fab'),
-        'Collapsed rule must hide buttons'
+        cssContent.includes('.m3-action-stack[hidden]'),
+        'Hidden rule must remove the entire container'
     );
     assert.ok(
-        cssContent.includes('rotate(180deg)'),
-        'Collapsed icon must rotate to indicate expand direction'
-    );
-    assert.ok(
-        cssContent.includes('[data-theme="dark"] .m3-action-stack.has-pull-tab .m3-action-pull-tab'),
+        cssContent.includes('[data-theme="dark"] .m3-action-stack.has-pull-tab + .m3-action-pull-tab'),
         'Dark mode rule must exist'
     );
     assert.ok(

@@ -42,6 +42,9 @@ export function initFloatingActions() {
             const isDesktop = window.matchMedia('(min-width: 1001px)').matches;
             const shouldHide = !isDesktop && isCollapsed;
 
+            document.body.classList.toggle('is-mobile-actions-collapsed', shouldHide);
+            actionStack.classList.toggle('is-collapsed', shouldHide);
+
             if (shouldHide) {
                 backToTop?.setAttribute('tabindex', '-1');
                 tocTrigger?.setAttribute('tabindex', '-1');
@@ -57,13 +60,14 @@ export function initFloatingActions() {
 
         const setCollapsed = (collapsed) => {
             isCollapsed = collapsed;
-            actionStack.classList.toggle('is-collapsed', isCollapsed);
             pullTab.setAttribute('aria-expanded', String(!isCollapsed));
             pullTab.setAttribute(
                 'aria-label',
                 isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
             );
-            syncPullTabA11y();
+            pullTab.querySelector('.m3-action-pull-tab__icon').textContent =
+                isCollapsed ? 'chevron_left' : 'chevron_right';
+            updateVisibility();
         };
 
         pullTab.addEventListener('click', (event) => {
@@ -116,7 +120,8 @@ export function initFloatingActions() {
                 && bounds.top <= bottom - height && bounds.bottom >= bottom);
         }
         const visible = shouldShow && !editing && inReadingLane;
-        actionStack.hidden = !visible;
+        actionStack.hidden = !visible || actionStack.classList.contains('is-collapsed');
+        if (pullTab) pullTab.hidden = !visible && !actionStack.classList.contains('is-collapsed');
         actionStack.classList.toggle('is-visible', visible);
     };
 
