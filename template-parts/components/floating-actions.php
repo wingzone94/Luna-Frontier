@@ -10,7 +10,7 @@ declare(strict_types=1);
             aria-label="<?php esc_attr_e( '追従ボタンを折りたたむ', 'node' ); ?>"
             aria-expanded="true"
             aria-controls="m3-back-to-top m3-toc-trigger">
-        <span class="m3-action-pull-tab__icon material-symbols-outlined" aria-hidden="true">keyboard_arrow_up</span>
+        <span class="m3-action-pull-tab__icon material-symbols-outlined" aria-hidden="true">expand_less</span>
     </button>
     <?php endif; ?>
 
