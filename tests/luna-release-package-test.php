@@ -25,7 +25,10 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 	}
 
 	public function test_preview_zip_has_expected_root_and_metadata(): void {
-		$this->assertFileExists( $this->theme_zip() );
+		$this->assertFileExists(
+			$this->theme_zip(),
+			'luna.zip は Git に置かない。Release と同じくビルドと build.json 刻印のあと scripts/build-luna-zip.sh で作る。欠ける場合はスキップせず失敗させる。'
+		);
 		$this->assertLessThan( 10 * 1024 * 1024, filesize( $this->theme_zip() ), 'Preview ZIPは重複フォントを避けて10MiB未満に保ちます' );
 		$zip = new ZipArchive();
 		$this->assertTrue( true === $zip->open( $this->theme_zip() ) );
@@ -50,6 +53,22 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 		$this->assertSame( $version_match[1], (string) ( $build['version'] ?? '' ) );
 		$repo_build = json_decode( (string) file_get_contents( $this->repo_dir() . '/build.json' ), true );
 		$this->assertSame( (string) ( $repo_build['build_id'] ?? '' ), (string) ( $build['build_id'] ?? '' ) );
+
+		// dist が無い ZIP はテーマが旧 assets へ黙って落ちる。Release はビルド後に包むので、同じ契約を要求する。
+		$manifest = json_decode( $this->contents( $this->theme_zip(), self::THEME_ROOT . 'dist/.vite/manifest.json' ), true );
+		$this->assertIsArray( $manifest, '配布ZIPに dist/.vite/manifest.json がありません' );
+		$main_file = is_array( $manifest['src/main.js'] ?? null ) ? (string) ( $manifest['src/main.js']['file'] ?? '' ) : '';
+		$this->assertMatchesRegularExpression( '#^js/main\.[^/]+\.js$#', $main_file );
+		$this->assertNotSame( '', $this->contents( $this->theme_zip(), self::THEME_ROOT . 'dist/' . $main_file ), 'main バンドルが ZIP に無い' );
+		$vendor_file = '';
+		foreach ( $manifest as $entry ) {
+			if ( is_array( $entry ) && is_string( $entry['file'] ?? null ) && 1 === preg_match( '#^js/vendor\.[^/]+\.js$#', $entry['file'] ) ) {
+				$vendor_file = $entry['file'];
+				break;
+			}
+		}
+		$this->assertNotSame( '', $vendor_file, 'vendor チャンクが manifest に無い' );
+		$this->assertNotSame( '', $this->contents( $this->theme_zip(), self::THEME_ROOT . 'dist/' . $vendor_file ), 'vendor バンドルが ZIP に無い' );
 	}
 
 	public function test_embedded_plugins_use_luna_brand_and_140_version(): void {

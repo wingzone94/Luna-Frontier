@@ -1,8 +1,9 @@
 name: Tests
 
-# 配布 ZIP の中身検証（Node_Release_Package_Test）を含む PHPUnit を CI で回す。
-# ローカルでは LocalWP の MySQL ソケットに繋ぐが、CI ではサービスコンテナへ
-# TCP 接続するため NODE_TEST_DB_HOST を渡す（tests/wp-tests-config.php 参照）。
+# PHPUnit には Luna_Release_Package_Test が含まれる。
+# luna.zip は Git 管理しない。Release ワークフローと同じ順で
+# フロントをビルドし、build.json を刻んでから検証用 ZIP を作る。
+# ZIP が無い検査のスキップはしない。
 
 on:
   push:
@@ -42,7 +43,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # zip は Node_Release_Package_Test が node.zip を開くのに必要。
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -50,6 +50,11 @@ jobs:
           extensions: mysqli, zip, mbstring, dom, libxml, json
           coverage: none
           tools: composer:v2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
 
       - name: Cache Composer packages
         uses: actions/cache@v4
@@ -111,6 +116,23 @@ jobs:
           done
           echo "MySQL が起動しませんでした"
           exit 1
+
+      # release-luna-frontier.yml の「Build dist → Update build.json → Create luna.zip」と同じ。
+      # 刻印はジョブ内だけ。コミット済みの build_id は書き換えない。
+      - name: Build dist (bun)
+        run: |
+          bun install --frozen-lockfile || bun install
+          bun run build
+
+      - name: Stamp build.json for the verification package
+        run: |
+          printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\n' \
+            "$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)" \
+            "$(date -u +%FT%TZ)" \
+            "$(grep -m1 '^Version:' style.css | awk '{print $2}')" > build.json
+
+      - name: Create verification luna.zip
+        run: bash scripts/build-luna-zip.sh
 
       - name: Run PHPUnit
         env:
