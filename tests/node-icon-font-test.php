@@ -171,4 +171,14 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'icon_names=', $url );
 		$this->assertStringContainsString( 'family=Material+Symbols+Outlined', $url );
 	}
+
+	public function test_code_font_setting_defaults_on_and_can_be_disabled() {
+		delete_option( 'node_code_font_enabled' );
+		$this->assertTrue( node_code_font_is_enabled() );
+		update_option( 'node_code_font_enabled', '0' );
+		$this->assertFalse( node_code_font_is_enabled() );
+		update_option( 'node_code_font_enabled', '1' );
+		$this->assertTrue( node_code_font_is_enabled() );
+		delete_option( 'node_code_font_enabled' );
+	}
 }

@@ -1,7 +1,7 @@
 # Luna Frontier
 ### WordPress Theme for Luminous Core
 
-![Version](https://img.shields.io/badge/version-2.0.3-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.0.4-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-21759b?style=for-the-badge&logo=wordpress)
 
@@ -14,7 +14,7 @@ Luna Frontier は Node の子テーマではありません。Node 1.x を起点
 
 **2.0.0の配布物はGitHubの専用ブランチへ反映済み**で、サイトへのインストールは2026年10月10日を予定していました。Node安定版の`master`とは更新チャンネルを分離しています。
 
-現行の公開物は GitHub Release の **2.0.3**（タグ `luna-frontier-v2.0.3-20261111T103054Z-0941737`）です。Luna Settings はこの Release の `luna.zip` と `luna-release.json` を照合します。ブランチ上の `luna.zip` は配布物ではありません。
+現行の公開物は GitHub Release の **2.0.4** です。Luna Settings はこの Release の `luna.zip` と `luna-release.json` を照合します。ブランチ上の `luna.zip` は配布物ではありません。
 
 ## Luna Frontier 2.0.0の主な変更
 
@@ -39,9 +39,9 @@ Luna Frontier は Node の子テーマではありません。Node 1.x を起点
 - **PWA 対応:** オフライン閲覧やホーム画面へのインストールをサポート。
 
 ## インストール
-1. [Luna Frontier 2.0.3 の Release](https://github.com/wingzone94/Luna-Frontier/releases/tag/luna-frontier-v2.0.3-20261111T103054Z-0941737) から `luna.zip` をダウンロードする。ZIP内のルートは`luna-frontier/`です。
+1. [Luna Frontier 2.0.4 の Release](https://github.com/wingzone94/Luna-Frontier/releases/latest) から `luna.zip` をダウンロードする。ZIP内のルートは`luna-frontier/`です。
 2. WordPress管理画面の「外観 → テーマ → 新規追加 → テーマのアップロード」から`luna.zip`をアップロードし、「Luna Frontier」を有効化する。既存の同名テーマがある場合は、管理画面の置換確認に従って更新する。
-3. 管理画面でバージョン`2.0.3`を確認し、トップページと記事ページを表示確認する。Nodeテーマの追加インストールやBunによるビルドは不要です。
+3. 管理画面でバージョン`2.0.4`を確認し、トップページと記事ページを表示確認する。Nodeテーマの追加インストールやBunによるビルドは不要です。
 
 ---
 **Luminous Core Teams**
