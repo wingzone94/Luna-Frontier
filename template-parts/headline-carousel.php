@@ -69,7 +69,7 @@ $headline_priority_assigned = false;
 
 	<div class="m3-headlines__header c-headline-carousel__header">
 		<h2 id="headline-title" class="m3-headlines__title m3-section-title">
-			<span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+			<span class="material-symbols-outlined" data-icon="campaign" aria-hidden="true"></span>
 			HEADLINE <span class="m3-section-title__sub">ニュース</span>
 		</h2>
 
@@ -80,14 +80,14 @@ $headline_priority_assigned = false;
 					data-headline-view="carousel"
 					aria-pressed="true"
 					aria-label="カード表示">
-					<span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+					<span class="material-symbols-outlined" data-icon="grid_view" aria-hidden="true"></span>
 				</button>
 				<button type="button"
 					class="c-headline-carousel__view"
 					data-headline-view="list"
 					aria-pressed="false"
 					aria-label="リスト表示">
-					<span class="material-symbols-outlined" aria-hidden="true">reorder</span>
+					<span class="material-symbols-outlined" data-icon="reorder" aria-hidden="true"></span>
 				</button>
 			</div>
 		</div>
@@ -101,13 +101,13 @@ $headline_priority_assigned = false;
 				aria-label="前のニュースを表示"
 				aria-disabled="true"
 				disabled>
-				<span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+				<span class="material-symbols-outlined" data-icon="chevron_left" aria-hidden="true"></span>
 			</button>
 			<button type="button"
 				class="c-headline-carousel__button c-headline-carousel__button--next"
 				data-headline-next
 				aria-label="次のニュースを表示">
-				<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+				<span class="material-symbols-outlined" data-icon="chevron_right" aria-hidden="true"></span>
 			</button>
 		</div>
 

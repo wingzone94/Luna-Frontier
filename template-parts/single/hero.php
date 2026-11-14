@@ -86,14 +86,14 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 		<?php // 3. Published / Updated ＋ 4. 最小限のメタ ?>
 		<div class="lf-article-header__meta">
 			<time class="lf-meta__item" datetime="<?php echo esc_attr( $lf_published ); ?>">
-				<span class="material-symbols-outlined lf-meta__icon" aria-hidden="true">calendar_today</span>
+				<span class="material-symbols-outlined lf-meta__icon" data-icon="calendar_today" aria-hidden="true"></span>
 				<span class="screen-reader-text">公開日</span>
 				<?php echo esc_html( get_the_date( '', $lf_post_id ) ); ?>
 			</time>
 
 			<?php if ( $lf_update ) : ?>
 				<time class="lf-meta__item" datetime="<?php echo esc_attr( $lf_update['datetime'] ); ?>">
-					<span class="material-symbols-outlined lf-meta__icon" aria-hidden="true">update</span>
+					<span class="material-symbols-outlined lf-meta__icon" data-icon="update" aria-hidden="true"></span>
 					<span class="screen-reader-text">更新日</span>
 					<?php echo esc_html( $lf_update['display'] ); ?>
 				</time>
@@ -106,13 +106,13 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 			?>
 			<?php if ( '' !== $lf_author && '' !== $lf_author_url ) : ?>
 				<a class="lf-meta__item lf-meta__item--author lf-meta__item--link" href="<?php echo esc_url( $lf_author_url ); ?>" rel="author" aria-label="<?php echo esc_attr( sprintf( '%sの記事一覧へ', $lf_author ) ); ?>">
-					<span class="material-symbols-outlined lf-meta__icon" aria-hidden="true">person</span>
+					<span class="material-symbols-outlined lf-meta__icon" data-icon="person" aria-hidden="true"></span>
 					<span class="screen-reader-text">執筆者</span>
 					<?php echo esc_html( $lf_author ); ?>
 				</a>
 			<?php elseif ( '' !== $lf_author ) : ?>
 				<span class="lf-meta__item lf-meta__item--author">
-					<span class="material-symbols-outlined lf-meta__icon" aria-hidden="true">person</span>
+					<span class="material-symbols-outlined lf-meta__icon" data-icon="person" aria-hidden="true"></span>
 					<span class="screen-reader-text">執筆者</span>
 					<?php echo esc_html( $lf_author ); ?>
 				</span>
@@ -161,7 +161,7 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 							<path class="m3-reading-circle__progress" pathLength="100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
 							<circle class="m3-reading-circle__head" cx="18" cy="2.0845" r="2.15" />
 						</svg>
-						<span class="material-symbols-outlined" aria-hidden="true">timer</span>
+						<span class="material-symbols-outlined" data-icon="timer" aria-hidden="true"></span>
 					</div>
 					<div class="m3-reading-badge-content">
 						<span class="m3-reading-badge-text m3-reading-badge-text--main"><?php echo esc_html( $lf_time_display ); ?></span>
@@ -196,7 +196,7 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 		<?php if ( $lf_show_summary ) : ?>
 			<details class="lf-intelligence-summary" id="m3-ai-summary" open>
 				<summary class="lf-intelligence-summary__head">
-					<span class="material-symbols-outlined lf-intelligence-summary__icon" aria-hidden="true">auto_awesome</span>
+					<span class="material-symbols-outlined lf-intelligence-summary__icon" data-icon="auto_awesome" aria-hidden="true"></span>
 					<span class="lf-system-label">Intelligence Summary</span>
 				</summary>
 				<div class="lf-intelligence-summary__body">

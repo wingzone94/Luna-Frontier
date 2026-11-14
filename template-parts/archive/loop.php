@@ -48,7 +48,7 @@ if ( false !== strpos( $list_class, 'm3-post-grid--2col-list' ) ) {
 		<div class="m3-no-results m3-archive-no-results">
 			<div class="m3-no-results__inner">
 				<div class="m3-no-results__icon">
-					<span class="material-symbols-outlined">inbox</span>
+					<span class="material-symbols-outlined" data-icon="inbox"></span>
 				</div>
 				<p class="m3-no-results__text"><?php echo esc_html( $empty_message ); ?></p>
 			</div>

@@ -187,19 +187,19 @@ declare(strict_types=1);
                 <form role="search" method="get" class="m3-search-bar" id="m3-main-search-form" action="<?php echo esc_url(home_url('/')); ?>">
                     <div class="m3-search-input-wrapper">
                         <button type="button" class="m3-icon-button m3-search-mobile-close" id="m3-search-mobile-close" aria-label="検索を閉じる">
-                            <span class="material-symbols-outlined">arrow_back</span>
+                            <span class="material-symbols-outlined" data-icon="arrow_back"></span>
                         </button>
                         <input type="search" class="m3-search-bar__input" id="m3-search-input" placeholder="検索..." value="<?php echo esc_attr( get_search_query() ); ?>" name="s" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="m3-search-suggestions">
                         <div class="m3-search-actions-inline">
                             <button type="button" class="m3-icon-button m3-search-clear" id="m3-search-clear" aria-label="キーワードをクリア"<?php echo get_search_query() ? '' : ' hidden'; ?>>
-                                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                                <span class="material-symbols-outlined" data-icon="close" aria-hidden="true"></span>
                             </button>
                             <button type="submit" class="m3-icon-button m3-search-submit" id="m3-search-submit" aria-label="検索を実行">
-                                <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                                <span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
                             </button>
                             <?php if ( ! function_exists( 'luna_frontier_is_legacy_archive' ) ) : ?>
                             <button type="button" class="m3-icon-button m3-search-advanced-trigger" id="m3-advanced-search-trigger" aria-label="詳細検索" aria-haspopup="dialog" aria-expanded="false" aria-controls="m3-advanced-search-modal">
-                                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                                <span class="material-symbols-outlined" data-icon="tune" aria-hidden="true"></span>
                             </button>
                             <?php endif; ?>
                         </div>
@@ -207,7 +207,7 @@ declare(strict_types=1);
                     </div>
                     <?php if ( function_exists( 'luna_frontier_is_legacy_archive' ) ) : ?>
                             <button type="button" class="m3-icon-button m3-search-advanced-trigger" id="m3-advanced-search-trigger" aria-label="詳細検索" aria-haspopup="dialog" aria-expanded="false" aria-controls="m3-advanced-search-modal">
-                                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                                <span class="material-symbols-outlined" data-icon="tune" aria-hidden="true"></span>
                             </button>
                     <?php endif; ?>
                 </form>
@@ -309,12 +309,12 @@ declare(strict_types=1);
         <!-- Header Right: Action Group. The search toggle stays here so opening search does not move it. -->
         <div class="m3-header__actions">
             <button type="button" class="m3-icon-button m3-search-bar__toggle m3-tooltip-target" id="search-toggle" aria-label="検索" data-tooltip="検索">
-                <span class="material-symbols-outlined">search</span>
+                <span class="material-symbols-outlined" data-icon="search"></span>
             </button>
 
             <!-- RSS -->
             <a href="<?php bloginfo('rss2_url'); ?>" class="m3-icon-button m3-tooltip-target m3-rss-button" id="m3-rss-trigger" aria-label="RSS" data-tooltip="RSSフィード">
-                <span class="material-symbols-outlined">rss_feed</span>
+                <span class="material-symbols-outlined" data-icon="rss_feed"></span>
             </a>
 
             <!-- X (Twitter) -->
@@ -334,13 +334,13 @@ declare(strict_types=1);
             <!-- Theme -->
             <div id="m3-theme-controls">
                 <button id="theme-toggle" class="m3-icon-button m3-tooltip-target" aria-label="テーマ" data-tooltip="テーマ切り替え">
-                    <span class="material-symbols-outlined" id="theme-toggle-icon">light_mode</span>
+                    <span class="material-symbols-outlined" data-icon="light_mode" id="theme-toggle-icon"></span>
                 </button>
             </div>
 
             <!-- View: スマホ / タブレット / PC で常時表示 -->
             <button class="m3-icon-button m3-tooltip-target m3-view-toggle--tablet" id="m3-view-toggle" type="button" aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
-                <span class="material-symbols-outlined" id="m3-view-toggle-icon" aria-hidden="true">smartphone</span>
+                <span class="material-symbols-outlined" data-icon="smartphone" id="m3-view-toggle-icon" aria-hidden="true"></span>
             </button>
 
         </div>
@@ -360,11 +360,11 @@ declare(strict_types=1);
         
         <div class="m3-modal__header">
             <div class="m3-modal__title-group">
-                <span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>
+                <span class="material-symbols-outlined" data-icon="filter_alt" aria-hidden="true"></span>
                 <h2 class="m3-modal__title" id="m3-advanced-search-title">詳細検索</h2>
             </div>
             <button type="button" class="m3-icon-button m3-modal__close" id="m3-advanced-search-close" aria-label="詳細検索を閉じる">
-                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                <span class="material-symbols-outlined" data-icon="close" aria-hidden="true"></span>
             </button>
         </div>
 
@@ -372,17 +372,17 @@ declare(strict_types=1);
             <div class="m3-modal__tab-indicator"></div>
             <?php // 狭い画面では 3 タブを等分に並べるため、短いラベルへ差し替える（CSS で切替） ?>
             <button type="button" class="m3-modal__tab is-active" data-page="1" aria-label="絞り込み">
-                <span class="material-symbols-outlined">filter_alt</span>
+                <span class="material-symbols-outlined" data-icon="filter_alt"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">絞り込み</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">条件</span>
             </button>
             <button type="button" class="m3-modal__tab" data-page="2" aria-label="ボリューム">
-                <span class="material-symbols-outlined">schedule</span>
+                <span class="material-symbols-outlined" data-icon="schedule"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">ボリューム</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">分量</span>
             </button>
             <button type="button" class="m3-modal__tab" data-page="3" aria-label="プラットフォーム">
-                <span class="material-symbols-outlined">devices</span>
+                <span class="material-symbols-outlined" data-icon="devices"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">プラットフォーム</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">機種</span>
             </button>
@@ -395,7 +395,7 @@ declare(strict_types=1);
                     <div class="m3-advanced-search-grid-layout">
                         <div class="m3-advanced-search-column">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined">category</span> カテゴリ</label>
+                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="category"></span> カテゴリ</label>
                                 <div class="m3-select-wrapper">
                                     <select name="m3_cat" class="m3-select">
                                         <option value="">すべてのカテゴリ</option>
@@ -405,11 +405,11 @@ declare(strict_types=1);
                                             <option value="<?php echo $cat->term_id; ?>"><?php echo esc_html($cat->name); ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <span class="material-symbols-outlined m3-select-icon">expand_more</span>
+                                    <span class="material-symbols-outlined m3-select-icon" data-icon="expand_more"></span>
                                 </div>
                             </div>
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined">sell</span> タグ</label>
+                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="sell"></span> タグ</label>
                                 <div class="m3-textfield-wrapper">
                                     <input type="text" name="m3_tag" id="m3-tag-input" class="m3-text-input" placeholder="タグ名を入力..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="m3-tag-suggestions">
                                     <div id="m3-tag-suggestions" class="m3-suggestions-list" role="listbox" aria-label="タグ候補"></div>
@@ -417,7 +417,7 @@ declare(strict_types=1);
                             </div>
                             <!-- Mobile Exclusive: Sort Order -->
                             <div class="m3-search-section m3-desktop-hidden">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined">sort</span> 並び順</label>
+                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="sort"></span> 並び順</label>
                                 <div class="m3-radio-group">
                                     <label class="m3-radio-item"><input type="radio" name="m3_sort" value="newest" checked><span class="m3-radio-label">新着</span></label>
                                     <label class="m3-radio-item"><input type="radio" name="m3_sort" value="oldest"><span class="m3-radio-label">古い順</span></label>
@@ -427,7 +427,7 @@ declare(strict_types=1);
                         </div>
                         <div class="m3-advanced-search-column m3-mobile-hidden">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined">calendar_month</span> 期間</label>
+                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="calendar_month"></span> 期間</label>
                                 <div class="m3-date-picker-grid">
                                     <input type="date" name="m3_start_date" class="m3-date-input">
                                     <span class="m3-date-range-sep">~</span>
@@ -444,11 +444,11 @@ declare(strict_types=1);
                         <div class="m3-advanced-search-column">
                                 <div class="m3-search-section">
                                     <!-- Range Slider -->
-                                    <label class="m3-search-section-label"><span class="material-symbols-outlined">schedule</span> 読了目安・ボリューム</label>
+                                    <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="schedule"></span> 読了目安・ボリューム</label>
                                     <?php // 読了目安（m3_reading_time）はバックエンド未実装のためUIから退避（F-11）。文字数範囲（m3_min/m3_max）は実装済みなので残す ?>
 
                                     <div class="m3-slider-container">
-                                        <div class="m3-search-section-label m3-search-section-label--sub"><span class="material-symbols-outlined">straighten</span> 文字数範囲</div>
+                                        <div class="m3-search-section-label m3-search-section-label--sub"><span class="material-symbols-outlined" data-icon="straighten"></span> 文字数範囲</div>
                                         <div class="m3-range-slider" id="m3-word-count-slider">
                                             <div class="m3-range-slider__track"></div>
                                             <div class="m3-range-slider__range" id="m3-slider-range"></div>
@@ -474,7 +474,7 @@ declare(strict_types=1);
                         </div>
                         <div class="m3-advanced-search-column">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined">media_output</span> メディア</label>
+                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="media_output"></span> メディア</label>
                                 <div class="m3-platform-list">
                                     <label class="m3-platform-chip m3-platform-chip--image"><input type="checkbox" name="m3_media_type[]" value="image"><span>画像</span></label>
                                     <label class="m3-platform-chip m3-platform-chip--video"><input type="checkbox" name="m3_media_type[]" value="video"><span>動画</span></label>

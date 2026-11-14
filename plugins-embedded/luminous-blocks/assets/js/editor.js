@@ -593,7 +593,7 @@
 			return a11y;
 		}
 
-		function noticeSaveMarkup( props, iconMap ) {
+		function noticeSaveMarkup( props, iconMap, useDataIcon ) {
 			var attributes = props.attributes;
 			var type = attributes.type || 'info';
 			var shape = attributes.shape || 'rounded';
@@ -605,13 +605,17 @@
 				className: 'm3-notice m3-notice--' + type + ( 'square' === shape ? ' m3-notice--square' : '' ),
 			}, noticeA11y( type ) ) );
 
+			var iconEl = false !== useDataIcon
+				? el( 'span', { className: 'material-symbols-outlined m3-notice__icon', 'data-icon': icon, 'aria-hidden': 'true' } )
+				: el( 'span', { className: 'material-symbols-outlined m3-notice__icon', 'aria-hidden': 'true' }, icon );
+
 			return el(
 				'blockquote',
 				blockProps,
 				el(
 					'div',
 					{ className: 'm3-notice__header' },
-					el( 'span', { className: 'material-symbols-outlined m3-notice__icon', 'aria-hidden': 'true' }, icon ),
+					iconEl,
 					el( 'span', { className: 'm3-notice__title' }, title )
 				),
 				el(
@@ -757,15 +761,21 @@
 			},
 
 			save: function ( props ) {
-				return noticeSaveMarkup( props, NOTICE_TYPES );
+				return noticeSaveMarkup( props, NOTICE_TYPES, true );
 			},
 
-			// 旧保存HTML（info/reportアイコン）を受理し、次回保存時に新アイコンへ移行する。
+			// 旧保存HTML（テキストノード型・info/report旧アイコン）を受理し、次回保存時に data-icon 方式へ移行する。
 			deprecated: [
 				{
 					attributes: NOTICE_ATTRIBUTES,
 					save: function ( props ) {
-						return noticeSaveMarkup( props, NOTICE_LEGACY_ICONS );
+						return noticeSaveMarkup( props, NOTICE_TYPES, false );
+					},
+				},
+				{
+					attributes: NOTICE_ATTRIBUTES,
+					save: function ( props ) {
+						return noticeSaveMarkup( props, NOTICE_LEGACY_ICONS, false );
 					},
 				},
 			],

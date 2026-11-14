@@ -27,7 +27,7 @@ $archive_base = trailingslashit( node_get_all_articles_url() );
 	<section class="m3-archive-header m3-surface m3-section-spacing" aria-labelledby="all-articles-title">
 		<div class="m3-headlines__header" style="border-bottom: none; margin-bottom: 0;">
 			<h1 id="all-articles-title" class="m3-headlines__title m3-section-title" style="margin-bottom: 0;">
-				<span class="material-symbols-outlined" aria-hidden="true" style="font-size: 1.2em; vertical-align: middle;">article</span>
+				<span class="material-symbols-outlined" data-icon="article" aria-hidden="true" style="font-size: 1.2em; vertical-align: middle;"></span>
 				ALL ARTICLES <span class="m3-section-title__sub">記事一覧</span>
 			</h1>
 		</div>
@@ -61,12 +61,12 @@ $archive_base = trailingslashit( node_get_all_articles_url() );
 		<nav class="m3-pager" aria-label="ページナビゲーション">
 			<?php if ( $paged > 1 ) : ?>
 				<a href="<?php echo esc_url( $archive_base . ( $paged > 2 ? 'page/' . ( $paged - 1 ) . '/' : '' ) ); ?>" class="m3-pager__btn">
-					<span class="material-symbols-outlined">arrow_back</span>
+					<span class="material-symbols-outlined" data-icon="arrow_back"></span>
 					前のページ
 				</a>
 			<?php else : ?>
 				<span class="m3-pager__btn m3-pager__btn--disabled" aria-hidden="true">
-					<span class="material-symbols-outlined">arrow_back</span>
+					<span class="material-symbols-outlined" data-icon="arrow_back"></span>
 					前のページ
 				</span>
 			<?php endif; ?>
@@ -76,12 +76,12 @@ $archive_base = trailingslashit( node_get_all_articles_url() );
 			<?php if ( $paged < $total_pages ) : ?>
 				<a href="<?php echo esc_url( $archive_base . 'page/' . ( $paged + 1 ) . '/' ); ?>" class="m3-pager__btn">
 					次のページ
-					<span class="material-symbols-outlined">arrow_forward</span>
+					<span class="material-symbols-outlined" data-icon="arrow_forward"></span>
 				</a>
 			<?php else : ?>
 				<span class="m3-pager__btn m3-pager__btn--disabled" aria-hidden="true">
 					次のページ
-					<span class="material-symbols-outlined">arrow_forward</span>
+					<span class="material-symbols-outlined" data-icon="arrow_forward"></span>
 				</span>
 			<?php endif; ?>
 		</nav>

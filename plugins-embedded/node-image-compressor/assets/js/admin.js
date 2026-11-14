@@ -88,7 +88,8 @@
 			chip.className = 'node-ic-chip node-ic-chip--' + state;
 			var icon = chip.querySelector('[data-node-ic-chip-icon]');
 			if (icon) {
-				icon.textContent = STATE_ICONS[state] || STATE_ICONS.ineligible;
+				icon.dataset.icon = STATE_ICONS[state] || STATE_ICONS.ineligible;
+				icon.textContent = '';
 			}
 			var label = chip.querySelector('[data-node-ic-chip-label]');
 			if (label) {
@@ -128,7 +129,8 @@
 			var skipText = skipBtn.querySelector('.node-ic-btn__text');
 			var isSkipped = payload.state === 'skipped';
 			if (skipIcon) {
-				skipIcon.textContent = isSkipped ? 'restart_alt' : 'block';
+				skipIcon.dataset.icon = isSkipped ? 'restart_alt' : 'block';
+				skipIcon.textContent = '';
 			}
 			if (skipText) {
 				skipText.textContent = isSkipped ? 'スキップ解除' : 'スキップ';

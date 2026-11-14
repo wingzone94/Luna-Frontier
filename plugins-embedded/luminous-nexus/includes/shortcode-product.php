@@ -97,14 +97,14 @@ function luminous_nexus_product_card_shortcode($atts) {
         <div class="m3-product-card__disclosures">
             <?php if ($atts['show_amazon_disclosure'] === '1' && !empty($disclosure_amazon)) : ?>
                 <div class="m3-product-card__disclosure">
-                    <span class="material-symbols-outlined">info</span>
+                    <span class="material-symbols-outlined" data-icon="info"></span>
                     <?php echo esc_html($disclosure_amazon); ?>
                 </div>
             <?php endif; ?>
             
             <?php if ($atts['show_rakuten_disclosure'] === '1' && !empty($disclosure_rakuten)) : ?>
                 <div class="m3-product-card__disclosure">
-                    <span class="material-symbols-outlined">info</span>
+                    <span class="material-symbols-outlined" data-icon="info"></span>
                     <?php echo esc_html($disclosure_rakuten); ?>
                 </div>
             <?php endif; ?>

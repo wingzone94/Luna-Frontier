@@ -41,8 +41,12 @@ test('template-parts/components/floating-actions.php: pull tab markup exists and
         'aria-controls must target both back-to-top and toc-trigger'
     );
     assert.ok(
-        phpContent.includes('>expand_less<'),
-        'Icon must be included subset glyph expand_less'
+        phpContent.includes('data-icon="expand_less"'),
+        'Icon must be included subset glyph expand_less via data-icon'
+    );
+    assert.ok(
+        !phpContent.includes('>expand_less<'),
+        'Icon text node must be empty to prevent Safari Reader View leakage'
     );
     assert.ok(
         !phpContent.includes('chevron_right'),

@@ -176,6 +176,57 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 	}
 }
 
+if ( ! function_exists( 'node_get_icon_font_css' ) ) {
+	/**
+	 * 登録済みの Material Symbols 名から `[data-icon]::before` 用 CSS を自動生成する。
+	 *
+	 * Safari のリーダー表示は Web フォントを読まず `aria-hidden` も無視するため、
+	 * リガチャ用テキストノードではなく `data-icon` 属性と `::before` で描画する。
+	 *
+	 * @return string 生成した CSS ルール文字列（未登録時は空文字）。
+	 */
+	function node_get_icon_font_css(): string {
+		$names = node_get_icon_font_names();
+		if ( array() === $names ) {
+			return '';
+		}
+
+		$rules = array(
+			'.material-symbols-outlined[data-icon]::before{font-family:inherit;font-feature-settings:inherit;-webkit-font-feature-settings:inherit;font-variation-settings:inherit;line-height:inherit}',
+		);
+
+		foreach ( $names as $name ) {
+			$rules[] = '.material-symbols-outlined[data-icon="' . $name . '"]::before{content:"' . $name . '";content:"' . $name . '" / ""}';
+		}
+
+		return implode( "\n", $rules );
+	}
+}
+
+if ( ! function_exists( 'node_enqueue_icon_font_content_css' ) ) {
+	/**
+	 * 自動生成した `[data-icon]::before` CSS をフロントおよびブロックエディタへ登録・出力する。
+	 */
+	function node_enqueue_icon_font_content_css(): void {
+		if ( ! function_exists( 'wp_register_style' ) || ! function_exists( 'wp_enqueue_style' ) || ! function_exists( 'wp_add_inline_style' ) ) {
+			return;
+		}
+
+		$css = node_get_icon_font_css();
+		if ( '' === $css ) {
+			return;
+		}
+
+		if ( function_exists( 'wp_style_is' ) && wp_style_is( 'node-icon-font-content', 'enqueued' ) ) {
+			return;
+		}
+
+		wp_register_style( 'node-icon-font-content', false, array(), null );
+		wp_enqueue_style( 'node-icon-font-content' );
+		wp_add_inline_style( 'node-icon-font-content', $css );
+	}
+}
+
 if ( ! function_exists( 'node_get_icon_font_url' ) ) {
 	/**
 	 * Material Symbols の CSS URL を組み立てる。
@@ -299,5 +350,7 @@ if ( ! function_exists( 'node_enqueue_code_font_stylesheet' ) ) {
 
 if ( function_exists( 'add_action' ) ) {
 	add_action( 'wp_enqueue_scripts', 'node_enqueue_code_font_stylesheet', 30 );
+	add_action( 'wp_enqueue_scripts', 'node_enqueue_icon_font_content_css', 30 );
+	add_action( 'enqueue_block_assets', 'node_enqueue_icon_font_content_css', 30 );
 }
 

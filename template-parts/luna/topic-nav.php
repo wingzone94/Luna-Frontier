@@ -124,7 +124,7 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 						<?php $lf_feature_current = '' !== (string) ( $lf_feature['slug'] ?? '' ) && is_category( (string) $lf_feature['slug'] ); ?>
 						<li class="lf-topic-nav__item<?php echo $lf_feature_current ? ' is-current' : ''; ?>">
 							<a href="<?php echo esc_url( (string) $lf_feature['url'] ); ?>"<?php echo $lf_feature_current ? ' aria-current="page"' : ''; ?>>
-								<span class="material-symbols-outlined lf-topic-nav__icon" aria-hidden="true">local_fire_department</span>
+								<span class="material-symbols-outlined lf-topic-nav__icon" data-icon="local_fire_department" aria-hidden="true"></span>
 								<span class="lf-topic-nav__label"><?php echo esc_html( (string) $lf_feature['name'] ); ?></span>
 							</a>
 						</li>
@@ -146,7 +146,7 @@ if ( empty( $lf_topics ) && empty( $lf_spotlight ) && '' === $lf_spotlight_url )
 				<?php foreach ( $lf_topics as $lf_topic ) : ?>
 					<li class="lf-topic-nav__item<?php echo $lf_topic['current'] ? ' is-current' : ''; ?>">
 						<a href="<?php echo esc_url( $lf_topic['url'] ); ?>"<?php echo $lf_topic['current'] ? ' aria-current="page"' : ''; ?>>
-							<span class="material-symbols-outlined lf-topic-nav__icon" aria-hidden="true"><?php echo esc_html( luna_frontier_topic_icon( $lf_topic['label'] ) ); ?></span>
+							<span class="material-symbols-outlined lf-topic-nav__icon" data-icon="<?php echo esc_attr( luna_frontier_topic_icon( $lf_topic['label'] ) ); ?>" aria-hidden="true"></span>
 							<span class="lf-topic-nav__label"><?php echo esc_html( $lf_topic['label'] ); ?></span>
 						</a>
 					</li>

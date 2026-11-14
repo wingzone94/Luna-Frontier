@@ -49,7 +49,7 @@ const KNOWN_DYNAMIC = new Map([
 ]);
 
 /** この文字列が無いファイルは走査しない（3方向のどれにも当たらないファイルを飛ばす）。 */
-const SCAN_HINT = /material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.textContent|content\s*:|setIcon\s*\(|icon_names/i;
+const SCAN_HINT = /material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.(?:textContent|dataset\.icon)|content\s*:|setIcon\s*\(|icon_names/i;
 
 const CRAWL_PATHS = [
 	'/',
@@ -138,6 +138,7 @@ async function extractFromPages() {
 
 	const browser = await chromium.launch();
 	const found = new Map();
+	const leaked = new Map();
 	try {
 		const paths = [...CRAWL_PATHS, ...(await discoverPaths(browser))];
 		for (const width of [390, 1440]) {
@@ -152,12 +153,20 @@ async function extractFromPages() {
 						document.getElementById('search-toggle')?.click();
 						await new Promise((resolve) => setTimeout(resolve, 600));
 					});
-					const names = await page.evaluate(() =>
-						[...document.querySelectorAll('.material-symbols-outlined')]
-							.map((el) => el.textContent.trim())
-							.filter(Boolean)
-					);
-					names.forEach((n) => { if (!found.has(n)) found.set(n, `${width}px ${path}`); });
+					const pageIcons = await page.evaluate(() => {
+						const icons = [];
+						const textLeaks = [];
+						for (const el of document.querySelectorAll('.material-symbols-outlined')) {
+							const dataIcon = el.dataset.icon?.trim();
+							const textIcon = el.textContent.trim();
+							if (dataIcon) icons.push(dataIcon);
+							if (textIcon) textLeaks.push(textIcon);
+						}
+						return { icons, textLeaks };
+					});
+					const where = `${width}px ${path}`;
+					pageIcons.icons.forEach((n) => { if (!found.has(n)) found.set(n, where); });
+					pageIcons.textLeaks.forEach((t) => { if (!leaked.has(t)) leaked.set(t, where); });
 				} catch {
 					// 個別ページの失敗は握りつぶす。到達できないだけなら静的側で担保する。
 				}
@@ -167,7 +176,7 @@ async function extractFromPages() {
 	} finally {
 		await browser.close();
 	}
-	return found;
+	return { found, leaked };
 }
 
 const declared = await readDeclaredIcons();
@@ -178,14 +187,17 @@ const problems = [];
 const { missing: missingSource, needsRuntime: filterRuntimeChecks } = partitionMissing(fromSource, declared, filterAdded);
 missingSource.forEach(([name, hit]) => problems.push(`${name}  (${hit.file}:${hit.line}  ${hit.id})`));
 
-const fromPages = process.argv.includes('--static-only') ? null : await extractFromPages();
+const pageResult = process.argv.includes('--static-only') ? null : await extractFromPages();
+const fromPages = pageResult ? pageResult.found : null;
+const leakedPages = pageResult ? [...pageResult.leaked.entries()] : [];
 let missingPages = [];
 if (fromPages !== null && fromPages.size > 0) {
-	const pageResult = partitionMissing(fromPages, declared, filterAdded);
-	missingPages = pageResult.missing;
-	filterRuntimeChecks.push(...pageResult.needsRuntime);
+	const partitioned = partitionMissing(fromPages, declared, filterAdded);
+	missingPages = partitioned.missing;
+	filterRuntimeChecks.push(...partitioned.needsRuntime);
 	missingPages.forEach(([name, where]) => problems.push(`${name}  (描画: ${where})`));
 }
+leakedPages.forEach(([text, where]) => problems.push(`${text}  (テキストノード残存: ${where})`));
 
 // 使っていない登録は害が無い（数KBの差）が、増え続けると棚卸しできなくなる。
 // 静的に読めない指定が残っている以上、「削除してよい」とは言えない。
@@ -218,6 +230,7 @@ if (AS_JSON) {
 		filterRegistrationNeedsRuntime: [...new Set(filterRuntimeChecks.map(([name]) => name))],
 		pagesFound: fromPages === null ? null : fromPages.size,
 		pagesMissing: missingPages.map(([name, where]) => ({ name, where })),
+		pagesLeakedText: leakedPages.map(([text, where]) => ({ text, where })),
 		dynamicSources: dynamic,
 		unused: unused,
 	}, null, 2));
@@ -239,11 +252,12 @@ if (filterAdded.size) {
 
 if (fromPages === null) {
 	console.log('実ページ: playwright が無いので省略');
-} else if (fromPages.size === 0) {
+} else if (fromPages.size === 0 && leakedPages.length === 0) {
 	console.log(`実ページ: ${BASE} に到達できず省略`);
 } else {
-	console.log(`実ページ: ${fromPages.size}種 / 未登録 ${missingPages.length}種`);
+	console.log(`実ページ: ${fromPages.size}種 / 未登録 ${missingPages.length}種 / テキストノード残存 ${leakedPages.length}件`);
 	missingPages.forEach(([name, where]) => console.log(`  - ${name}  (描画: ${where})`));
+	leakedPages.forEach(([text, where]) => console.log(`  - ${text}  (テキストノード残存: ${where})`));
 }
 
 if (unused.length) {

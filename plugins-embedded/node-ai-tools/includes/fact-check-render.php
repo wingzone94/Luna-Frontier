@@ -250,13 +250,13 @@ if ( ! function_exists( 'node_ai_render_fact_check_front' ) ) {
 		<details class="m3-fact-check m3-reveal">
 			<summary class="m3-fact-check__toggle">
 				<span class="m3-fact-check__toggle-inner">
-					<span class="material-symbols-outlined m3-fact-check__icon" aria-hidden="true">verified</span>
+					<span class="material-symbols-outlined m3-fact-check__icon" data-icon="verified" aria-hidden="true"></span>
 					<span class="m3-fact-check__label"><?php esc_html_e( 'Fact Check', 'node-ai-tools' ); ?></span>
 					<span class="m3-fact-check__risk m3-fact-check__risk--<?php echo esc_attr( $risk ); ?>">
 						<?php echo esc_html( sprintf( __( 'リスク: %s', 'node-ai-tools' ), $risk_label ) ); ?>
 					</span>
-					<span class="material-symbols-outlined m3-fact-check__chevron m3-fact-check__chevron--more" aria-hidden="true">expand_more</span>
-					<span class="material-symbols-outlined m3-fact-check__chevron m3-fact-check__chevron--less" aria-hidden="true">expand_less</span>
+					<span class="material-symbols-outlined m3-fact-check__chevron m3-fact-check__chevron--more" data-icon="expand_more" aria-hidden="true"></span>
+					<span class="material-symbols-outlined m3-fact-check__chevron m3-fact-check__chevron--less" data-icon="expand_less" aria-hidden="true"></span>
 				</span>
 			</summary>
 			<div class="m3-fact-check__body">
@@ -291,13 +291,13 @@ if ( ! function_exists( 'node_ai_render_fact_check_front' ) ) {
 				<footer class="m3-fact-check__footer">
 					<?php if ( ! empty( $data['grounded'] ) ) : ?>
 						<span class="m3-fact-check__badge">
-							<span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+							<span class="material-symbols-outlined" data-icon="travel_explore" aria-hidden="true"></span>
 							Google Search Grounding
 						</span>
 					<?php endif; ?>
 					<?php if ( ! empty( $data['guidelines_used'] ) ) : ?>
 						<span class="m3-fact-check__badge m3-fact-check__badge--guidelines">
-							<span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+							<span class="material-symbols-outlined" data-icon="menu_book" aria-hidden="true"></span>
 							<?php esc_html_e( 'ガイドライン参照', 'node-ai-tools' ); ?>
 						</span>
 					<?php endif; ?>

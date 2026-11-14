@@ -55,7 +55,7 @@
             toast.setAttribute('aria-atomic', 'true');
             document.body.appendChild(toast);
         }
-        toast.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span></span>';
+        toast.innerHTML = '<span class="material-symbols-outlined" data-icon="check_circle" aria-hidden="true"></span><span></span>';
         toast.querySelector('span:last-child').textContent = message;
 
         window.clearTimeout(toastTimer);
@@ -88,17 +88,23 @@
     const flashSuccess = (btn) => {
         const icon = btn.querySelector('.m3-blogcard__action-icon');
         if (icon && !btn.dataset.originalIcon) {
-            btn.dataset.originalIcon = icon.textContent;
+            btn.dataset.originalIcon = icon.dataset.icon || '';
         }
 
         btn.classList.add('is-success');
-        if (icon) icon.textContent = 'check';
+        if (icon) {
+            icon.dataset.icon = 'check';
+            icon.textContent = '';
+        }
 
         const previous = iconResetTimers.get(btn);
         if (previous) window.clearTimeout(previous);
         const timer = window.setTimeout(() => {
             btn.classList.remove('is-success');
-            if (icon && btn.dataset.originalIcon) icon.textContent = btn.dataset.originalIcon;
+            if (icon && btn.dataset.originalIcon) {
+                icon.dataset.icon = btn.dataset.originalIcon;
+                icon.textContent = '';
+            }
         }, 2000);
         iconResetTimers.set(btn, timer);
 

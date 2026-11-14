@@ -26,7 +26,7 @@ if ( function_exists( 'node_home_register_featured_post_ids' ) ) {
 <section id="hot" class="m3-hot-posts m3-surface m3-section-spacing" aria-labelledby="hot-title">
 	<div class="m3-headlines__header m3-hot-posts__header">
 		<h2 id="hot-title" class="m3-section-title m3-headlines__title">
-			<span class="material-symbols-outlined" aria-hidden="true">whatshot</span>
+			<span class="material-symbols-outlined" data-icon="whatshot" aria-hidden="true"></span>
 			HOT <span class="m3-section-title__sub">よく読まれています</span>
 		</h2>
 	</div>

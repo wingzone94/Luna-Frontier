@@ -53,7 +53,7 @@ function node_print_get_button_html(): string {
 		        onclick="window.print()"
 		        title="この記事を印刷"
 		        aria-label="この記事を印刷する">
-			<span class="material-symbols-outlined" aria-hidden="true">print</span>
+			<span class="material-symbols-outlined" data-icon="print" aria-hidden="true"></span>
 			<span class="m3-share-btn__label">印刷</span>
 		</button>
 	<?php

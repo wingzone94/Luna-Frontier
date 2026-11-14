@@ -36,7 +36,7 @@ get_header();
 					   class="m3-spotlight-badge m3-ripple-host"
 					   style="background-color: <?php echo esc_attr( $cat['color'] ); ?>; color: #ffffff;"
 					   aria-label="<?php echo esc_attr( $cat['name'] ); ?>特集へ">
-						<span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+						<span class="material-symbols-outlined" data-icon="auto_awesome" aria-hidden="true"></span>
 						<?php echo esc_html( $cat['name'] ); ?>
 					</a>
 				<?php endforeach; ?>

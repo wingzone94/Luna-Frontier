@@ -206,4 +206,38 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$names = node_get_icon_font_names();
 		$this->assertSame( array_values( array_unique( $names ) ), $names );
 	}
+
+	public function test_generated_icon_font_css_tracks_registered_names_and_enqueues_inline_style() {
+		$custom_callback = static function ( array $names ): array {
+			$names[] = 'luna_test_glyph';
+			return $names;
+		};
+		add_filter( 'node_icon_font_names', $custom_callback );
+
+		try {
+			$names = node_get_icon_font_names();
+			$css   = node_get_icon_font_css();
+
+			$this->assertContains( 'luna_test_glyph', $names );
+			$this->assertStringContainsString( '.material-symbols-outlined[data-icon]::before{', $css );
+			foreach ( array( 'person', 'tablet_mac', 'luna_test_glyph' ) as $expected ) {
+				$this->assertStringContainsString(
+					'.material-symbols-outlined[data-icon="' . $expected . '"]::before{content:"' . $expected . '";content:"' . $expected . '" / ""}',
+					$css
+				);
+			}
+
+			wp_dequeue_style( 'node-icon-font-content' );
+			wp_deregister_style( 'node-icon-font-content' );
+			node_enqueue_icon_font_content_css();
+			$this->assertTrue( wp_style_is( 'node-icon-font-content', 'enqueued' ) );
+			$inline = wp_styles()->get_data( 'node-icon-font-content', 'after' );
+			$this->assertIsArray( $inline );
+			$this->assertStringContainsString( 'data-icon="luna_test_glyph"', implode( "\n", $inline ) );
+		} finally {
+			remove_filter( 'node_icon_font_names', $custom_callback );
+			wp_dequeue_style( 'node-icon-font-content' );
+			wp_deregister_style( 'node-icon-font-content' );
+		}
+	}
 }

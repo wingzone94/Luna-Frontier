@@ -52,7 +52,7 @@ if ( $lf_terms && function_exists( 'node_get_category_label_props' ) && function
 				echo 'news' === $lf_variant ? node_defer_image_html( $lf_image_html ) : $lf_image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				?>
 			<?php else : ?>
-				<span class="lf-home-story__placeholder material-symbols-outlined" aria-hidden="true">article</span>
+				<span class="lf-home-story__placeholder material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
 			<?php endif; ?>
 		</div>
 		<div class="lf-home-story__body">

@@ -16,8 +16,8 @@ if ( (int) $wp_query->max_num_pages <= 1 ) {
 $pagination = get_the_posts_pagination(
 	array(
 		'mid_size'  => 2,
-		'prev_text' => '<span class="material-symbols-outlined">chevron_left</span>',
-		'next_text' => '<span class="material-symbols-outlined">chevron_right</span>',
+		'prev_text' => '<span class="material-symbols-outlined" data-icon="chevron_left"></span>',
+		'next_text' => '<span class="material-symbols-outlined" data-icon="chevron_right"></span>',
 	)
 );
 

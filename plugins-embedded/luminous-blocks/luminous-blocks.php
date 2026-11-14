@@ -69,6 +69,35 @@ final class Luminous_Blocks {
 		// フロントエンド / エディタ用アセット
 		add_action( 'luminous_enqueue_scripts', [ $this, 'enqueue_frontend_assets' ] );
 		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_editor_assets' ] );
+		add_filter( 'render_block_node/notice', [ $this, 'normalize_legacy_notice_icons' ], 10, 1 );
+	}
+
+	/**
+	 * 既定投稿の旧 `node/notice` 保存済み HTML（テキストノード型）を描画時に `data-icon` 形式へ正規化する。
+	 * `node/notice` 自体の静的ブロック性（`render_callback === null`）は維持したまま、
+	 * DB 上の既存記事がリーダー表示でアイコン名を漏らさないようにする局所対処。
+	 */
+	public function normalize_legacy_notice_icons( string $block_content ): string {
+		if ( false === strpos( $block_content, 'material-symbols-outlined' ) ) {
+			return $block_content;
+		}
+
+		$normalized = preg_replace_callback(
+			'/<span\b([^>]*\bmaterial-symbols-outlined\b[^>]*)>\s*([a-z0-9_]{2,40})\s*<\/span>/i',
+			static function ( array $matches ): string {
+				$attrs = $matches[1];
+				$icon  = strtolower( $matches[2] );
+
+				if ( preg_match( '/\bdata-icon\s*=/i', $attrs ) ) {
+					return '<span' . $attrs . '></span>';
+				}
+
+				return '<span' . $attrs . ' data-icon="' . esc_attr( $icon ) . '"></span>';
+			},
+			$block_content
+		);
+
+		return is_string( $normalized ) ? $normalized : $block_content;
 	}
 
 	public function register_blocks(): void {

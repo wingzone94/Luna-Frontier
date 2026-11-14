@@ -14,7 +14,16 @@
     white-space: nowrap;
     direction: ltr;
     -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined[data-icon]::before {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    -webkit-font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    line-height: inherit;
 }
 
 /* Global Interaction triggers */

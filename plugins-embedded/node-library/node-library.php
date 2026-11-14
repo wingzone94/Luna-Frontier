@@ -713,14 +713,14 @@ final class Node_Library {
 			<div class="m3-product-card__disclosures">
 				<?php if ($show_amazon_disclosure && !empty($disc_amazon)) : ?>
 					<div class="m3-product-card__disclosure">
-						<span class="material-symbols-outlined">info</span>
+						<span class="material-symbols-outlined" data-icon="info"></span>
 						<?php echo esc_html($disc_amazon); ?>
 					</div>
 				<?php endif; ?>
 				
 				<?php if ($show_rakuten_disclosure && !empty($disc_rakuten)) : ?>
 					<div class="m3-product-card__disclosure">
-						<span class="material-symbols-outlined">info</span>
+						<span class="material-symbols-outlined" data-icon="info"></span>
 						<?php echo esc_html($disc_rakuten); ?>
 					</div>
 				<?php endif; ?>
@@ -780,6 +780,7 @@ final class Node_Library {
 			array(
 				'adminNewUrl'  => admin_url( 'post-new.php?post_type=node_library' ),
 				'adminListUrl' => admin_url( 'edit.php?post_type=node_library' ),
+				'iconCss'      => function_exists( 'node_get_icon_font_css' ) ? node_get_icon_font_css() : '',
 			)
 		);
 	}

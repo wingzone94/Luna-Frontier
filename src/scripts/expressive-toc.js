@@ -74,7 +74,7 @@ export function initExpressiveFloatingTOC() {
             tocTrigger.className = 'm3-fab m3-fab--extended m3-fab--mobile-hidden toc-ready';
             tocTrigger.setAttribute('aria-label', '目次を表示');
             tocTrigger.innerHTML = [
-                '<span class="material-symbols-outlined" aria-hidden="true">list</span>',
+                '<span class="material-symbols-outlined" data-icon="list" aria-hidden="true"></span>',
                 '<span class="m3-fab-text">目次</span>'
             ].join('');
             actionStack.appendChild(tocTrigger);
@@ -87,10 +87,10 @@ export function initExpressiveFloatingTOC() {
             tocPanel.setAttribute('aria-hidden', 'true');
             tocPanel.innerHTML = [
                 '<div class="m3-sticky-toc__header">',
-                '<span class="material-symbols-outlined m3-toc-icon" aria-hidden="true">toc</span>',
+                '<span class="material-symbols-outlined m3-toc-icon" data-icon="toc" aria-hidden="true"></span>',
                 '<span class="m3-sticky-toc__title">目次</span>',
                 '<button type="button" id="m3-toc-close" class="m3-toc-close-btn" aria-label="目次を閉じる">',
-                '<span class="material-symbols-outlined" aria-hidden="true">close</span>',
+                '<span class="material-symbols-outlined" data-icon="close" aria-hidden="true"></span>',
                 '</button>',
                 '</div>',
                 '<nav id="m3-toc-container" class="m3-toc-body" aria-label="ページ内目次"></nav>'

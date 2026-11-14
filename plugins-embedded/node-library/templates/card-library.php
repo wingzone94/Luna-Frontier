@@ -428,7 +428,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                    class="m3-platform-button m3-platform-button--<?php echo esc_attr( $platform_slug ); ?> m3-platform-button--desktop m3-ripple-host"
                    target="_blank"
                    rel="noopener">
-                    <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+                    <span class="material-symbols-outlined" data-icon="shopping_cart" aria-hidden="true"></span>
                     <?php echo esc_html( $button_label ); ?>
                 </a>
                 <a href="<?php echo esc_url( $link['url'] ); ?>"
@@ -439,12 +439,12 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                     <img class="m3-platform-store-badge" src="<?php echo esc_url( $badge_url ); ?>" alt="<?php echo esc_attr( $button_label ); ?>">
                 </a>
                 <button class="m3-platform-qr-toggle" type="button" aria-label="<?php echo esc_attr( $platform . 'のQRコードを表示' ); ?>" aria-controls="<?php echo esc_attr( $qr_panel_id ); ?>" aria-expanded="false" title="QRコードを表示" data-node-library-qr-toggle>
-                    <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+                    <span class="material-symbols-outlined" data-icon="qr_code_2" aria-hidden="true"></span>
                 </button>
             </div>
             <dialog class="m3-platform-qr-dialog" id="<?php echo esc_attr( $qr_panel_id ); ?>" aria-labelledby="<?php echo esc_attr( $qr_title_id ); ?>" data-qr-url="<?php echo esc_url( $link['url'] ); ?>" data-node-library-qr-dialog>
                 <button class="m3-platform-qr-close" type="button" aria-label="QRコードを閉じる" title="閉じる" data-node-library-qr-close>
-                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    <span class="material-symbols-outlined" data-icon="close" aria-hidden="true"></span>
                 </button>
                 <h5 id="<?php echo esc_attr( $qr_title_id ); ?>"><?php echo esc_html( $platform ); ?></h5>
                 <span class="m3-platform-qr-status" data-node-library-qr-status>QRコードを生成中…</span>
@@ -452,7 +452,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                 <div class="m3-platform-qr-link-row">
                     <a class="m3-platform-qr-url" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $link['url'] ); ?></a>
                     <button class="m3-platform-qr-copy" type="button" data-copy-text="<?php echo esc_url( $link['url'] ); ?>" data-node-library-qr-copy>
-                        <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                        <span class="material-symbols-outlined" data-icon="content_copy" aria-hidden="true"></span>
                         コピー
                     </button>
                 </div>
@@ -477,7 +477,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
            target="_blank"
            rel="noopener"<?php echo $platform_warning ? ' data-node-library-platform-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-platform-warning="' . esc_attr( $platform_warning ) . '" data-node-library-nintendo-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-nintendo-warning="' . esc_attr( $platform_warning ) . '"' : ''; ?>>
             <span class="m3-platform-button__main">
-                <span class="material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+                <span class="material-symbols-outlined" data-icon="shopping_cart" aria-hidden="true"></span>
                 <span><?php echo esc_html( $button_label ); ?></span>
             </span>
             <?php if ( $platform_hardware_note ) : ?>
@@ -493,7 +493,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
 ?>
 <section class="m3-game-card m3-reveal node-library-card<?php echo ! empty( $steam_links ) ? ' m3-game-card--has-steam-toggle' : ''; ?>">
     <div class="m3-game-card__header">
-        <span class="material-symbols-outlined" aria-hidden="true"><?php echo esc_html( $header_icon ); ?></span>
+        <span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $header_icon ); ?>" aria-hidden="true"></span>
         <h3><?php echo esc_html( $header_text ); ?></h3>
     </div>
     
@@ -506,7 +506,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
         <?php if ( $library_permalink ) : ?>
             <a class="m3-game-card__details-link" href="<?php echo esc_url( $library_permalink ); ?>">
                 <?php esc_html_e( '詳細を見る', 'node-library' ); ?>
-                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                <span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span>
             </a>
         <?php endif; ?>
 
@@ -522,7 +522,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                             $panel_id = $store_tabs_id . '-' . $group_key . '-panel';
                             ?>
                             <button class="m3-game-card__tab" id="<?php echo esc_attr( $tab_id ); ?>" type="button" role="tab" aria-label="<?php echo esc_attr( $group['label'] ); ?>" aria-selected="<?php echo 0 === $tab_index ? 'true' : 'false'; ?>" aria-controls="<?php echo esc_attr( $panel_id ); ?>" tabindex="<?php echo 0 === $tab_index ? '0' : '-1'; ?>" data-node-library-tab="<?php echo esc_attr( $group_key ); ?>">
-                                <span class="material-symbols-outlined" aria-hidden="true"><?php echo esc_html( $group['icon'] ); ?></span>
+                                <span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $group['icon'] ); ?>" aria-hidden="true"></span>
                                 <span class="m3-game-card__tab-label m3-game-card__tab-label--full"><?php echo esc_html( $group['label'] ); ?></span>
                                 <span class="m3-game-card__tab-label m3-game-card__tab-label--compact"><?php echo esc_html( $group['short_label'] ); ?></span>
                                 <?php if ( 'all' === $group_key ) : ?>
@@ -534,11 +534,11 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                     </div>
                     <?php if ( count( $store_groups ) > 3 ) : ?>
                         <button class="m3-game-card__tab-next" type="button" aria-label="次のタブを表示" title="次のタブを表示" data-node-library-tab-next>
-                            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                            <span class="material-symbols-outlined" data-icon="chevron_right" aria-hidden="true"></span>
                         </button>
                     <?php endif; ?>
                     <button class="m3-game-card__tab-back" type="button" aria-label="デバイスタイプ別に戻る" title="デバイスタイプ別に戻る" data-node-library-tab-back hidden>
-                        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                        <span class="material-symbols-outlined" data-icon="arrow_back" aria-hidden="true"></span>
                         <span class="m3-game-card__tab-back-label">デバイスタイプ別に戻る</span>
                     </button>
                     </div>

@@ -94,7 +94,7 @@ async function scanNames() {
 	for (const file of await walk(ROOT)) {
 		const rel = relative(ROOT, file);
 		const text = await readFile(file, 'utf8');
-		if (!/material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.textContent|content\s*:|setIcon\s*\(|icon_names/i.test(text)) continue;
+		if (!/material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.(?:textContent|dataset\.icon)|content\s*:|setIcon\s*\(|icon_names/i.test(text)) continue;
 		entries.push({ path: rel, text });
 	}
 	const { found, medium, maps, filterAdded, dynamic } = extractUsageFromEntries(entries, known);
@@ -157,6 +157,9 @@ test('node_icon_font_names フィルタが足す名前は、割合に関係な�
 test('実行時にしか決まらない指定を拾う', () => {
 	const php = `<span class="material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>`;
 	assert.ok(findDynamicSources(php).some((d) => d.id === 'php_expression_icon'));
+
+	const phpAttr = `<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $icon ); ?>"></span>`;
+	assert.ok(findDynamicSources(phpAttr).some((d) => d.id === 'php_expression_icon'));
 
 	const filter = `add_filter( 'node_icon_font_names', 'luna_frontier_home_icon_names' );`;
 	assert.ok(findDynamicSources(filter).some((d) => d.id === 'icon_font_names_filter'));
@@ -318,15 +321,22 @@ test('未使用の key は登録削除済みで、node-image-compressor 用4種�
 	}
 });
 
-test('span 内 PHP 三項演算子と icon 要素 textContent / PHP配列・match・JS定数マップを高信頼抽出する', () => {
+test('span 内/属性の PHP 三項演算子・data-icon・dataset.icon 代入・PHP配列/match・JS定数マップを高信頼抽出する', () => {
 	const phpSpan = `<span class="material-symbols-outlined"><?php echo 'skipped' === $status['state'] ? 'restart_alt' : 'block'; ?></span>`;
 	const spanHits = extractLiterals(phpSpan).filter((h) => h.confidence === 'high').map((h) => h.name).sort();
 	assert.deepEqual(spanHits, ['block', 'restart_alt']);
 
+	const phpDataAttrSpan = `
+		<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
+		<span data-icon="person" class="material-symbols-outlined" aria-hidden="true"></span>
+	`;
+	const attrSpanHits = extractLiterals(phpDataAttrSpan).filter((h) => h.confidence === 'high').map((h) => h.name).sort();
+	assert.deepEqual(attrSpanHits, ['person', 'smartphone', 'sports_esports']);
+
 	const jsText = `
-		skipIcon.textContent = isSkipped ? 'restart_alt' : 'block';
-		icon.textContent = item.icon || 'search';
-		if (copyIcon) copyIcon.textContent = 'check';
+		skipIcon.dataset.icon = isSkipped ? 'restart_alt' : 'block';
+		icon.dataset.icon = item.icon || 'search';
+		if (copyIcon) copyIcon.dataset.icon = 'check';
 	`;
 	const jsHits = extractLiterals(jsText).filter((h) => h.confidence === 'high').map((h) => h.name).sort();
 	assert.deepEqual(jsHits, ['block', 'check', 'restart_alt', 'search']);
@@ -346,10 +356,10 @@ test('span 内 PHP 三項演算子と icon 要素 textContent / PHP配列・matc
 	const phpHits = extractScopedHighRefs('sample.php', phpScoped).map((h) => h.name).sort();
 	assert.deepEqual(phpHits, ['block', 'check_circle', 'do_not_disturb_on', 'pending', 'smartphone', 'sports_esports']);
 
-	const jsMap = `var STATE_ICONS = { pending: 'pending', skipped: 'block' }; icon.textContent = STATE_ICONS[state];`;
+	const jsMap = `var STATE_ICONS = { pending: 'pending', skipped: 'block' }; icon.dataset.icon = STATE_ICONS[state];`;
 	assert.deepEqual(extractScopedHighRefs('admin.js', jsMap).map((h) => h.name).sort(), ['block', 'pending']);
 
-	const legacyMap = `var NOTICE_LEGACY_ICONS = { alert: 'report' }; return noticeSaveMarkup( props, NOTICE_LEGACY_ICONS );`;
+	const legacyMap = `var NOTICE_LEGACY_ICONS = { alert: 'report' }; return noticeSaveMarkup( props, NOTICE_LEGACY_ICONS, false );`;
 	assert.deepEqual(extractScopedHighRefs('editor.js', legacyMap), []);
 });
 

@@ -42,7 +42,7 @@ $node_404_links = array(
 			<form role="search" method="get" class="m3-404-search" action="<?php echo esc_url( home_url( '/' ) ); ?>">
 				<input type="search" class="m3-404-search__field" placeholder="キーワードで検索" value="" name="s" />
 				<button type="submit" class="m3-404-search__submit" aria-label="検索">
-					<span class="material-symbols-outlined" aria-hidden="true">search</span>
+					<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
 				</button>
 			</form>
 		</div>
@@ -50,7 +50,7 @@ $node_404_links = array(
 		<nav class="m3-404-lite__links" aria-label="主要ページ">
 			<?php foreach ( $node_404_links as $node_404_link ) : ?>
 				<a class="m3-button <?php echo esc_attr( $node_404_link['class'] ); ?>" href="<?php echo esc_url( $node_404_link['url'] ); ?>">
-					<span class="material-symbols-outlined" aria-hidden="true"><?php echo esc_html( $node_404_link['icon'] ); ?></span>
+					<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $node_404_link['icon'] ); ?>" aria-hidden="true"></span>
 					<?php echo esc_html( $node_404_link['label'] ); ?>
 				</a>
 			<?php endforeach; ?>

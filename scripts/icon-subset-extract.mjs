@@ -23,10 +23,25 @@ const VALUE_END = '(?=\\s*(?:[,;)\\]}>/]|$))';
 /** アイコン名がそのまま書かれている箇所。 */
 export const LITERAL_PATTERNS = [
 	{
+		id: 'span_data_icon',
+		confidence: 'high',
+		note: '<span class="material-symbols-outlined" data-icon="name"></span>',
+		re: new RegExp(
+			`<span\\b(?=[^>]*\\bclass=["'][^"']*material-symbols-outlined[^"']*["'])[^>]*\\bdata-icon\\s*=\\s*["'](${ICON_NAME})["'](?=[\\s>/]|$)`,
+			'g'
+		),
+	},
+	{
 		id: 'span_literal',
 		confidence: 'high',
 		note: '<span class="material-symbols-outlined">name</span>',
 		re: new RegExp(`class=["'][^"']*material-symbols-outlined[^"']*["'][^>]*>\\s*(${ICON_NAME})\\s*<`, 'g'),
+	},
+	{
+		id: 'dataset_icon',
+		confidence: 'medium',
+		note: 'el.dataset.icon = "name"',
+		re: new RegExp(`\\.dataset\\.icon\\s*=\\s*['"](${ICON_NAME})['"]${VALUE_END}`, 'g'),
 	},
 	{
 		id: 'text_content',
@@ -93,8 +108,8 @@ export const ICON_MAP_MIN_KNOWN_RATIO = 0.6;
 export const DYNAMIC_SOURCES = [
 	{
 		id: 'php_expression_icon',
-		note: 'スパンの中身が PHP の式（名前がソースに無い）',
-		re: new RegExp(`class=["'][^"']*material-symbols-outlined[^"']*["'][^>]*>\\s*<\\?php`, 'g'),
+		note: 'スパンのアイコン指定が PHP の式（名前がソースに無い）',
+		re: /<span\b(?=[^>]*\bclass=["'][^"']*material-symbols-outlined[^"']*["'])(?:[^>]*\bdata-icon=["']<\?(?:php\b|=)|[^>]*>\s*<\?(?:php\b|=))/g,
 	},
 	{
 		id: 'php_variable_icon',
@@ -254,6 +269,22 @@ export function extractLiterals(text) {
 		}
 	}
 
+	const spanAttrPhpRe = /<span\b(?=[^>]*\bclass=["'][^"']*material-symbols-outlined[^"']*["'])[^>]*\bdata-icon=["']<\?(?:php\b|=)([\s\S]*?)\?>["']/g;
+	for (const m of text.matchAll(spanAttrPhpRe)) {
+		const expr = m[1].replace(/^\s*(?:echo|print)\b\s*/, '').replace(/;\s*$/, '').trim();
+		const names = extractTernaryBranchLiterals(expr);
+		const line = lineOf(text, m.index);
+		for (const name of names) {
+			found.push({
+				name,
+				id: 'span_php_literal',
+				confidence: 'high',
+				note: '<span class="material-symbols-outlined" data-icon="<?php ... ?>"></span>',
+				line,
+			});
+		}
+	}
+
 	const spanPhpRe = /class=["'][^"']*material-symbols-outlined[^"']*["'][^>]*>\s*<\?(?:php\b|=)([\s\S]*?)\?>\s*(?=<\/span>)/g;
 	for (const m of text.matchAll(spanPhpRe)) {
 		const expr = m[1].replace(/^\s*(?:echo|print)\b\s*/, '').replace(/;\s*$/, '').trim();
@@ -270,7 +301,7 @@ export function extractLiterals(text) {
 		}
 	}
 
-	const iconTextRe = /(?:^|[^\w$])(?:[A-Za-z0-9_$]*[Ii]con(?:El|Element|Node|Span)?|querySelector\s*\(\s*['"][^'"]*material-symbols[^'"]*['"]\s*\))\.textContent\s*=\s*([^;\n]+)/gm;
+	const iconTextRe = /(?:^|[^\w$])(?:[A-Za-z0-9_$]*[Ii]con(?:El|Element|Node|Span)?|querySelector\s*\(\s*['"][^'"]*material-symbols[^'"]*['"]\s*\))\.(?:textContent|dataset\.icon)\s*=\s*([^;\n]+)/gm;
 	for (const m of text.matchAll(iconTextRe)) {
 		const lineStart = text.lastIndexOf('\n', m.index) + 1;
 		const linePrefix = text.slice(lineStart, m.index).trimStart();
@@ -282,7 +313,7 @@ export function extractLiterals(text) {
 				name,
 				id: 'icon_text_content',
 				confidence: 'high',
-				note: 'icon要素の textContent 代入',
+				note: 'icon要素の data-icon / textContent 代入',
 				line,
 			});
 		}
@@ -372,8 +403,8 @@ export function extractScopedHighRefs(rel, text) {
 	const jsIconMapRe = /\b(?:const|let|var)\s+([A-Za-z0-9_$]*_?ICONS?)\s*=\s*\{/g;
 	for (const mapMatch of text.matchAll(jsIconMapRe)) {
 		const mapName = mapMatch[1];
-		const usedInTextContent = new RegExp(`\\.textContent\\s*=[^;]*\\b${mapName}\\s*\\[`).test(text);
-		if (!usedInTextContent) continue;
+		const usedInIconAssignment = new RegExp(`\\.(?:textContent|dataset\\.icon)\\s*=[^;]*\\b${mapName}\\s*\\[`).test(text);
+		if (!usedInIconAssignment) continue;
 		const start = mapMatch.index + mapMatch[0].length;
 		const end = matchClose(text, start, '{', '}');
 		if (end === -1) continue;

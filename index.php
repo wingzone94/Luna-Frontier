@@ -16,11 +16,11 @@ get_header();
             <section id="spotlight" class="special-features m3-surface m3-section-spacing" aria-labelledby="spotlight-title">
                 <div class="m3-headlines__header" style="margin-bottom: 24px; padding: 0;">
                     <h2 id="spotlight-title" class="m3-section-title m3-headlines__title" style="margin-bottom: 0;">
-                        <span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span>
+                        <span class="material-symbols-outlined" data-icon="local_fire_department" aria-hidden="true"></span>
                         SPOTLIGHT <span class="m3-section-title__sub">特集</span>
                     </h2>
                     <a href="<?php echo esc_url( node_get_spotlight_url() ); ?>" class="m3-headlines__more m3-button m3-button--text">
-                        すべて見る<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        すべて見る<span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span>
                     </a>
                 </div>
                 <div class="special-features__pills">
@@ -29,7 +29,7 @@ get_header();
                            class="m3-spotlight-badge m3-ripple-host"
                            style="background-color: <?php echo esc_attr($cat['color']); ?>; color:#fff;"
                            aria-label="<?php echo esc_attr($cat['name']); ?>特集へ">
-                            <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                            <span class="material-symbols-outlined" data-icon="auto_awesome" aria-hidden="true"></span>
                             <?php echo esc_html($cat['name']); ?>
                         </a>
                     <?php endforeach; ?>
@@ -55,7 +55,7 @@ get_header();
         <section<?php echo $is_first_page ? ' id="latest"' : ''; ?> class="l-card-grid m3-post-grid" aria-labelledby="<?php echo $is_first_page ? 'latest-title' : 'articles-title'; ?>">
             <?php if ($is_first_page) : ?>
                 <div class="m3-surface m3-surface--latest m3-section-spacing">
-                    <h2 id="latest-title" class="m3-section-title"><span class="material-symbols-outlined" aria-hidden="true">bolt</span> LATEST <span class="m3-section-title__sub">最新記事</span></h2>
+                    <h2 id="latest-title" class="m3-section-title"><span class="material-symbols-outlined" data-icon="bolt" aria-hidden="true"></span> LATEST <span class="m3-section-title__sub">最新記事</span></h2>
                     <div class="l-card-grid__items l-card-grid__items--featured m3-post-grid__container m3-post-grid__container--featured">
             <?php else : ?>
                 <div class="m3-surface m3-surface--articles m3-section-spacing">
@@ -76,7 +76,7 @@ get_header();
                 </div>
                 <a class="m3-latest-see-all m3-button m3-button--text" href="<?php echo esc_url(node_get_all_articles_url()); ?>">
                     <span class="m3-latest-see-all__text">すべて見る</span>
-                    <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    <span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span>
                 </a>
             <?php else : ?>
                 </div>
@@ -87,7 +87,7 @@ get_header();
                     <?php if ($is_first_page) : ?>
                         <a href="<?php echo esc_url(node_get_all_articles_url()); ?>" class="m3-archive-pill-button m3-ripple-host" aria-label="全ての記事を見る">
                             <span class="m3-archive-pill-button__text">すべての記事を見る</span>
-                            <div class="m3-archive-pill-button__icon"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></div>
+                            <div class="m3-archive-pill-button__icon"><span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span></div>
                         </a>
                     <?php else : ?>
                         <?php
@@ -95,7 +95,7 @@ get_header();
                         ?>
                         <a href="<?php echo esc_url($next_link); ?>" class="m3-archive-pill-button m3-ripple-host" aria-label="もっと見る">
                             <span class="m3-archive-pill-button__text">もっと見る</span>
-                            <div class="m3-archive-pill-button__icon"><span class="material-symbols-outlined" aria-hidden="true">expand_more</span></div>
+                            <div class="m3-archive-pill-button__icon"><span class="material-symbols-outlined" data-icon="expand_more" aria-hidden="true"></span></div>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -104,7 +104,7 @@ get_header();
     <?php else : ?>
         <section class="m3-no-posts m3-surface m3-section-spacing">
             <div class="m3-no-posts__content">
-                <span class="material-symbols-outlined m3-no-posts__icon">sentiment_dissatisfied</span>
+                <span class="material-symbols-outlined m3-no-posts__icon" data-icon="sentiment_dissatisfied"></span>
                 <h2 class="m3-no-posts__title">記事が見つかりませんでした</h2>
                 <p class="m3-no-posts__text">投稿された記事がまだないか、条件に一致する記事がありません。</p>
                 <a href="<?php echo esc_url(home_url('/')); ?>" class="m3-button m3-button--filled">トップへ戻る</a>
