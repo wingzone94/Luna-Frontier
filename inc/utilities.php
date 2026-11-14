@@ -589,7 +589,7 @@ function node_the_category_labels($post_id = null) {
         // PC(1001px〜)ではCSSで文字を隠しアイコン(📁)のみ表示。ホバー/フォーカスで
         // 上方向に「この記事に属しているカテゴリ表記です」の吹き出しを出す。
         echo '<span class="m3-article__category-label" tabindex="0" aria-label="CATEGORY: この記事に属しているカテゴリ表記です">'
-            . '<span class="material-symbols-outlined" aria-hidden="true">folder</span>'
+            . '<span class="material-symbols-outlined" data-icon="folder" aria-hidden="true"></span>'
             . '<span class="m3-article__category-label-text">CATEGORY</span>'
             . '<span class="m3-category-info-bubble" role="tooltip" aria-hidden="true">この記事に属しているカテゴリ表記です</span>'
             . '</span>';
@@ -640,7 +640,7 @@ function node_the_tag_labels($post_id = null) {
 
     echo '<div class="m3-article__tags">';
     echo '<span class="m3-article__footer-label">';
-    echo '<span class="material-symbols-outlined" aria-hidden="true">sell</span>';
+    echo '<span class="material-symbols-outlined" data-icon="sell" aria-hidden="true"></span>';
     echo 'TAGS';
     echo '</span>';
 
@@ -684,10 +684,10 @@ function node_the_post_badges($post_id = null, $mode = 'compact', $types = ['ai'
         echo '<span class="' . esc_attr($ai_class) . '" data-tooltip="' . esc_attr($ai_label) . '" title="' . esc_attr($ai_label) . '" aria-label="' . esc_attr($ai_label) . '"' . $pos_attr . '>';
         if ($mode === 'expressive') {
             echo '<span class="m3-ai-disclosure__glow"></span>';
-            echo '<span class="material-symbols-outlined m3-ai-disclosure__icon">auto_awesome</span>';
+            echo '<span class="material-symbols-outlined m3-ai-disclosure__icon" data-icon="auto_awesome"></span>';
             echo '<span class="m3-ai-disclosure__text">' . esc_html($ai_label) . '</span>';
         } else {
-            echo '<span class="material-symbols-outlined">auto_awesome</span>';
+            echo '<span class="material-symbols-outlined" data-icon="auto_awesome"></span>';
             if ($mode === 'full') {
                 echo '<span class="m3-label__text">' . esc_html($ai_label) . '</span>';
             }
@@ -713,7 +713,7 @@ function node_the_post_badges($post_id = null, $mode = 'compact', $types = ['ai'
         }
 
         echo '<span class="' . esc_attr($sp_class) . '" data-tooltip="' . esc_attr($sponsor_tooltip) . '"' . $pos_attr . '>';
-        echo '<span class="material-symbols-outlined">info</span>';
+        echo '<span class="material-symbols-outlined" data-icon="info"></span>';
         if ($mode === 'full') {
             echo '<span class="m3-label__text">' . esc_html($sponsor_text) . '</span>';
         }
@@ -737,7 +737,7 @@ function node_the_series_banner($post_id = null, $extra_class = '') {
     $style = $color ? ' style="--node-series-color: ' . esc_attr($color) . ';"' : '';
 
     echo '<span class="' . esc_attr($class) . '"' . $style . ' title="' . esc_attr($label) . '" aria-label="' . esc_attr($label) . '">';
-    echo '<span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>';
+    echo '<span class="material-symbols-outlined" data-icon="auto_stories" aria-hidden="true"></span>';
     echo '<span>' . esc_html($series_position['index'] . ' / ' . $series_position['total']) . '</span>';
     echo '</span>';
 }

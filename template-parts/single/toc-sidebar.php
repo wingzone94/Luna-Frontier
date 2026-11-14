@@ -9,7 +9,7 @@ declare(strict_types=1);
 <aside id="m3-toc-sidebar" class="m3-toc-sidebar" aria-labelledby="toc-sidebar-title">
     <div class="m3-toc-sidebar__inner m3-surface-container-low">
         <div class="m3-toc-sidebar__header">
-            <span class="material-symbols-outlined m3-toc-sidebar__icon" aria-hidden="true">toc</span>
+            <span class="material-symbols-outlined m3-toc-sidebar__icon" data-icon="toc" aria-hidden="true"></span>
             <h2 id="toc-sidebar-title" class="m3-toc-sidebar__title">目次</h2>
 
             <button
@@ -20,7 +20,7 @@ declare(strict_types=1);
                 aria-controls="m3-toc-sidebar-content"
                 aria-label="<?php esc_attr_e( '目次を折りたたむ', 'node' ); ?>"
             >
-                <span class="material-symbols-outlined" aria-hidden="true">expand_less</span>
+                <span class="material-symbols-outlined" data-icon="expand_less" aria-hidden="true"></span>
             </button>
         </div>
 

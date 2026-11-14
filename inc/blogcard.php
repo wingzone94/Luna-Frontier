@@ -610,7 +610,7 @@ function node_blogcard_markup( array $ogp, string $url ): string {
 					<?php endif; ?>
 						<span class="m3-blogcard__title"><?php echo esc_html( $title ); ?></span>
 						<?php if ( ! $is_internal ) : ?>
-							<span class="m3-blogcard__external-icon material-symbols-outlined" aria-hidden="true">open_in_new</span>
+							<span class="m3-blogcard__external-icon material-symbols-outlined" data-icon="open_in_new" aria-hidden="true"></span>
 						<?php endif; ?>
 					<?php echo $is_scheduled ? '</span>' : '</a>'; ?>
 					<?php if ( $is_scheduled ) : ?>
@@ -636,10 +636,10 @@ function node_blogcard_markup( array $ogp, string $url ): string {
 						</span>
 						<span class="m3-blogcard__actions">
 							<button type="button" class="m3-blogcard__action m3-blogcard__action--copy" data-url="<?php echo esc_url( $url ); ?>" data-share-title="<?php echo esc_attr( $share_title ); ?>" title="<?php esc_attr_e( 'リンクをコピー', 'node' ); ?>" aria-label="<?php esc_attr_e( 'リンクをコピー', 'node' ); ?>">
-								<span class="material-symbols-outlined m3-blogcard__action-icon" aria-hidden="true">content_copy</span>
+								<span class="material-symbols-outlined m3-blogcard__action-icon" data-icon="content_copy" aria-hidden="true"></span>
 							</button>
 							<button type="button" class="m3-blogcard__action m3-blogcard__action--share" data-url="<?php echo esc_url( $url ); ?>" data-share-title="<?php echo esc_attr( $share_title ); ?>" title="<?php esc_attr_e( 'シェア', 'node' ); ?>" aria-label="<?php esc_attr_e( 'シェアする', 'node' ); ?>">
-								<span class="material-symbols-outlined m3-blogcard__action-icon" aria-hidden="true">share</span>
+								<span class="material-symbols-outlined m3-blogcard__action-icon" data-icon="share" aria-hidden="true"></span>
 							</button>
 						</span>
 					</div>

@@ -75,7 +75,7 @@
             toast.setAttribute('role', 'status');
             toast.setAttribute('aria-live', 'polite');
             toast.setAttribute('aria-atomic', 'true');
-            toast.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">check_circle</span><span>タイトルとURLをコピーしました</span>';
+            toast.innerHTML = '<span class="material-symbols-outlined" data-icon="check_circle" aria-hidden="true"></span><span>タイトルとURLをコピーしました</span>';
             document.body.appendChild(toast);
         }
 
@@ -123,7 +123,10 @@
 
         btn.classList.remove('is-success', 'is-copy-armed');
         btn.dataset.copyStage = '';
-        if (copyIcon && btn.dataset.copyOriginalIcon) copyIcon.textContent = btn.dataset.copyOriginalIcon;
+        if (copyIcon && btn.dataset.copyOriginalIcon) {
+            copyIcon.dataset.icon = btn.dataset.copyOriginalIcon;
+            copyIcon.textContent = '';
+        }
         if (copyLabel && btn.dataset.copyOriginalLabel) copyLabel.textContent = btn.dataset.copyOriginalLabel;
         if (btn.dataset.copyOriginalAriaLabel) {
             btn.setAttribute('aria-label', btn.dataset.copyOriginalAriaLabel);
@@ -155,12 +158,15 @@
             btn.classList.toggle('is-copy-armed', Boolean(options.armed));
             const copyIcon = btn.querySelector('.m3-copy-icon') || btn.querySelector('.material-symbols-outlined');
             const copyLabel = btn.querySelector('.m3-copy-label') || btn.querySelector('.m3-share-btn__label');
-            if (copyIcon && !btn.dataset.copyOriginalIcon) btn.dataset.copyOriginalIcon = copyIcon.textContent;
+            if (copyIcon && !btn.dataset.copyOriginalIcon) btn.dataset.copyOriginalIcon = copyIcon.dataset.icon || '';
             if (copyLabel && !btn.dataset.copyOriginalLabel) btn.dataset.copyOriginalLabel = copyLabel.textContent;
             if (!Object.prototype.hasOwnProperty.call(btn.dataset, 'copyOriginalAriaLabel')) {
                 btn.dataset.copyOriginalAriaLabel = btn.getAttribute('aria-label') || '';
             }
-            if (copyIcon) copyIcon.textContent = 'check';
+            if (copyIcon) {
+                copyIcon.dataset.icon = 'check';
+                copyIcon.textContent = '';
+            }
             if (copyLabel) copyLabel.textContent = options.label || 'コピーしました！';
             btn.setAttribute('aria-label', options.ariaLabel || options.label || 'コピーしました');
             if (typeof gsap !== 'undefined') gsap.fromTo(btn, { scale: 0.92 }, { scale: 1, duration: 0.5, ease: "elastic.out(1, 0.3)" });

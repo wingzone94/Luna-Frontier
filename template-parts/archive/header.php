@@ -36,7 +36,7 @@ $mark_style = function_exists( 'node_get_archive_mark_style' )
 	<div class="m3-archive-header__inner">
 		<div class="m3-archive-header__hero">
 			<div class="m3-archive-header__icon" aria-hidden="true">
-				<span class="material-symbols-outlined"><?php echo esc_html( $icon ); ?></span>
+				<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $icon ); ?>"></span>
 			</div>
 			<div class="m3-archive-header__copy">
 				<p class="m3-archive-header__eyebrow">
@@ -48,7 +48,7 @@ $mark_style = function_exists( 'node_get_archive_mark_style' )
 				<?php if ( ! empty( $context['count'] ) ) : ?>
 					<div class="m3-archive-header__meta">
 						<p class="m3-archive-header__count">
-							<span class="material-symbols-outlined" aria-hidden="true">article</span>
+							<span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
 							<?php
 							printf(
 								/* translators: %d: number of posts */

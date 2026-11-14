@@ -6,7 +6,7 @@ function createGroupLabel(iconName, text) {
     label.className = 'm3-platform-group-label';
     icon.className = 'material-symbols-outlined';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = iconName;
+    icon.dataset.icon = iconName;
     title.textContent = text;
     label.append(icon, title);
 

@@ -74,7 +74,8 @@ export function syncViewToggleUI(btn) {
     btn.hidden = false;
 
     if (icon) {
-        icon.textContent = VIEW_MODE_ICON[resolveViewToggleIconKey(mode, deviceClass)];
+        icon.dataset.icon = VIEW_MODE_ICON[resolveViewToggleIconKey(mode, deviceClass)];
+        icon.textContent = '';
     }
 
     btn.dataset.viewMode = mode;

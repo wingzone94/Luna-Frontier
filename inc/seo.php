@@ -193,23 +193,23 @@ function node_the_breadcrumbs() {
 
     if ( is_singular( 'node_library' ) ) {
         $library_url = get_post_type_archive_link( 'node_library' );
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<a itemprop="item" href="' . esc_url( $library_url ) . '"><span itemprop="name">Luna Library</span></a>';
         echo '<meta itemprop="position" content="2" /></li>';
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">' . esc_html( get_the_title() ) . '</span>';
         echo '<meta itemprop="position" content="3" /></li>';
     } elseif ( is_singular() ) {
         $cat = node_get_primary_category();
         if ( $cat ) {
-            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
             echo '<li class="m3-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
             echo '<a itemprop="item" href="' . esc_url( get_category_link( $cat->term_id ) ) . '"><span itemprop="name">' . esc_html( $cat->name ) . '</span></a>';
             echo '<meta itemprop="position" content="2" /></li>';
         }
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">' . esc_html( get_the_title() ) . '</span>';
         echo '<meta itemprop="position" content="3" /></li>';
@@ -219,34 +219,34 @@ function node_the_breadcrumbs() {
         $m = (int) get_query_var( 'monthnum' );
         $d = (int) get_query_var( 'day' );
         if ( is_month() || is_day() ) {
-            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
             echo '<li class="m3-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
             echo '<a itemprop="item" href="' . esc_url( get_year_link( $y ) ) . '"><span itemprop="name">' . esc_html( $y . '年' ) . '</span></a>';
             echo '<meta itemprop="position" content="' . $pos++ . '" /></li>';
         }
         if ( is_day() ) {
-            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+            echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
             echo '<li class="m3-breadcrumbs__item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
             echo '<a itemprop="item" href="' . esc_url( get_month_link( $y, $m ) ) . '"><span itemprop="name">' . esc_html( $m . '月' ) . '</span></a>';
             echo '<meta itemprop="position" content="' . $pos++ . '" /></li>';
         }
         $current_label = is_year() ? $y . '年' : ( is_month() ? $m . '月' : $d . '日' );
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">' . esc_html( $current_label ) . '</span>';
         echo '<meta itemprop="position" content="' . $pos . '" /></li>';
     } elseif ( is_category() || is_tag() || is_tax() ) {
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">' . esc_html( single_term_title( '', false ) ) . '</span>';
         echo '<meta itemprop="position" content="2" /></li>';
     } elseif ( is_post_type_archive() ) {
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">' . esc_html( post_type_archive_title( '', false ) ) . '</span>';
         echo '<meta itemprop="position" content="2" /></li>';
     } elseif ( is_search() ) {
-        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined">chevron_right</span></li>';
+        echo '<li class="m3-breadcrumbs__separator"><span class="material-symbols-outlined" data-icon="chevron_right"></span></li>';
         echo '<li class="m3-breadcrumbs__item m3-breadcrumbs__item--current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">';
         echo '<span itemprop="name">検索結果: ' . esc_html( get_search_query() ) . '</span>';
         echo '<meta itemprop="position" content="2" /></li>';

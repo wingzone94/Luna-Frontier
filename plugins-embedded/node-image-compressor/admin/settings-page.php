@@ -114,6 +114,13 @@ add_action(
 			null
 		);
 
+		if ( function_exists( 'node_get_icon_font_css' ) ) {
+			$icon_css = node_get_icon_font_css();
+			if ( '' !== $icon_css ) {
+				wp_add_inline_style( 'node-ic-symbols', $icon_css );
+			}
+		}
+
 		wp_enqueue_style( 'node-ic-admin', NODE_IC_URL . 'assets/css/admin.css', array( 'node-ic-symbols' ), NODE_IC_VERSION );
 		wp_enqueue_script( 'node-ic-admin', NODE_IC_URL . 'assets/js/admin.js', array(), NODE_IC_VERSION, true );
 
@@ -189,7 +196,7 @@ function node_ic_render_page(): void {
 
 			<header class="node-ic-header">
 				<h1 class="node-ic-title">
-					<span class="material-symbols-outlined" aria-hidden="true">compress</span>
+					<span class="material-symbols-outlined" data-icon="compress" aria-hidden="true"></span>
 					アイキャッチの WebP 置き換え
 				</h1>
 				<p class="node-ic-subtitle">アイキャッチ画像を WebP に置き換えて転送量と LCP を改善します。既定では元の JPEG / PNG は削除されます。</p>
@@ -197,7 +204,7 @@ function node_ic_render_page(): void {
 
 			<?php if ( ! $supported ) : ?>
 				<div class="node-ic-banner node-ic-banner--error" role="alert">
-					<span class="material-symbols-outlined" aria-hidden="true">error</span>
+					<span class="material-symbols-outlined" data-icon="error" aria-hidden="true"></span>
 					<div>
 						<strong>このサーバーは WebP の書き出しに対応していません。</strong>
 						<p>GD の WebP サポート、または Imagick の有効化をホスティング事業者にご確認ください。置き換え機能は無効化されています。</p>
@@ -205,7 +212,7 @@ function node_ic_render_page(): void {
 				</div>
 			<?php elseif ( ! Node_IC_Converter::is_enabled() ) : ?>
 				<div class="node-ic-banner node-ic-banner--warn" role="status">
-					<span class="material-symbols-outlined" aria-hidden="true">pause_circle</span>
+					<span class="material-symbols-outlined" data-icon="pause_circle" aria-hidden="true"></span>
 					<div>
 						<strong>WebP への置き換えは現在オフです。</strong>
 						<p>下の「設定」から有効にすると置き換えできるようになります。</p>
@@ -215,7 +222,7 @@ function node_ic_render_page(): void {
 
 			<?php if ( $supported && Node_IC_Converter::is_enabled() && ! Node_IC_Converter::keeps_original() ) : ?>
 				<div class="node-ic-banner node-ic-banner--warn" role="status">
-					<span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>
+					<span class="material-symbols-outlined" data-icon="delete_forever" aria-hidden="true"></span>
 					<div>
 						<strong>元ファイルを削除して置き換えます。</strong>
 						<p>置き換えた画像は復元できません。残しておきたい場合は下の「元ファイルを残す」をオンにしてください。<?php echo Node_IC_Converter::redirects_old_urls() ? '旧 URL へのアクセスは新しい WebP へ転送されます。' : '旧 URL へのアクセスは 404 になります（下の「旧 URL を新しい画像へ転送する」で転送できます）。'; ?></p>
@@ -255,11 +262,11 @@ function node_ic_render_page(): void {
 
 				<div class="node-ic-bulk__actions">
 					<button type="button" class="node-ic-btn node-ic-btn--filled" data-node-ic-bulk <?php disabled( ! $supported || 0 === $summary['pending'] ); ?>>
-						<span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+						<span class="material-symbols-outlined" data-icon="bolt" aria-hidden="true"></span>
 						未置き換えをすべて置き換え<?php echo $summary['pending'] > 0 ? esc_html( sprintf( '（%d件）', $summary['pending'] ) ) : ''; ?>
 					</button>
 					<button type="button" class="node-ic-btn node-ic-btn--text" data-node-ic-bulk-stop hidden>
-						<span class="material-symbols-outlined" aria-hidden="true">stop_circle</span>
+						<span class="material-symbols-outlined" data-icon="stop_circle" aria-hidden="true"></span>
 						中止
 					</button>
 				</div>
@@ -284,7 +291,7 @@ function node_ic_render_page(): void {
 									<?php if ( $thumbnail ) : ?>
 										<img src="<?php echo esc_url( $thumbnail ); ?>" alt="" loading="lazy" width="72" height="72" data-node-ic-thumb>
 									<?php else : ?>
-										<span class="material-symbols-outlined" aria-hidden="true">broken_image</span>
+										<span class="material-symbols-outlined" data-icon="broken_image" aria-hidden="true"></span>
 									<?php endif; ?>
 								</div>
 
@@ -301,7 +308,7 @@ function node_ic_render_page(): void {
 
 									<p class="node-ic-item__meta" data-node-ic-meta>
 										<span class="node-ic-chip node-ic-chip--<?php echo esc_attr( $status['state'] ); ?>" data-node-ic-chip>
-											<span class="material-symbols-outlined" aria-hidden="true" data-node-ic-chip-icon><?php echo esc_html( node_ic_state_icon( $status['state'] ) ); ?></span>
+											<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( node_ic_state_icon( $status['state'] ) ); ?>" aria-hidden="true" data-node-ic-chip-icon></span>
 											<span data-node-ic-chip-label><?php echo esc_html( $status['label'] ); ?></span>
 										</span>
 										<span class="node-ic-item__size" data-node-ic-size>
@@ -316,15 +323,15 @@ function node_ic_render_page(): void {
 
 								<div class="node-ic-item__actions" data-node-ic-actions>
 									<button type="button" class="node-ic-btn node-ic-btn--tonal" data-node-ic-convert <?php disabled( ! $supported || 'pending' !== $status['state'] ); ?>>
-										<span class="material-symbols-outlined" aria-hidden="true">compress</span>
+										<span class="material-symbols-outlined" data-icon="compress" aria-hidden="true"></span>
 										<span class="node-ic-btn__text">置き換え</span>
 									</button>
 									<button type="button" class="node-ic-btn node-ic-btn--text" data-node-ic-restore <?php disabled( ! $status['restorable'] ); ?>>
-										<span class="material-symbols-outlined" aria-hidden="true">undo</span>
+										<span class="material-symbols-outlined" data-icon="undo" aria-hidden="true"></span>
 										<span class="node-ic-btn__text">復元</span>
 									</button>
 									<button type="button" class="node-ic-btn node-ic-btn--text" data-node-ic-skip <?php disabled( 'converted' === $status['state'] ); ?>>
-										<span class="material-symbols-outlined" aria-hidden="true"><?php echo 'skipped' === $status['state'] ? 'restart_alt' : 'block'; ?></span>
+										<span class="material-symbols-outlined" data-icon="<?php echo 'skipped' === $status['state'] ? 'restart_alt' : 'block'; ?>" aria-hidden="true"></span>
 										<span class="node-ic-btn__text"><?php echo 'skipped' === $status['state'] ? 'スキップ解除' : 'スキップ'; ?></span>
 									</button>
 								</div>
@@ -399,7 +406,7 @@ function node_ic_render_page(): void {
 
 					<div class="node-ic-form__actions">
 						<button type="submit" class="node-ic-btn node-ic-btn--filled">
-							<span class="material-symbols-outlined" aria-hidden="true">save</span>
+							<span class="material-symbols-outlined" data-icon="save" aria-hidden="true"></span>
 							設定を保存
 						</button>
 					</div>

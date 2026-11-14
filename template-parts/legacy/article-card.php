@@ -90,7 +90,7 @@ $permalink = get_permalink($post_id);
 
             <div class="m3-card__dates c-card__dates">
                 <div class="m3-card__date c-card__date">
-                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span class="material-symbols-outlined" data-icon="calendar_today"></span>
                     <span>
                         <?php
                         // 相対時間「（N時間前）」は極小幅でCSSにより非表示にできるよう分離する
@@ -106,7 +106,7 @@ $permalink = get_permalink($post_id);
                 </div>
                 <?php if ($modified) : ?>
                     <div class="m3-card__date m3-card__date--modified c-card__date c-card__date--modified" title="<?php echo esc_attr(sprintf('追記 %s', $modified['display'])); ?>">
-                        <span class="material-symbols-outlined">update</span>
+                        <span class="material-symbols-outlined" data-icon="update"></span>
                         <time datetime="<?php echo esc_attr($modified['datetime']); ?>">
                             <?php echo esc_html(sprintf('追記 %s', $modified['display_short'])); ?>
                         </time>

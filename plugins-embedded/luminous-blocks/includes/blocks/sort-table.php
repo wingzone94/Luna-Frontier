@@ -17,7 +17,7 @@ if ( ! function_exists( 'node_render_sort_table_block' ) ) {
                 <thead>
                     <tr>
                         <?php foreach ($data[0] as $cell) : ?>
-                            <th><?php echo esc_html($cell); ?> <span class="material-symbols-outlined">unfold_more</span></th>
+                            <th><?php echo esc_html($cell); ?> <span class="material-symbols-outlined" data-icon="unfold_more"></span></th>
                         <?php endforeach; ?>
                     </tr>
                 </thead>

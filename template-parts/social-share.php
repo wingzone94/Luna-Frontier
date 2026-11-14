@@ -170,7 +170,7 @@ $print_button_position = function_exists( 'node_print_button_position' ) ? node_
                 title="システムシェア"
                 aria-label="システムのシェア機能を開く"
                 hidden>
-            <span class="material-symbols-outlined" aria-hidden="true">share</span>
+            <span class="material-symbols-outlined" data-icon="share" aria-hidden="true"></span>
             <span class="m3-share-btn__label">シェア</span>
         </button>
 
@@ -181,7 +181,7 @@ $print_button_position = function_exists( 'node_print_button_position' ) ? node_
                 data-share-title="<?php echo esc_attr($title); ?>"
                 title="タイトルとURLをコピー" 
                 aria-label="この記事のタイトルとURLをコピーする">
-            <span class="material-symbols-outlined m3-copy-icon" aria-hidden="true">content_copy</span>
+            <span class="material-symbols-outlined m3-copy-icon" data-icon="content_copy" aria-hidden="true"></span>
             <span class="m3-share-btn__label m3-copy-label">コピー</span>
         </button>
 

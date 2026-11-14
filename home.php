@@ -99,7 +99,7 @@ get_header();
 	<?php get_template_part( 'template-parts/hero-slider' ); ?>
 	<section class="lf-home__news" aria-labelledby="lf-news-title">
 		<div class="lf-home__section-head">
-			<h2 id="lf-news-title"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><?php esc_html_e( '速報', 'node' ); ?></h2>
+			<h2 id="lf-news-title"><span class="material-symbols-outlined" data-icon="campaign" aria-hidden="true"></span><?php esc_html_e( '速報', 'node' ); ?></h2>
 			<p class="lf-home__intro"><?php esc_html_e( '最新のニュースをお届け', 'node' ); ?></p>
 			<?php if ( $lf_news_category instanceof WP_Term ) : ?>
 			<a class="lf-home__more" href="<?php echo esc_url( get_category_link( $lf_news_category ) ); ?>"><?php esc_html_e( 'ニュース一覧を見る', 'node' ); ?><span aria-hidden="true">→</span></a>
@@ -142,7 +142,7 @@ get_header();
 				<?php foreach ( $lf_latest as $lf_story ) { get_template_part( 'template-parts/luna/home-story', null, array( 'story' => $lf_story, 'variant' => 'latest' ) ); } ?>
 				<?php if ( empty( $lf_latest ) ) : ?>
 				<div class="lf-home__empty-state">
-					<span class="material-symbols-outlined lf-home__empty-icon" aria-hidden="true">calendar_today</span>
+					<span class="material-symbols-outlined lf-home__empty-icon" data-icon="calendar_today" aria-hidden="true"></span>
 					<p class="lf-home__empty-text">
 						<?php
 						$lf_tab_label = $lf_date_tabs[ $lf_active_date ]['label'] ?? __( '指定された期間', 'node' );
@@ -170,7 +170,7 @@ get_header();
 			<div class="lf-home__list-footer">
 				<a class="lf-home__more-button" href="<?php echo esc_url( $lf_more_url ); ?>">
 					<span><?php esc_html_e( '過去の記事をもっと見る', 'node' ); ?></span>
-					<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+					<span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span>
 				</a>
 			</div>
 			<?php endif; ?>
@@ -179,7 +179,7 @@ get_header();
 		<aside class="lf-home__aside" aria-label="記事を探す">
 			<section id="popular" class="lf-home__panel" aria-labelledby="lf-popular-title">
 				<div class="lf-home__section-head">
-					<h2 id="lf-popular-title"><span class="material-symbols-outlined" aria-hidden="true">local_fire_department</span><?php esc_html_e( '人気記事', 'node' ); ?></h2>
+					<h2 id="lf-popular-title"><span class="material-symbols-outlined" data-icon="local_fire_department" aria-hidden="true"></span><?php esc_html_e( '人気記事', 'node' ); ?></h2>
 					<nav class="lf-home__period" aria-label="<?php esc_attr_e( '人気記事の集計期間', 'node' ); ?>">
 						<?php foreach ( array( 7 => __( '過去7日間', 'node' ), 30 => __( '過去30日間', 'node' ) ) as $lf_days => $lf_label ) : ?>
 						<a href="<?php echo esc_url( add_query_arg( 'lf_period', $lf_days, $lf_popular_url ) . '#popular' ); ?>"<?php echo $lf_period === $lf_days ? ' aria-current="true"' : ''; ?>><span><?php echo esc_html( $lf_label ); ?></span></a>
@@ -204,7 +204,7 @@ get_header();
 						'option_none_value' => '0', 'selected' => 0,
 						'exclude_tree' => ( get_category_by_slug( 'spotlight' ) ?: (object) array( 'term_id' => 0 ) )->term_id,
 					) ); ?>
-					<button type="submit" aria-label="<?php esc_attr_e( '選択したカテゴリーを表示', 'node' ); ?>"><span class="material-symbols-outlined" aria-hidden="true">send</span></button>
+					<button type="submit" aria-label="<?php esc_attr_e( '選択したカテゴリーを表示', 'node' ); ?>"><span class="material-symbols-outlined" data-icon="send" aria-hidden="true"></span></button>
 				</form>
 			</section>
 			<?php endif; ?>

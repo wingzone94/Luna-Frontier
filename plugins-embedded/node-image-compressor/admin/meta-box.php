@@ -68,7 +68,7 @@ function node_ic_render_meta_box( WP_Post $post ): void {
 					<?php if ( $thumbnail ) : ?>
 						<img src="<?php echo esc_url( $thumbnail ); ?>" alt="" loading="lazy" width="56" height="56" data-node-ic-thumb>
 					<?php else : ?>
-						<span class="material-symbols-outlined" aria-hidden="true">broken_image</span>
+						<span class="material-symbols-outlined" data-icon="broken_image" aria-hidden="true"></span>
 					<?php endif; ?>
 				</div>
 
@@ -76,7 +76,7 @@ function node_ic_render_meta_box( WP_Post $post ): void {
 					<p class="node-ic-item__name" title="<?php echo esc_attr( $filename ); ?>"><?php echo esc_html( $filename ); ?></p>
 					<p class="node-ic-item__meta" data-node-ic-meta>
 						<span class="node-ic-chip node-ic-chip--<?php echo esc_attr( $status['state'] ); ?>" data-node-ic-chip>
-							<span class="material-symbols-outlined" aria-hidden="true" data-node-ic-chip-icon><?php echo esc_html( node_ic_state_icon( $status['state'] ) ); ?></span>
+							<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( node_ic_state_icon( $status['state'] ) ); ?>" aria-hidden="true" data-node-ic-chip-icon></span>
 							<span data-node-ic-chip-label><?php echo esc_html( $status['label'] ); ?></span>
 						</span>
 						<span class="node-ic-item__size" data-node-ic-size>
@@ -91,11 +91,11 @@ function node_ic_render_meta_box( WP_Post $post ): void {
 
 				<div class="node-ic-item__actions" data-node-ic-actions>
 					<button type="button" class="node-ic-btn node-ic-btn--tonal" data-node-ic-convert <?php disabled( 'pending' !== $status['state'] ); ?>>
-						<span class="material-symbols-outlined" aria-hidden="true">compress</span>
+						<span class="material-symbols-outlined" data-icon="compress" aria-hidden="true"></span>
 						<span class="node-ic-btn__text">WebP に置き換え</span>
 					</button>
 					<button type="button" class="node-ic-btn node-ic-btn--text" data-node-ic-restore <?php disabled( ! $status['restorable'] ); ?>>
-						<span class="material-symbols-outlined" aria-hidden="true">undo</span>
+						<span class="material-symbols-outlined" data-icon="undo" aria-hidden="true"></span>
 						<span class="node-ic-btn__text">復元</span>
 					</button>
 				</div>

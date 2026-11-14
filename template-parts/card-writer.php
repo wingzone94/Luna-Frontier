@@ -139,7 +139,7 @@ $author_archive_url = get_author_posts_url( $author_id );
                     <a href="<?php echo esc_url($author_archive_url); ?>"
                        class="m3-writer-card__archive-link m3-ripple-host"
                        aria-label="<?php echo esc_attr(sprintf('%sの記事一覧（%d件）', get_the_author(), $author_post_count)); ?>">
-                        <span class="material-symbols-outlined" aria-hidden="true">article</span>
+                        <span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
                         <span class="m3-writer-card__archive-text">記事一覧</span>
                         <span class="m3-writer-card__archive-count"><?php echo esc_html(sprintf('%d件', $author_post_count)); ?></span>
                     </a>
@@ -173,7 +173,7 @@ $author_archive_url = get_author_posts_url( $author_id );
                                     <path d="<?php echo esc_attr($brand_icons[$sns['brand']]['path']); ?>" />
                                 </svg>
                             <?php else : ?>
-                                <span class="material-symbols-outlined m3-writer-pill__symbol" aria-hidden="true">link</span>
+                                <span class="material-symbols-outlined m3-writer-pill__symbol" data-icon="link" aria-hidden="true"></span>
                             <?php endif; ?>
                             </span>
                             <span class="m3-writer-pill__label"><?php echo esc_html($sns['brand'] === 'x' ? 'X' : $sns['label']); ?></span>

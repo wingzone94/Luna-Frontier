@@ -22,9 +22,9 @@ if ( empty( $ai_summary ) && ( ! is_array( $game_info ) || empty( $game_info['ti
     <?php if ( ! empty( $ai_summary ) ) : ?>
     <details class="m3-nexus-abstract ai-summary-accordion" style="--ai-vibe-color: #FF9800;">
         <summary class="m3-nexus-abstract__badge">
-            <span class="material-symbols-outlined">psychology</span>
+            <span class="material-symbols-outlined" data-icon="psychology"></span>
             INTELLIGENCE SUMMARY
-            <span class="material-symbols-outlined expand-icon">expand_more</span>
+            <span class="material-symbols-outlined expand-icon" data-icon="expand_more"></span>
         </summary>
         <div class="m3-nexus-abstract__content">
             <?php echo nl2br(esc_html(strip_tags($ai_summary))); ?>
@@ -35,7 +35,7 @@ if ( empty( $ai_summary ) && ( ! is_array( $game_info ) || empty( $game_info['ti
     <?php if ( is_array( $game_info ) && ! empty( $game_info['title'] ) ) : ?>
     <aside class="m3-game-box">
         <div class="m3-game-box__header">
-            <span class="material-symbols-outlined">sports_esports</span>
+            <span class="material-symbols-outlined" data-icon="sports_esports"></span>
             <h3 class="m3-game-box__title"><?php echo esc_html( $game_info['title'] ); ?></h3>
         </div>
         <?php if ( ! empty( $game_info['summary'] ) ) : ?>
@@ -47,7 +47,7 @@ if ( empty( $ai_summary ) && ( ! is_array( $game_info ) || empty( $game_info['ti
         <div class="m3-game-box__links">
             <?php foreach ( $game_info['links'] as $label => $url ) : ?>
                 <a href="<?php echo esc_url( $url ); ?>" class="m3-chip m3-chip--assistive" target="_blank" rel="noopener">
-                    <span class="material-symbols-outlined">link</span>
+                    <span class="material-symbols-outlined" data-icon="link"></span>
                     <?php echo esc_html( $label ); ?>
                 </a>
             <?php endforeach; ?>

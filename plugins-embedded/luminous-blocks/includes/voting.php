@@ -14,11 +14,11 @@ if ( ! function_exists( 'node_render_voting_refined' ) ) {
             <h4 class="m3-voting-card__question"><?php echo esc_html($question); ?></h4>
             <div class="m3-voting-card__actions">
                 <button class="m3-button m3-button--tonal" data-vote="yes">
-                    <span class="material-symbols-outlined">thumb_up</span>
+                    <span class="material-symbols-outlined" data-icon="thumb_up"></span>
                     はい
                 </button>
                 <button class="m3-button m3-button--tonal" data-vote="no">
-                    <span class="material-symbols-outlined">thumb_down</span>
+                    <span class="material-symbols-outlined" data-icon="thumb_down"></span>
                     いいえ
                 </button>
             </div>

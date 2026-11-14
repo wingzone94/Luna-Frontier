@@ -78,7 +78,7 @@ if ( ! empty( $archive_library_ids ) ) {
 
 	<section class="node-library-archive__showcase" aria-labelledby="node-library-title">
 		<div class="node-library-archive__eyebrow">
-			<span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+			<span class="material-symbols-outlined" data-icon="grid_view" aria-hidden="true"></span>
 			<?php esc_html_e( 'Luna Library', 'node' ); ?>
 		</div>
 		<div class="node-library-archive__heading">
@@ -207,13 +207,13 @@ if ( ! empty( $archive_library_ids ) ) {
 							<a class="node-library-shelf-card__link node-library-shelf-card__link--main" href="<?php the_permalink(); ?>">
 								<span class="node-library-shelf-card__meta">
 									<span class="node-library-shelf-card__type node-library-shelf-card__type--<?php echo esc_attr( $library_type ); ?>">
-										<span class="material-symbols-outlined" aria-hidden="true"><?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?></span>
+										<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
 										<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
 									</span>
 									<?php if ( ! empty( $app_devices ) ) : ?>
 										<span class="node-library-shelf-card__devices" role="img" aria-label="<?php echo esc_attr( implode( '、', wp_list_pluck( $app_devices, 'label' ) ) ); ?>">
 											<?php foreach ( $app_devices as $app_device ) : ?>
-												<span class="material-symbols-outlined" aria-hidden="true"><?php echo esc_html( $app_device['icon'] ); ?></span>
+												<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $app_device['icon'] ); ?>" aria-hidden="true"></span>
 											<?php endforeach; ?>
 										</span>
 									<?php endif; ?>
@@ -251,9 +251,9 @@ if ( ! empty( $archive_library_ids ) ) {
 							<a class="node-library-shelf-card__link node-library-shelf-card__link--footer" href="<?php the_permalink(); ?>">
 								<span class="node-library-shelf-card__footer">
 									<span class="node-library-shelf-card__stats">
-										<span><span class="material-symbols-outlined" aria-hidden="true">article</span><?php echo esc_html( sprintf( __( '記事 %s件', 'node' ), number_format_i18n( $library_article_counts[ $library_id ] ?? 0 ) ) ); ?></span>
+										<span><span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span><?php echo esc_html( sprintf( __( '記事 %s件', 'node' ), number_format_i18n( $library_article_counts[ $library_id ] ?? 0 ) ) ); ?></span>
 									</span>
-									<span class="node-library-shelf-card__action"><?php esc_html_e( '詳細を見る', 'node' ); ?><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+									<span class="node-library-shelf-card__action"><?php esc_html_e( '詳細を見る', 'node' ); ?><span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span></span>
 							</span>
 						</a>
 					</article>
@@ -261,7 +261,7 @@ if ( ! empty( $archive_library_ids ) ) {
 			</div>
 		<?php else : ?>
 			<div class="node-library-empty-state">
-				<span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+				<span class="material-symbols-outlined" data-icon="inventory_2" aria-hidden="true"></span>
 				<p><?php esc_html_e( '現在、該当するライブラリ項目はありません。', 'node' ); ?></p>
 				<?php if ( $selected_type ) : ?><a href="<?php echo esc_url( $archive_url ); ?>"><?php esc_html_e( 'すべての作品を見る', 'node' ); ?></a><?php endif; ?>
 			</div>
@@ -292,8 +292,8 @@ if ( ! empty( $archive_library_ids ) ) {
 								'total'     => $pagination_total,
 								'type'      => 'list',
 								'add_args'  => false,
-								'prev_text' => '<span class="screen-reader-text">' . esc_html__( '前へ', 'node' ) . '</span><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>',
-								'next_text' => '<span class="screen-reader-text">' . esc_html__( '次へ', 'node' ) . '</span><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>',
+								'prev_text' => '<span class="screen-reader-text">' . esc_html__( '前へ', 'node' ) . '</span><span class="material-symbols-outlined" data-icon="chevron_left" aria-hidden="true"></span>',
+								'next_text' => '<span class="screen-reader-text">' . esc_html__( '次へ', 'node' ) . '</span><span class="material-symbols-outlined" data-icon="chevron_right" aria-hidden="true"></span>',
 							)
 						)
 					);

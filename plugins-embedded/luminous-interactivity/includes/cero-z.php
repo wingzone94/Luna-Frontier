@@ -17,7 +17,7 @@ function luminous_cero_z_render_dialog( int $post_id ): void {
 	<dialog id="cero-z-dialog" class="m3-dialog">
 		<div class="m3-dialog__container">
             <div class="m3-dialog__icon">
-                <span class="material-symbols-outlined">report_problem</span>
+                <span class="material-symbols-outlined" data-icon="report_problem"></span>
             </div>
             <h2 class="m3-dialog__title">年齢制限の確認</h2>
             <div class="m3-dialog__content">

@@ -117,7 +117,7 @@ endif;
         'fields'               => $node_fields,
         'comment_field'        => $node_comment_field,
         'class_form'           => 'm3-comment-form',
-        'submit_button'        => '<button name="%1$s" type="submit" id="%2$s" class="m3-button m3-button--filled m3-comment-submit-btn" disabled>%4$s<span class="material-symbols-outlined">send</span></button>',
+        'submit_button'        => '<button name="%1$s" type="submit" id="%2$s" class="m3-button m3-button--filled m3-comment-submit-btn" disabled>%4$s<span class="material-symbols-outlined" data-icon="send"></span></button>',
         'title_reply_before'   => '<h3 id="reply-title" class="comment-reply-title m3-title-medium">',
         'title_reply_after'    => '</h3>',
     ) );

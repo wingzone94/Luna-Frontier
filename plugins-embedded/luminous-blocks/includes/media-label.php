@@ -13,7 +13,7 @@ if ( ! function_exists( 'node_render_media_label' ) ) {
         <div class="m3-media-label-wrapper">
             <img src="<?php echo esc_url($image_url); ?>" alt="" loading="lazy">
             <span class="m3-media-badge">
-                <span class="material-symbols-outlined">auto_awesome</span>
+                <span class="material-symbols-outlined" data-icon="auto_awesome"></span>
                 <?php echo esc_html($label_text); ?>
             </span>
         </div>

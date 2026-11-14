@@ -82,7 +82,7 @@ global $wp_query;
 			</div>
 
 			<button class="lf-search-form__submit" type="submit">
-				<span class="material-symbols-outlined" aria-hidden="true">search</span>
+				<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
 				<?php esc_html_e( '検索', 'node' ); ?>
 			</button>
 		</div>
@@ -90,7 +90,7 @@ global $wp_query;
 		<?php // ---- Advanced: 任意展開。JS 無しで開閉できる ---- ?>
 		<details class="lf-search-form__advanced"<?php echo $lf_advanced_open ? ' open' : ''; ?>>
 			<summary class="lf-search-form__advanced-head">
-				<span class="material-symbols-outlined" aria-hidden="true">tune</span>
+				<span class="material-symbols-outlined" data-icon="tune" aria-hidden="true"></span>
 				<span class="lf-system-label"><?php esc_html_e( '詳細条件', 'node' ); ?></span>
 			</summary>
 
@@ -247,7 +247,7 @@ global $wp_query;
 
 				<?php if ( function_exists( 'node_get_all_articles_url' ) ) : ?>
 					<a class="m3-button m3-button--filled lf-no-results__action" href="<?php echo esc_url( node_get_all_articles_url() ); ?>">
-						<span class="material-symbols-outlined" aria-hidden="true">article</span>
+						<span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
 						<?php esc_html_e( '記事一覧を見る', 'node' ); ?>
 					</a>
 				<?php endif; ?>
@@ -260,8 +260,8 @@ global $wp_query;
 		the_posts_pagination(
 			array(
 				'mid_size'  => 2,
-				'prev_text' => '<span class="material-symbols-outlined">chevron_left</span>',
-				'next_text' => '<span class="material-symbols-outlined">chevron_right</span>',
+				'prev_text' => '<span class="material-symbols-outlined" data-icon="chevron_left"></span>',
+				'next_text' => '<span class="material-symbols-outlined" data-icon="chevron_right"></span>',
 			)
 		);
 		?>

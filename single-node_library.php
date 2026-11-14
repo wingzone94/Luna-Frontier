@@ -65,7 +65,7 @@ get_header();
 		<article <?php post_class( 'node-library-single__article' ); ?>>
 			<header class="node-library-single__hero">
 				<div class="node-library-single__type node-library-single__type--<?php echo esc_attr( $library_type ); ?>">
-					<span class="material-symbols-outlined" aria-hidden="true"><?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?></span>
+					<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
 					<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
 				</div>
 				<h1><?php the_title(); ?></h1>
@@ -74,7 +74,7 @@ get_header();
 
 			<section class="node-library-single__stores" aria-labelledby="node-library-stores-title">
 				<div class="node-library-single__section-heading">
-					<span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
+					<span class="material-symbols-outlined" data-icon="shopping_bag" aria-hidden="true"></span>
 					<h2 id="node-library-stores-title"><?php esc_html_e( '入手先', 'node' ); ?></h2>
 				</div>
 				<?php if ( defined( 'NODE_LIBRARY_DIR' ) ) : ?>
@@ -87,7 +87,7 @@ get_header();
 			<?php if ( ! empty( $linked_article_posts ) ) : ?>
 				<section class="node-library-single__articles" aria-labelledby="node-library-articles-title">
 					<header class="m3-date-group__header">
-						<span class="m3-date-group__icon" aria-hidden="true"><span class="material-symbols-outlined">article</span></span>
+						<span class="m3-date-group__icon" aria-hidden="true"><span class="material-symbols-outlined" data-icon="article"></span></span>
 							<h2 class="m3-date-group__title" id="node-library-articles-title"><?php echo esc_html( $linked_articles_title ); ?></h2>
 						<span class="m3-date-group__count"><?php echo esc_html( number_format_i18n( count( $linked_article_posts ) ) ); ?><?php esc_html_e( '件', 'node' ); ?></span>
 					</header>
@@ -96,7 +96,7 @@ get_header();
 						<?php foreach ( $visible_linked_article_posts as $linked_article ) : ?>
 							<a class="m3-date-item" href="<?php echo esc_url( get_permalink( $linked_article ) ); ?>">
 								<span class="m3-date-item__body"><span class="m3-date-item__title"><?php echo esc_html( get_the_title( $linked_article ) ); ?></span></span>
-								<span class="material-symbols-outlined m3-date-item__chevron" aria-hidden="true">chevron_right</span>
+								<span class="material-symbols-outlined m3-date-item__chevron" data-icon="chevron_right" aria-hidden="true"></span>
 							</a>
 							<?php endforeach; ?>
 							</div>
@@ -105,14 +105,14 @@ get_header();
 									<summary>
 										<span class="node-library-single__more-label node-library-single__more-label--closed"><?php echo esc_html( sprintf( __( 'さらに%1$s件の記事を表示', 'node' ), number_format_i18n( count( $more_linked_article_posts ) ) ) ); ?></span>
 										<span class="node-library-single__more-label node-library-single__more-label--open"><?php esc_html_e( '追加の記事を閉じる', 'node' ); ?></span>
-										<span class="material-symbols-outlined node-library-single__more-icon" aria-hidden="true">expand_more</span>
+										<span class="material-symbols-outlined node-library-single__more-icon" data-icon="expand_more" aria-hidden="true"></span>
 									</summary>
 									<div class="node-library-single__more-panel">
 										<div class="m3-date-group__items">
 										<?php foreach ( $more_linked_article_posts as $linked_article ) : ?>
 											<a class="m3-date-item" href="<?php echo esc_url( get_permalink( $linked_article ) ); ?>">
 											<span class="m3-date-item__body"><span class="m3-date-item__title"><?php echo esc_html( get_the_title( $linked_article ) ); ?></span></span>
-											<span class="material-symbols-outlined m3-date-item__chevron" aria-hidden="true">chevron_right</span>
+											<span class="material-symbols-outlined m3-date-item__chevron" data-icon="chevron_right" aria-hidden="true"></span>
 											</a>
 										<?php endforeach; ?>
 										</div>
@@ -124,7 +124,7 @@ get_header();
 			<?php endif; ?>
 
 			<footer class="node-library-single__footer">
-				<a href="<?php echo esc_url( $library_url ); ?>"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span><?php esc_html_e( 'Luna Library一覧へ戻る', 'node' ); ?></a>
+				<a href="<?php echo esc_url( $library_url ); ?>"><span class="material-symbols-outlined" data-icon="arrow_back" aria-hidden="true"></span><?php esc_html_e( 'Luna Library一覧へ戻る', 'node' ); ?></a>
 			</footer>
 		</article>
 	<?php endwhile; ?>

@@ -52,7 +52,7 @@ declare(strict_types=1);
             <?php endif; ?>
             <div class="m3-elevated-nav-card__content">
                 <span class="m3-elevated-nav-card__label">
-                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span class="material-symbols-outlined" data-icon="arrow_back"></span>
                     前の記事
                 </span>
                 <h4 class="m3-elevated-nav-card__title"><?php echo esc_html(get_the_title($prev_post->ID)); ?></h4>
@@ -69,7 +69,7 @@ declare(strict_types=1);
             <div class="m3-elevated-nav-card__content" style="align-items: flex-end;">
                 <span class="m3-elevated-nav-card__label">
                     次の記事
-                    <span class="material-symbols-outlined">arrow_forward</span>
+                    <span class="material-symbols-outlined" data-icon="arrow_forward"></span>
                 </span>
                 <h4 class="m3-elevated-nav-card__title"><?php echo esc_html(get_the_title($next_post->ID)); ?></h4>
             </div>

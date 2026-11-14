@@ -50,7 +50,7 @@ class AdBlockDetector {
                 
                 <div class="ns-adblock-header">
                     <div class="ns-adblock-icon-wrapper">
-                        <span class="material-symbols-outlined ns-adblock-icon">info</span>
+                        <span class="material-symbols-outlined ns-adblock-icon" data-icon="info"></span>
                     </div>
                     <h2 id="ns-adblock-title" class="ns-adblock-title">広告ブロックが検出されました</h2>
                 </div>
@@ -74,17 +74,17 @@ class AdBlockDetector {
 
                 <div class="ns-adblock-actions">
                     <button id="ns-btn-allow-ads" class="ns-btn ns-btn--primary">
-                        <span class="material-symbols-outlined">web_asset</span>
+                        <span class="material-symbols-outlined" data-icon="web_asset"></span>
                         広告を表示して読み進める
                     </button>
                     <button id="ns-btn-continue-without-ads" class="ns-btn ns-btn--outline" disabled>
-                        <span class="material-symbols-outlined">health_and_safety</span>
+                        <span class="material-symbols-outlined" data-icon="health_and_safety"></span>
                         広告なしで続ける
                     </button>
                 </div>
 
                 <div class="ns-adblock-footer-msg">
-                    <span class="material-symbols-outlined">favorite</span>
+                    <span class="material-symbols-outlined" data-icon="favorite"></span>
                     <span>みなさまのご協力が、良質なコンテンツの継続につながります。</span>
                 </div>
 

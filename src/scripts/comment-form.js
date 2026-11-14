@@ -27,7 +27,7 @@ export function initCommentForm() {
     commentForm.addEventListener('submit', () => {
         if (submitBtn) {
             submitBtn.classList.add('is-submitting');
-            submitBtn.innerHTML = '送信中...<span class="material-symbols-outlined">schedule</span>';
+            submitBtn.innerHTML = '送信中...<span class="material-symbols-outlined" data-icon="schedule"></span>';
             submitBtn.style.backgroundColor = '#2196F3';
             submitBtn.style.pointerEvents = 'none';
         }

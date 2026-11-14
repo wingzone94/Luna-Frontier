@@ -28,6 +28,6 @@ $post_id = get_the_ID();
     </div>
     <h3 class="m3-headline-card__title"><?php the_title(); ?></h3>
     <div class="m3-headline-card__icon">
-        <span class="material-symbols-outlined">chevron_right</span>
+        <span class="material-symbols-outlined" data-icon="chevron_right"></span>
     </div>
 </a>

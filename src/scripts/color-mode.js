@@ -75,7 +75,8 @@ export function initColorMode() {
                     window.NodeMaterialSymbols.setIcon(icon, iconName);
                     return;
                 }
-                icon.textContent = iconName;
+                icon.dataset.icon = iconName;
+                icon.textContent = '';
             });
     }
 
@@ -134,7 +135,7 @@ export function initColorMode() {
         notice.setAttribute('role', 'status');
         notice.setAttribute('aria-live', 'polite');
         notice.innerHTML = `
-            <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+            <span class="material-symbols-outlined" data-icon="sync" aria-hidden="true"></span>
             <span class="m3-color-sync-notice__text">${message}</span>
         `;
 

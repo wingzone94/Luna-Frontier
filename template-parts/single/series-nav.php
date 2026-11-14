@@ -33,7 +33,7 @@ $node_series_style     = $node_series_color ? ' style="--node-series-color: ' . 
 				aria-label="シリーズ「<?php echo esc_attr( $node_series_toc['term']->name ); ?>」の記事一覧"
 			>
 				<span class="m3-series-toc__toggle-icon">
-					<span class="material-symbols-outlined">auto_stories</span>
+					<span class="material-symbols-outlined" data-icon="auto_stories"></span>
 				</span>
 				<span class="m3-series-toc__toggle-label">
 					<span class="m3-series-toc__series-name" data-series-name-fit><?php echo esc_html( $node_series_toc['term']->name ); ?></span>
@@ -46,7 +46,7 @@ $node_series_style     = $node_series_color ? ' style="--node-series-color: ' . 
 					この記事はシリーズ第<?php echo esc_html( $node_series_position['index'] ); ?>回です。この記事に含まれているシリーズは「<?php echo esc_html( $node_series_toc['term']->name ); ?>」（全<?php echo esc_html( $node_series_position['total'] ); ?>回）です。
 				</span>
 				<?php endif; ?>
-				<span class="material-symbols-outlined m3-series-toc__chevron">expand_more</span>
+				<span class="material-symbols-outlined m3-series-toc__chevron" data-icon="expand_more"></span>
 			</button>
 		</h3>
 		<div class="m3-series-toc__panel" id="<?php echo esc_attr( $node_series_panel_id ); ?>">
@@ -73,7 +73,7 @@ $node_series_style     = $node_series_color ? ' style="--node-series-color: ' . 
 				aria-expanded="false"
 				data-series-info-toggle
 			>
-				<span class="material-symbols-outlined m3-series-toc__info-toggle-icon" aria-hidden="true">info</span>
+				<span class="material-symbols-outlined m3-series-toc__info-toggle-icon" data-icon="info" aria-hidden="true"></span>
 				<span class="m3-series-toc__info-toggle-label">シリーズ機能について</span>
 				<span class="m3-series-toc__info-toggle-expanded-label">
 					この記事はシリーズ「<?php echo esc_html( $node_series_toc['term']->name ); ?>」の一部です。番号をタップすると各回に移動できます。色のついた丸が現在表示中の回です。

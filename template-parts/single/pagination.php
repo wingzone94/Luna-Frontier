@@ -30,7 +30,7 @@ $get_multipage_url = static function ( int $page_number ): string {
         <div class="m3-article__pagination-row">
             <nav class="m3-article-pagination m3-pagination--split" aria-label="<?php esc_attr_e( '記事のページ', 'node' ); ?>">
                 <span class="m3-pagination__label">
-                    <span class="material-symbols-outlined m3-pagination__label-icon" aria-hidden="true">auto_stories</span>
+                    <span class="material-symbols-outlined m3-pagination__label-icon" data-icon="auto_stories" aria-hidden="true"></span>
                     PAGES
                 </span>
                 <div class="m3-pagination__controls">
@@ -42,7 +42,7 @@ $get_multipage_url = static function ( int $page_number ): string {
                                 </option>
                             <?php endfor; ?>
                         </select>
-                        <span class="material-symbols-outlined m3-select-chevron" aria-hidden="true">expand_more</span>
+                        <span class="material-symbols-outlined m3-select-chevron" data-icon="expand_more" aria-hidden="true"></span>
                     </div>
                     <div class="m3-pagination__numbers">
                         <?php
@@ -62,9 +62,9 @@ $get_multipage_url = static function ( int $page_number ): string {
                         $last_rendered_page = 0;
 
                         if ( $current_multipage > 1 ) {
-                            echo '<a href="' . esc_url( $first_url ) . '" class="m3-pagination__number m3-pagination__number--icon" aria-label="' . esc_attr__( '最初のページへ', 'node' ) . '"><span class="material-symbols-outlined" aria-hidden="true">first_page</span></a>';
+                            echo '<a href="' . esc_url( $first_url ) . '" class="m3-pagination__number m3-pagination__number--icon" aria-label="' . esc_attr__( '最初のページへ', 'node' ) . '"><span class="material-symbols-outlined" data-icon="first_page" aria-hidden="true"></span></a>';
                         } else {
-                            echo '<span class="m3-pagination__number m3-pagination__number--icon is-disabled" aria-hidden="true"><span class="material-symbols-outlined">first_page</span></span>';
+                            echo '<span class="m3-pagination__number m3-pagination__number--icon is-disabled" aria-hidden="true"><span class="material-symbols-outlined" data-icon="first_page"></span></span>';
                         }
 
                         foreach ( $pagination_display_pages as $i ) {
@@ -95,9 +95,9 @@ $get_multipage_url = static function ( int $page_number ): string {
                         $last_url = $get_multipage_url( (int) $numpages );
 
                         if ( $current_multipage < (int) $numpages ) {
-                            echo '<a href="' . esc_url( $last_url ) . '" class="m3-pagination__number m3-pagination__number--icon" aria-label="' . esc_attr__( '最後のページへ', 'node' ) . '"><span class="material-symbols-outlined" aria-hidden="true">last_page</span></a>';
+                            echo '<a href="' . esc_url( $last_url ) . '" class="m3-pagination__number m3-pagination__number--icon" aria-label="' . esc_attr__( '最後のページへ', 'node' ) . '"><span class="material-symbols-outlined" data-icon="last_page" aria-hidden="true"></span></a>';
                         } else {
-                            echo '<span class="m3-pagination__number m3-pagination__number--icon is-disabled" aria-hidden="true"><span class="material-symbols-outlined">last_page</span></span>';
+                            echo '<span class="m3-pagination__number m3-pagination__number--icon is-disabled" aria-hidden="true"><span class="material-symbols-outlined" data-icon="last_page"></span></span>';
                         }
                         ?>
                     </div>

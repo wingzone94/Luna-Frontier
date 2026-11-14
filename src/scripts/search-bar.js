@@ -135,10 +135,12 @@ export function initSearchBar() {
                 && suggestionSources.includes('category');
             if (isCategorySuggestion) {
                 icon.className = 'm3-search-suggestion__mark';
+                icon.removeAttribute('data-icon');
                 icon.textContent = '📁';
             } else {
                 icon.className = 'material-symbols-outlined';
-                icon.textContent = item.icon || 'search';
+                icon.dataset.icon = item.icon || 'search';
+                icon.textContent = '';
             }
 
             label.className = 'm3-search-suggestion__label';
@@ -504,7 +506,7 @@ export function initSearchBar() {
             option.setAttribute('aria-selected', 'false');
             icon.className = 'material-symbols-outlined';
             icon.setAttribute('aria-hidden', 'true');
-            icon.textContent = 'sell';
+            icon.dataset.icon = 'sell';
             label.textContent = term.name;
             option.append(icon, label);
             option.addEventListener('click', (event) => {

@@ -220,7 +220,7 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
                 },
             };
             const attrs = new Map();
-            const icon = { textContent: 'smartphone' };
+            const icon = { dataset: { icon: 'smartphone' }, textContent: '' };
             const btn = {
                 hidden: true,
                 dataset: { viewMode: 'mobile' },
@@ -243,7 +243,8 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
             maxTouchPoints: 5,
         });
         assert.equal(tabletPc.btn.dataset.viewMode, 'pc');
-        assert.equal(tabletPc.icon.textContent, 'tablet_mac');
+        assert.equal(tabletPc.icon.dataset.icon, 'tablet_mac');
+        assert.equal(tabletPc.icon.textContent, '');
         assert.equal(tabletPc.attrs.get('aria-label'), 'PC表示モード');
         assert.equal(tabletPc.btn.dataset.tooltip, 'PC表示モード（タップでモバイル表示）');
 
@@ -256,7 +257,8 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
             saved: 'mobile',
         });
         assert.equal(tabletMobile.btn.dataset.viewMode, 'mobile');
-        assert.equal(tabletMobile.icon.textContent, 'smartphone');
+        assert.equal(tabletMobile.icon.dataset.icon, 'smartphone');
+        assert.equal(tabletMobile.icon.textContent, '');
         assert.equal(tabletMobile.attrs.get('aria-label'), 'モバイル表示モード');
 
         // Desktop PC
@@ -267,7 +269,8 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
             maxTouchPoints: 0,
         });
         assert.equal(desktopPc.btn.dataset.viewMode, 'pc');
-        assert.equal(desktopPc.icon.textContent, 'computer');
+        assert.equal(desktopPc.icon.dataset.icon, 'computer');
+        assert.equal(desktopPc.icon.textContent, '');
 
         // Phone mobile
         const phoneMobile = runSync({
@@ -277,7 +280,8 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
             maxTouchPoints: 5,
         });
         assert.equal(phoneMobile.btn.dataset.viewMode, 'mobile');
-        assert.equal(phoneMobile.icon.textContent, 'smartphone');
+        assert.equal(phoneMobile.icon.dataset.icon, 'smartphone');
+        assert.equal(phoneMobile.icon.textContent, '');
     } finally {
         globalThis.document = origDoc;
         globalThis.window = origWin;

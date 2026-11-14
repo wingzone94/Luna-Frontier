@@ -13,13 +13,13 @@ $is_single_post = is_singular( 'post' );
             aria-label="<?php esc_attr_e( '追従ボタンを折りたたむ', 'node' ); ?>"
             aria-expanded="true"
             aria-controls="m3-back-to-top m3-toc-trigger">
-        <span class="m3-action-pull-tab__icon material-symbols-outlined" aria-hidden="true">expand_less</span>
+        <span class="m3-action-pull-tab__icon material-symbols-outlined" data-icon="expand_less" aria-hidden="true"></span>
     </button>
     <?php endif; ?>
 
     <!-- 1. Back to Top -->
     <button type="button" aria-label="最上部へ戻る" id="m3-back-to-top" class="m3-fab m3-fab--extended m3-fab--mobile-hidden">
-        <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+        <span class="material-symbols-outlined" data-icon="arrow_upward" aria-hidden="true"></span>
         <span class="m3-fab-text">TOP</span>
         <span class="m3-fab-label-top">最上部へ戻る</span>
     </button>
@@ -27,7 +27,7 @@ $is_single_post = is_singular( 'post' );
     <?php if ( $is_single_post ) : ?>
     <!-- 2. TOC Trigger -->
     <button type="button" aria-label="目次を表示" id="m3-toc-trigger" class="m3-fab m3-fab--extended m3-fab--mobile-hidden toc-ready">
-        <span class="material-symbols-outlined" aria-hidden="true">list</span>
+        <span class="material-symbols-outlined" data-icon="list" aria-hidden="true"></span>
         <span class="m3-fab-text">目次</span>
         <span class="m3-fab-label-top">目次を表示</span>
     </button>

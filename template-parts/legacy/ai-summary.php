@@ -29,10 +29,10 @@ if ( $mode === 'single' ) :
 <div class="ai-summary-single is-collapsed" id="m3-ai-summary" style="--ai-vibe-color: <?php echo esc_attr( $tone_color ); ?>;">
     <button type="button" class="ai-summary-header" id="ai-summary-toggle" aria-expanded="false" aria-controls="m3-ai-summary-panel">
         <div class="ai-summary-label">
-            <span class="material-symbols-outlined m3-expressive-icon" aria-hidden="true">auto_awesome</span>
+            <span class="material-symbols-outlined m3-expressive-icon" data-icon="auto_awesome" aria-hidden="true"></span>
             <span class="m3-expressive-title">Intelligence Summary</span>
         </div>
-        <span class="material-symbols-outlined expand-icon" aria-hidden="true">expand_more</span>
+        <span class="material-symbols-outlined expand-icon" data-icon="expand_more" aria-hidden="true"></span>
     </button>
 
     <div class="ai-summary-collapsible" id="m3-ai-summary-panel" aria-labelledby="ai-summary-toggle" aria-hidden="true">
