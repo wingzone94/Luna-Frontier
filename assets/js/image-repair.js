@@ -30,7 +30,8 @@
     return job;
   }
   root.addEventListener('click', async event => {
-    const task = event.target.dataset.task;
+    const button = event.target instanceof Element ? event.target.closest('[data-task]') : null;
+    const task = button && root.contains(button) ? button.dataset.task : '';
     if (!task) return;
     if (task === 'stop') { stopped = true; return; }
     if (busy) return;
@@ -42,7 +43,12 @@
       if (task === 'previous' || task === 'next') {
         offset = Math.max(0, offset + (task === 'next' ? 50 : -50)); await request('status'); return;
       }
-      if (task === 'repair_one') { await request(task, event.target.dataset.index); return; }
+      if (task === 'repair_one') {
+        const index = Number.parseInt(button.dataset.index || '-1', 10);
+        if (!Number.isInteger(index) || index < 0) return;
+        await request(task, index);
+        return;
+      }
       let work = task;
       if (task === 'retry') { await request('retry'); work = 'repair'; }
       if (task === 'start') { document.getElementById('node-image-reviewed').checked = false; offset = 0; await request('start'); work = 'scan'; }

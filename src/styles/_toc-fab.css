@@ -40,8 +40,8 @@
     }
 
     /* ヒーロー統合目次（hero-toc.js）がヒーロー通過を検知したら、
-     * モバイルでも目次FABを解放して追従導線を引き継ぐ。 */
-    body.is-hero-passed .m3-action-stack.is-singular #m3-toc-trigger.toc-ready {
+     * モバイルでも目次FABを解放して追従導線を引き継ぐ（折りたたみ中は除く）。 */
+    body.is-hero-passed .m3-action-stack.is-singular:not(.is-collapsed) #m3-toc-trigger.toc-ready {
         display: flex !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -570,7 +570,7 @@ body.is-active-toc #m3-sticky-toc {
     display: none;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 767px) {
     /* JSが有効で .has-pull-tab が付与された場合のみ表示（プログレッシブエンハンスメント） */
     .m3-action-stack.has-pull-tab .m3-action-pull-tab {
         display: flex;
@@ -578,9 +578,9 @@ body.is-active-toc #m3-sticky-toc {
         justify-content: center;
         position: absolute;
         bottom: calc(100% + 8px);
-        right: 0;
+        right: calc(12px + env(safe-area-inset-right));
         width: 44px;
-        height: 40px;
+        height: 44px;
         padding: 0;
         border: 1px solid var(--md-sys-color-outline-variant, #d6c2b1);
         border-radius: var(--m3-radius-small, 10px);
@@ -598,13 +598,13 @@ body.is-active-toc #m3-sticky-toc {
                     box-shadow 0.2s ease;
     }
 
-    /* タップ領域最低44×44pxを確保 */
+    /* タップ領域最低48×48pxを確保 */
     .m3-action-stack.has-pull-tab .m3-action-pull-tab::before {
         content: '';
         position: absolute;
-        inset: -8px -6px;
-        min-width: 44px;
-        min-height: 44px;
+        inset: -4px;
+        min-width: 48px;
+        min-height: 48px;
     }
 
     .m3-action-stack.has-pull-tab .m3-action-pull-tab:hover {
@@ -613,20 +613,34 @@ body.is-active-toc #m3-sticky-toc {
         box-shadow: var(--m3-elevation-2);
     }
 
+    .m3-action-stack.has-pull-tab .m3-action-pull-tab:focus-visible {
+        outline: 2px solid var(--md-sys-color-primary, #FF9900);
+        outline-offset: 2px;
+    }
+
     .m3-action-stack.has-pull-tab .m3-action-pull-tab:active {
         transform: scale(0.92);
     }
 
-    /* プルタブ内アイコン */
+    /* プルタブ内アイコン：展開時は下向き（下へ折りたたむ）、格納時は上向き（上へ引き出す） */
     .m3-action-pull-tab__icon {
         font-size: 20px;
         line-height: 1;
+        transform: rotate(180deg);
         transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    /* 展開時は上向き、収納時は下向きの矢印 */
     .m3-action-stack.is-collapsed .m3-action-pull-tab__icon {
-        transform: rotate(180deg);
+        transform: rotate(0deg);
+    }
+
+    /* 折りたたみ時：バーのポインタ遮断を解除しプルタブのみタップ可能にする */
+    .m3-action-stack.has-pull-tab.is-collapsed {
+        pointer-events: none;
+    }
+
+    .m3-action-stack.has-pull-tab.is-collapsed .m3-action-pull-tab {
+        pointer-events: auto;
     }
 
     /* ボタン群のトランジション定義 */
@@ -638,8 +652,10 @@ body.is-active-toc #m3-sticky-toc {
                     box-shadow 0.2s ease;
     }
 
-    /* 折りたたみ状態：ボタン群をまとめて収納（フェードアウト） */
-    .m3-action-stack.has-pull-tab.is-collapsed .m3-fab {
+    /* 折りたたみ状態：ボタン群をまとめて収納（フェードアウト＋操作不可化） */
+    .m3-action-stack.has-pull-tab.is-collapsed .m3-fab,
+    .m3-action-stack.has-pull-tab.is-collapsed #m3-toc-trigger.toc-ready,
+    .m3-action-stack.has-pull-tab.is-collapsed #m3-back-to-top {
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
@@ -668,6 +684,7 @@ body.is-active-toc #m3-sticky-toc {
 
 /* prefers-reduced-motion 対応 */
 @media (prefers-reduced-motion: reduce) {
+    .m3-action-stack,
     .m3-action-stack .m3-fab,
     .m3-action-pull-tab,
     .m3-action-pull-tab__icon {

@@ -66,4 +66,29 @@ class Node_Image_Repair_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$this->assertSame( 1, $scan['data']['job']['scanned'] );
 	}
 
+	public function test_missing_or_corrupted_row_option_is_handled_safely_without_fatal(): void {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => '<img src="https://outside.example/missing-row.png">',
+			)
+		);
+
+		$this->assertTrue( $this->call_task( 'start' )['success'] );
+		$scan = $this->call_task( 'scan' );
+		$this->assertTrue( $scan['success'] );
+
+		$job = get_option( Node_Image_Repair::JOB );
+		delete_option( Node_Image_Repair::PREFIX . $job['id'] . '_0' );
+
+		$status = $this->call_task( 'status' );
+		$this->assertTrue( $status['success'] );
+		$this->assertSame( array(), $status['data']['rows'] );
+
+		$repair = $this->call_task( 'repair' );
+		$this->assertFalse( $repair['success'] );
+		$this->assertStringContainsString( '修復対象データが見つかりません', (string) ( $repair['data'] ?? '' ) );
+	}
+
 }

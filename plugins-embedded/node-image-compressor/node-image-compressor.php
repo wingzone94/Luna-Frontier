@@ -83,6 +83,28 @@ final class Node_Image_Compressor {
 		// 消えた旧画像 URL を WebP へ転送する。
 		// 404 テンプレートの描画に入る前に済ませたいので、template_redirect の最優先で走らせる
 		add_action( 'template_redirect', 'node_ic_maybe_redirect_replaced_image', 0 );
+
+		add_filter( 'node_icon_font_names', 'node_ic_register_icon_font_names' );
+	}
+}
+
+if ( ! function_exists( 'node_ic_register_icon_font_names' ) ) {
+	/**
+	 * 管理画面で使う Material Symbols をテーマのフォントサブセットへ追加する。
+	 *
+	 * @param string[] $names 登録済みのアイコン名一覧。
+	 * @return string[]
+	 */
+	function node_ic_register_icon_font_names( array $names ): array {
+		return array_merge(
+			$names,
+			array(
+				'block',
+				'do_not_disturb_on',
+				'pending',
+				'restart_alt',
+			)
+		);
 	}
 }
 

@@ -1,8 +1,11 @@
 <?php
 declare(strict_types=1);
+
+// JS（floating-actions.js / expressive-toc.js）と適用条件を一致させ、固定ページ等での不要生成・レイアウトシフトを防ぐ。
+$is_single_post = is_singular( 'post' );
 ?>
-<div class="m3-action-stack <?php echo is_singular() ? 'is-singular' : ''; ?>">
-    <?php if ( is_singular() ) : ?>
+<div class="m3-action-stack<?php echo $is_single_post ? ' is-singular' : ''; ?>">
+    <?php if ( $is_single_post ) : ?>
     <!-- Mobile Action Pull Tab (Collapsible Toggle) -->
     <button type="button"
             id="m3-action-pull-tab"
@@ -21,7 +24,7 @@ declare(strict_types=1);
         <span class="m3-fab-label-top">最上部へ戻る</span>
     </button>
 
-    <?php if ( is_singular() ) : ?>
+    <?php if ( $is_single_post ) : ?>
     <!-- 2. TOC Trigger -->
     <button type="button" aria-label="目次を表示" id="m3-toc-trigger" class="m3-fab m3-fab--extended m3-fab--mobile-hidden toc-ready">
         <span class="material-symbols-outlined" aria-hidden="true">list</span>

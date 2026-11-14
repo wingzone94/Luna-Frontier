@@ -4,67 +4,152 @@
 
 import { isIndexOrArchiveView, isSinglePostView } from './page-state';
 
+const MOBILE_DOCK_QUERY = '(max-width: 767px)';
+const DESKTOP_STACK_QUERY = '(min-width: 1001px)';
+
 export function initFloatingActions() {
     const actionStack = document.querySelector('.m3-action-stack');
     if (!actionStack) return;
 
-    const isSingle = isSinglePostView();
-    const showBackToTopContext = isSingle || isIndexOrArchiveView();
+    // Template (floating-actions.php) outputs .is-singular / pullTab / tocTrigger only on single-post.
+    const isSingle = document.body.classList.contains('single-post');
+    const showBackToTopContext = isSingle || isSinglePostView() || isIndexOrArchiveView();
     const backToTop = document.getElementById('m3-back-to-top');
     const tocTrigger = document.getElementById('m3-toc-trigger');
     const tocPanel = document.getElementById('m3-sticky-toc');
     const readingBody = document.querySelector('.m3-article__body');
     const pullTab = document.getElementById('m3-action-pull-tab');
+    const form = document.querySelector('#respond');
 
     backToTop?.addEventListener('click', (event) => {
         event.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
     });
 
     if (!isSingle) {
+        actionStack.classList.remove('is-singular', 'has-pull-tab', 'is-collapsed', 'is-has-toc');
         pullTab?.remove();
         tocTrigger?.remove();
         tocPanel?.classList.remove('is-active');
         tocPanel?.remove();
         document.querySelector('.m3-toc-scrim')?.remove();
-        actionStack.classList.remove('is-has-toc');
         document.body.classList.remove('is-active-toc');
     }
 
-    let syncPullTabA11y = () => {};
+    const mobileDockMedia = window.matchMedia(MOBILE_DOCK_QUERY);
+    const desktopMedia = window.matchMedia(DESKTOP_STACK_QUERY);
+
+    let isCollapsed = false;
+    let hasReachedReadingZone = !readingBody;
+    let isRespondIntersecting = false;
+    let rafId = 0;
+    let lastVisible = null;
+
+    const syncPullTabA11y = () => {
+        if (!isSingle || !pullTab) return;
+
+        const isMobileDock = mobileDockMedia.matches;
+        if (!isMobileDock && isCollapsed) {
+            isCollapsed = false;
+            actionStack.classList.remove('is-collapsed');
+            pullTab.setAttribute('aria-expanded', 'true');
+            pullTab.setAttribute('aria-label', '追従ボタンを折りたたむ');
+        }
+
+        const shouldHide = isMobileDock && isCollapsed;
+        if (shouldHide) {
+            const active = document.activeElement;
+            if (active && (backToTop?.contains(active) || tocTrigger?.contains(active))) {
+                pullTab.focus({ preventScroll: true });
+            }
+            backToTop?.setAttribute('tabindex', '-1');
+            tocTrigger?.setAttribute('tabindex', '-1');
+            backToTop?.setAttribute('aria-hidden', 'true');
+            tocTrigger?.setAttribute('aria-hidden', 'true');
+        } else {
+            backToTop?.removeAttribute('tabindex');
+            tocTrigger?.removeAttribute('tabindex');
+            backToTop?.removeAttribute('aria-hidden');
+            tocTrigger?.removeAttribute('aria-hidden');
+        }
+    };
+
+    const setCollapsed = (collapsed) => {
+        if (!isSingle || !pullTab) return;
+        isCollapsed = Boolean(collapsed) && mobileDockMedia.matches;
+        actionStack.classList.toggle('is-collapsed', isCollapsed);
+        pullTab.setAttribute('aria-expanded', String(!isCollapsed));
+        pullTab.setAttribute(
+            'aria-label',
+            isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
+        );
+        syncPullTabA11y();
+    };
+
+    const applyVisibility = (visible) => {
+        if (
+            visible === lastVisible
+            && actionStack.hidden === !visible
+            && actionStack.classList.contains('is-visible') === visible
+        ) {
+            return;
+        }
+        lastVisible = visible;
+        actionStack.hidden = !visible;
+        actionStack.classList.toggle('is-visible', visible);
+    };
+
+    const updateVisibility = () => {
+        syncPullTabA11y();
+
+        if (!showBackToTopContext) {
+            applyVisibility(false);
+            return;
+        }
+
+        const isDesktop = desktopMedia.matches;
+        let visible = true;
+
+        if (!isDesktop) {
+            if (!isSingle) {
+                visible = false;
+            } else {
+                const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+                const heroPassed = document.body.classList.contains('is-hero-passed');
+
+                if (!('IntersectionObserver' in window) && readingBody) {
+                    const bounds = readingBody.getBoundingClientRect();
+                    hasReachedReadingZone = bounds.top <= window.innerHeight - 72;
+                }
+                if (!('IntersectionObserver' in window) && form) {
+                    const formBounds = form.getBoundingClientRect();
+                    isRespondIntersecting = formBounds.top < window.innerHeight && formBounds.bottom > 0;
+                }
+
+                // Give the comment form the viewport while visible or focused; keep TOP/TOC available before and after.
+                const editing = Boolean(
+                    form && (form.contains(document.activeElement) || isRespondIntersecting)
+                );
+                const pastTopHero = hasReachedReadingZone && (scrollY > 120 || heroPassed);
+                visible = pastTopHero && !editing;
+            }
+        }
+
+        applyVisibility(visible);
+    };
+
+    const scheduleVisibilityUpdate = () => {
+        if (rafId) return;
+        rafId = window.requestAnimationFrame(() => {
+            rafId = 0;
+            updateVisibility();
+        });
+    };
 
     if (isSingle && pullTab) {
         actionStack.classList.add('has-pull-tab');
-
-        let isCollapsed = false;
-
-        syncPullTabA11y = () => {
-            const isDesktop = window.matchMedia('(min-width: 1001px)').matches;
-            const shouldHide = !isDesktop && isCollapsed;
-
-            if (shouldHide) {
-                backToTop?.setAttribute('tabindex', '-1');
-                tocTrigger?.setAttribute('tabindex', '-1');
-                backToTop?.setAttribute('aria-hidden', 'true');
-                tocTrigger?.setAttribute('aria-hidden', 'true');
-            } else {
-                backToTop?.removeAttribute('tabindex');
-                tocTrigger?.removeAttribute('tabindex');
-                backToTop?.removeAttribute('aria-hidden');
-                tocTrigger?.removeAttribute('aria-hidden');
-            }
-        };
-
-        const setCollapsed = (collapsed) => {
-            isCollapsed = collapsed;
-            actionStack.classList.toggle('is-collapsed', isCollapsed);
-            pullTab.setAttribute('aria-expanded', String(!isCollapsed));
-            pullTab.setAttribute(
-                'aria-label',
-                isCollapsed ? '追従ボタンを展開する' : '追従ボタンを折りたたむ'
-            );
-            syncPullTabA11y();
-        };
+        syncPullTabA11y();
 
         pullTab.addEventListener('click', (event) => {
             event.preventDefault();
@@ -72,58 +157,74 @@ export function initFloatingActions() {
             setCollapsed(!isCollapsed);
         });
 
-        const desktopMedia = window.matchMedia('(min-width: 1001px)');
-        if (typeof desktopMedia.addEventListener === 'function') {
-            desktopMedia.addEventListener('change', syncPullTabA11y);
-        } else if (typeof desktopMedia.addListener === 'function') {
-            desktopMedia.addListener(syncPullTabA11y);
+        const handleMobileDockChange = () => {
+            if (!mobileDockMedia.matches) {
+                setCollapsed(false);
+            } else {
+                syncPullTabA11y();
+            }
+            scheduleVisibilityUpdate();
+        };
+
+        if (typeof mobileDockMedia.addEventListener === 'function') {
+            mobileDockMedia.addEventListener('change', handleMobileDockChange);
+        } else if (typeof mobileDockMedia.addListener === 'function') {
+            mobileDockMedia.addListener(handleMobileDockChange);
         }
     }
 
-    const updateVisibility = () => {
-        syncPullTabA11y();
+    if (typeof desktopMedia.addEventListener === 'function') {
+        desktopMedia.addEventListener('change', scheduleVisibilityUpdate);
+    } else if (typeof desktopMedia.addListener === 'function') {
+        desktopMedia.addListener(scheduleVisibilityUpdate);
+    }
 
-        if (!showBackToTopContext) {
-            actionStack.classList.remove('is-visible');
-            return;
+    if (isSingle && 'IntersectionObserver' in window) {
+        if (readingBody) {
+            const bodyObserver = new IntersectionObserver(
+                (entries) => {
+                    const entry = entries[entries.length - 1];
+                    if (!entry) return;
+                    // Once the article body enters above the bottom zone (or scrolls past top),
+                    // keep back-to-top visible through related posts, comments, and footer.
+                    hasReachedReadingZone = entry.isIntersecting || entry.boundingClientRect.top <= 0;
+                    scheduleVisibilityUpdate();
+                },
+                { threshold: 0, rootMargin: '0px 0px -72px 0px' }
+            );
+            bodyObserver.observe(readingBody);
         }
 
-        const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
-        const tocReady = isSingle && Boolean(document.querySelector('#m3-toc-trigger.toc-ready'));
-        const isDesktop = window.matchMedia('(min-width: 1001px)').matches;
-        const shouldShow = isDesktop || scrollY > 200 || tocReady;
-        const form = document.querySelector('#respond');
-        const formBounds = form?.getBoundingClientRect();
-        // Give the entire comment form the viewport while it is visible or focused.
-        // The TOC and TOP remain available before and after the form.
-        const editing = !isDesktop && form && (form.contains(document.activeElement)
-            || (formBounds.top < window.innerHeight && formBounds.bottom > 0));
-        let inReadingLane = true;
-        if (!isDesktop) {
-            const bounds = readingBody?.getBoundingClientRect();
-            const style = getComputedStyle(actionStack);
-            const size = parseFloat(style.getPropertyValue('--node-action-size')) || 48;
-            const gap = parseFloat(style.gap) || 12;
-            const hasToc = tocTrigger && getComputedStyle(tocTrigger).display !== 'none';
-            const horizontal = style.flexDirection === 'row' || style.flexDirection === 'row-reverse';
-            const height = (horizontal || !hasToc ? size : 2 * size + gap)
-                + (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
-            const bottomOffset = parseFloat(style.bottom);
-            const bottom = window.innerHeight - (Number.isFinite(bottomOffset) ? bottomOffset : 24);
-            // Other article sections keep their full width. Retire the actions
-            // before the body gutter ends rather than floating over those sections.
-            inReadingLane = isSingle && Boolean(bounds
-                && bounds.top <= bottom - height && bounds.bottom >= bottom);
+        if (form) {
+            const respondObserver = new IntersectionObserver(
+                (entries) => {
+                    const entry = entries[entries.length - 1];
+                    if (!entry) return;
+                    isRespondIntersecting = entry.isIntersecting;
+                    scheduleVisibilityUpdate();
+                },
+                { threshold: 0 }
+            );
+            respondObserver.observe(form);
         }
-        const visible = shouldShow && !editing && inReadingLane;
-        actionStack.hidden = !visible;
-        actionStack.classList.toggle('is-visible', visible);
-    };
+    }
 
-    window.addEventListener('scroll', updateVisibility, { passive: true });
-    window.addEventListener('resize', updateVisibility, { passive: true });
+    updateVisibility();
+
+    if (typeof MutationObserver === 'function') {
+        // expressive-toc.js re-adds .is-visible on delayed re-renders; keep hidden/visible synchronized with lastVisible.
+        const classSyncObserver = new MutationObserver(() => {
+            if (typeof lastVisible !== 'boolean') return;
+            if (actionStack.hidden !== !lastVisible || actionStack.classList.contains('is-visible') !== lastVisible) {
+                applyVisibility(lastVisible);
+            }
+        });
+        classSyncObserver.observe(actionStack, { attributes: true, attributeFilter: ['class', 'hidden'] });
+    }
+
+    window.addEventListener('scroll', scheduleVisibilityUpdate, { passive: true });
+    window.addEventListener('resize', scheduleVisibilityUpdate, { passive: true });
     document.addEventListener('m3:toc:ready', updateVisibility);
-    document.addEventListener('focusin', updateVisibility);
-    document.addEventListener('focusout', () => queueMicrotask(updateVisibility));
-    setTimeout(updateVisibility, 150);
+    document.addEventListener('focusin', scheduleVisibilityUpdate);
+    document.addEventListener('focusout', () => queueMicrotask(scheduleVisibilityUpdate));
 }

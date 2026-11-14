@@ -16,6 +16,7 @@ import {
 	declaredIconsFromSource,
 	partitionMissing,
 	extractUsageFromEntries,
+	findPrefixCollisions,
 } from './icon-subset-extract.mjs';
 
 const ROOT = process.cwd();
@@ -25,14 +26,14 @@ const AS_JSON = process.argv.includes('--json');
 const SOURCE_EXTENSIONS = new Set(['.php', '.js', '.css', '.html', '.mjs']);
 // .tmp* は配布ZIPを組み立てるときの作業ディレクトリ（.gitignore 済み）。
 // 過去の版のテンプレートが残るので、今のアイコン一覧の答え合わせには使えない。
-const SKIP_DIRS = new Set(['.git', 'node_modules', 'vendor', 'scratch', 'test-results', '.cursor', '.claude']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'vendor', 'scratch', 'test-results', '.cursor', '.claude', '.gemini', '.codex']);
 const SKIP_DIR_PREFIXES = ['.tmp'];
 /**
- * assets はビルド済みの出力なので、テーマ直下のものだけ飛ばす。
+ * assets と dist はテーマ直下のビルド済み出力なので、トップレベルのものだけ飛ばす。
  * plugins-embedded/<plugin>/assets/js/editor.js はビルド前のソースで、
  * `icon: 'warning'` のようにアイコン名が literal で入っている（飛ばすと取りこぼす）。
  */
-const SKIP_TOP_LEVEL_DIRS = new Set(['assets']);
+const SKIP_TOP_LEVEL_DIRS = new Set(['assets', 'dist']);
 
 /**
  * 「使用箇所」として数えてはいけないファイル、および
@@ -48,7 +49,7 @@ const KNOWN_DYNAMIC = new Map([
 ]);
 
 /** この文字列が無いファイルは走査しない（3方向のどれにも当たらないファイルを飛ばす）。 */
-const SCAN_HINT = /material-symbols|data-(?:node-section-)?icon|\bicon\b|content\s*:|setIcon\s*\(|icon_names/i;
+const SCAN_HINT = /material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.textContent|content\s*:|setIcon\s*\(|icon_names/i;
 
 const CRAWL_PATHS = [
 	'/',
@@ -198,12 +199,17 @@ const seen = new Set([
 const unused = [...declared].filter((n) => !seen.has(n) && !KNOWN_DYNAMIC.has(n));
 const mediumUnknown = [...fromMedium].filter(([name]) => !declared.has(name));
 const mapUnknown = [...fromMaps.keys()].filter((name) => !declared.has(name));
+const prefixCollisions = findPrefixCollisions(
+	[...missingSource.map(([name]) => name), ...missingPages.map(([name]) => name)],
+	declared
+);
 
 if (AS_JSON) {
 	console.log(JSON.stringify({
 		declared: declared.size,
 		staticFound: fromSource.size,
 		staticMissing: missingSource.map(([name, hit]) => ({ name, file: hit.file, line: hit.line, kind: hit.id })),
+		prefixCollisions,
 		mediumFound: [...fromMedium.keys()],
 		mediumMissingFromDeclared: mediumUnknown.map(([name, hit]) => ({ name, file: hit.file, line: hit.line, kind: hit.id })),
 		mapFound: [...fromMaps.keys()],
@@ -270,6 +276,12 @@ if (problems.length) {
 	console.error(`\n未登録のアイコン ${problems.length} 種。inc/icon-font.php に追加すること。`);
 	console.error('登録しないとグリフが無く、リガチャの文字がそのまま表示される。');
 	problems.forEach((p) => console.error(`  - ${p}`));
+	if (prefixCollisions.length) {
+		console.error('');
+		for (const { name, prefix } of prefixCollisions) {
+			console.error(`  ! PREFIX COLLISION DANGER: ${name} は登録済み ${prefix} に前方一致して別アイコンへ化ける`);
+		}
+	}
 	process.exit(1);
 }
 

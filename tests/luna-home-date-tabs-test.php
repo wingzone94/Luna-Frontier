@@ -196,4 +196,86 @@ class Luna_Home_Date_Tabs_Test extends WP_UnitTestCase {
 		// 一昨日もなくそれ以前（3日前など）がある場合
 		$this->assertSame( 'older', luna_home_resolve_active_date_tab( '', '2026-11-09 23:59:59', $ref ) );
 	}
+
+	/**
+	 * WP_Query の date_query とカテゴリー絞込・タイムゾーン境界（00:00:00〜23:59:59）で漏れ・重複がないこと。
+	 */
+	public function test_date_tabs_wp_query_boundaries_and_category_filter(): void {
+		$tz_orig = get_option( 'timezone_string' );
+		update_option( 'timezone_string', 'Asia/Tokyo' );
+
+		try {
+			$ref = new DateTimeImmutable( '2026-11-12 00:05:00', new DateTimeZone( 'Asia/Tokyo' ) );
+
+			$cat_tech = self::factory()->category->create( array( 'name' => 'TechTabs' ) );
+			$cat_life = self::factory()->category->create( array( 'name' => 'LifeTabs' ) );
+
+			$post_today_early = self::factory()->post->create(
+				array(
+					'post_status'   => 'publish',
+					'post_date'     => '2026-11-12 00:00:00',
+					'post_category' => array( $cat_tech ),
+				)
+			);
+			$post_yesterday_late = self::factory()->post->create(
+				array(
+					'post_status'   => 'publish',
+					'post_date'     => '2026-11-11 23:59:59',
+					'post_category' => array( $cat_tech ),
+				)
+			);
+			$post_two_days_early = self::factory()->post->create(
+				array(
+					'post_status'   => 'publish',
+					'post_date'     => '2026-11-10 00:00:00',
+					'post_category' => array( $cat_life ),
+				)
+			);
+			$post_older_late = self::factory()->post->create(
+				array(
+					'post_status'   => 'publish',
+					'post_date'     => '2026-11-09 23:59:59',
+					'post_category' => array( $cat_tech ),
+				)
+			);
+
+			$query_ids = static function ( string $tab, int $cat_id = 0 ) use ( $ref ): array {
+				$q = new WP_Query(
+					array(
+						'post_type'      => 'post',
+						'post_status'    => 'publish',
+						'posts_per_page' => 20,
+						'cat'            => $cat_id,
+						'fields'         => 'ids',
+						'date_query'     => luna_home_build_date_query( $tab, $ref ),
+					)
+				);
+				return array_map( 'intval', $q->posts );
+			};
+
+			$this->assertContains( $post_today_early, $query_ids( 'today', $cat_tech ) );
+			$this->assertNotContains( $post_yesterday_late, $query_ids( 'today', $cat_tech ) );
+
+			$this->assertContains( $post_yesterday_late, $query_ids( 'yesterday', $cat_tech ) );
+			$this->assertNotContains( $post_today_early, $query_ids( 'yesterday', $cat_tech ) );
+			$this->assertNotContains( $post_two_days_early, $query_ids( 'yesterday', 0 ) );
+
+			$this->assertContains( $post_two_days_early, $query_ids( 'two_days_ago', $cat_life ) );
+			$this->assertNotContains( $post_two_days_early, $query_ids( 'two_days_ago', $cat_tech ) );
+			$this->assertNotContains( $post_older_late, $query_ids( 'two_days_ago', 0 ) );
+
+			$this->assertContains( $post_older_late, $query_ids( 'older', $cat_tech ) );
+			$this->assertNotContains( $post_two_days_early, $query_ids( 'older', 0 ) );
+		} finally {
+			update_option( 'timezone_string', $tz_orig );
+		}
+	}
+
+	/**
+	 * home.php で人気記事期間切替リンク（$lf_popular_url）が選択中の lf_date を維持すること。
+	 */
+	public function test_home_template_preserves_lf_date_when_switching_popular_period(): void {
+		$home = (string) file_get_contents( dirname( __DIR__ ) . '/home.php' );
+		$this->assertStringContainsString( "\$lf_popular_base_args['lf_date'] = \$lf_date_requested;", $home );
+	}
 }

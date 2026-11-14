@@ -36,10 +36,10 @@ function luna_frontier_version(): string {
 }
 
 /**
- * フッターなど利用者向けに見せるメジャーバージョン。
+ * フッターなど利用者向けに見せるバージョン表記（style.css の Version と一致させる）。
  */
 function luna_frontier_display_version(): string {
-	return '2.0';
+	return luna_frontier_version();
 }
 
 /**

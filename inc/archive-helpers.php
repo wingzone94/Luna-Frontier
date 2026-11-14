@@ -300,16 +300,42 @@ function node_date_archive_sort( $query ) {
 
 	switch ( $sort ) {
 		case 'date-asc':
-			$query->set( 'orderby', 'date' );
-			$query->set( 'order', 'ASC' );
+			$query->set(
+				'orderby',
+				array(
+					'date' => 'ASC',
+					'ID'   => 'ASC',
+				)
+			);
 			break;
 		case 'modified-desc':
-			$query->set( 'orderby', 'modified' );
-			$query->set( 'order', 'DESC' );
+			$query->set(
+				'orderby',
+				array(
+					'modified' => 'DESC',
+					'ID'       => 'DESC',
+				)
+			);
 			break;
 		case 'modified-asc':
-			$query->set( 'orderby', 'modified' );
-			$query->set( 'order', 'ASC' );
+			$query->set(
+				'orderby',
+				array(
+					'modified' => 'ASC',
+					'ID'       => 'ASC',
+				)
+			);
+			break;
+		default:
+			if ( ! $query->get( 'orderby' ) ) {
+				$query->set(
+					'orderby',
+					array(
+						'date' => 'DESC',
+						'ID'   => 'DESC',
+					)
+				);
+			}
 			break;
 	}
 }

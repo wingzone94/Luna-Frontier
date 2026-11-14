@@ -109,7 +109,7 @@
 		   ダークは別の式（seed 46% + 別の地色）を使うので再現しない。
 		   このブロックがライト専用なのはそのためでもある。 */
 		--md-sys-color-primary-container: color-mix(in srgb, var(--md-sys-color-primary) 22%, #fff4e5);
-		--node-article-accent-container: color-mix(in srgb, var(--node-article-accent) 22%, #fff4e5);
+		--node-article-accent-container: color-mix(in srgb, var(--node-article-accent, #ff9900) 22%, #fff4e5);
 	}
 
 	/* ---------------------------------------------------------------------

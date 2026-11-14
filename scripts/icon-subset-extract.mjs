@@ -130,6 +130,88 @@ export function lineOf(text, index) {
 }
 
 /**
+ * 三項演算子の結果枝（`? 'a' : 'b'`）からアイコン名リテラルだけを取り出す。
+ * 条件式側の比較文字列（`'skipped' === $status['state']` 等）は拾わない。
+ *
+ * @param {string} expr
+ * @returns {string[]}
+ */
+export function extractTernaryBranchLiterals(expr) {
+	const out = [];
+	const scan = (chunk) => {
+		const trimmed = chunk.trim();
+		if (!trimmed) return;
+		let q = -1;
+		let quote = null;
+		let paren = 0;
+		let bracket = 0;
+		for (let i = 0; i < trimmed.length; i++) {
+			const c = trimmed[i];
+			if (quote !== null) {
+				if (c === '\\') { i++; continue; }
+				if (c === quote) quote = null;
+				continue;
+			}
+			if (c === "'" || c === '"') { quote = c; continue; }
+			if (c === '(') paren++;
+			else if (c === ')' && paren > 0) paren--;
+			else if (c === '[') bracket++;
+			else if (c === ']' && bracket > 0) bracket--;
+			else if (c === '?' && paren === 0 && bracket === 0) {
+				if (trimmed[i + 1] === '?') { i++; continue; }
+				q = i;
+				break;
+			}
+		}
+
+		if (q === -1) {
+			const unwrapped = trimmed.replace(/^\(([\s\S]*)\)$/, '$1').trim();
+			const single = new RegExp(`^['"](${ICON_NAME})['"]$`).exec(unwrapped);
+			if (single) {
+				out.push(single[1]);
+				return;
+			}
+			const fallback = new RegExp(`(?:\\|\\||\\?\\?)\\s*['"](${ICON_NAME})['"]\\s*$`).exec(unwrapped);
+			if (fallback) out.push(fallback[1]);
+			return;
+		}
+
+		const rest = trimmed.slice(q + 1);
+		let colon = -1;
+		quote = null;
+		paren = 0;
+		bracket = 0;
+		let nested = 0;
+		for (let i = 0; i < rest.length; i++) {
+			const c = rest[i];
+			if (quote !== null) {
+				if (c === '\\') { i++; continue; }
+				if (c === quote) quote = null;
+				continue;
+			}
+			if (c === "'" || c === '"') { quote = c; continue; }
+			if (c === '(') paren++;
+			else if (c === ')' && paren > 0) paren--;
+			else if (c === '[') bracket++;
+			else if (c === ']' && bracket > 0) bracket--;
+			else if (paren === 0 && bracket === 0) {
+				if (c === '?' && rest[i + 1] !== '?') nested++;
+				else if (c === ':') {
+					if (rest[i + 1] === ':') { i++; continue; }
+					if (nested === 0) { colon = i; break; }
+					nested--;
+				}
+			}
+		}
+		if (colon === -1) return;
+		scan(rest.slice(0, colon));
+		scan(rest.slice(colon + 1));
+	};
+	scan(expr);
+	return out;
+}
+
+/**
  * `open` に対応する閉じ位置を返す。文字列リテラルの中は数えない。
  * 入れ子の array( ... ) / [ ... ] や関数本体に対応するため。
  */
@@ -153,7 +235,9 @@ export function matchClose(text, from, open, close) {
 	return -1;
 }
 
-/** アイコン名がそのまま書かれている箇所を拾う。 */
+/**
+ * アイコン名がそのまま書かれている箇所と、高信頼の三項演算子・icon要素 textContent 代入を拾う。
+ */
 export function extractLiterals(text) {
 	const found = [];
 	for (const pattern of LITERAL_PATTERNS) {
@@ -169,6 +253,143 @@ export function extractLiterals(text) {
 			});
 		}
 	}
+
+	const spanPhpRe = /class=["'][^"']*material-symbols-outlined[^"']*["'][^>]*>\s*<\?(?:php\b|=)([\s\S]*?)\?>\s*(?=<\/span>)/g;
+	for (const m of text.matchAll(spanPhpRe)) {
+		const expr = m[1].replace(/^\s*(?:echo|print)\b\s*/, '').replace(/;\s*$/, '').trim();
+		const names = extractTernaryBranchLiterals(expr);
+		const line = lineOf(text, m.index);
+		for (const name of names) {
+			found.push({
+				name,
+				id: 'span_php_literal',
+				confidence: 'high',
+				note: '<span class="material-symbols-outlined"><?php ... ?></span>',
+				line,
+			});
+		}
+	}
+
+	const iconTextRe = /(?:^|[^\w$])(?:[A-Za-z0-9_$]*[Ii]con(?:El|Element|Node|Span)?|querySelector\s*\(\s*['"][^'"]*material-symbols[^'"]*['"]\s*\))\.textContent\s*=\s*([^;\n]+)/gm;
+	for (const m of text.matchAll(iconTextRe)) {
+		const lineStart = text.lastIndexOf('\n', m.index) + 1;
+		const linePrefix = text.slice(lineStart, m.index).trimStart();
+		if (linePrefix.startsWith('//') || linePrefix.startsWith('*')) continue;
+		const names = extractTernaryBranchLiterals(m[1]);
+		const line = lineOf(text, m.index);
+		for (const name of names) {
+			found.push({
+				name,
+				id: 'icon_text_content',
+				confidence: 'high',
+				note: 'icon要素の textContent 代入',
+				line,
+			});
+		}
+	}
+
+	return found;
+}
+
+/**
+ * PHP ファイルやプラグイン内の高信頼なアイコン配列・三項演算子・match・定数マップを抽出する。
+ *
+ * @param {string} rel
+ * @param {string} text
+ * @returns {Array<{name: string, id: string, confidence: string, note: string, line: number}>}
+ */
+export function extractScopedHighRefs(rel, text) {
+	const found = [];
+	const normalized = String(rel).replaceAll('\\', '/');
+	const isPhp = normalized.endsWith('.php');
+
+	if (isPhp) {
+		const phpIconArrowRe = /['"]icon['"]\s*=>\s*([^,\n;)]+)/g;
+		for (const m of text.matchAll(phpIconArrowRe)) {
+			const expr = m[1].trim();
+			const names = extractTernaryBranchLiterals(expr);
+			const line = lineOf(text, m.index);
+			for (const name of names) {
+				found.push({
+					name,
+					id: 'php_icon_arrow',
+					confidence: 'high',
+					note: "PHP の 'icon' => リテラル / 三項演算子",
+					line,
+				});
+			}
+		}
+
+		const phpIconFnRe = /function\s+([A-Za-z0-9_]*icon[A-Za-z0-9_]*)\s*\([^)]*\)[^{]*\{/gi;
+		for (const fnMatch of text.matchAll(phpIconFnRe)) {
+			if (/(?:^|_)(?:icon_names|register_icon)/.test(fnMatch[1])) continue;
+			const start = fnMatch.index + fnMatch[0].length;
+			const end = matchClose(text, start, '{', '}');
+			if (end === -1) continue;
+			const body = text.slice(start, end);
+			const lineBase = fnMatch.index;
+
+			for (const matchExpr of body.matchAll(/\bmatch\s*\([^)]*\)\s*\{/g)) {
+				const mStart = matchExpr.index + matchExpr[0].length;
+				const mEnd = matchClose(body, mStart, '{', '}');
+				if (mEnd === -1) continue;
+				const mBody = body.slice(mStart, mEnd);
+				for (const arm of mBody.matchAll(new RegExp(`=>\\s*['"](${ICON_NAME})['"]${VALUE_END}`, 'g'))) {
+					found.push({
+						name: arm[1],
+						id: 'php_icon_match',
+						confidence: 'high',
+						note: `PHP icon関数 ${fnMatch[1]}() の match`,
+						line: lineOf(text, lineBase + matchExpr.index),
+					});
+				}
+			}
+
+			for (const literal of findArrayLiterals(body, { requireIconContext: false })) {
+				for (const name of namesInArrayBody(literal.body)) {
+					found.push({
+						name,
+						id: 'php_icon_fn_array',
+						confidence: 'high',
+						note: `PHP icon関数 ${fnMatch[1]}() の配列`,
+						line: lineOf(text, lineBase + literal.start),
+					});
+				}
+			}
+
+			for (const fallback of body.matchAll(new RegExp(`\\$icon\\s*=\\s*['"](${ICON_NAME})['"]\\s*;`, 'g'))) {
+				found.push({
+					name: fallback[1],
+					id: 'php_icon_fn_fallback',
+					confidence: 'high',
+					note: `PHP icon関数 ${fnMatch[1]}() の既定値`,
+					line: lineOf(text, lineBase + fallback.index),
+				});
+			}
+		}
+	}
+
+	const jsIconMapRe = /\b(?:const|let|var)\s+([A-Za-z0-9_$]*_?ICONS?)\s*=\s*\{/g;
+	for (const mapMatch of text.matchAll(jsIconMapRe)) {
+		const mapName = mapMatch[1];
+		const usedInTextContent = new RegExp(`\\.textContent\\s*=[^;]*\\b${mapName}\\s*\\[`).test(text);
+		if (!usedInTextContent) continue;
+		const start = mapMatch.index + mapMatch[0].length;
+		const end = matchClose(text, start, '{', '}');
+		if (end === -1) continue;
+		const body = text.slice(start, end);
+		const line = lineOf(text, mapMatch.index);
+		for (const entry of body.matchAll(new RegExp(`:\\s*['"](${ICON_NAME})['"]${VALUE_END}`, 'g'))) {
+			found.push({
+				name: entry[1],
+				id: 'js_icon_map_const',
+				confidence: 'high',
+				note: `JS アイコン定数マップ ${mapName}`,
+				line,
+			});
+		}
+	}
+
 	return found;
 }
 
@@ -315,6 +536,28 @@ export function partitionMissing(uses, declared, additions) {
 }
 
 /**
+ * 未登録アイコン名が登録済みの別名に前方一致し、リガチャ化けを起こす危険を検知する。
+ *
+ * @param {Iterable<string>} missingNames 未登録のアイコン名一覧。
+ * @param {Set<string>} declared 登録済みのアイコン名集合。
+ * @returns {Array<{name: string, prefix: string, prefixes: string[]}>}
+ */
+export function findPrefixCollisions(missingNames, declared) {
+	const declaredList = [...declared].sort((a, b) => b.length - a.length || a.localeCompare(b));
+	const seen = new Set();
+	const collisions = [];
+	for (const name of missingNames) {
+		if (seen.has(name) || declared.has(name)) continue;
+		seen.add(name);
+		const prefixes = declaredList.filter((r) => name !== r && name.startsWith(r));
+		if (prefixes.length > 0) {
+			collisions.push({ name, prefix: prefixes[0], prefixes });
+		}
+	}
+	return collisions;
+}
+
+/**
  * `inc/icon-font.php` の配列から登録済みの名前を読む。
  * PHP を動かさずに済ませるための最低限の読み取り（配列の中の 'name' を拾うだけ）。
  */
@@ -403,7 +646,7 @@ export function extractUsageFromEntries(entries, declared) {
 		if (isNonProductPath(rel)) continue;
 
 		if (!DECLARATION_FILES.has(rel)) {
-			for (const hit of [...extractLiterals(text), ...extractCssContent(text)]) {
+			for (const hit of [...extractLiterals(text), ...extractScopedHighRefs(rel, text), ...extractCssContent(text)]) {
 				const bucket = hit.confidence === 'high' ? found : medium;
 				if (!bucket.has(hit.name)) bucket.set(hit.name, { file: rel, ...hit });
 			}

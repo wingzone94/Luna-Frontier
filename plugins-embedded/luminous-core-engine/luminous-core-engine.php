@@ -668,9 +668,42 @@ namespace LuminousCore\Engine {
 			);
 		}
 
+		private function apply_deterministic_orderby( array $args, string $search_keyword = '' ): array {
+			if ( empty( $args['orderby'] ) ) {
+				if ( '' === trim( $search_keyword ) ) {
+					$args['orderby'] = array(
+						'date' => 'DESC',
+						'ID'   => 'DESC',
+					);
+				}
+
+				return $args;
+			}
+
+			$order   = isset( $args['order'] ) && 'ASC' === strtoupper( (string) $args['order'] ) ? 'ASC' : 'DESC';
+			$orderby = $args['orderby'];
+
+			if ( 'meta_value_num' === $orderby ) {
+				$args['orderby'] = array(
+					'meta_value_num' => $order,
+					'date'           => 'DESC',
+					'ID'             => 'DESC',
+				);
+				unset( $args['order'] );
+			} elseif ( is_string( $orderby ) && in_array( $orderby, array( 'date', 'title', 'modified' ), true ) ) {
+				$args['orderby'] = array(
+					$orderby => $order,
+					'ID'     => $order,
+				);
+				unset( $args['order'] );
+			}
+
+			return $args;
+		}
+
 		public function get_rest_results( \WP_REST_Request $request ): \WP_REST_Response {
 			$params                        = self::get_request_params( $request );
-			$args                          = $this->build_args( $params );
+			$args                          = $this->apply_deterministic_orderby( $this->build_args( $params ), (string) ( $params['s'] ?? '' ) );
 			$args['post_type']             = 'post';
 			$args['post_status']           = 'publish';
 			$args['posts_per_page']        = 6;
@@ -901,7 +934,7 @@ namespace LuminousCore\Engine {
 			$query->set( 'post_type', 'post' );
 			$query->set( 'post_status', 'publish' );
 
-			$advanced_args = $this->build_args( wp_unslash( $_GET ) );
+			$advanced_args  = $this->apply_deterministic_orderby( $this->build_args( wp_unslash( $_GET ) ), (string) $query->get( 's' ) );
 			$forwarded_keys = array(
 				'tax_query',
 				'meta_query',

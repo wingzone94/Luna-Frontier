@@ -110,4 +110,122 @@ class Node_Theme_Update_Test extends WP_UnitTestCase {
 		$this->assertFileExists( $theme . '/original.php' );
 		$this->assertDirectoryDoesNotExist( $theme . '_previous_update' );
 	}
+
+	public function test_release_meta_validation_and_url_allowlist(): void {
+		$tag = 'luna-frontier-v2.0.4-20261113T070327Z-70a6808';
+		$zip_url = "https://github.com/wingzone94/Luna-Frontier/releases/download/{$tag}/luna.zip";
+		$json_url = "https://github.com/wingzone94/Luna-Frontier/releases/download/{$tag}/luna-release.json";
+
+		$this->assertTrue( node_is_luna_release_download_url( $zip_url, 'luna.zip' ) );
+		$this->assertTrue( node_is_luna_release_download_url( $json_url, 'luna-release.json' ) );
+		$this->assertFalse( node_is_luna_release_download_url( 'https://raw.githubusercontent.com/wingzone94/Luna-Frontier/luna-frontier-2.0-skyalow/style.css', 'style.css' ) );
+		$this->assertFalse( node_is_luna_release_download_url( $zip_url . '?token=1', 'luna.zip' ) );
+		$this->assertFalse( node_is_luna_release_download_url( $zip_url, 'other.zip' ) );
+
+		$valid_meta = array(
+			'tag'      => $tag,
+			'version'  => '2.0.4',
+			'build_id' => '20261113T070327Z-70a6808',
+			'asset'    => 'luna.zip',
+			'sha256'   => str_repeat( 'a', 64 ),
+		);
+		$release = array( 'tag_name' => $tag );
+		$this->assertTrue( node_validate_luna_release_meta( $valid_meta, $release ) );
+
+		$bad_tag = $valid_meta;
+		$bad_tag['version'] = '2.0.5';
+		$this->assertWPError( node_validate_luna_release_meta( $bad_tag, $release ) );
+
+		$zip_file = $this->root . '/sample.zip';
+		file_put_contents( $zip_file, 'luna-zip-payload' );
+		$expected_sha = hash_file( 'sha256', $zip_file );
+		$this->assertTrue( node_verify_zip_sha256( $zip_file, $expected_sha ) );
+		$this->assertWPError( node_verify_zip_sha256( $zip_file, str_repeat( '0', 64 ) ) );
+	}
+
+	public function test_select_luna_release_picks_newer_build_within_same_version_offline(): void {
+		$older_tag = 'luna-frontier-v2.0.4-20261112T132528Z-a0afbd3';
+		$newer_tag = 'luna-frontier-v2.0.4-20261113T070327Z-70a6808';
+		$draft_tag = 'luna-frontier-v2.0.5-20261114T000000Z-1234567';
+
+		$releases = array(
+			array(
+				'tag_name' => $draft_tag,
+				'draft'    => true,
+				'assets'   => array(),
+			),
+			array(
+				'tag_name' => 'node-v1.4.0',
+				'draft'    => false,
+				'assets'   => array(),
+			),
+			array(
+				'tag_name' => $older_tag,
+				'draft'    => false,
+				'assets'   => array(
+					array(
+						'name'                 => 'luna-release.json',
+						'browser_download_url' => "https://github.com/wingzone94/Luna-Frontier/releases/download/{$older_tag}/luna-release.json",
+					),
+				),
+			),
+			array(
+				'tag_name' => $newer_tag,
+				'draft'    => false,
+				'assets'   => array(
+					array(
+						'name'                 => 'luna-release.json',
+						'browser_download_url' => "https://github.com/wingzone94/Luna-Frontier/releases/download/{$newer_tag}/luna-release.json",
+					),
+				),
+			),
+		);
+
+		$meta_by_url = array(
+			"https://github.com/wingzone94/Luna-Frontier/releases/download/{$older_tag}/luna-release.json" => array(
+				'tag'      => $older_tag,
+				'version'  => '2.0.4',
+				'build_id' => '20261112T132528Z-a0afbd3',
+				'asset'    => 'luna.zip',
+				'sha256'   => str_repeat( 'b', 64 ),
+			),
+			"https://github.com/wingzone94/Luna-Frontier/releases/download/{$newer_tag}/luna-release.json" => array(
+				'tag'      => $newer_tag,
+				'version'  => '2.0.4',
+				'build_id' => '20261113T070327Z-70a6808',
+				'asset'    => 'luna.zip',
+				'sha256'   => str_repeat( 'c', 64 ),
+			),
+		);
+
+		$filter = static function ( $preempt, array $args, string $url ) use ( $releases, $meta_by_url ) {
+			if ( LUNA_UPDATE_API . '/releases?per_page=20' === $url ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( $releases ),
+				);
+			}
+			if ( isset( $meta_by_url[ $url ] ) && ! empty( $args['filename'] ) ) {
+				file_put_contents( $args['filename'], wp_json_encode( $meta_by_url[ $url ] ) );
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '',
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+		try {
+			$selected = node_select_luna_release( '2.0.4', '20261112T132528Z-a0afbd3' );
+			$this->assertIsArray( $selected );
+			$this->assertSame( $newer_tag, $selected['meta']['tag'] );
+
+			$none = node_select_luna_release( '2.0.4', '20261113T070327Z-70a6808' );
+			$this->assertWPError( $none );
+			$this->assertSame( 'luna_update_none', $none->get_error_code() );
+		} finally {
+			remove_filter( 'pre_http_request', $filter, 10 );
+		}
+	}
 }

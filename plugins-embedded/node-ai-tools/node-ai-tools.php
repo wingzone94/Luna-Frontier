@@ -352,18 +352,28 @@ final class Node_AI_Tools {
 
         if ( ! function_exists( 'node_ai_core' ) || ! node_ai_core()->is_enabled() ) return;
 
-        $user_id = (int) $post->post_author;
-        $result  = node_ai_core()->summarize( $content, array(), $user_id, $post_id );
-
-        if ( is_wp_error( $result ) ) {
-            if ( function_exists( 'node_ai_dispatch_connect_event' ) ) {
-                node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $result->get_error_message() );
-            }
+        if ( function_exists( 'node_ai_acquire_summary_lock' ) && ! node_ai_acquire_summary_lock( $post_id ) ) {
             return;
         }
 
-        if ( function_exists( 'node_ai_store_summary_result' ) ) {
-            node_ai_store_summary_result( $post_id, $result, $user_id );
+        try {
+            $user_id = (int) $post->post_author;
+            $result  = node_ai_core()->summarize( $content, array(), $user_id, $post_id );
+
+            if ( is_wp_error( $result ) ) {
+                if ( function_exists( 'node_ai_dispatch_connect_event' ) ) {
+                    node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $result->get_error_message() );
+                }
+                return;
+            }
+
+            if ( function_exists( 'node_ai_store_summary_result' ) ) {
+                node_ai_store_summary_result( $post_id, $result, $user_id );
+            }
+        } finally {
+            if ( function_exists( 'node_ai_release_summary_lock' ) ) {
+                node_ai_release_summary_lock( $post_id );
+            }
         }
     }
 }

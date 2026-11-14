@@ -66,4 +66,42 @@ class Node_AI_Ajax_Permissions_Test extends WP_Ajax_UnitTestCase {
 		$this->assertNotSame( 'この記事を編集する権限がありません。', $response['data']['message'] ?? '' );
 		$this->assertSame( 3, (int) get_post_meta( $post_id, '_node_ai_max_lines', true ) );
 	}
+
+	public function test_concurrent_summary_generation_lock_blocks_duplicate_execution_and_releases(): void {
+		require_once dirname( __DIR__ ) . '/plugins-embedded/node-ai-tools/includes/ajax-handlers.php';
+
+		$editor_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		$post_id   = $this->factory->post->create(
+			array(
+				'post_author'  => $editor_id,
+				'post_status'  => 'publish',
+				'post_content' => '排他制御と失敗時復旧の検証用本文。',
+			)
+		);
+		wp_set_current_user( $editor_id );
+
+		$this->assertTrue( node_ai_acquire_summary_lock( $post_id, 90 ) );
+		$this->assertFalse( node_ai_acquire_summary_lock( $post_id, 90 ) );
+
+		add_action( 'wp_ajax_node_generate_ai_summary', 'node_ai_ajax_generate_summary' );
+		$_POST                = array(
+			'post_id' => $post_id,
+			'nonce'   => wp_create_nonce( 'node_ai_generate_action' ),
+		);
+		$this->_last_response = '';
+		try {
+			$this->_handleAjax( 'node_generate_ai_summary' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// wp_send_json_error() の正常な終了。
+		} finally {
+			remove_action( 'wp_ajax_node_generate_ai_summary', 'node_ai_ajax_generate_summary' );
+			node_ai_release_summary_lock( $post_id );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'] );
+		$this->assertStringContainsString( '生成中', $response['data']['message'] ?? '' );
+		$this->assertTrue( node_ai_acquire_summary_lock( $post_id, 90 ) );
+		node_ai_release_summary_lock( $post_id );
+	}
 }

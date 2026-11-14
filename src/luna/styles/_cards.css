@@ -13,7 +13,8 @@
  */
 
 body.lf-theme .m3-card,
-body.lf-theme .c-card {
+body.lf-theme .c-card,
+body.lf-theme .m3-related-card {
 	--lf-card-current-accent: var(--lf-card-accent, var(--lf-brand-text));
 	--lf-card-current-outline: var(--lf-card-outline, var(--lf-rule));
 	--lf-card-current-surface: var(--lf-card-surface, var(--lf-paper-sunken));
@@ -26,6 +27,10 @@ body.lf-theme .c-card {
 	container-name: lf-card;
 	transition: border-color var(--lf-motion-base) var(--lf-easing-standard),
 		transform var(--lf-motion-base) var(--lf-easing-standard);
+}
+
+body.lf-theme .m3-related-card {
+	border-block-start: 3px solid var(--node-article-accent, var(--lf-brand));
 }
 
 body.lf-theme[data-theme="dark"] .lf-card-spectrum,
@@ -50,9 +55,16 @@ body.lf-theme .lf-card-spectrum.m3-card--no-image::before {
 }
 
 body.lf-theme .m3-card:hover,
-body.lf-theme .c-card:hover {
+body.lf-theme .c-card:hover,
+body.lf-theme .m3-related-card:hover,
+body.lf-theme .m3-related-card:focus-visible {
 	border-color: var(--lf-rule-strong);
 	box-shadow: none;
+}
+
+body.lf-theme .m3-related-card:focus-visible {
+	outline: 2px solid var(--lf-brand-text);
+	outline-offset: 2px;
 }
 
 body.lf-theme .lf-card-spectrum:hover,
@@ -61,7 +73,8 @@ body.lf-theme .lf-card-spectrum:focus-within {
 }
 
 /* カード内のサムネイルも紙に合わせて四角にする。 */
-body.lf-theme .m3-card :is(img, .m3-card__image, .c-card__image) {
+body.lf-theme .m3-card :is(img, .m3-card__image, .c-card__image),
+body.lf-theme .m3-related-card :is(img, .m3-related-card__image) {
 	border-radius: var(--lf-shape-paper);
 }
 
@@ -112,7 +125,8 @@ body.lf-theme .c-card__title {
 /* Reduced Motion ではカードの変形をやめる。 */
 @media (prefers-reduced-motion: reduce) {
 	body.lf-theme .m3-card,
-	body.lf-theme .c-card {
+	body.lf-theme .c-card,
+	body.lf-theme .m3-related-card {
 		transition: none;
 	}
 }
