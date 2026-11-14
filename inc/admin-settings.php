@@ -513,41 +513,57 @@ function node_render_settings_page() {
                         },
                         success: function(response) {
                             btn.prop('disabled', false).text('アップデートを確認');
+                            var resultBox = $('#update-check-result');
                             if (response.success) {
-                                var remote = response.data.remote_version;
-                                var local = response.data.local_version;
-                                if (response.data.update_available) {
-                                    $('#update-check-result').html('<p style="color: #FF9900; font-weight: bold;">新しいバージョン (v' + remote + ') が見つかりました！</p>');
+                                var data = response.data || {};
+                                var remote = data.remote_version || '';
+                                var local = data.local_version || '';
+                                if (data.update_available) {
+                                    resultBox.empty().append(
+                                        $('<p>').css({ color: '#FF9900', fontWeight: 'bold' }).text('新しいバージョン (v' + remote + ') が見つかりました！')
+                                    );
                                     $('#luminous-install-update').text('最新版をインストール').show();
-                                } else if (response.data.install_available) {
-                                    if (response.data.build_update_available) {
-                                        $('#update-check-result').html('<p style="color: #FF9900; font-weight: bold;">同一バージョン (v' + local + ') の新しいビルドが配信されています。<br>配信中: ' + response.data.remote_build + '<br>インストール済み: ' + (response.data.local_build || '不明') + '</p>');
+                                } else if (data.install_available) {
+                                    if (data.build_update_available) {
+                                        resultBox.empty().append(
+                                            $('<p>').css({ color: '#FF9900', fontWeight: 'bold' })
+                                                .append(document.createTextNode('同一バージョン (v' + local + ') の新しいビルドが配信されています。'))
+                                                .append($('<br>'))
+                                                .append(document.createTextNode('配信中: ' + (data.remote_build || '')))
+                                                .append($('<br>'))
+                                                .append(document.createTextNode('インストール済み: ' + (data.local_build || '不明')))
+                                        );
                                         $('#luminous-install-update').text('新しいビルドを再インストール').show();
-                                    } else if (response.data.remote_build && response.data.local_build && response.data.remote_build === response.data.local_build) {
-                                        $('#update-check-result').html('<p style="color: #4CAF50;">最新バージョン・最新ビルドです (v' + local + ' / ' + response.data.local_build + ')。同じバージョンを再インストールできます。</p>');
+                                    } else if (data.remote_build && data.local_build && data.remote_build === data.local_build) {
+                                        resultBox.empty().append(
+                                            $('<p>').css('color', '#4CAF50').text('最新バージョン・最新ビルドです (v' + local + ' / ' + data.local_build + ')。同じバージョンを再インストールできます。')
+                                        );
                                         $('#luminous-install-update').text('同じバージョンを再インストール').show();
                                     } else {
-                                        $('#update-check-result').html('<p style="color: #4CAF50;">最新バージョンです (v' + local + ')。ビルド比較は利用できません（配信側またはインストール側に build.json がありません）。同じバージョンを再インストールできます。</p>');
+                                        resultBox.empty().append(
+                                            $('<p>').css('color', '#4CAF50').text('最新バージョンです (v' + local + ')。ビルド比較は利用できません（配信側またはインストール側に build.json がありません）。同じバージョンを再インストールできます。')
+                                        );
                                         $('#luminous-install-update').text('同じバージョンを再インストール').show();
                                     }
                                 } else {
-                                    var status = !remote && !response.data.remote_build
-                                        ? '現在インストール可能な新しいリリースはありません (v' + local + (response.data.local_build ? ' / ' + response.data.local_build : '') + ')。'
-                                        : response.data.remote_build_behind
+                                    var status = !remote && !data.remote_build
+                                        ? '現在インストール可能な新しいリリースはありません (v' + local + (data.local_build ? ' / ' + data.local_build : '') + ')。'
+                                        : data.remote_build_behind
                                             ? '現在のビルドは配布中のビルドより新しいため、更新は不要です。'
-                                            : (!response.data.remote_build || !response.data.local_build)
+                                            : (!data.remote_build || !data.local_build)
                                                 ? '配布ビルドと現在のビルドを比較できませんでした。'
-                                                : '最新バージョン・最新ビルドです (v' + local + ' / ' + response.data.local_build + ')。';
-                                    $('#update-check-result').empty().append($('<p>').css('color', '#4CAF50').text(status));
+                                                : '最新バージョン・最新ビルドです (v' + local + ' / ' + data.local_build + ')。';
+                                    resultBox.empty().append($('<p>').css('color', '#4CAF50').text(status));
                                     $('#luminous-install-update').hide();
                                 }
                             } else {
-                                $('#update-check-result').html('<p style="color: #f44336;">エラー: ' + response.data + '</p>');
+                                var errText = (response.data && response.data.message) ? response.data.message : (response.data || '不明なエラー');
+                                resultBox.empty().append($('<p>').css('color', '#f44336').text('エラー: ' + errText));
                             }
                         },
                         error: function() {
                             btn.prop('disabled', false).text('アップデートを確認');
-                            $('#update-check-result').html('<p style="color: #f44336;">ネットワークエラーが発生しました。</p>');
+                            $('#update-check-result').empty().append($('<p>').css('color', '#f44336').text('ネットワークエラーが発生しました。'));
                         }
                     });
                 });

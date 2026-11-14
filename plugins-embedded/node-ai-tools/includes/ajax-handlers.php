@@ -81,6 +81,76 @@ if ( ! function_exists( 'node_ai_store_summary_result' ) ) {
     }
 }
 
+if ( ! function_exists( 'node_ai_summary_lock_option_name' ) ) {
+    /**
+     * 投稿単位の要約生成ロック名。
+     */
+    function node_ai_summary_lock_option_name( int $post_id ): string {
+        return 'node_ai_summary_lock_' . max( 0, $post_id );
+    }
+}
+
+if ( ! function_exists( 'node_ai_acquire_summary_lock' ) ) {
+    /**
+     * 投稿単位の要約生成排他ロックを原子的に取得する（同時実行・二重生成防止）。
+     */
+    function node_ai_acquire_summary_lock( int $post_id, int $ttl = 90 ): bool {
+        if ( $post_id <= 0 ) {
+            return false;
+        }
+
+        global $wpdb;
+        $lock_name = node_ai_summary_lock_option_name( $post_id );
+        $now_unix  = time();
+        $expires   = $now_unix + max( 1, $ttl );
+
+        $inserted = $wpdb->query(
+            $wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'off')",
+                $lock_name,
+                (string) $expires
+            )
+        );
+        if ( false === $inserted ) {
+            return false;
+        }
+
+        if ( 1 !== $inserted ) {
+            $acquired = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND CAST(option_value AS UNSIGNED) <= %d",
+                    (string) $expires,
+                    $lock_name,
+                    $now_unix
+                )
+            );
+            if ( 1 !== $acquired ) {
+                return false;
+            }
+        }
+
+        wp_cache_delete( $lock_name, 'options' );
+        wp_cache_delete( 'notoptions', 'options' );
+        return true;
+    }
+}
+
+if ( ! function_exists( 'node_ai_release_summary_lock' ) ) {
+    /**
+     * 投稿単位の要約生成排他ロックを解放する。
+     */
+    function node_ai_release_summary_lock( int $post_id ): void {
+        if ( $post_id <= 0 ) {
+            return;
+        }
+
+        $lock_name = node_ai_summary_lock_option_name( $post_id );
+        delete_option( $lock_name );
+        wp_cache_delete( $lock_name, 'options' );
+        wp_cache_delete( 'notoptions', 'options' );
+    }
+}
+
 if ( ! function_exists( 'node_ai_ajax_generate_summary' ) ) {
     /**
      * AI 要約生成 AJAX ハンドラ
@@ -138,26 +208,38 @@ if ( ! function_exists( 'node_ai_ajax_generate_summary' ) ) {
             return;
         }
 
-        $result = $core->summarize(
-            $content,
-            array(
-                'custom_prompt' => $custom_prompt,
-                'max_lines' => $max_lines,
-                'max_chars' => $max_chars
-            ),
-            get_current_user_id(),
-            $post_id
-        );
-
-        if ( is_wp_error( $result ) ) {
-            node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $result->get_error_message() );
-            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        if ( ! node_ai_acquire_summary_lock( $post_id ) ) {
+            wp_send_json_error( array( 'message' => '現在この投稿の要約を生成中です。完了までお待ちください。' ) );
             return;
         }
 
-        $payload = node_ai_store_summary_result( $post_id, $result, get_current_user_id() );
+        $payload = null;
+        try {
+            $result = $core->summarize(
+                $content,
+                array(
+                    'custom_prompt' => $custom_prompt,
+                    'max_lines'     => $max_lines,
+                    'max_chars'     => $max_chars,
+                ),
+                get_current_user_id(),
+                $post_id
+            );
+
+            if ( is_wp_error( $result ) ) {
+                node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $result->get_error_message() );
+                $payload = $result;
+            } else {
+                $payload = node_ai_store_summary_result( $post_id, $result, get_current_user_id() );
+                if ( is_wp_error( $payload ) ) {
+                    node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $payload->get_error_message() );
+                }
+            }
+        } finally {
+            node_ai_release_summary_lock( $post_id );
+        }
+
         if ( is_wp_error( $payload ) ) {
-            node_ai_dispatch_connect_event( 'ai_failed', $post_id, 'summarize', $payload->get_error_message() );
             wp_send_json_error( array( 'message' => $payload->get_error_message() ) );
             return;
         }

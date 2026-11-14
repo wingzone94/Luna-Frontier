@@ -31,15 +31,15 @@ Theme URI: https://luminous-core.net/
 Author: Luminous Core Teams
 Author URI: https://luminous-core.net/
 Description: Luna Frontier for Luminous Core. Independent theme descended from Node 1.x. Not a child theme.
-Version: 2.0.3
+Version: 2.0.4
 Text Domain: node
 */
 ```
 
 - `Theme Name` は **Luna Frontier** であること。
 - `Template:` ヘッダーが存在しないこと。
-- バージョン番号が、切ろうとしているリリースの `style.css` と一致していること。上の `2.0.3` は 2026-11-11 時点の現行ヘッダーであり、次の版を切るときはその版の値に読み替える。
-- ブランチにコミットされている `build.json` の `version` / `build_id` は、公開済み Release の値とは別に残りうる。更新判定は Release の `luna-release.json` を見る。`build_id` を文書の都合で書き換えない。
+- バージョン番号が、切ろうとしているリリースの `style.css` と一致していること。上の `2.0.4` は現行ヘッダー例であり、次の版を切るときはその版の値に読み替える。
+- ブランチにコミットされている `build.json` の `version` / `build_id` は、公開済み Release の値とは別に残りうる。更新判定は Release の `luna-release.json` と ZIP 内の `build.json` を見る。`build_id` を文書の都合で書き換えない。
 
 ## 2. アセットのビルド
 
@@ -81,10 +81,12 @@ bun run verify:visual
 - 768px（タブレット縦）
 - 390px（スマートフォン）
 
-## 4. build.json の更新（必須）
+## 4. build.json の生成契約（CI 自動刻印 / ローカル検証用）
 
-同日リリースや同一バージョン内での修正配信に対応するため、ZIP生成のたびに **`build.json` を必ず再生成** します。
-Luminous Settings の更新判定はこの `build_id` を照合します。
+同日リリースや同一バージョン内での修正配信に対応するため、配布 ZIP 生成時は **`style.css` の `Version` と一致する `build.json`** を生成して ZIP に同梱します。Luminous Settings の更新判定は不変タグ `luna-frontier-v{version}-{build_id}` 配下の `luna-release.json` と ZIP 内 `build.json` の `build_id` を照合します。
+
+- **本番 Release（GitHub Actions）**: `.github/workflows/release-luna-frontier.yml` がワークフロー内で `build.json` を自動生成して `luna.zip` に同梱し、結果を Git へはコミットしません。
+- **ローカル ZIP 検証**: ローカルで `luna.zip` と `Luna_Release_Package_Test` を検証する場合のみ、必要に応じて一時的に再生成できます（テスト後に不要な変更を残さないこと）。
 
 ```bash
 printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\n' \
@@ -93,78 +95,12 @@ printf '{\n    "build_id": "%s",\n    "built_at": "%s",\n    "version": "%s"\n}\
   "$(grep -m1 '^Version:' style.css | awk '{print $2}')" > build.json
 ```
 
-- `build.json` は配布ZIPに含め、Gitコミットにも含めます。
-
 ## 5. luna.zip の生成
 
-以下のスクリプトを実行して、`luna.zip` を生成します。
+ローカルでのパッケージ生成と CI（`release-luna-frontier.yml`）の正本スクリプト **`scripts/build-luna-zip.sh`** を実行して `luna.zip` を生成します（手順の重複を防ぐため、除外定義は `scripts/build-luna-zip.sh` 側で一元管理します）。
 
 ```bash
-rm -f luna.zip
-repo_dir=$(pwd)
-tmpdir=$(mktemp -d)
-
-rsync -a \
-  --exclude='.git' \
-  --exclude='.git/' \
-  --exclude='.github/' \
-  --exclude='scripts/' \
-  --exclude='node_modules/' \
-  --exclude='*.zip' \
-  --exclude='.DS_Store' \
-  --exclude='.!*!.DS_Store' \
-  --exclude='.tmp*/' \
-  --exclude='.cursor/' \
-  --exclude='.gemini/' \
-  --exclude='.codex/' \
-  --exclude='.claude/' \
-  --exclude='.agents/' \
-  --exclude='scratch/' \
-  --exclude='production_plugins/' \
-  --exclude='/luna-interactive/' \
-  --exclude='luna-frontier/' \
-  --exclude='src/styles/' \
-  --exclude='src/scripts/' \
-  --exclude='src/fonts/' \
-  --exclude='src/*.js' \
-  --exclude='/vendor/' \
-  --exclude='tests/' \
-  --exclude='test-results/' \
-  --exclude='design/' \
-  --exclude='composer.json' \
-  --exclude='composer.lock' \
-  --exclude='phpunit.xml.dist' \
-  --exclude='.phpunit.result.cache' \
-  --exclude='STATUS.md' \
-  --exclude='NODE-2.0.md' \
-  --exclude='NODE-1.3.md' \
-  --exclude='STRUCTURAL-REVIEW-1.2.md' \
-  --exclude='REFACTORING_PLAN.md' \
-  --exclude='NODE_LIBRARY_REGRESSION_PLAN.md' \
-  --exclude='1.2*.md' \
-  --exclude='AGENTS.md' \
-  --exclude='GEMINI.md' \
-  --exclude='AI.md' \
-  --exclude='TECHNOLOGIES.md' \
-  --exclude='skills-lock.json' \
-  --exclude='gemini_targets.txt' \
-  --exclude='package.json' \
-  --exclude='bun.lock' \
-  --exclude='vite.config.js' \
-  --exclude='HOW_TO_RELEASE.md' \
-  --exclude='CHANGELOG.md' \
-  --exclude='.gitignore' \
-  --exclude='.gitattributes' \
-  --exclude='assets/css/main.css' \
-  --exclude='assets/css/material3.css' \
-  --exclude='*.ttf' \
-  --exclude='*.otf' \
-  --exclude='*.woff' \
-  --exclude='*.woff2' \
-  ./ "$tmpdir/luna-frontier/"
-
-(cd "$tmpdir" && zip -qr "$repo_dir/luna.zip" luna-frontier)
-rm -rf "$tmpdir"
+bash scripts/build-luna-zip.sh
 ```
 
 ### 生成後の必須チェック
@@ -195,7 +131,7 @@ Luna Settings の更新確認は、ブランチ HEAD の `style.css` / `build.js
 - タグ: `luna-frontier-v2.0.3-20261111T103054Z-0941737`
 - https://github.com/wingzone94/Luna-Frontier/releases/tag/luna-frontier-v2.0.3-20261111T103054Z-0941737
 
-ブランチ上の `build.json` は、その Release より前にコミットされた `version: 2.0.2` / `build_id: 20261104T230119Z-1368777` のまま残している。Release ワークフローはジョブ内で `style.css` の Version に合わせて刻み直すが、その結果はコミットしない。
+ブランチ上の `build.json` にはリリース前の開発時点の値（例: `version: 2.0.2` や現行ブランチの `2.0.4`）が残りうる。Release ワークフローはジョブ内で `style.css` の Version に合わせて `build.json` と `luna-release.json` を刻み直すが、その結果は Git へコミットしない。
 
 ---
 

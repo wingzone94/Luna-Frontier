@@ -77,31 +77,45 @@ function node_ai_render_summary_meta_box($post) {
             var maxChars = $('#node_ai_max_chars').val();
             var geminiModel = $('#node_ai_gemini_model').length ? $('#node_ai_gemini_model').val() : '';
 
+            if (btn.prop('disabled')) {
+                return;
+            }
             if ($.trim($('#node_ai_summary_textarea').val()) !== '' && !window.confirm('現在の要約を上書きして再生成しますか？')) {
                 return;
             }
             
             btn.prop('disabled', true);
             status.text('生成中...').css('color', '#FF9900');
-            $.post(ajaxurl, {
-                action: 'node_generate_ai_summary',
-                post_id: postId,
-                custom_prompt: customPrompt,
-                max_lines: maxLines,
-                max_chars: maxChars,
-                gemini_model: geminiModel,
-                nonce: nonce
-            }, function(response) {
-                btn.prop('disabled', false);
-                if (response.success) {
-                    $('#node_ai_summary_textarea').val(response.data.summary);
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                timeout: 70000,
+                data: {
+                    action: 'node_generate_ai_summary',
+                    post_id: postId,
+                    custom_prompt: customPrompt,
+                    max_lines: maxLines,
+                    max_chars: maxChars,
+                    gemini_model: geminiModel,
+                    nonce: nonce
+                }
+            }).done(function(response) {
+                if (response && response.success && response.data) {
+                    $('#node_ai_summary_textarea').val(response.data.summary || '');
                     status.text('生成完了！').css('color', 'green');
                 } else {
-                    status.text('エラー: ' + response.data.message).css('color', 'red');
+                    var message = (response && response.data && response.data.message) ? response.data.message : '不明なエラーが発生しました。';
+                    status.text('エラー: ' + message).css('color', 'red');
                 }
-            }).fail(function() {
+            }).fail(function(xhr, textStatus) {
+                if (textStatus === 'timeout') {
+                    status.text('タイムアウトしました。時間をおいて再試行してください。').css('color', 'red');
+                } else {
+                    status.text('通信エラーが発生しました。').css('color', 'red');
+                }
+            }).always(function() {
                 btn.prop('disabled', false);
-                status.text('通信エラーが発生しました。').css('color', 'red');
             });
         });
     });

@@ -448,4 +448,42 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 			'filename' => null,
 		);
 	}
+
+	public function test_auto_generate_summary_skips_when_locked_and_releases_lock_on_api_error(): void {
+		update_option( 'node_ai_gemini_api_key', 'AIza-mock-test-key' );
+		update_option( 'node_ai_gemini_model', 'gemini-2.5-flash' );
+
+		$post_id = self::factory()->post->create(
+			array(
+				'post_author'  => $this->user_id,
+				'post_status'  => 'publish',
+				'post_content' => '自動要約の失敗時ロック解放テスト本文。',
+			)
+		);
+
+		$plugin = Node_AI_Tools::instance();
+		$calls  = 0;
+		$counter = static function ( $preempt ) use ( &$calls ) {
+			++$calls;
+			return new WP_Error( 'http_request_failed', 'Operation timed out after 30000 milliseconds' );
+		};
+
+		try {
+			// ロック保持中は外部APIへ進まない。
+			$this->assertTrue( node_ai_acquire_summary_lock( $post_id, 90 ) );
+			add_filter( 'pre_http_request', $counter, 10, 3 );
+			$plugin->run_auto_generate_ai_summary( $post_id );
+			$this->assertSame( 0, $calls );
+
+			// ロック解放後にタイムアウトエラーが返ってもロックはクリーンに解放される。
+			node_ai_release_summary_lock( $post_id );
+			$plugin->run_auto_generate_ai_summary( $post_id );
+			$this->assertSame( 1, $calls );
+			$this->assertSame( '', (string) get_post_meta( $post_id, '_node_ai_summary', true ) );
+			$this->assertTrue( node_ai_acquire_summary_lock( $post_id, 90 ) );
+		} finally {
+			remove_filter( 'pre_http_request', $counter, 10 );
+			node_ai_release_summary_lock( $post_id );
+		}
+	}
 }

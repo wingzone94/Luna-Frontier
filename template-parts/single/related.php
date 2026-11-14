@@ -49,7 +49,7 @@ if ($related_query->have_posts()) :
                             ?>
                         </div>
                     <?php else : ?>
-                        <div class="m3-related-card__image m3-related-card__image--placeholder" style="display: flex; align-items: center; justify-content: center; background: var(--md-sys-color-surface-container-high); aspect-ratio: 4/3;">
+                        <div class="m3-related-card__image m3-related-card__image--placeholder" style="display: flex; align-items: center; justify-content: center; background: var(--md-sys-color-surface-container-high); aspect-ratio: 16/9;">
                             <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-sys-color-outline-variant);" aria-hidden="true">image</span>
                         </div>
                     <?php endif; ?>

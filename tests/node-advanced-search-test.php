@@ -161,4 +161,96 @@ class Node_Advanced_Search_Test extends WP_UnitTestCase {
 
 		$this->assertArrayNotHasKey( 'node_media_types', $args );
 	}
+
+	public function test_search_and_date_archive_pagination_use_deterministic_id_tiebreaker(): void {
+		$ids = array();
+		for ( $i = 0; $i < 6; $i++ ) {
+			$ids[] = self::factory()->post->create(
+				array(
+					'post_status' => 'publish',
+					'post_title'  => 'Same Timestamp Tie',
+					'post_date'   => '2026-11-10 12:00:00',
+				)
+			);
+		}
+
+		$original_get = $_GET;
+		try {
+			$_GET = array(
+				's'       => '',
+				'm3_sort' => 'newest',
+			);
+			$this->go_to( home_url( '/?s=&m3_sort=newest' ) );
+			$search_orderby = $GLOBALS['wp_query']->get( 'orderby' );
+			$this->assertSame(
+				array(
+					'date' => 'DESC',
+					'ID'   => 'DESC',
+				),
+				$search_orderby
+			);
+
+			$page1 = new \WP_Query(
+				array(
+					'post_type'      => 'post',
+					'post_status'    => 'publish',
+					'post__in'       => $ids,
+					'posts_per_page' => 3,
+					'paged'          => 1,
+					'orderby'        => $search_orderby,
+				)
+			);
+			$page2 = new \WP_Query(
+				array(
+					'post_type'      => 'post',
+					'post_status'    => 'publish',
+					'post__in'       => $ids,
+					'posts_per_page' => 3,
+					'paged'          => 2,
+					'orderby'        => $search_orderby,
+				)
+			);
+
+			$p1_ids = wp_list_pluck( $page1->posts, 'ID' );
+			$p2_ids = wp_list_pluck( $page2->posts, 'ID' );
+			$this->assertCount( 3, $p1_ids );
+			$this->assertCount( 3, $p2_ids );
+			$this->assertSame( array(), array_intersect( $p1_ids, $p2_ids ) );
+			$merged = array_merge( $p1_ids, $p2_ids );
+			sort( $merged );
+			$expected = $ids;
+			sort( $expected );
+			$this->assertSame( $expected, $merged );
+
+			// Non-empty keyword search without explicit sort keeps WP relevance ordering.
+			$_GET = array( 's' => 'Timestamp' );
+			$this->go_to( home_url( '/?s=Timestamp' ) );
+			$this->assertSame( '', $GLOBALS['wp_query']->get( 'orderby' ) );
+
+			// Date archive sort helper adds ID tiebreaker.
+			$this->go_to( add_query_arg( 'sort', 'date-asc', get_month_link( 2026, 11 ) ) );
+			$this->assertTrue( $GLOBALS['wp_query']->is_date() );
+			$this->assertSame(
+				array(
+					'date' => 'ASC',
+					'ID'   => 'ASC',
+				),
+				$GLOBALS['wp_query']->get( 'orderby' )
+			);
+
+			// REST search results with identical timestamps return descending ID order cleanly.
+			$rest_req = new \WP_REST_Request( 'GET', '/luminous-core-engine/v1/search/results' );
+			$rest_req->set_param( 's', 'Same Timestamp Tie' );
+			$rest_req->set_param( 'm3_sort', 'newest' );
+			$rest_res = rest_do_request( $rest_req );
+			$this->assertSame( 200, $rest_res->get_status() );
+			$rest_data = $rest_res->get_data();
+			$rest_ids  = wp_list_pluck( $rest_data['results'], 'id' );
+			$expected_desc = $ids;
+			rsort( $expected_desc );
+			$this->assertSame( $expected_desc, $rest_ids );
+		} finally {
+			$_GET = $original_get;
+		}
+	}
 }

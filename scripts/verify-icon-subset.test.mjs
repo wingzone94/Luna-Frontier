@@ -9,7 +9,7 @@
  *
  * ここではその6種が実際に参照として見つかること、そのときに使った抽出の条件
  * （終端記号・アイコンフォントの範囲・対応表の割合）が壊れていないことを固定する。
- * あわせて、MS-Trim の棚卸しで「静的に参照が見つからない」と記録した12種が今も検出できること
+ * あわせて、MS-Trim の棚卸しで「静的に参照が見つからない」と記録した一覧から key を除いた11種が今も検出できること
  * （＝誤判定を直したせいで検出能力を失っていないこと）も確認する。
  *
  * 実行: bun run verify:icon-subset:test
@@ -17,7 +17,9 @@
  */
 
 import { strict as assert } from 'node:assert';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { test } from 'node:test';
 
@@ -27,22 +29,23 @@ import {
 	extractFontRegistrationAdditions,
 	extractIconMaps,
 	extractLiterals,
+	extractScopedHighRefs,
 	extractUsageFromEntries,
 	findDynamicSources,
+	findPrefixCollisions,
 	isNonProductPath,
 	partitionMissing,
 } from './icon-subset-extract.mjs';
 
 const ROOT = process.cwd();
 
-/** MS-Trim の棚卸し（outputs/phase4/MATERIAL-SYMBOLS-AUDIT.md）で「参照ゼロ」と記録した12種。 */
+/** 静的に参照が見つからない登録アイコン（11種。`'key'` は未使用のため削除済み）。 */
 const KNOWN_UNUSED = [
 	'analytics',
 	'chat_bubble',
 	'clear_all',
 	'edit',
 	'format_size',
-	'key',
 	'more_horiz',
 	'perm_media',
 	'search_off',
@@ -61,14 +64,14 @@ const PREVIOUS_FALSE_POSITIVES = [
 	'label',
 ];
 
-const SKIP_DIRS = new Set(['.git', 'node_modules', 'vendor', 'scratch', '.cursor', '.claude']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', 'vendor', 'scratch', 'test-results', '.cursor', '.claude', '.gemini', '.codex']);
 
 async function walk(dir) {
 	const out = [];
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
 		if (SKIP_DIRS.has(entry.name) || entry.name.startsWith('.tmp')) continue;
-		// ビルド済みの assets はテーマ直下のものだけ飛ばす（CLI と同じ扱い）。
-		if (dir === ROOT && entry.name === 'assets') continue;
+		// ビルド済みの assets / dist はテーマ直下のものだけ飛ばす（CLI と同じ扱い）。
+		if (dir === ROOT && (entry.name === 'assets' || entry.name === 'dist')) continue;
 		const full = join(dir, entry.name);
 		if (entry.isDirectory()) out.push(...(await walk(full)));
 		else if (/\.(php|js|css|html|mjs)$/.test(entry.name)) out.push(full);
@@ -91,7 +94,7 @@ async function scanNames() {
 	for (const file of await walk(ROOT)) {
 		const rel = relative(ROOT, file);
 		const text = await readFile(file, 'utf8');
-		if (!/material-symbols|data-(?:node-section-)?icon|\bicon\b|content\s*:|setIcon\s*\(|icon_names/i.test(text)) continue;
+		if (!/material-symbols|data-(?:node-section-)?icon|\bicon\b|[A-Za-z0-9_$]*icon\w*\.textContent|content\s*:|setIcon\s*\(|icon_names/i.test(text)) continue;
 		entries.push({ path: rel, text });
 	}
 	const { found, medium, maps, filterAdded, dynamic } = extractUsageFromEntries(entries, known);
@@ -168,7 +171,7 @@ test('再発防止: 以前「未使用」と誤判定した6種が、実際に�
 	}
 });
 
-test('検出能力: 静的に参照が見つからない12種は、今も参照が見つからないまま', async () => {
+test('検出能力: 静的に参照が見つからない11種は、今も参照が見つからないまま', async () => {
 	const { seen } = await scanNames();
 	for (const name of KNOWN_UNUSED) {
 		assert.ok(!seen.has(name), `${name} を参照として拾ってしまった（未使用の検出能力が落ちている）`);
@@ -297,4 +300,90 @@ test('フィルタ追加候補は未登録エラーと登録確認済みの両�
  const result = partitionMissing(found, new Set(['close']), new Map([['audit_glyph', {}]]));
  assert.deepEqual(result.missing.map(([name]) => name), ['real_missing']);
  assert.deepEqual(result.needsRuntime.map(([name]) => name), ['audit_glyph']);
+});
+
+test('未使用の key は登録削除済みで、node-image-compressor 用4種が登録されている', async () => {
+	const declared = await declaredIcons();
+	assert.ok(!declared.has('key'), '未使用の key が inc/icon-font.php に残っている');
+	for (const name of ['block', 'do_not_disturb_on', 'pending', 'restart_alt']) {
+		assert.ok(declared.has(name), `${name} が inc/icon-font.php に無い`);
+	}
+});
+
+test('span 内 PHP 三項演算子と icon 要素 textContent / PHP配列・match・JS定数マップを高信頼抽出する', () => {
+	const phpSpan = `<span class="material-symbols-outlined"><?php echo 'skipped' === $status['state'] ? 'restart_alt' : 'block'; ?></span>`;
+	const spanHits = extractLiterals(phpSpan).filter((h) => h.confidence === 'high').map((h) => h.name).sort();
+	assert.deepEqual(spanHits, ['block', 'restart_alt']);
+
+	const jsText = `
+		skipIcon.textContent = isSkipped ? 'restart_alt' : 'block';
+		icon.textContent = item.icon || 'search';
+		if (copyIcon) copyIcon.textContent = 'check';
+	`;
+	const jsHits = extractLiterals(jsText).filter((h) => h.confidence === 'high').map((h) => h.name).sort();
+	assert.deepEqual(jsHits, ['block', 'check', 'restart_alt', 'search']);
+
+	const phpScoped = `
+		<?php
+		$x = array( 'icon' => 'app' === $type ? 'smartphone' : 'sports_esports' );
+		function node_ic_state_icon( string $state ): string {
+			return match ( $state ) {
+				'converted' => 'check_circle',
+				'pending' => 'pending',
+				'skipped' => 'block',
+				default => 'do_not_disturb_on',
+			};
+		}
+	`;
+	const phpHits = extractScopedHighRefs('sample.php', phpScoped).map((h) => h.name).sort();
+	assert.deepEqual(phpHits, ['block', 'check_circle', 'do_not_disturb_on', 'pending', 'smartphone', 'sports_esports']);
+
+	const jsMap = `var STATE_ICONS = { pending: 'pending', skipped: 'block' }; icon.textContent = STATE_ICONS[state];`;
+	assert.deepEqual(extractScopedHighRefs('admin.js', jsMap).map((h) => h.name).sort(), ['block', 'pending']);
+
+	const legacyMap = `var NOTICE_LEGACY_ICONS = { alert: 'report' }; return noticeSaveMarkup( props, NOTICE_LEGACY_ICONS );`;
+	assert.deepEqual(extractScopedHighRefs('editor.js', legacyMap), []);
+});
+
+test('findPrefixCollisions は未登録アイコンの前方一致衝突を検知する', () => {
+	const declared = new Set(['key', 'check', 'check_circle', 'search']);
+	const collisions = findPrefixCollisions(
+		['keyboard_arrow_up', 'check_circle_outline', 'search_insights', 'search', 'unrelated_new'],
+		declared
+	);
+	assert.deepEqual(
+		collisions.map((c) => ({ name: c.name, prefix: c.prefix })),
+		[
+			{ name: 'keyboard_arrow_up', prefix: 'key' },
+			{ name: 'check_circle_outline', prefix: 'check_circle' },
+			{ name: 'search_insights', prefix: 'search' },
+		]
+	);
+});
+
+test('CLI は前方一致衝突を PREFIX COLLISION DANGER と exit 1 で報告する', async () => {
+	const fixture = await mkdtemp(join(tmpdir(), 'node-icon-prefix-'));
+	try {
+		await mkdir(join(fixture, 'inc'));
+		await writeFile(join(fixture, 'inc/icon-font.php'), "<?php $names = array('check');");
+		await writeFile(join(fixture, 'content.php'), '<span class="material-symbols-outlined">check_circle</span>');
+		const run = () => spawnSync(process.execPath, [join(ROOT, 'scripts/verify-icon-subset.mjs'), '--static-only'], {
+			cwd: fixture,
+			encoding: 'utf8',
+			timeout: 10000,
+		});
+		const collision = run();
+		assert.ifError(collision.error);
+		assert.equal(collision.status, 1, collision.stdout + collision.stderr);
+		assert.match(collision.stderr, /PREFIX COLLISION DANGER: check_circle は登録済み check に前方一致/);
+
+		// 完全名を登録すれば、短い名前が共存していても衝突エラーにはしない。
+		await writeFile(join(fixture, 'inc/icon-font.php'), "<?php $names = array('check', 'check_circle');");
+		const registered = run();
+		assert.ifError(registered.error);
+		assert.equal(registered.status, 0, registered.stdout + registered.stderr);
+		assert.doesNotMatch(registered.stderr, /PREFIX COLLISION DANGER/);
+	} finally {
+		await rm(fixture, { recursive: true, force: true });
+	}
 });

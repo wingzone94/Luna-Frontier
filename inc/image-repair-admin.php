@@ -115,11 +115,14 @@ function node_image_repair_ajax(): void {
 			if ( $index < $job['count'] ) {
 				$key = Node_Image_Repair::PREFIX . $job['id'] . '_' . $index;
 				$row = get_option( $key );
+				if ( ! is_array( $row ) ) {
+					throw new RuntimeException( '修復対象データが見つかりません。再検査を実行してください。' );
+				}
 				try {
 					if ( 'restore' === $task ) {
 						$result = Node_Image_Repair::restore( $key . '_journal' );
 						$row['result'] = $result['message'] ?? $result['state'];
-					} elseif ( '修復可能' === $row['status'] && ! in_array( $row['result'], array( 'done', 'already_ok' ), true ) ) {
+					} elseif ( '修復可能' === ( $row['status'] ?? '' ) && ! in_array( $row['result'] ?? '', array( 'done', 'already_ok' ), true ) ) {
 						$result = Node_Image_Repair::repair( $row, $key . '_journal' );
 						$row['result'] = $result['state'];
 					}
@@ -133,6 +136,9 @@ function node_image_repair_ajax(): void {
 		$rows = array();
 		for ( $i = $offset; $i < min( $offset + 50, $job['count'] ); ++$i ) {
 			$row = get_option( Node_Image_Repair::PREFIX . $job['id'] . '_' . $i );
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
 			unset( $row['snapshot'] ); $row['index'] = $i; $rows[] = $row;
 		}
 		$response = array( 'job' => $job, 'rows' => $rows );

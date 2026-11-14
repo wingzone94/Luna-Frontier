@@ -181,4 +181,29 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$this->assertTrue( node_code_font_is_enabled() );
 		delete_option( 'node_code_font_enabled' );
 	}
+
+	public function test_image_compressor_icons_are_declared_and_unused_key_is_removed() {
+		$names = node_get_icon_font_names();
+
+		$this->assertNotContains( 'key', $names );
+		foreach ( array( 'block', 'do_not_disturb_on', 'pending', 'restart_alt' ) as $icon ) {
+			$this->assertContains( $icon, $names );
+		}
+	}
+
+	public function test_node_image_compressor_filter_registers_icons_without_duplicates() {
+		if ( ! function_exists( 'node_ic_register_icon_font_names' ) ) {
+			require_once dirname( __DIR__ ) . '/plugins-embedded/node-image-compressor/node-image-compressor.php';
+		}
+
+		$added = node_ic_register_icon_font_names( array() );
+		$this->assertSame(
+			array( 'block', 'do_not_disturb_on', 'pending', 'restart_alt' ),
+			$added
+		);
+
+		add_filter( 'node_icon_font_names', 'node_ic_register_icon_font_names' );
+		$names = node_get_icon_font_names();
+		$this->assertSame( array_values( array_unique( $names ) ), $names );
+	}
 }

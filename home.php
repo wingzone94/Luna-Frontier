@@ -74,7 +74,14 @@ $lf_news = $lf_news_category instanceof WP_Term ? get_posts( array(
 ) ) : array();
 $lf_period = isset( $_GET['lf_period'] ) && is_string( $_GET['lf_period'] ) && '30' === wp_unslash( $_GET['lf_period'] ) ? 30 : 7;
 $lf_popular = function_exists( 'node_get_popular_posts_for_period' ) ? node_get_popular_posts_for_period( $lf_period ) : array();
-$lf_popular_url = $lf_selected ? add_query_arg( 'lf_category', $lf_selected, $lf_home_url ) : $lf_home_url;
+$lf_popular_base_args = array();
+if ( $lf_selected ) {
+	$lf_popular_base_args['lf_category'] = $lf_selected;
+}
+if ( '' !== $lf_date_requested ) {
+	$lf_popular_base_args['lf_date'] = $lf_date_requested;
+}
+$lf_popular_url = $lf_popular_base_args ? add_query_arg( $lf_popular_base_args, $lf_home_url ) : $lf_home_url;
 
 $lf_filter_base_args = array( 'lf_period' => $lf_period );
 if ( '' !== $lf_date_requested ) {

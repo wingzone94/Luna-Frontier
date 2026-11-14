@@ -8,8 +8,7 @@ declare( strict_types=1 );
  * - Paper Design（四角・面と罫で階層をつくる）へ
  * - Official SNS は公式アカウントだけにする
  *   （RSS は 2026-08-09 のユーザー指示でフッターから削除。ヘッダーには残っている）
- * - バージョン表記は利用者向けのメジャー表記（luna_frontier_display_version()）。
- *   style.css の完全な Version は node_get_theme_version() と luna_frontier_version() が読む。
+ * - バージョン表記は style.css の完全な Version（luna_frontier_display_version() が luna_frontier_version() を返す）。
  * - ブランドクロームなので Dynamic Color は流し込まない（§23 / §38）
  *
  * @package LunaFrontier

@@ -16,8 +16,8 @@
  * 軸を固定すれば 9.2KB まで下がるが、見た目が変わる。
  *
  * **一覧に無いアイコンはリガチャの文字がそのまま出る**（例: "settings" と表示される）。
- * アイコンを増やしたら必ずここへ追加すること。取りこぼしは
- * `bun run verify:icons`（静的抽出との突き合わせ）と
+ * アイコンを増やしたら必ずここへ追加すること。取りこぼしと前方一致化けは
+ * `bun run verify:icon-subset -- --static-only`（静的抽出との突き合わせ）と
  * `bun run verify:icon-subset`（実ページの描画結果との突き合わせ）が検出する。
  *
  * @package Node
@@ -46,6 +46,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'article',
 			'auto_awesome',
 			'auto_stories',
+			'block',
 			'bolt',
 			'broken_image',
 			'calendar_month',
@@ -66,6 +67,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'delete_forever',
 			'desktop_windows',
 			'devices',
+			'do_not_disturb_on',
 			'edit',
 			'edit_note',
 			'error',
@@ -84,7 +86,6 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'inbox',
 			'info',
 			'inventory_2',
-			'key',
 			'label',
 			'laptop_mac',
 			'last_page',
@@ -100,6 +101,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'newspaper',
 			'open_in_new',
 			'pause_circle',
+			'pending',
 			'perm_media',
 			'person',
 			'print',
@@ -108,6 +110,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'qr_code_2',
 			'reorder',
 			'report_problem',
+			'restart_alt',
 			'restaurant',
 			'rss_feed',
 			'save',
