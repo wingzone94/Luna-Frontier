@@ -61,8 +61,8 @@ function node_internal_url_to_postid( string $url ): int {
 }
 
 /** 公開済み記事、または予約記事のカード用メタデータを毎回最新状態から取得する。 */
-function node_blogcard_internal_ogp( string $url ) {
-	$post_id = node_internal_url_to_postid( $url );
+function node_blogcard_internal_ogp( string $url, ?int $post_id = null ) {
+	$post_id = $post_id ?? node_internal_url_to_postid( $url );
 	if ( ! $post_id ) {
 		return false;
 	}
@@ -83,6 +83,60 @@ function node_blogcard_internal_ogp( string $url ) {
 		'favicon'      => get_site_icon_url( 32 ) ?: '',
 		'scheduled_id' => $is_scheduled ? $post->ID : 0,
 		'publish_at'   => $is_scheduled ? (int) get_post_timestamp( $post ) : 0,
+	);
+}
+
+/**
+ * 公開アーカイブのメタ情報を WP API から構築し、自己 HTTP を行わない。
+ * 解決不能 URL（非公開化された投稿を含む）は失敗扱いとする。
+ */
+function node_blogcard_internal_archive_ogp( string $url ) {
+	$normalize = static fn( string $link ): string => untrailingslashit( set_url_scheme( $link ) );
+	$target = $normalize( $url );
+	$title = '';
+	$description = '';
+	if ( $target === $normalize( home_url( '/' ) ) ) {
+		$title = get_bloginfo( 'name' );
+		$description = get_bloginfo( 'description' );
+	} else {
+		// クエリ形式・階層 taxonomy も正規リンクとの一致時だけ採用する。
+		$slug = rawurldecode( basename( untrailingslashit( (string) wp_parse_url( $url, PHP_URL_PATH ) ) ) );
+		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
+		foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $taxonomy ) {
+			$args = array( 'taxonomy' => $taxonomy->name, 'hide_empty' => false, 'slug' => $slug );
+			if ( 'category' === $taxonomy->name && isset( $query['cat'] ) ) {
+				unset( $args['slug'] );
+				$args['include'] = array( absint( $query['cat'] ) );
+			} elseif ( $taxonomy->query_var && isset( $query[ $taxonomy->query_var ] ) && is_string( $query[ $taxonomy->query_var ] ) ) {
+				$args['slug'] = $query[ $taxonomy->query_var ];
+			}
+			$terms = get_terms( $args );
+			foreach ( is_wp_error( $terms ) ? array() : $terms as $term ) {
+				$link = get_term_link( $term );
+				if ( ! is_wp_error( $link ) && $target === $normalize( $link ) ) {
+					$title = $term->name;
+					$description = wp_strip_all_tags( $term->description );
+					break 2;
+				}
+			}
+		}
+		if ( '' === $title ) {
+			foreach ( get_post_types( array( 'public' => true, 'has_archive' => true ), 'objects' ) as $type ) {
+				$link = get_post_type_archive_link( $type->name );
+				if ( $link && $target === $normalize( $link ) ) {
+					$title = $type->labels->name;
+					break;
+				}
+			}
+		}
+	}
+	return '' === $title ? false : array(
+		'title' => $title,
+		'description' => $description,
+		'image' => '',
+		'site_name' => get_bloginfo( 'name' ),
+		'is_internal' => true,
+		'favicon' => get_site_icon_url( 32 ) ?: '',
 	);
 }
 
@@ -119,20 +173,19 @@ function node_get_ogp_data( string $url ) {
 	if ( empty( $url ) ) {
 		return false;
 	}
-	// 投稿の公開状態を毎回確認し、トップ・アーカイブ等の非投稿 URL は公開 OGP を取得する。
-	$is_internal = node_is_internal_url( $url );
-	if ( $is_internal && node_internal_url_to_postid( $url ) ) {
-		return node_blogcard_internal_ogp( $url );
+	// 内部 URL は毎回公開状態を確認。過去の HTTP キャッシュは再利用しない。
+	if ( node_is_internal_url( $url ) ) {
+		$post_id = node_internal_url_to_postid( $url );
+		return $post_id ? node_blogcard_internal_ogp( $url, $post_id ) : node_blogcard_internal_archive_ogp( $url );
 	}
 
 	$transient_key = 'node_ogp_' . md5( $url );
-	// 非公開化されて URL 解決できなくなった投稿の旧メタデータも再利用しない。
-	$cached        = $is_internal ? false : get_transient( $transient_key );
+	$cached        = get_transient( $transient_key );
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
 	// 取得失敗は負のキャッシュとして記録する。これが無いと、失敗する URL では
-	// レンダーのたびに 15 秒タイムアウトの外部 HTTP が走り表示が遅延する。
+	// レンダーのたびに 外部取得タイムアウトの外部 HTTP が走り表示が遅延する。
 	if ( node_blogcard_fetch_failure_marker() === $cached ) {
 		return false;
 	}
@@ -149,7 +202,7 @@ function node_get_ogp_data( string $url ) {
 	$response = wp_safe_remote_get(
 		$url,
 		array(
-			'timeout'    => 15,
+			'timeout'    => 4,
 			// ゲームストア（任天堂・PlayStation・Xbox 等）はボット防御下にあり、
 			// 「compatible; ...」型の自己申告ボット UA では 403 を返す。同梱の
 			// node-library と同じブラウザ UA に揃えて商品ページを取得できるようにする。
@@ -300,7 +353,7 @@ function node_blogcard_fetch_failure_marker(): string {
  * @return false
  */
 function node_blogcard_cache_failure( string $transient_key ) {
-	set_transient( $transient_key, node_blogcard_fetch_failure_marker(), 6 * HOUR_IN_SECONDS );
+	set_transient( $transient_key, node_blogcard_fetch_failure_marker(), 5 * MINUTE_IN_SECONDS );
 	return false;
 }
 
@@ -940,7 +993,9 @@ function node_blogcard_defer( string $html ): string {
 		return '';
 	}
 
-	return '<div class="node-blogcard-slot">' . base64_encode( $html ) . '</div>';
+	$payload = base64_encode( $html );
+	$signature = hash_hmac( 'sha256', $payload, wp_salt( 'nonce' ) );
+	return '<div class="node-blogcard-slot" data-sig="' . esc_attr( $signature ) . '">' . $payload . '</div>';
 }
 
 /**
@@ -955,9 +1010,14 @@ function node_blogcard_hydrate( string $content ): string {
 	}
 
 	return (string) preg_replace_callback(
-		'#<div class="node-blogcard-slot">([A-Za-z0-9+/=]+)</div>#',
+		'#<div class="node-blogcard-slot"(?: data-sig="([^"]*)")?>([A-Za-z0-9+/=]+)</div>#',
 		static function ( array $m ): string {
-			$decoded = base64_decode( $m[1], true );
+			// 旧形式・salt 更新・改ざんは破棄。未署名 HTML は絶対に展開しない。
+			$expected = hash_hmac( 'sha256', $m[2], wp_salt( 'nonce' ) );
+			if ( ! hash_equals( $expected, $m[1] ) ) {
+				return '';
+			}
+			$decoded = base64_decode( $m[2], true );
 			// oEmbed の保存済みプレースホルダでも予定変更・公開・下書きへの戻しを反映する。
 			if ( false !== $decoded && preg_match( '/data-node-scheduled-post="([0-9]+)"/', $decoded, $scheduled ) ) {
 				$post = get_post( (int) $scheduled[1] );
@@ -1044,7 +1104,7 @@ function node_is_google_maps_url( string $url ): bool {
 	$host = (string) preg_replace( '/^www\./', '', $host );
 	$path = (string) parse_url( $url, PHP_URL_PATH );
 
-	if ( in_array( $host, array( 'maps.app.goo.gl', 'goo.gl' ), true ) ) {
+	if ( 'maps.app.goo.gl' === $host || ( 'goo.gl' === $host && str_starts_with( $path, '/maps' ) ) ) {
 		return true;
 	}
 
@@ -1085,7 +1145,7 @@ function node_maps_embed_html( string $url ): string {
  */
 function node_youtube_video_id( string $url, string $host, string $path ): string {
 	if ( 'youtu.be' === $host ) {
-		return (string) preg_replace( '#^/([\w-]{6,})\b.*#', '$1', $path );
+		return preg_match( '#^/([\w-]{6,})(?:/|$)#', $path, $m ) ? $m[1] : '';
 	}
 
 	if ( in_array( $host, array( 'youtube.com', 'm.youtube.com' ), true ) ) {
@@ -1114,7 +1174,7 @@ function node_youtube_video_id( string $url, string $host, string $path ): strin
  * @return string 埋め込み用 src（該当しなければ空文字）。
  */
 function node_google_maps_embed_src( string $url, string $host, string $path ): string {
-	$is_short = in_array( $host, array( 'maps.app.goo.gl', 'goo.gl' ), true );
+	$is_short = 'maps.app.goo.gl' === $host || ( 'goo.gl' === $host && str_starts_with( $path, '/maps' ) );
 	$is_maps  = ( str_ends_with( $host, 'google.com' ) || str_starts_with( $host, 'maps.google.' ) )
 		&& ( str_starts_with( $path, '/maps' ) || '' !== (string) parse_url( $url, PHP_URL_QUERY ) );
 
@@ -1369,7 +1429,7 @@ function node_register_maps_oembed_route(): void {
 		'/maps-oembed',
 		array(
 			'methods'             => 'GET',
-			'permission_callback' => '__return_true',
+			'permission_callback' => static fn(): bool => current_user_can( 'edit_posts' ),
 			'callback'            => 'node_maps_oembed_response',
 			'args'                => array(
 				'url' => array(
@@ -1436,7 +1496,7 @@ function node_pre_oembed_maps_result( $result, $url, $args ) {
  * 自サイト URL の oEmbed 取得を短絡し、内部カードを直接返す。
  *
  * 自サイト埋め込みは WordPress の自己 oEmbed（ループバック HTTP 要求）に依存し、要求の
- * 成否・タイミングでカードが出たり出なかったりする。ここで url_to_postid ベースに短絡して
+ * 成否・タイミングでカードが出たり出なかったりする。ここですべての内部 URL を短絡して
  * ループバックを完全に排除し、内部カードを毎回確実に生成する。node_blogcard_defer() で
  * base64 プレースホルダ化しているため、キャッシュ後の別リクエストでも復元できる。
  *
@@ -1447,16 +1507,13 @@ function node_pre_oembed_maps_result( $result, $url, $args ) {
  */
 function node_pre_oembed_internal_result( $result, $url, $args ) {
 	unset( $args );
-	if ( null !== $result || ! node_is_internal_url( (string) $url ) || ! node_internal_url_to_postid( (string) $url ) ) {
+	if ( null !== $result || ! node_is_internal_url( (string) $url ) ) {
 		return $result;
 	}
 
 	$card = node_render_blogcard( (string) $url );
-	if ( '' === $card || str_contains( $card, 'm3-blogcard__fallback' ) ) {
-		return $result;
-	}
-
-	return node_blogcard_defer( $card );
+	// false も短絡値。非公開・解決不能 URL を discovery HTTP に渡さない。
+	return '' === $card ? false : node_blogcard_defer( $card );
 }
 
 add_shortcode( 'blogcard', 'node_blogcard_shortcode' );
