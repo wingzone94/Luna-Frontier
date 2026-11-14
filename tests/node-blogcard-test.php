@@ -74,15 +74,108 @@ class Node_Blogcard_Test extends WP_UnitTestCase {
 	}
 
 	public function test_internal_nonpost_urls_keep_public_ogp_cards(): void {
-		foreach ( array( home_url( '/' ), home_url( '/category/news/' ) ) as $url ) {
-			$mock = $this->mock_ogp_response( $url, '公開ページのタイトル' );
-			try {
-				$html = node_render_blogcard( $url );
-				$this->assertStringContainsString( '公開ページのタイトル', $html );
-				$this->assertStringNotContainsString( 'm3-blogcard__fallback', $html );
-			} finally {
-				remove_filter( 'pre_http_request', $mock, 10 );
+		$this->set_permalink_structure( '/%postname%/' );
+		$term = self::factory()->category->create_and_get( array( 'name' => '公開カテゴリ', 'slug' => 'news' ) );
+		$calls = 0;
+		$mock = static function () use ( &$calls ) {
+			++$calls;
+			return new WP_Error( 'unexpected_http' );
+		};
+		add_filter( 'pre_http_request', $mock );
+		try {
+			foreach ( array( home_url( '/' ) => get_bloginfo( 'name' ), get_term_link( $term ) => $term->name ) as $url => $title ) {
+				set_transient( 'node_ogp_' . md5( $url ), array( 'title' => 'stale private metadata' ) );
+				for ( $i = 0; $i < 2; ++$i ) {
+					$html = node_render_blogcard( $url );
+					$this->assertStringContainsString( $title, $html );
+					$this->assertStringNotContainsString( 'stale private metadata', $html );
+				}
 			}
+			$this->assertNotFalse( wp_oembed_get( get_term_link( $term ) ) );
+			wp_oembed_get( home_url( '/missing-task-1a/' ) );
+			$this->assertSame( 0, $calls );
+		} finally {
+			remove_filter( 'pre_http_request', $mock );
+		}
+	}
+
+	public function test_unsigned_and_tampered_slots_are_discarded_by_the_content(): void {
+		$payload = base64_encode( '<script>alert(1)</script><img src=x onerror="alert(1)">' );
+		foreach ( array( '', ' data-sig="' . str_repeat( '0', 64 ) . '"' ) as $signature ) {
+			$html = apply_filters( 'the_content', '<div class="node-blogcard-slot"' . $signature . '>' . $payload . '</div>' );
+			$this->assertStringNotContainsString( '<script', $html );
+			$this->assertStringNotContainsString( 'onerror', $html );
+			$this->assertStringNotContainsString( $payload, $html );
+		}
+		$slot = node_blogcard_defer( '<p>Trusted card</p>' );
+		$this->assertSame( '<p>Trusted card</p>', node_blogcard_hydrate( $slot ) );
+		$this->assertSame( '', node_blogcard_hydrate( str_replace( base64_encode( '<p>Trusted card</p>' ), $payload, $slot ) ) );
+	}
+
+	public function test_maps_rest_route_requires_edit_posts(): void {
+		do_action( 'rest_api_init' );
+		$request = new WP_REST_Request( 'GET', '/node/v1/maps-oembed' );
+		$request->set_param( 'url', 'https://www.google.com/maps?q=Tokyo' );
+		try {
+			wp_set_current_user( 0 );
+			$this->assertSame( 401, rest_get_server()->dispatch( $request )->get_status() );
+			wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+			$this->assertSame( 403, rest_get_server()->dispatch( $request )->get_status() );
+			wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+			$this->assertSame( 200, rest_get_server()->dispatch( $request )->get_status() );
+		} finally {
+			wp_set_current_user( 0 );
+		}
+	}
+
+	public function test_anonymous_maps_embed_bypasses_the_restricted_rest_route(): void {
+		wp_set_current_user( 0 );
+		$calls = 0;
+		$mock = static function () use ( &$calls ) {
+			++$calls;
+			return new WP_Error( 'unexpected_http' );
+		};
+		add_filter( 'pre_http_request', $mock );
+		try {
+			$url = 'https://www.google.com/maps?q=Tokyo';
+			$html = wp_oembed_get( $url );
+			$this->assertSame( node_maps_embed_html( $url ), $html );
+			$this->assertStringContainsString( '<iframe src="https://maps.google.com/maps?', $html );
+			$this->assertSame( 0, $calls );
+		} finally {
+			remove_filter( 'pre_http_request', $mock );
+		}
+	}
+
+	public function test_short_urls_and_maps_query_encoding(): void {
+		$this->assertFalse( node_is_google_maps_url( 'https://goo.gl/anything' ) );
+		$this->assertSame( '', node_special_embed( 'https://goo.gl/anything' ) );
+		foreach ( array( 'https://youtu.be/', 'https://youtu.be/abc', 'https://youtu.be/abcdef!' ) as $url ) {
+			$this->assertSame( '', node_special_embed( $url ) );
+		}
+		$query = '東京駅 & A+B';
+		$src = node_google_maps_embed_src( 'https://www.google.com/maps?q=' . rawurlencode( $query ), 'google.com', '/maps' );
+		parse_str( wp_parse_url( $src, PHP_URL_QUERY ), $params );
+		$this->assertSame( $query, $params['q'], 'The query must survive exactly one URL decode.' );
+	}
+
+	public function test_external_timeout_is_short_and_failure_is_cached(): void {
+		$url = 'https://example.com/task-1a-timeout';
+		$calls = 0;
+		$mock = function ( $pre, $args ) use ( &$calls ) {
+			++$calls;
+			$this->assertSame( 4, $args['timeout'] );
+			return new WP_Error( 'timeout' );
+		};
+		add_filter( 'pre_http_request', $mock, 10, 2 );
+		try {
+			$this->assertFalse( node_get_ogp_data( $url ) );
+			$this->assertFalse( node_get_ogp_data( $url ) );
+			$this->assertSame( 1, $calls );
+			$this->assertLessThanOrEqual( time() + 300, get_option( '_transient_timeout_node_ogp_' . md5( $url ) ) );
+		} finally {
+			remove_filter( 'pre_http_request', $mock, 10 );
+			delete_transient( 'node_ogp_' . md5( $url ) );
 		}
 	}
 
