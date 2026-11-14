@@ -99,34 +99,60 @@ declare(strict_types=1);
         // 表示モードはブラウザで判定し、ページキャッシュの UA に依存させない。
         const VIEW_STORE_KEY = 'm3_store_view-mode';
         const ua = navigator.userAgent || '';
-        const isTablet = /iPad|Tablet|Silk|Kindle|PlayBook/i.test(ua)
+        const platform = navigator.platform || '';
+        const touchPoints = Number(navigator.maxTouchPoints || 0);
+        const phoneUa = /iPhone|iPod|Windows Phone/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+        const tabletIdentity = !phoneUa && (
+            /iPad|Tablet|Silk|Kindle|PlayBook/i.test(ua)
             || (/Android/i.test(ua) && !/Mobile/i.test(ua))
-            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-            || (navigator.maxTouchPoints > 0 && matchMedia('(min-width: 768px) and (pointer: coarse)').matches);
-        const isPhone = /iPhone|iPod|Windows Phone|Android.*Mobile/i.test(ua)
-            || (navigator.maxTouchPoints > 0 && matchMedia('(max-width: 767px) and (pointer: coarse)').matches);
+            || (platform === 'MacIntel' && touchPoints > 1)
+            || (/Macintosh/i.test(ua) && touchPoints >= 2)
+            || (/Windows/i.test(ua) && touchPoints > 0)
+        );
+        const isPhone = phoneUa
+            || (!tabletIdentity && touchPoints > 0 && matchMedia('(max-width: 767px) and (pointer: coarse)').matches);
+        const isTablet = tabletIdentity
+            || (!isPhone && touchPoints > 0 && matchMedia('(min-width: 768px) and (pointer: coarse)').matches);
+
+        let savedViewMode = null;
         try {
             const viewRaw = localStorage.getItem(VIEW_STORE_KEY);
-            const savedViewMode = viewRaw ? JSON.parse(viewRaw) : null;
-            const viewMode = (savedViewMode === 'mobile' || savedViewMode === 'pc')
-                ? savedViewMode
-                : (isTablet || isPhone || matchMedia('(max-width: 767px)').matches ? 'mobile' : null);
-            const viewport = document.getElementById('m3-viewport');
+            savedViewMode = viewRaw ? JSON.parse(viewRaw) : null;
+        } catch (e) {
+            savedViewMode = null;
+        }
 
-            if (isTablet || isPhone) {
-                document.documentElement.setAttribute('data-device-class', isPhone ? 'phone' : 'tablet');
-            }
+        const viewMode = (savedViewMode === 'mobile' || savedViewMode === 'pc')
+            ? savedViewMode
+            : (isPhone ? 'mobile' : (isTablet ? 'pc' : (matchMedia('(max-width: 767px)').matches ? 'mobile' : null)));
+        const root = document.documentElement;
+        const viewport = document.getElementById('m3-viewport');
 
-            if (viewport && viewMode === 'mobile') {
+        if (isTablet || isPhone) {
+            root.setAttribute('data-device-class', isPhone ? 'phone' : 'tablet');
+        }
+
+        if (viewMode === 'mobile') {
+            if (viewport) {
                 viewport.setAttribute('content', isTablet && !isPhone
                     ? 'width=390, initial-scale=1, viewport-fit=cover'
                     : 'width=device-width, initial-scale=1, viewport-fit=cover');
-                document.documentElement.setAttribute('data-view-mode', 'mobile');
-            } else if (viewport && viewMode === 'pc') {
-                viewport.setAttribute('content', 'width=1280, initial-scale=1, viewport-fit=cover');
-                document.documentElement.setAttribute('data-view-mode', 'pc');
             }
-        } catch (e) {}
+            root.setAttribute('data-view-mode', 'mobile');
+            root.classList.remove('lf-tablet-pc');
+        } else if (isTablet && viewMode === 'pc') {
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover');
+            }
+            root.setAttribute('data-view-mode', 'pc');
+            root.classList.add('lf-tablet-pc');
+        } else if (viewMode === 'pc') {
+            if (viewport) {
+                viewport.setAttribute('content', 'width=1280, initial-scale=1, viewport-fit=cover');
+            }
+            root.setAttribute('data-view-mode', 'pc');
+            root.classList.remove('lf-tablet-pc');
+        }
 
     })();
     </script>

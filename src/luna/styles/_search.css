@@ -77,7 +77,7 @@ body.lf-theme .m3-search-suggestion__mark {
  * Below 1024px the existing disclosure is left unchanged.
  */
 @media (max-width: 1023.98px) {
-	body.lf-theme .m3-header:not(.search-is-active) .m3-header__search-slot {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .m3-header:not(.search-is-active) .m3-header__search-slot {
 		position: absolute;
 		width: 0;
 		height: 0;
@@ -85,7 +85,7 @@ body.lf-theme .m3-search-suggestion__mark {
 		pointer-events: none;
 	}
 
-	body.lf-theme .m3-header.search-is-active .m3-header__search-slot {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .m3-header.search-is-active .m3-header__search-slot {
 		position: static;
 		display: flex;
 		flex: 1 1 auto;
@@ -97,7 +97,7 @@ body.lf-theme .m3-search-suggestion__mark {
 		pointer-events: auto;
 	}
 
-	body.lf-theme .m3-header.search-is-active .m3-header__actions {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .m3-header.search-is-active .m3-header__actions {
 		flex: 0 0 0;
 		width: 0;
 		min-width: 0;
@@ -106,8 +106,8 @@ body.lf-theme .m3-search-suggestion__mark {
 		overflow: hidden;
 	}
 
-	body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-container,
-	body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-bar {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-container,
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .m3-header.search-is-active .m3-header__search-slot .m3-search-bar {
 		flex: 1 1 auto;
 		width: 100%;
 		min-width: 0;
@@ -267,6 +267,143 @@ body.lf-theme .m3-search-suggestion__mark {
 		transform: translateY(-50%);
 		z-index: 1003;
 	}
+}
+
+/* タブレットPC表示時は 1023px 以下でもデスクトップ用の 3 列ヘッダー検索バーを使う。 */
+@layer components {
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-header__actions > .m3-rss-button,
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-header__actions > .m3-social-button,
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-header__actions > #m3-theme-controls,
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-header__actions > #m3-view-toggle,
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active #search-toggle {
+		opacity: 1 !important;
+		visibility: visible !important;
+		pointer-events: auto !important;
+		width: 48px !important;
+		min-width: 48px !important;
+		height: 48px !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		overflow: visible !important;
+		flex: 0 0 48px !important;
+	}
+
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-search-mobile-close,
+	:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active #m3-search-submit {
+		display: none !important;
+	}
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__inner {
+	display: grid;
+	grid-template-columns: minmax(0, max-content) minmax(0, 1fr) max-content;
+	align-items: center;
+	column-gap: 12px;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-header__inner {
+	grid-template-columns: minmax(0, max-content) minmax(9rem, 1fr) max-content;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__left {
+	grid-column: 1;
+	grid-row: 1;
+	min-width: 0;
+	overflow: hidden;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__left :is(.site-branding, .custom-logo-link, .m3-header__logo-link) {
+	min-width: 0;
+	max-width: 100%;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__left .m3-logo-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__left .custom-logo {
+	display: block;
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	min-width: 0;
+	max-height: 48px;
+	object-fit: contain;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__search-slot {
+	display: flex;
+	grid-column: 2;
+	grid-row: 1;
+	align-items: center;
+	min-width: 0;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__search-slot .m3-search-container,
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__search-slot .m3-search-bar {
+	position: relative;
+	display: flex;
+	flex: 1 1 auto;
+	align-items: center;
+	justify-content: flex-end;
+	width: 100%;
+	min-width: 0;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header__actions {
+	grid-column: 3;
+	grid-row: 1;
+	justify-self: end;
+	position: static;
+	flex: 0 0 auto;
+	width: max-content;
+	max-width: 100%;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header .m3-search-input-wrapper {
+	position: relative;
+	right: auto;
+	left: auto;
+	top: auto;
+	flex: 0 1 auto;
+	width: 0;
+	max-width: 0;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	opacity: 0;
+	visibility: hidden;
+	overflow: hidden;
+	pointer-events: none;
+	transform: none;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active .m3-search-input-wrapper {
+	width: min(100%, 460px);
+	max-width: 460px;
+	margin-left: auto;
+	padding: 2px 56px 2px 16px;
+	opacity: 1;
+	visibility: visible;
+	overflow: visible;
+	pointer-events: auto;
+	background: var(--md-sys-color-surface-container-highest);
+	border-radius: 28px;
+	box-shadow: var(--m3-elevation-2);
+	z-index: 1001;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .m3-header.search-is-active #m3-advanced-search-trigger {
+	position: absolute;
+	top: 50%;
+	right: 4px;
+	left: auto;
+	margin: 0;
+	transform: translateY(-50%);
+	z-index: 1003;
 }
 
 body.lf-theme .lf-search__header {

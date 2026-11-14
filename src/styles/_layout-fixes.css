@@ -197,7 +197,7 @@ body.is-single-header-sticky .m3-page-container {
 
 /* ===== Mobile Header Sticky Guard ===== */
 @media (max-width: 1000px) {
-    body.is-mobile-header-sticky .m3-header {
+    :where(html:not(.lf-tablet-pc)) body.is-mobile-header-sticky .m3-header {
         position: fixed !important;
         top: var(--wp-admin-bar-offset, 0px) !important;
         left: 0 !important;
@@ -211,7 +211,7 @@ body.is-single-header-sticky .m3-page-container {
         will-change: auto !important;
     }
 
-    body.is-mobile-header-sticky .m3-page-container {
+    :where(html:not(.lf-tablet-pc)) body.is-mobile-header-sticky .m3-page-container {
         backface-visibility: visible !important;
         -webkit-backface-visibility: visible !important;
         transform: none !important;

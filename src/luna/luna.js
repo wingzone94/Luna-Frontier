@@ -10,6 +10,50 @@
  * しない。JS が失敗してもスタイルは適用される状態を保つため。
  */
 
+const TABLET_PC_CLASS = 'lf-tablet-pc';
+
+/**
+ * Self-contained tablet-PC check so dist/js/luna.js keeps zero chunk imports
+ * and runs cleanly as a classic script in tests and standalone templates.
+ */
+function detectTabletDevice() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
+  const phoneUa = /iPhone|iPod|Windows Phone/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+  if (phoneUa) return false;
+
+  const isTabletIdentity =
+    /iPad/i.test(ua)
+    || (platform === 'MacIntel' && maxTouchPoints > 1)
+    || (/Macintosh/i.test(ua) && maxTouchPoints >= 2)
+    || (/Android/i.test(ua) && !/Mobile/i.test(ua))
+    || (/Windows/i.test(ua) && maxTouchPoints > 0)
+    || /Tablet|Silk|Kindle|PlayBook/i.test(ua);
+
+  if (isTabletIdentity) return true;
+
+  const matchSafe = (q) => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(q).matches : false);
+  return maxTouchPoints > 0 && matchSafe('(min-width: 768px)') && matchSafe('(pointer: coarse)');
+}
+
+function isTabletPcMode() {
+  if (typeof document === 'undefined') return false;
+  const root = document.documentElement;
+  if (root.classList.contains(TABLET_PC_CLASS)) return true;
+  if (root.dataset.viewMode === 'mobile') return false;
+  return detectTabletDevice();
+}
+
+function syncTabletPcClass() {
+  if (typeof document === 'undefined') return false;
+  const root = document.documentElement;
+  const active = root.dataset.viewMode !== 'mobile' && detectTabletDevice();
+  root.classList.toggle(TABLET_PC_CLASS, active);
+  return active;
+}
+
 import { setupTableGuides } from './table-guides';
 
 /**
@@ -39,9 +83,10 @@ function setupFootnoteRelocation() {
   block.setAttribute('aria-label', '脚注');
 
   const media = window.matchMedia('(min-width: 1024px)');
+  const isDesktop = () => media.matches || isTabletPcMode();
 
   const apply = () => {
-    if (media.matches) {
+    if (isDesktop()) {
       if (footnotes.parentNode === block) return;
       block.appendChild(footnotes);
       aside.appendChild(block);
@@ -366,7 +411,7 @@ function setupHeadingTocAccess() {
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 
   const headingFromEvent = (event) => {
-    if (!media.matches) return null;
+    if (!media.matches && !isTabletPcMode()) return null;
 
     const heading = event.target.closest(ARTICLE_HEADING_SELECTOR);
     if (!heading || !article.contains(heading) || heading.closest(HEADING_EXCLUDE_SELECTOR)) return null;
@@ -627,6 +672,7 @@ function setupCalendarMonth() {
 }
 
 function init() {
+  syncTabletPcClass();
   const headerSearch = document.getElementById('m3-search-input');
   if (headerSearch) {
     headerSearch.placeholder = 'キーワードで検索';

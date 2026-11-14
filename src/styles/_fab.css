@@ -89,7 +89,7 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
 }
 
 @media (max-width: 1000px) {
-    .m3-sticky-toc {
+    :where(html:not(.lf-tablet-pc)) .m3-sticky-toc {
         bottom: calc(84px + env(safe-area-inset-bottom));
         right: 12px;
         left: 12px;
@@ -341,7 +341,7 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
 
 /* Mobile Overrides (<= 1000px) */
 @media screen and (max-width: 1000px) {
-    .m3-action-stack {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack {
         --node-action-size: 48px;
         flex-direction: column-reverse;
         gap: 12px;
@@ -349,14 +349,14 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
         right: calc(8px + env(safe-area-inset-right));
     }
 
-    .m3-action-stack:not(.is-visible) { visibility: hidden; }
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack:not(.is-visible) { visibility: hidden; }
 
-    .m3-fab--mobile-hidden {
+    :where(html:not(.lf-tablet-pc)) .m3-fab--mobile-hidden {
         display: none !important;
     }
 
     /* AI FAB remains expressive on mobile */
-    .m3-fab--ai-expressive {
+    :where(html:not(.lf-tablet-pc)) .m3-fab--ai-expressive {
         width: auto !important;
         min-width: max-content !important;
         padding: 0 20px 0 16px !important;
@@ -364,14 +364,14 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
         height: 48px !important;
     }
 
-    .m3-fab--ai-expressive .m3-fab-text {
+    :where(html:not(.lf-tablet-pc)) .m3-fab--ai-expressive .m3-fab-text {
         display: inline-block;
         font-size: 0.85rem;
         font-weight: 800;
         margin-left: 8px;
     }
 
-    .m3-fab-label-top {
+    :where(html:not(.lf-tablet-pc)) .m3-fab-label-top {
         opacity: 1;
         visibility: visible;
         transform: translateX(-50%);
@@ -395,8 +395,8 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
 
 @media (max-width: 1000px) {
 
-    .m3-sticky-navigation,
-    .m3-fab-comment {
+    :where(html:not(.lf-tablet-pc)) .m3-sticky-navigation,
+    :where(html:not(.lf-tablet-pc)) .m3-fab-comment {
         right: var(--m3-spacing-s);
     }
 }
@@ -405,6 +405,10 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
     .m3-fab--pc-hidden {
         display: none !important;
     }
+}
+
+:where(html.lf-tablet-pc) .m3-fab--pc-hidden {
+    display: none !important;
 }
 
 /* PC: sidebar TOC replaces FAB trigger (>= 1101px, matches sidebar breakpoint) */

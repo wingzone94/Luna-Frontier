@@ -3,6 +3,7 @@ import {
     getDeviceSignals,
     isPhoneLikeDevice,
     isRealDesktopHoverDevice,
+    isTabletIdentitySignals,
     isTabletLikeDevice,
 } from './device-mode';
 import {
@@ -13,14 +14,6 @@ import {
 
 export const VIEW_SUGGEST_DISMISS_KEY = 'view-mode-suggest-dismiss';
 
-function isTabletIdentity(signals) {
-    const { ua, platform, maxTouchPoints } = signals;
-    return /iPad/i.test(ua)
-        || (platform === 'MacIntel' && maxTouchPoints > 1)
-        || (/Android/i.test(ua) && !/Mobile/i.test(ua))
-        || /Tablet|Silk|Kindle|PlayBook/i.test(ua);
-}
-
 function readSuggestContext() {
     const signals = getDeviceSignals();
     const savedRaw = storage.get('view-mode');
@@ -28,11 +21,11 @@ function readSuggestContext() {
     return {
         saved,
         serverTablet: document.documentElement.dataset.deviceClass === 'tablet',
-        phoneLike: isPhoneLikeDevice(),
-        tabletLike: isTabletLikeDevice(),
-        tabletIdentity: isTabletIdentity(signals),
+        phoneLike: isPhoneLikeDevice(signals),
+        tabletLike: isTabletLikeDevice(signals),
+        tabletIdentity: isTabletIdentitySignals(signals),
         hasHoverMouse: signals.hasHoverMouse,
-        realDesktop: isRealDesktopHoverDevice(),
+        realDesktop: isRealDesktopHoverDevice(signals),
     };
 }
 

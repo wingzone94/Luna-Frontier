@@ -155,11 +155,11 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
  * Consolidate the nested article gutters so 320px keeps a readable measure.
  * The actions are shown only while this body lane occupies their screen area. */
 @media (max-width: 1000px) {
-	body.lf-theme.single-post .m3-article {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-article {
 		padding-inline: 0;
 	}
 
-	body.lf-theme.single-post .m3-article__body {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-article__body {
 		--lf-article-inset: var(--lf-space-xs, 12px);
 		--lf-action-gutter: calc(60px + env(safe-area-inset-right));
 		margin-inline: 0 auto;
@@ -172,14 +172,14 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
  * to a bottom bar so they no longer reserve a permanent gutter beside the text.
  * 768px and wider keeps the existing right-hand action lane. */
 @media (max-width: 767px) {
-	body.lf-theme.single-post .m3-article__body {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-article__body {
 		--lf-action-gutter: 0px;
 		margin-inline: 0;
 		inline-size: 100%;
 		max-inline-size: 100%;
 	}
 
-	body.lf-theme.single-post .m3-action-stack {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-action-stack {
 		inset: auto 0 0;
 		flex-direction: row;
 		align-items: center;
@@ -197,28 +197,28 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 			border-color 0.2s ease;
 	}
 
-	body.lf-theme.single-post .m3-action-stack:not(.is-visible) {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-action-stack:not(.is-visible) {
 		pointer-events: none;
 	}
 
 	/* 折りたたみ時は下部バーの背景・ボーダー・ポインタ遮断ごと画面下へ格納し、プルタブのみ safe-area 上へ残す。 */
-	body.lf-theme.single-post .m3-action-stack.has-pull-tab.is-collapsed {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-action-stack.has-pull-tab.is-collapsed {
 		transform: translateY(calc(100% - env(safe-area-inset-bottom)));
 		background: transparent;
 		border-block-start-color: transparent;
 		pointer-events: none;
 	}
 
-	body.lf-theme.single-post .m3-action-stack.has-pull-tab.is-collapsed .m3-action-pull-tab {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-action-stack.has-pull-tab.is-collapsed .m3-action-pull-tab {
 		pointer-events: auto;
 	}
 
-	body.lf-theme.single-post .m3-page-container {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post .m3-page-container {
 		padding-block-end: calc(64px + env(safe-area-inset-bottom));
 	}
 
-	body.lf-theme.single-post:has(.m3-action-stack.is-collapsed) .m3-page-container,
-	body.lf-theme.single-post:has(.m3-action-stack[hidden]) .m3-page-container {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post:has(.m3-action-stack.is-collapsed) .m3-page-container,
+	:where(html:not(.lf-tablet-pc)) body.lf-theme.single-post:has(.m3-action-stack[hidden]) .m3-page-container {
 		padding-block-end: env(safe-area-inset-bottom);
 	}
 }
@@ -228,7 +228,7 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
  * まだ 1 カラムのまま。Aside だけ 2 列に流して縦の消費を抑える。
  * --------------------------------------------------------------------- */
 @media (min-width: 600px) and (max-width: 1023px) {
-	body.lf-theme .lf-reading-aside {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-reading-aside {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--lf-space-s) var(--lf-space-m);
@@ -295,9 +295,60 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
+/* タブレットPC表示時は 1023px 以下でも PC 2カラムを適用する。 */
+:where(html.lf-tablet-pc) body.lf-theme.single-post,
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-page-container {
+	overflow-x: clip;
+	overflow-y: visible;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-page-container {
+	display: flow-root;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
+	column-gap: var(--lf-column-gap);
+	align-items: start;
+	grid-auto-flow: row dense;
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > * {
+	grid-column: 1 / -1;
+	min-inline-size: 0;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .lf-article-header {
+	grid-column: 1;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .m3-article__body {
+	grid-column: 1;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .lf-reading-aside {
+	grid-column: 2;
+	grid-row: 2;
+	align-self: stretch;
+	margin-block: 0;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .lf-aside-block--toc {
+	position: sticky;
+	--lf-toc-offset: calc(64px + var(--safe-area-top, 0px) + var(--wp-admin-bar-offset, 0px));
+	inset-block-start: calc(var(--lf-toc-offset) + var(--lf-space-s));
+	max-block-size: calc(100vh - var(--lf-toc-offset) - var(--lf-space-xl));
+	flex-shrink: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
 /* Luna 移行前（537de1ca）の目次ボタン配色。寸法・開閉・safe area はベースを継承する。 */
 @media (max-width: 1023px) {
-	body.lf-theme #m3-toc-trigger {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme #m3-toc-trigger {
 		--node-fab-background: #FF9900;
 		--node-fab-color: #ffffff;
 		--node-fab-border: none;
@@ -315,9 +366,21 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
+:where(html.lf-tablet-pc) body.lf-theme.single-post:has(.lf-aside-block--toc) #m3-toc-trigger {
+	display: none;
+}
+
 /* 高さが足りない環境で sticky が読書の邪魔にならないよう解除する。 */
 @media (min-width: 1024px) and (max-height: 600px) {
 	body.lf-theme.single-post .lf-aside-block--toc {
+		position: static;
+		max-block-size: none;
+		overflow-y: visible;
+	}
+}
+
+@media (max-height: 600px) {
+	:where(html.lf-tablet-pc) body.lf-theme.single-post .lf-aside-block--toc {
 		position: static;
 		max-block-size: none;
 		overflow-y: visible;

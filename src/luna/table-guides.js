@@ -33,7 +33,8 @@ export function setupTableGuides() {
         el.removeAttribute('tabindex');
         state.addedTab = false;
       }
-      const show = scrollable && !desktop.matches;
+      const isDesktop = desktop.matches || document.documentElement.classList.contains('lf-tablet-pc');
+      const show = scrollable && !isDesktop;
       if (show && !state.guide) {
         const guide = document.createElement('div');
         guide.className = 'lf-table-guide';

@@ -340,6 +340,14 @@ body.lf-theme .m3-article__body h6:not(:where(.m3-notice *)) {
 	}
 }
 
+:where(html.lf-tablet-pc) body.lf-theme .m3-article__body :is(h2, h3, h4, h5, h6) {
+	cursor: default;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .lf-aside-block--toc.is-lf-revealed {
+	border-block-start-color: color-mix(in srgb, var(--lf-brand) 72%, var(--lf-rule));
+}
+
 body.lf-theme .lf-toc__link.lf-toc__link--flash {
 	background: transparent;
 	border-radius: 0;
