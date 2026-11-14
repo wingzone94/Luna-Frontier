@@ -1,3 +1,4 @@
+import { isTabletPcMode } from './device-mode';
 import { isSinglePostView } from './page-state';
 
 /**
@@ -63,6 +64,7 @@ export function initHeroTOC() {
     const readingBadge = document.getElementById('m3-hero-reading-badge');
     if (readingBadge && readingBadge.closest('.m3-hero-col--aside')) {
         const mobileQuery = window.matchMedia('(max-width: 1000px)');
+        const isMobileLayout = () => !isTabletPcMode() && mobileQuery.matches;
         const AUTO_OPEN_DELAY_MS = 1600;
         const DATE_READY_TIMEOUT_MS = 1200;
         let autoOpenTimer = 0;
@@ -98,13 +100,13 @@ export function initHeroTOC() {
 
         const scheduleAutoOpen = () => {
             clearAutoOpenTimer();
-            if (!mobileQuery.matches || userInteractedWithBadge || readingBadge.classList.contains('is-badge-open')) {
+            if (!isMobileLayout() || userInteractedWithBadge || readingBadge.classList.contains('is-badge-open')) {
                 return;
             }
 
             autoOpenTimer = window.setTimeout(() => {
                 autoOpenTimer = 0;
-                if (!mobileQuery.matches || userInteractedWithBadge) return;
+                if (!isMobileLayout() || userInteractedWithBadge) return;
                 readingBadge.classList.add('is-badge-open');
                 readingBadge.setAttribute('aria-expanded', 'true');
             }, AUTO_OPEN_DELAY_MS);
@@ -121,7 +123,7 @@ export function initHeroTOC() {
         };
 
         const syncBadgeInteractive = () => {
-            if (mobileQuery.matches) {
+            if (isMobileLayout()) {
                 if (badgeLocked) return; // 表示済みロック中は静的アイコンのまま
                 readingBadge.setAttribute('role', 'button');
                 readingBadge.setAttribute('tabindex', '0');
@@ -143,7 +145,7 @@ export function initHeroTOC() {
         };
 
         const toggleBadge = () => {
-            if (!mobileQuery.matches || badgeLocked) return;
+            if (!isMobileLayout() || badgeLocked) return;
             userInteractedWithBadge = true;
             clearAutoOpenTimer();
             if (readingBadge.classList.contains('is-badge-open')) {
@@ -177,11 +179,12 @@ export function initHeroTOC() {
     const titleExpandBtn = document.querySelector('[data-hero-title-expand]');
     if (heroTitle && titleExpandBtn) {
         const pcQuery = window.matchMedia('(min-width: 1001px)');
+        const isPcLayout = () => isTabletPcMode() || pcQuery.matches;
 
         const syncTitleClamp = () => {
             // 展開後はボタンが DOM から消滅している（再読込まで復帰しない）
             if (!titleExpandBtn.isConnected) return;
-            if (!pcQuery.matches || heroTitle.classList.contains('is-title-expanded')) {
+            if (!isPcLayout() || heroTitle.classList.contains('is-title-expanded')) {
                 titleExpandBtn.hidden = true;
                 return;
             }

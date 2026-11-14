@@ -2,6 +2,7 @@
  * Floating action stack (back-to-top, comments, AI, TOC trigger visibility).
  */
 
+import { isTabletPcMode } from './device-mode';
 import { isIndexOrArchiveView, isSinglePostView } from './page-state';
 
 const MOBILE_DOCK_QUERY = '(max-width: 767px)';
@@ -49,7 +50,9 @@ export function initFloatingActions() {
     const syncPullTabA11y = () => {
         if (!isSingle || !pullTab) return;
 
-        const isMobileDock = mobileDockMedia.matches;
+        const tabletPc = isTabletPcMode();
+        pullTab.hidden = tabletPc;
+        const isMobileDock = !tabletPc && mobileDockMedia.matches;
         if (!isMobileDock && isCollapsed) {
             isCollapsed = false;
             actionStack.classList.remove('is-collapsed');
@@ -77,7 +80,7 @@ export function initFloatingActions() {
 
     const setCollapsed = (collapsed) => {
         if (!isSingle || !pullTab) return;
-        isCollapsed = Boolean(collapsed) && mobileDockMedia.matches;
+        isCollapsed = Boolean(collapsed) && !isTabletPcMode() && mobileDockMedia.matches;
         actionStack.classList.toggle('is-collapsed', isCollapsed);
         pullTab.setAttribute('aria-expanded', String(!isCollapsed));
         pullTab.setAttribute(
@@ -108,7 +111,7 @@ export function initFloatingActions() {
             return;
         }
 
-        const isDesktop = desktopMedia.matches;
+        const isDesktop = isTabletPcMode() || desktopMedia.matches;
         let visible = true;
 
         if (!isDesktop) {

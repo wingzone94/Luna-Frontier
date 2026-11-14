@@ -52,13 +52,13 @@ body.lf-theme .lf-topic-archive .m3-card__visual img {
 }
 
 @media (max-width: 1024px) {
-	body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 700px) {
-	body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-topic-archive .lf-topic-archive__grid {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }

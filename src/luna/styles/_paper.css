@@ -281,6 +281,8 @@ body.lf-theme .m3-article__body pre {
 	.lf-table-guide:not([hidden]) { display: none; }
 }
 
+:where(html.lf-tablet-pc) .lf-table-guide:not([hidden]) { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
 	.lf-table-guide:not([hidden]) { transition: none; }
 }

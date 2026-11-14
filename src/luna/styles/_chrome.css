@@ -146,6 +146,29 @@ body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
 	}
 }
 
+:where(html.lf-tablet-pc) body.lf-theme .lf-topic-nav__features {
+	flex: 1 1 0;
+	container-type: inline-size;
+	scroll-snap-type: inline mandatory;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .lf-topic-nav__features > li {
+	flex: 0 0 100cqi;
+	min-inline-size: 0;
+	scroll-snap-align: start;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .lf-topic-nav__features a {
+	max-inline-size: 100%;
+	justify-content: flex-start;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme .lf-topic-nav__features .lf-topic-nav__label {
+	min-inline-size: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 /* Center native keyboard focus scrolling, including at browser zoom.
  * Scroll padding leaves touch and wheel scrolling unconstrained. */
 body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list):has(a:focus-visible) {
@@ -213,35 +236,35 @@ body.lf-theme:has(.lf-topic-nav__group--spotlight) .special-features {
 }
 
 @media (max-width: 1000px) {
-	body.lf-theme .lf-topic-nav__inner {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-topic-nav__inner {
 		flex-direction: column;
 		align-items: stretch;
 		gap: 4px;
 	}
 
-	body.lf-theme .lf-topic-nav__group {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-topic-nav__group {
 		flex: 1 1 auto;
 		max-inline-size: 100%;
 	}
 
-	body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-topic-nav__group + .lf-topic-nav__group {
 		border-inline-start: 0;
 		padding-inline-start: 0;
 		border-block-start: 1px solid var(--lf-rule);
 	}
 
-	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
 		flex: 1 1 0;
 		scrollbar-width: thin;
 		scrollbar-color: var(--lc-accent) transparent;
 	}
 
-	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar {
 		display: block;
 		height: 6px;
 	}
 
-	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar-thumb {
+	:where(html:not(.lf-tablet-pc)) body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar-thumb {
 		background: var(--lc-accent);
 		border-radius: 3px;
 	}

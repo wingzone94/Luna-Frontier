@@ -120,9 +120,9 @@ body.lf-theme .lf-home #latest { scroll-margin-top: 88px; }
 	body.lf-theme .lf-home__filters { order: 3; flex-basis: 100%; justify-content: flex-start; }
 }
 @media (max-width: 1000px) {
-	body.lf-theme .lf-home__news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	body.lf-theme .lf-home__columns { grid-template-columns: minmax(0, 1fr); }
-	body.lf-theme .lf-home__aside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-home__news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-home__columns { grid-template-columns: minmax(0, 1fr); }
+	:where(html:not(.lf-tablet-pc)) body.lf-theme .lf-home__aside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 @media (max-width: 600px) {
 	body.lf-theme .lf-home { padding-top: 16px; }
@@ -169,4 +169,4 @@ body.lf-theme .lf-home__calendar-controls select:hover { background: var(--md-sy
 body.lf-theme .lf-home__calendar-form.is-enhanced button { display: none; }
 body.lf-theme .lf-home__calendar[aria-busy="true"] table { opacity: .5; }
 
-@media (min-width: 601px) and (max-width: 1000px) { body.lf-theme .lf-home__calendar { grid-column: 2; } }
+@media (min-width: 601px) and (max-width: 1000px) { :where(html:not(.lf-tablet-pc)) body.lf-theme .lf-home__calendar { grid-column: 2; } }

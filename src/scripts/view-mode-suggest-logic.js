@@ -1,28 +1,22 @@
 export const VIEW_SUGGEST_DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * 推奨表示。電話・タブレットと断定できるときだけ mobile、
- * ホバー付き実デスクトップだけ pc。タッチ対応ノート等は null（提案しない）。
+ * 推奨表示。電話と断定できるときだけ mobile、
+ * ホバー付き実デスクトップだけ pc。タブレットやタッチ対応ノートは明示選択を尊重する（提案しない）。
  */
 export function recommendViewMode({
     phoneLike,
-    tabletIdentity,
-    tabletLike,
-    hasHoverMouse,
     realDesktop,
 }) {
     if (phoneLike) return 'mobile';
-    if (tabletIdentity) return 'mobile';
-    if (tabletLike && !hasHoverMouse) return 'mobile';
     if (realDesktop) return 'pc';
     return null;
 }
 
-/** header.php と同じ優先順。保存値 > サーバーのタブレットUA > JS の初期値。 */
-export function effectiveViewMode({ saved, serverTablet, phoneLike, tabletLike }) {
+/** 初期表示モード。保存値 > 電話UA/小型タッチ端末（mobile）> それ以外（pc）。 */
+export function effectiveViewMode({ saved, phoneLike }) {
     if (saved === 'mobile' || saved === 'pc') return saved;
-    if (serverTablet) return 'mobile';
-    return (phoneLike || tabletLike) ? 'mobile' : 'pc';
+    return phoneLike ? 'mobile' : 'pc';
 }
 
 export function viewModeDeviceKind({

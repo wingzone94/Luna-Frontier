@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+    isPhoneLikeDevice,
+    isTabletIdentitySignals,
+    isTabletLikeDevice,
+} from '../src/scripts/device-mode.js';
+import {
+    effectiveViewMode,
     isViewSuggestDismissed,
     shouldSuggestViewMode,
     VIEW_SUGGEST_DISMISS_MS,
@@ -53,11 +59,15 @@ test('phone saved mobile does not suggest', () => {
     assert.equal(shouldSuggestViewMode({ ...phone, saved: 'mobile' }), null);
 });
 
-test('tablet saved pc suggests mobile', () => {
-    const result = shouldSuggestViewMode({ ...tablet, saved: 'pc' });
-    assert.equal(result?.recommended, 'mobile');
-    assert.equal(result?.current, 'pc');
-    assert.equal(result?.deviceKind, 'tablet');
+test('tablet defaults to pc and never suggests mobile', () => {
+    assert.equal(effectiveViewMode({ ...tablet, saved: null }), 'pc');
+    assert.equal(shouldSuggestViewMode({ ...tablet, saved: null }), null);
+    assert.equal(shouldSuggestViewMode({ ...tablet, saved: 'pc' }), null);
+});
+
+test('tablet explicit mobile choice is respected without suggestion', () => {
+    assert.equal(effectiveViewMode({ ...tablet, saved: 'mobile' }), 'mobile');
+    assert.equal(shouldSuggestViewMode({ ...tablet, saved: 'mobile' }), null);
 });
 
 test('desktop saved mobile suggests pc', () => {
@@ -71,7 +81,10 @@ test('desktop saved pc does not suggest', () => {
     assert.equal(shouldSuggestViewMode({ ...desktop, saved: 'pc' }), null);
 });
 
-test('no saved value follows the existing initial mode', () => {
+test('no saved value follows the new initial mode per device', () => {
+    assert.equal(effectiveViewMode({ ...phone, saved: null }), 'mobile');
+    assert.equal(effectiveViewMode({ ...tablet, saved: null }), 'pc');
+    assert.equal(effectiveViewMode({ ...desktop, saved: null }), 'pc');
     assert.equal(shouldSuggestViewMode({ ...phone, saved: null }), null);
     assert.equal(shouldSuggestViewMode({ ...tablet, saved: null }), null);
     assert.equal(shouldSuggestViewMode({ ...desktop, saved: null }), null);
@@ -82,14 +95,42 @@ test('touch laptop does not suggest even when the saved mode looks wrong', () =>
     assert.equal(shouldSuggestViewMode({ ...touchLaptop, saved: 'mobile' }), null);
 });
 
-test('server tablet viewport versus a real desktop is a mismatch', () => {
-    const result = shouldSuggestViewMode({
-        ...desktop,
-        saved: null,
-        serverTablet: true,
-    });
-    assert.equal(result?.current, 'mobile');
-    assert.equal(result?.recommended, 'pc');
+test('tablet device class does not force mobile mode on desktop', () => {
+    assert.equal(shouldSuggestViewMode({ ...desktop, saved: null, serverTablet: true }), null);
+});
+
+test('device-mode detects iPad, iPadOS desktop UA, Android tablet, and Windows touch tablet', () => {
+    const iPadMini = { ua: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)', platform: 'iPad', maxTouchPoints: 5, hasCoarsePointer: true, isLargeViewport: false };
+    assert.equal(isTabletIdentitySignals(iPadMini), true);
+    assert.equal(isTabletLikeDevice(iPadMini), true);
+    assert.equal(isPhoneLikeDevice(iPadMini), false);
+
+    const iPadDesktopUa = { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', platform: '', maxTouchPoints: 5, hasCoarsePointer: true, isLargeViewport: true };
+    assert.equal(isTabletIdentitySignals(iPadDesktopUa), true);
+    assert.equal(isTabletLikeDevice(iPadDesktopUa), true);
+    assert.equal(isPhoneLikeDevice(iPadDesktopUa), false);
+
+    const androidTablet = { ua: 'Mozilla/5.0 (Linux; Android 14; Pixel Tablet) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', platform: 'Linux armv8l', maxTouchPoints: 5, hasCoarsePointer: true, isLargeViewport: true };
+    assert.equal(isTabletIdentitySignals(androidTablet), true);
+    assert.equal(isPhoneLikeDevice(androidTablet), false);
+
+    const windowsTablet = { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', platform: 'Win32', maxTouchPoints: 10, hasHoverMouse: true, hasCoarsePointer: true, isLargeViewport: true };
+    assert.equal(isTabletIdentitySignals(windowsTablet), true);
+    assert.equal(isTabletLikeDevice(windowsTablet), true);
+    assert.equal(isPhoneLikeDevice(windowsTablet), false);
+
+    const windowsDesktop = { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', platform: 'Win32', maxTouchPoints: 0, hasHoverMouse: true, hasCoarsePointer: false, isLargeViewport: true };
+    assert.equal(isTabletIdentitySignals(windowsDesktop), false);
+    assert.equal(isTabletLikeDevice(windowsDesktop), false);
+
+    const iPhone = { ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', platform: 'iPhone', maxTouchPoints: 5, hasCoarsePointer: true, isLargeViewport: false };
+    assert.equal(isTabletIdentitySignals(iPhone), false);
+    assert.equal(isTabletLikeDevice(iPhone), false);
+    assert.equal(isPhoneLikeDevice(iPhone), true);
+
+    const windowsPhone = { ua: 'Mozilla/5.0 (Windows Phone 10.0; Android 6.0; Microsoft; Lumia 950)', platform: 'ARM', maxTouchPoints: 5, hasCoarsePointer: true, isLargeViewport: false };
+    assert.equal(isTabletIdentitySignals(windowsPhone), false);
+    assert.equal(isPhoneLikeDevice(windowsPhone), true);
 });
 
 test('dismiss hides the same fingerprint only until it expires', () => {

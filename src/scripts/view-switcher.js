@@ -1,5 +1,5 @@
 import { storage } from '../storage';
-import { isPhoneLikeDevice, isTabletLikeDevice } from './device-mode';
+import { isPhoneLikeDevice, isTabletLikeDevice, syncTabletPcClass } from './device-mode';
 import { initViewModeSuggest } from './view-mode-suggest';
 
 const VIEW_MODE_ICON = {
@@ -23,8 +23,15 @@ function getViewMode() {
         return saved;
     }
 
-    return isPhoneLikeDevice() || isTabletLikeDevice()
-        || window.matchMedia('(max-width: 767px)').matches ? 'mobile' : 'pc';
+    if (isPhoneLikeDevice()) {
+        return 'mobile';
+    }
+
+    if (isTabletLikeDevice()) {
+        return 'pc';
+    }
+
+    return window.matchMedia('(max-width: 767px)').matches ? 'mobile' : 'pc';
 }
 
 function syncViewToggleUI(btn) {
@@ -32,6 +39,7 @@ function syncViewToggleUI(btn) {
     const icon = document.getElementById('m3-view-toggle-icon');
 
     document.documentElement.dataset.viewMode = mode;
+    syncTabletPcClass();
     btn.hidden = false;
 
     if (icon) {

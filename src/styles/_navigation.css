@@ -359,7 +359,7 @@
 
 /* フォルダブル（開いた状態）: 正方形に近い大画面 */
 @media (min-width: 600px) and (max-width: 1024px) and (min-aspect-ratio: 4/5) {
-    .m3-article__body {
+    :where(html:not(.lf-tablet-pc)) .m3-article__body {
         max-width: 680px;
         margin: 0 auto;
     }
@@ -377,7 +377,7 @@
 }
 
 @media (max-width: 1000px) {
-    .site-main {
+    :where(html:not(.lf-tablet-pc)) .site-main {
         padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
     }
 }

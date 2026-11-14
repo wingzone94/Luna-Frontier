@@ -140,30 +140,30 @@
 }
 
 @media (max-width: 768px) {
-    .m3-search-results-toolbar {
+    :where(html:not(.lf-tablet-pc)) .m3-search-results-toolbar {
         padding: 0 16px;
     }
-    .m3-search-results-toolbar__inner {
+    :where(html:not(.lf-tablet-pc)) .m3-search-results-toolbar__inner {
         flex-direction: column;
         gap: 16px;
         padding: 16px;
         border-radius: 24px;
         align-items: stretch;
     }
-    .m3-search-results-sort {
+    :where(html:not(.lf-tablet-pc)) .m3-search-results-sort {
         flex-direction: column;
         width: 100%;
         gap: 12px;
     }
-    .m3-sort-options {
+    :where(html:not(.lf-tablet-pc)) .m3-sort-options {
         width: 100%;
         justify-content: space-between;
     }
-    .m3-segmented-button {
+    :where(html:not(.lf-tablet-pc)) .m3-segmented-button {
         width: 100%;
         justify-content: space-around;
     }
-    .m3-segmented-item {
+    :where(html:not(.lf-tablet-pc)) .m3-segmented-item {
         flex: 1;
     }
 }

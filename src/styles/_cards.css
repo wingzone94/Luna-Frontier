@@ -523,6 +523,10 @@
     }
 }
 
+:where(html.lf-tablet-pc) :is(.l-card-grid__items, .m3-post-grid__container).is-articles-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 /* --- No Posts Found Styling --- */
 .m3-no-posts {
     text-align: center;

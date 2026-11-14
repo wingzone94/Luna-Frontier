@@ -19,15 +19,27 @@
     }
 }
 
+:where(html.lf-tablet-pc) .m3-sticky-toc {
+    bottom: 104px !important;
+    right: 24px !important;
+    width: 320px !important;
+}
+
+:where(html.lf-tablet-pc) .m3-action-stack.is-singular .m3-fab {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
 @media (max-width: 1000px) {
-    .m3-action-stack.is-singular #m3-back-to-top {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.is-singular #m3-back-to-top {
         display: flex !important;
         opacity: 1;
         visibility: visible;
         transform: scale(1);
     }
 
-    .m3-action-stack.is-singular #m3-toc-trigger {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.is-singular #m3-toc-trigger {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -35,13 +47,13 @@
     }
 
     /* 非表示の TOP が場所を占めると目次ボタンがパネルへ重なるため、開いている間は詰める。 */
-    body.is-active-toc .m3-action-stack #m3-back-to-top {
+    :where(html:not(.lf-tablet-pc)) body.is-active-toc .m3-action-stack #m3-back-to-top {
         display: none !important;
     }
 
     /* ヒーロー統合目次（hero-toc.js）がヒーロー通過を検知したら、
      * モバイルでも目次FABを解放して追従導線を引き継ぐ（折りたたみ中は除く）。 */
-    body.is-hero-passed .m3-action-stack.is-singular:not(.is-collapsed) #m3-toc-trigger.toc-ready {
+    :where(html:not(.lf-tablet-pc)) body.is-hero-passed .m3-action-stack.is-singular:not(.is-collapsed) #m3-toc-trigger.toc-ready {
         display: flex !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -190,7 +202,7 @@ body.is-active-toc #m3-sticky-toc {
 }
 
 @media (max-width: 1000px) {
-    #m3-sticky-toc {
+    :where(html:not(.lf-tablet-pc)) #m3-sticky-toc {
         right: 12px;
         left: 12px;
         width: auto;
@@ -358,7 +370,7 @@ body.is-active-toc #m3-sticky-toc {
 }
 
 @media (max-width: 1000px) {
-    #m3-sticky-toc.m3-sticky-toc--expressive {
+    :where(html:not(.lf-tablet-pc)) #m3-sticky-toc.m3-sticky-toc--expressive {
         right: 12px;
         left: 12px;
         bottom: calc(104px + env(safe-area-inset-bottom)) !important;
@@ -369,7 +381,7 @@ body.is-active-toc #m3-sticky-toc {
         transform-origin: bottom right;
     }
 
-    #m3-sticky-toc.m3-sticky-toc--expressive::after {
+    :where(html:not(.lf-tablet-pc)) #m3-sticky-toc.m3-sticky-toc--expressive::after {
         right: 28px;
     }
 }
@@ -572,7 +584,7 @@ body.is-active-toc #m3-sticky-toc {
 
 @media (max-width: 767px) {
     /* JSが有効で .has-pull-tab が付与された場合のみ表示（プログレッシブエンハンスメント） */
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -599,7 +611,7 @@ body.is-active-toc #m3-sticky-toc {
     }
 
     /* タップ領域最低48×48pxを確保 */
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab::before {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab::before {
         content: '';
         position: absolute;
         inset: -4px;
@@ -607,44 +619,44 @@ body.is-active-toc #m3-sticky-toc {
         min-height: 48px;
     }
 
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab:hover {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab:hover {
         background: var(--md-sys-color-surface-container-highest, #efd2bb);
         color: var(--md-sys-color-on-surface, #2b1700);
         box-shadow: var(--m3-elevation-2);
     }
 
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab:focus-visible {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab:focus-visible {
         outline: 2px solid var(--md-sys-color-primary, #FF9900);
         outline-offset: 2px;
     }
 
-    .m3-action-stack.has-pull-tab .m3-action-pull-tab:active {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab:active {
         transform: scale(0.92);
     }
 
     /* プルタブ内アイコン：展開時は下向き（下へ折りたたむ）、格納時は上向き（上へ引き出す） */
-    .m3-action-pull-tab__icon {
+    :where(html:not(.lf-tablet-pc)) .m3-action-pull-tab__icon {
         font-size: 20px;
         line-height: 1;
         transform: rotate(180deg);
         transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
     }
 
-    .m3-action-stack.is-collapsed .m3-action-pull-tab__icon {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.is-collapsed .m3-action-pull-tab__icon {
         transform: rotate(0deg);
     }
 
     /* 折りたたみ時：バーのポインタ遮断を解除しプルタブのみタップ可能にする */
-    .m3-action-stack.has-pull-tab.is-collapsed {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab.is-collapsed {
         pointer-events: none;
     }
 
-    .m3-action-stack.has-pull-tab.is-collapsed .m3-action-pull-tab {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab.is-collapsed .m3-action-pull-tab {
         pointer-events: auto;
     }
 
     /* ボタン群のトランジション定義 */
-    .m3-action-stack.has-pull-tab .m3-fab {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-fab {
         transition: transform 0.24s cubic-bezier(0.2, 0, 0, 1),
                     opacity 0.2s ease,
                     visibility 0.24s,
@@ -653,9 +665,9 @@ body.is-active-toc #m3-sticky-toc {
     }
 
     /* 折りたたみ状態：ボタン群をまとめて収納（フェードアウト＋操作不可化） */
-    .m3-action-stack.has-pull-tab.is-collapsed .m3-fab,
-    .m3-action-stack.has-pull-tab.is-collapsed #m3-toc-trigger.toc-ready,
-    .m3-action-stack.has-pull-tab.is-collapsed #m3-back-to-top {
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab.is-collapsed .m3-fab,
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab.is-collapsed #m3-toc-trigger.toc-ready,
+    :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab.is-collapsed #m3-back-to-top {
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
@@ -663,7 +675,7 @@ body.is-active-toc #m3-sticky-toc {
     }
 
     /* 目次パネル展開中はプルタブも非表示にして邪魔しない */
-    body.is-active-toc .m3-action-stack .m3-action-pull-tab {
+    :where(html:not(.lf-tablet-pc)) body.is-active-toc .m3-action-stack .m3-action-pull-tab {
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
