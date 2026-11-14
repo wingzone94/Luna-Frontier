@@ -11,6 +11,12 @@ import {
     shouldSuggestViewMode,
     VIEW_SUGGEST_DISMISS_MS,
 } from '../src/scripts/view-mode-suggest-logic.js';
+import {
+    resolveViewToggleIcon,
+    resolveViewToggleIconKey,
+    syncViewToggleUI,
+    VIEW_MODE_ICON,
+} from '../src/scripts/view-switcher.js';
 
 const phone = {
     phoneLike: true,
@@ -150,4 +156,136 @@ test('applying the suggestion clears the mismatch', () => {
     assert.ok(before);
     const after = shouldSuggestViewMode({ ...phone, saved: before.recommended });
     assert.equal(after, null);
+});
+
+test('view-toggle icon resolves tablet_mac for tablet pc mode and preserves computer/smartphone', () => {
+    assert.deepEqual(VIEW_MODE_ICON, {
+        pc: 'computer',
+        tablet: 'tablet_mac',
+        mobile: 'smartphone',
+    });
+
+    assert.equal(resolveViewToggleIconKey('pc', 'tablet'), 'tablet');
+    assert.equal(resolveViewToggleIcon('pc', 'tablet'), 'tablet_mac');
+
+    assert.equal(resolveViewToggleIconKey('mobile', 'tablet'), 'mobile');
+    assert.equal(resolveViewToggleIcon('mobile', 'tablet'), 'smartphone');
+
+    assert.equal(resolveViewToggleIconKey('pc', ''), 'pc');
+    assert.equal(resolveViewToggleIcon('pc', ''), 'computer');
+    assert.equal(resolveViewToggleIcon('pc', 'desktop'), 'computer');
+
+    assert.equal(resolveViewToggleIconKey('mobile', 'phone'), 'mobile');
+    assert.equal(resolveViewToggleIcon('mobile', 'phone'), 'smartphone');
+    assert.equal(resolveViewToggleIcon('pc', 'phone'), 'computer');
+});
+
+test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-state labels or viewMode', () => {
+    const origDoc = globalThis.document;
+    const origWin = globalThis.window;
+    const origNavDesc = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const origLS = globalThis.localStorage;
+
+    try {
+        const store = new Map();
+        globalThis.localStorage = {
+            getItem: (k) => (store.has(k) ? store.get(k) : null),
+            setItem: (k, v) => store.set(k, String(v)),
+            removeItem: (k) => store.delete(k),
+        };
+        globalThis.window = {
+            matchMedia: () => ({ matches: false }),
+        };
+        Object.defineProperty(globalThis, 'navigator', {
+            value: { userAgent: '', platform: '', maxTouchPoints: 0 },
+            configurable: true,
+        });
+
+        const runSync = ({ deviceClass, ua, platform = '', maxTouchPoints = 0, saved = null }) => {
+            store.clear();
+            if (saved !== null) {
+                store.set('m3_store_view-mode', JSON.stringify(saved));
+            }
+            Object.defineProperty(globalThis, 'navigator', {
+                value: { userAgent: ua, platform, maxTouchPoints },
+                configurable: true,
+            });
+
+            const classes = new Set();
+            const root = {
+                dataset: deviceClass ? { deviceClass } : {},
+                classList: {
+                    contains: (c) => classes.has(c),
+                    toggle: (c, f) => (f ? classes.add(c) : classes.delete(c)),
+                },
+            };
+            const attrs = new Map();
+            const icon = { textContent: 'smartphone' };
+            const btn = {
+                hidden: true,
+                dataset: { viewMode: 'mobile' },
+                setAttribute: (k, v) => attrs.set(k, v),
+            };
+            globalThis.document = {
+                documentElement: root,
+                getElementById: (id) => (id === 'm3-view-toggle-icon' ? icon : null),
+            };
+
+            syncViewToggleUI(btn);
+            return { root, btn, icon, attrs };
+        };
+
+        // Tablet PC (default)
+        const tabletPc = runSync({
+            deviceClass: 'tablet',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            platform: 'MacIntel',
+            maxTouchPoints: 5,
+        });
+        assert.equal(tabletPc.btn.dataset.viewMode, 'pc');
+        assert.equal(tabletPc.icon.textContent, 'tablet_mac');
+        assert.equal(tabletPc.attrs.get('aria-label'), 'PC表示モード');
+        assert.equal(tabletPc.btn.dataset.tooltip, 'PC表示モード（タップでモバイル表示）');
+
+        // Tablet explicit mobile
+        const tabletMobile = runSync({
+            deviceClass: 'tablet',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            platform: 'MacIntel',
+            maxTouchPoints: 5,
+            saved: 'mobile',
+        });
+        assert.equal(tabletMobile.btn.dataset.viewMode, 'mobile');
+        assert.equal(tabletMobile.icon.textContent, 'smartphone');
+        assert.equal(tabletMobile.attrs.get('aria-label'), 'モバイル表示モード');
+
+        // Desktop PC
+        const desktopPc = runSync({
+            deviceClass: '',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            platform: 'MacIntel',
+            maxTouchPoints: 0,
+        });
+        assert.equal(desktopPc.btn.dataset.viewMode, 'pc');
+        assert.equal(desktopPc.icon.textContent, 'computer');
+
+        // Phone mobile
+        const phoneMobile = runSync({
+            deviceClass: 'phone',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)',
+            platform: 'iPhone',
+            maxTouchPoints: 5,
+        });
+        assert.equal(phoneMobile.btn.dataset.viewMode, 'mobile');
+        assert.equal(phoneMobile.icon.textContent, 'smartphone');
+    } finally {
+        globalThis.document = origDoc;
+        globalThis.window = origWin;
+        if (origNavDesc) {
+            Object.defineProperty(globalThis, 'navigator', origNavDesc);
+        } else {
+            delete globalThis.navigator;
+        }
+        globalThis.localStorage = origLS;
+    }
 });

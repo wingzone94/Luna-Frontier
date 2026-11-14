@@ -186,7 +186,7 @@ class Node_Icon_Font_Test extends WP_UnitTestCase {
 		$names = node_get_icon_font_names();
 
 		$this->assertNotContains( 'key', $names );
-		foreach ( array( 'block', 'do_not_disturb_on', 'pending', 'restart_alt' ) as $icon ) {
+		foreach ( array( 'block', 'do_not_disturb_on', 'pending', 'restart_alt', 'tablet_mac' ) as $icon ) {
 			$this->assertContains( $icon, $names );
 		}
 	}
