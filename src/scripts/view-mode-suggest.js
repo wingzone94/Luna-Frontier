@@ -1,16 +1,16 @@
-import { storage } from '../storage';
+import { storage } from '../storage.js';
 import {
     getDeviceSignals,
     isPhoneLikeDevice,
     isRealDesktopHoverDevice,
     isTabletIdentitySignals,
     isTabletLikeDevice,
-} from './device-mode';
+} from './device-mode.js';
 import {
     VIEW_SUGGEST_DISMISS_MS,
     isViewSuggestDismissed,
     shouldSuggestViewMode,
-} from './view-mode-suggest-logic';
+} from './view-mode-suggest-logic.js';
 
 export const VIEW_SUGGEST_DISMISS_KEY = 'view-mode-suggest-dismiss';
 
