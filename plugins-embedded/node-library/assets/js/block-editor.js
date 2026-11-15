@@ -455,6 +455,10 @@
             };
 
             return [
+                editorConfig.productCardAvailable === false
+                    ? el(components.Notice, { key: 'nexus-required', status: 'warning', isDismissible: false },
+                        '商品リンクカードの表示には Luminous Nexus（Luna Nexus）が必要です。プラグインを有効化または更新してください。入力内容は保持されます。')
+                    : null,
                 el(InspectorControls, { key: 'inspector' },
                     el(PanelBody, { title: 'ディスクロージャー設定', initialOpen: true },
                         el(CheckboxControl, {

@@ -75,6 +75,10 @@ const CARD_MOTION_SELECTOR = [
     '.m3-product-card'
 ].join(', ');
 
+// Nexusの商品カードは、監視やアニメーションが完了しなくても常に読める状態を保つ。
+const getMotionCards = () => Array.from(document.querySelectorAll(CARD_MOTION_SELECTOR))
+    .filter(card => !card.closest('.m3-product-card-container--nexus'));
+
 let cardGridReady = false;
 let cardMotionReady = false;
 
@@ -94,7 +98,7 @@ const setupCardGrid = () => {
 export const hasBelowFoldCardMotion = () => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
 
-    return Array.from(document.querySelectorAll(CARD_MOTION_SELECTOR)).some((card) => {
+    return getMotionCards().some((card) => {
         if (card.style.display === 'none') return false;
         const rect = card.getBoundingClientRect();
         return !(rect.bottom > 0 && rect.top < window.innerHeight);
@@ -112,7 +116,7 @@ export const initCardAnimations = () => {
         return;
     }
 
-    const cards = document.querySelectorAll(CARD_MOTION_SELECTOR);
+    const cards = getMotionCards();
     if (cards.length === 0) return;
 
     const belowFold = Array.from(cards).filter((card) => {

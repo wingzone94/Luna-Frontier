@@ -29,7 +29,8 @@
 @import './_library.css' layer(components);
 @import './_search-results.css' layer(components);
 @import './_cards.css' layer(components);
-@import './_product-card.css' layer(components);
+/* Scoped Nexus rules must also override the unlayered legacy blocks.css. */
+@import './_product-card.css';
 @import './_article.css' layer(components);
 @import './_article-layout.css' layer(components);
 @import './_series-nav.css' layer(components);

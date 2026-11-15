@@ -9,12 +9,7 @@ function node_generate_product_link($url, $type = 'amazon') {
     return esc_url($url);
 }
 
-/**
- * 商品リンク ショートコード [m3_product]
- * [product_card] へ一本化済み。後方互換性のためエイリアスとして維持。
- * 既存記事で [m3_product] を使用していても正常に動作します。
- */
-add_shortcode('m3_product', 'node_product_card_shortcode');
+// 商品カードと旧 [m3_product] の登録は Luminous Nexus が所有する。
 // --- ユーティリティ ---
 
 function node_get_all_articles_per_page(): int {

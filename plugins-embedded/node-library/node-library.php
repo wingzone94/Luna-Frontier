@@ -637,97 +637,25 @@ final class Node_Library {
 	}
 
 	/**
-	 * ブロックのレンダリング (Product Card - 自己完結型)
+	 * ブロックのレンダリング (Product Card)
 	 */
 	public function render_product_card_block( $attributes ): string {
-		$title                   = $attributes['title'] ?? '';
-		$price                   = $attributes['price'] ?? '';
-		$image_url               = $attributes['imageUrl'] ?? '';
-		$amazon_url              = $attributes['amazonUrl'] ?? '';
-		$asin                    = $attributes['asin'] ?? '';
-		$rakuten_url             = $attributes['rakutenUrl'] ?? '';
-		$show_amazon_disclosure  = $attributes['showAmazonDisclosure'] ?? true;
-		$show_rakuten_disclosure = $attributes['showRakutenDisclosure'] ?? true;
-
-		$amazon_id   = get_option('luminous_nexus_amazon_id');
-		$rakuten_id  = get_option('luminous_nexus_rakuten_id');
-		$disc_amazon = get_option('luminous_nexus_disclosure_amazon', 'Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。');
-		$disc_rakuten = get_option('luminous_nexus_disclosure_rakuten', '当メディアは、楽天アフィリエイト・プログラムの参加者です。');
-
-		// Amazon URL の構築 (ASIN があれば優先)
-		if (!empty($asin)) {
-			$amazon_url = "https://www.amazon.co.jp/dp/{$asin}";
-			if ($amazon_id) {
-				$amazon_url .= "?tag={$amazon_id}";
-			}
-		} elseif (!empty($amazon_url) && $amazon_id && !str_contains($amazon_url, 'tag=')) {
-			$separator = str_contains($amazon_url, '?') ? '&' : '?';
-			$amazon_url .= "{$separator}tag={$amazon_id}";
+		if ( ! function_exists( 'luminous_nexus_render_product_card' ) ) {
+			return '';
 		}
 
-		$has_amazon  = !empty($amazon_url);
-		$has_rakuten = !empty($rakuten_url);
-
-		if (!$has_amazon && !$has_rakuten) return '';
-
-		ob_start();
-		?>
-		<div class="m3-product-card-container m3-reveal">
-			<div class="m3-product-card">
-				<?php if (!empty($image_url)) : ?>
-				<div class="m3-product-card__image">
-					<img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($title); ?>" loading="lazy">
-				</div>
-				<?php endif; ?>
-
-				<div class="m3-product-card__content">
-					<?php if (!empty($title)) : ?>
-					<h4 class="m3-product-card__title"><?php echo esc_html($title); ?></h4>
-					<?php endif; ?>
-
-					<?php if (!empty($price)) : ?>
-					<div class="m3-product-card__price-wrapper">
-						<span class="m3-product-card__price-label">参考価格:</span>
-						<span class="m3-product-card__price"><?php echo esc_html($price); ?></span>
-					</div>
-					<?php endif; ?>
-
-					<div class="m3-product-card__actions">
-						<?php if ($has_amazon) : ?>
-						<a href="<?php echo esc_url($amazon_url); ?>" class="m3-product-btn m3-product-btn--amazon m3-ripple-host" target="_blank" rel="noopener noreferrer sponsored">
-							<img src="https://www.google.com/s2/favicons?domain=amazon.co.jp&sz=32" alt="" class="m3-product-btn__icon">
-							Amazonで見る
-						</a>
-						<?php endif; ?>
-
-						<?php if ($has_rakuten) : ?>
-						<a href="<?php echo esc_url($rakuten_url); ?>" class="m3-product-btn m3-product-btn--rakuten m3-ripple-host" target="_blank" rel="noopener noreferrer sponsored">
-							<img src="https://www.google.com/s2/favicons?domain=rakuten.co.jp&sz=32" alt="" class="m3-product-btn__icon">
-							楽天市場で見る
-						</a>
-						<?php endif; ?>
-					</div>
-				</div>
-			</div>
-			
-			<div class="m3-product-card__disclosures">
-				<?php if ($show_amazon_disclosure && !empty($disc_amazon)) : ?>
-					<div class="m3-product-card__disclosure">
-						<span class="material-symbols-outlined" data-icon="info"></span>
-						<?php echo esc_html($disc_amazon); ?>
-					</div>
-				<?php endif; ?>
-				
-				<?php if ($show_rakuten_disclosure && !empty($disc_rakuten)) : ?>
-					<div class="m3-product-card__disclosure">
-						<span class="material-symbols-outlined" data-icon="info"></span>
-						<?php echo esc_html($disc_rakuten); ?>
-					</div>
-				<?php endif; ?>
-			</div>
-		</div>
-		<?php
-		return ob_get_clean();
+		return luminous_nexus_render_product_card(
+			array(
+				'title'                   => $attributes['title'] ?? '',
+				'price'                   => $attributes['price'] ?? '',
+				'image_url'               => $attributes['imageUrl'] ?? '',
+				'amazon_url'              => $attributes['amazonUrl'] ?? '',
+				'asin'                    => $attributes['asin'] ?? '',
+				'rakuten_url'             => $attributes['rakutenUrl'] ?? '',
+				'show_amazon_disclosure'  => $attributes['showAmazonDisclosure'] ?? true,
+				'show_rakuten_disclosure' => $attributes['showRakutenDisclosure'] ?? true,
+			)
+		);
 	}
 
 	/**
@@ -770,18 +698,21 @@ final class Node_Library {
 			'node-library-block-editor',
 			NODE_LIBRARY_URL . 'assets/js/block-editor.js',
 			[ 'wp-blocks', 'wp-element', 'wp-components', 'wp-data', 'wp-api-fetch', 'wp-block-editor' ],
-			NODE_LIBRARY_VERSION,
+			NODE_LIBRARY_VERSION . '.' . filemtime( NODE_LIBRARY_DIR . 'assets/js/block-editor.js' ),
 			true
 		);
 
-		wp_localize_script(
+		wp_add_inline_script(
 			'node-library-block-editor',
-			'nodeLibraryEditor',
-			array(
-				'adminNewUrl'  => admin_url( 'post-new.php?post_type=node_library' ),
-				'adminListUrl' => admin_url( 'edit.php?post_type=node_library' ),
-				'iconCss'      => function_exists( 'node_get_icon_font_css' ) ? node_get_icon_font_css() : '',
-			)
+			'var nodeLibraryEditor = ' . wp_json_encode(
+				array(
+					'adminNewUrl'          => admin_url( 'post-new.php?post_type=node_library' ),
+					'adminListUrl'         => admin_url( 'edit.php?post_type=node_library' ),
+					'iconCss'              => function_exists( 'node_get_icon_font_css' ) ? node_get_icon_font_css() : '',
+					'productCardAvailable' => function_exists( 'luminous_nexus_render_product_card' ),
+				)
+			) . ';',
+			'before'
 		);
 	}
 
