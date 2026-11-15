@@ -316,6 +316,8 @@
     .m3-product-card-container--nexus .m3-product-btn {
         width: 100%;
         justify-content: center;
+        padding: 10px 14px;
+        gap: 8px;
     }
 
     .m3-product-card-container--nexus .m3-product-action-group--amazon {
