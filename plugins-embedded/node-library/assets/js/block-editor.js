@@ -4,6 +4,7 @@
     var SelectControl = components.SelectControl;
     var TextControl = components.TextControl;
     var CheckboxControl = components.CheckboxControl;
+    var ToggleControl = components.ToggleControl || CheckboxControl;
     var PanelBody = components.PanelBody;
     var InspectorControls = blockEditor.InspectorControls;
     var Spinner = components.Spinner;
@@ -408,17 +409,19 @@
     // --- 商品リンクカード ---
     registerBlockType('node-library/product-card', {
         title: '商品リンクカード',
-        description: 'Amazon / 楽天の URL から商品情報を取得してカード表示します。',
+        description: 'Amazon / 楽天 / My Nintendo Store の URL から商品情報を取得してカード表示します。',
         icon: 'cart',
         category: 'node',
-        keywords: ['product', 'amazon', 'rakuten', '商品', 'アフィリエイト'],
+        keywords: ['product', 'amazon', 'rakuten', 'nintendo', '商品', 'アフィリエイト', '任天堂'],
         attributes: {
             title: { type: 'string', default: '' },
             price: { type: 'string', default: '' },
             imageUrl: { type: 'string', default: '' },
             amazonUrl: { type: 'string', default: '' },
             asin: { type: 'string', default: '' },
+            amazonDownload: { type: 'boolean', default: false },
             rakutenUrl: { type: 'string', default: '' },
+            nintendoUrl: { type: 'string', default: '' },
             showAmazonDisclosure: { type: 'boolean', default: true },
             showRakutenDisclosure: { type: 'boolean', default: true }
         },
@@ -431,30 +434,110 @@
             var fetchState = element.useState(false);
             var isFetching = fetchState[0];
             var setIsFetching = fetchState[1];
+            var noticeState = element.useState(null);
+            var fetchNotice = noticeState[0];
+            var setFetchNotice = noticeState[1];
+
+            var extractStoreAttributes = function (rawUrl, data) {
+                var next = {};
+                var sourceUrl = (rawUrl || '').trim();
+                var asin = (data && data.asin) ? String(data.asin) : '';
+
+                if (!asin && /(?:amazon\.co\.jp|amazon\.com)/i.test(sourceUrl)) {
+                    var asinMatch = sourceUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+                    if (asinMatch) {
+                        asin = asinMatch[1].toUpperCase();
+                    }
+                }
+
+                if (asin) {
+                    next.asin = asin;
+                    next.showAmazonDisclosure = true;
+                } else if (data && data.amazon_url) {
+                    next.amazonUrl = data.amazon_url;
+                    next.showAmazonDisclosure = true;
+                } else if (/(?:amazon\.co\.jp|amazon\.com|amzn\.to|amzn\.asia)/i.test(sourceUrl)) {
+                    next.amazonUrl = sourceUrl;
+                    next.showAmazonDisclosure = true;
+                }
+
+                if (data && data.rakuten_url) {
+                    next.rakutenUrl = data.rakuten_url;
+                    next.showRakutenDisclosure = true;
+                } else if (/rakuten\.co\.jp/i.test(sourceUrl)) {
+                    next.rakutenUrl = sourceUrl;
+                    next.showRakutenDisclosure = true;
+                }
+
+                if (data && data.nintendo_url) {
+                    next.nintendoUrl = data.nintendo_url;
+                } else if (/store-jp\.nintendo\.com/i.test(sourceUrl)) {
+                    next.nintendoUrl = sourceUrl;
+                }
+
+                return next;
+            };
 
             var fetchProductInfo = function () {
                 if (!urlInput) return;
                 setIsFetching(true);
+                setFetchNotice(null);
                 apiFetch({ path: '/node-library/v1/fetch-ogp?url=' + encodeURIComponent(urlInput) })
                     .then(function (data) {
-                        var cleanTitle = (data.title || '').replace(/^Amazon\s*\|\s*/i, '').replace(/[\s|]+Amazon\.co\.jp$/i, '');
-                        setAttributes({ title: cleanTitle, imageUrl: data.image || '' });
-                        if (data.asin) {
-                            setAttributes({ asin: data.asin, showAmazonDisclosure: true });
-                        } else if (urlInput.indexOf('rakuten.co.jp') !== -1) {
-                            setAttributes({ rakutenUrl: urlInput, showRakutenDisclosure: true });
+                        var safeData = data || {};
+                        var nextAttrs = extractStoreAttributes(urlInput, safeData);
+                        var cleanTitle = (safeData.title || '').replace(/^Amazon\s*\|\s*/i, '').replace(/[\s|]+Amazon\.co\.jp$/i, '').trim();
+
+                        if (cleanTitle) {
+                            nextAttrs.title = cleanTitle;
                         }
+                        if (safeData.image) {
+                            nextAttrs.imageUrl = safeData.image;
+                        }
+                        if (safeData.price) {
+                            nextAttrs.price = safeData.price;
+                        }
+
+                        if (Object.keys(nextAttrs).length > 0) {
+                            setAttributes(nextAttrs);
+                        }
+
+                        if (safeData.ogp_error) {
+                            setFetchNotice({
+                                status: 'warning',
+                                message: safeData.message || 'OGPを取得できませんでした。手入力で登録できます'
+                            });
+                        } else if (safeData.partial) {
+                            setFetchNotice({
+                                status: 'info',
+                                message: '一部の商品情報のみ取得できました。未取得の項目は手入力で登録できます'
+                            });
+                        }
+
                         setIsFetching(false);
                         setUrlInput('');
                     })
                     .catch(function (err) {
+                        var fallbackAttrs = extractStoreAttributes(urlInput, null);
+                        if (Object.keys(fallbackAttrs).length > 0) {
+                            setAttributes(fallbackAttrs);
+                        }
+                        if (typeof console !== 'undefined' && console.warn) {
+                            console.warn('[node-library] OGP fetch failed:', err);
+                        }
                         setIsFetching(false);
-                        var msg = (err && err.message) ? err.message : '情報の取得に失敗しました。';
-                        window.alert('エラー: ' + msg);
+                        setFetchNotice({
+                            status: 'warning',
+                            message: 'OGPを取得できませんでした。手入力で登録できます'
+                        });
                     });
             };
 
             return [
+                editorConfig.productCardAvailable === false
+                    ? el(components.Notice, { key: 'nexus-required', status: 'warning', isDismissible: false },
+                        '商品リンクカードの表示には Luminous Nexus（Luna Nexus）が必要です。プラグインを有効化または更新してください。入力内容は保持されます。')
+                    : null,
                 el(InspectorControls, { key: 'inspector' },
                     el(PanelBody, { title: 'ディスクロージャー設定', initialOpen: true },
                         el(CheckboxControl, {
@@ -467,13 +550,21 @@
                             checked: attributes.showRakutenDisclosure,
                             onChange: function (val) { setAttributes({ showRakutenDisclosure: val }); }
                         })
+                    ),
+                    el(PanelBody, { title: 'Amazon ダウンロード設定', initialOpen: true },
+                        el(ToggleControl, {
+                            label: 'オンラインコード版（ダウンロード専用）',
+                            help: 'Amazon ボタンの横にダウンロードアイコンと注意事項を表示します。',
+                            checked: Boolean(attributes.amazonDownload),
+                            onChange: function (val) { setAttributes({ amazonDownload: Boolean(val) }); }
+                        })
                     )
                 ),
                 el('div', { className: 'node-library-block-editor', key: 'editor' },
                     el(Placeholder, {
                         icon: 'cart',
                         label: '商品リンクカード',
-                        instructions: 'Amazon や楽天の商品 URL を貼り付けて「情報を取得」を押してください。'
+                        instructions: 'Amazon・楽天・My Nintendo Store の商品 URL を貼り付けて「情報を取得」を押してください。'
                     },
                         el('div', { style: { width: '100%', display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' } },
                             el(TextControl, {
@@ -489,6 +580,13 @@
                                 disabled: isFetching || !urlInput
                             }, isFetching ? el(Spinner) : '情報を取得')
                         ),
+                        fetchNotice && components.Notice
+                            ? el(components.Notice, {
+                                status: fetchNotice.status || 'warning',
+                                isDismissible: true,
+                                onRemove: function () { setFetchNotice(null); }
+                            }, fetchNotice.message)
+                            : null,
                         attributes.title || attributes.imageUrl
                             ? el('div', {
                                 style: {
@@ -516,7 +614,14 @@
                             el(TextControl, { label: '参考価格', value: attributes.price, placeholder: '￥2,980', onChange: function (val) { setAttributes({ price: val }); } }),
                             el(TextControl, { label: '画像 URL', value: attributes.imageUrl, onChange: function (val) { setAttributes({ imageUrl: val }); } }),
                             el(TextControl, { label: 'Amazon ASIN', value: attributes.asin, placeholder: 'B0XXXXXXXX', onChange: function (val) { setAttributes({ asin: val }); } }),
-                            el(TextControl, { label: '楽天 URL', value: attributes.rakutenUrl, onChange: function (val) { setAttributes({ rakutenUrl: val }); } })
+                            el(TextControl, { label: 'Amazon URL（ASIN未使用時）', value: attributes.amazonUrl, placeholder: 'https://www.amazon.co.jp/...', onChange: function (val) { setAttributes({ amazonUrl: val }); } }),
+                            el(ToggleControl, {
+                                label: 'Amazon オンラインコード版（ダウンロード専用）',
+                                checked: Boolean(attributes.amazonDownload),
+                                onChange: function (val) { setAttributes({ amazonDownload: Boolean(val) }); }
+                            }),
+                            el(TextControl, { label: '楽天 URL', value: attributes.rakutenUrl, onChange: function (val) { setAttributes({ rakutenUrl: val }); } }),
+                            el(TextControl, { label: 'My Nintendo Store URL', value: attributes.nintendoUrl, placeholder: 'https://store-jp.nintendo.com/...', onChange: function (val) { setAttributes({ nintendoUrl: val }); } })
                         )
                     )
                 )
