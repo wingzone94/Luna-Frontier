@@ -434,28 +434,102 @@
             var fetchState = element.useState(false);
             var isFetching = fetchState[0];
             var setIsFetching = fetchState[1];
+            var noticeState = element.useState(null);
+            var fetchNotice = noticeState[0];
+            var setFetchNotice = noticeState[1];
+
+            var extractStoreAttributes = function (rawUrl, data) {
+                var next = {};
+                var sourceUrl = (rawUrl || '').trim();
+                var asin = (data && data.asin) ? String(data.asin) : '';
+
+                if (!asin && /(?:amazon\.co\.jp|amazon\.com)/i.test(sourceUrl)) {
+                    var asinMatch = sourceUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+                    if (asinMatch) {
+                        asin = asinMatch[1].toUpperCase();
+                    }
+                }
+
+                if (asin) {
+                    next.asin = asin;
+                    next.showAmazonDisclosure = true;
+                } else if (data && data.amazon_url) {
+                    next.amazonUrl = data.amazon_url;
+                    next.showAmazonDisclosure = true;
+                } else if (/(?:amazon\.co\.jp|amazon\.com|amzn\.to|amzn\.asia)/i.test(sourceUrl)) {
+                    next.amazonUrl = sourceUrl;
+                    next.showAmazonDisclosure = true;
+                }
+
+                if (data && data.rakuten_url) {
+                    next.rakutenUrl = data.rakuten_url;
+                    next.showRakutenDisclosure = true;
+                } else if (/rakuten\.co\.jp/i.test(sourceUrl)) {
+                    next.rakutenUrl = sourceUrl;
+                    next.showRakutenDisclosure = true;
+                }
+
+                if (data && data.nintendo_url) {
+                    next.nintendoUrl = data.nintendo_url;
+                } else if (/store-jp\.nintendo\.com/i.test(sourceUrl)) {
+                    next.nintendoUrl = sourceUrl;
+                }
+
+                return next;
+            };
 
             var fetchProductInfo = function () {
                 if (!urlInput) return;
                 setIsFetching(true);
+                setFetchNotice(null);
                 apiFetch({ path: '/node-library/v1/fetch-ogp?url=' + encodeURIComponent(urlInput) })
                     .then(function (data) {
-                        var cleanTitle = (data.title || '').replace(/^Amazon\s*\|\s*/i, '').replace(/[\s|]+Amazon\.co\.jp$/i, '');
-                        setAttributes({ title: cleanTitle, imageUrl: data.image || '' });
-                        if (data.asin) {
-                            setAttributes({ asin: data.asin, showAmazonDisclosure: true });
-                        } else if (urlInput.indexOf('rakuten.co.jp') !== -1) {
-                            setAttributes({ rakutenUrl: urlInput, showRakutenDisclosure: true });
-                        } else if (urlInput.indexOf('store-jp.nintendo.com') !== -1) {
-                            setAttributes({ nintendoUrl: urlInput });
+                        var safeData = data || {};
+                        var nextAttrs = extractStoreAttributes(urlInput, safeData);
+                        var cleanTitle = (safeData.title || '').replace(/^Amazon\s*\|\s*/i, '').replace(/[\s|]+Amazon\.co\.jp$/i, '').trim();
+
+                        if (cleanTitle) {
+                            nextAttrs.title = cleanTitle;
                         }
+                        if (safeData.image) {
+                            nextAttrs.imageUrl = safeData.image;
+                        }
+                        if (safeData.price) {
+                            nextAttrs.price = safeData.price;
+                        }
+
+                        if (Object.keys(nextAttrs).length > 0) {
+                            setAttributes(nextAttrs);
+                        }
+
+                        if (safeData.ogp_error) {
+                            setFetchNotice({
+                                status: 'warning',
+                                message: safeData.message || 'OGPを取得できませんでした。手入力で登録できます'
+                            });
+                        } else if (safeData.partial) {
+                            setFetchNotice({
+                                status: 'info',
+                                message: '一部の商品情報のみ取得できました。未取得の項目は手入力で登録できます'
+                            });
+                        }
+
                         setIsFetching(false);
                         setUrlInput('');
                     })
                     .catch(function (err) {
+                        var fallbackAttrs = extractStoreAttributes(urlInput, null);
+                        if (Object.keys(fallbackAttrs).length > 0) {
+                            setAttributes(fallbackAttrs);
+                        }
+                        if (typeof console !== 'undefined' && console.warn) {
+                            console.warn('[node-library] OGP fetch failed:', err);
+                        }
                         setIsFetching(false);
-                        var msg = (err && err.message) ? err.message : '情報の取得に失敗しました。';
-                        window.alert('エラー: ' + msg);
+                        setFetchNotice({
+                            status: 'warning',
+                            message: 'OGPを取得できませんでした。手入力で登録できます'
+                        });
                     });
             };
 
@@ -506,6 +580,13 @@
                                 disabled: isFetching || !urlInput
                             }, isFetching ? el(Spinner) : '情報を取得')
                         ),
+                        fetchNotice && components.Notice
+                            ? el(components.Notice, {
+                                status: fetchNotice.status || 'warning',
+                                isDismissible: true,
+                                onRemove: function () { setFetchNotice(null); }
+                            }, fetchNotice.message)
+                            : null,
                         attributes.title || attributes.imageUrl
                             ? el('div', {
                                 style: {
@@ -533,6 +614,7 @@
                             el(TextControl, { label: '参考価格', value: attributes.price, placeholder: '￥2,980', onChange: function (val) { setAttributes({ price: val }); } }),
                             el(TextControl, { label: '画像 URL', value: attributes.imageUrl, onChange: function (val) { setAttributes({ imageUrl: val }); } }),
                             el(TextControl, { label: 'Amazon ASIN', value: attributes.asin, placeholder: 'B0XXXXXXXX', onChange: function (val) { setAttributes({ asin: val }); } }),
+                            el(TextControl, { label: 'Amazon URL（ASIN未使用時）', value: attributes.amazonUrl, placeholder: 'https://www.amazon.co.jp/...', onChange: function (val) { setAttributes({ amazonUrl: val }); } }),
                             el(ToggleControl, {
                                 label: 'Amazon オンラインコード版（ダウンロード専用）',
                                 checked: Boolean(attributes.amazonDownload),

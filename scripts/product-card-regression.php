@@ -162,6 +162,95 @@ $nintendo_only_download = luminous_nexus_render_product_card(
 	)
 );
 product_card_check( ! str_contains( $nintendo_only_download, 'data-icon="download"' ) && ! str_contains( $nintendo_only_download, $download_msg ), 'Download indicator is omitted when no Amazon button is present' );
+
+// Task 3: OGP 503 graceful degradation and Ocarina of Time (My Nintendo Store) registration.
+$http_503_mock = static function ( $preempt, $args, $url ) {
+	return array(
+		'headers'  => array(),
+		'body'     => 'Service Unavailable',
+		'response' => array(
+			'code'    => 503,
+			'message' => 'Service Unavailable',
+		),
+	);
+};
+add_filter( 'pre_http_request', $http_503_mock, 10, 3 );
+
+$failed_url = 'https://www.amazon.co.jp/dp/B098765432?th=1';
+delete_transient( 'node_lib_ogp_utf8_v3_' . md5( $failed_url ) );
+$req_503 = new WP_REST_Request( 'GET', '/node-library/v1/fetch-ogp' );
+$req_503->set_param( 'url', $failed_url );
+$res_503  = $library->handle_fetch_ogp( $req_503 );
+$data_503 = $res_503 instanceof WP_REST_Response ? $res_503->get_data() : array();
+product_card_check( ! is_wp_error( $res_503 ) && true === ( $data_503['ogp_error'] ?? false ), 'OGP 503 failure degrades gracefully without returning a blocking WP_Error' );
+product_card_check( str_contains( (string) ( $data_503['message'] ?? '' ), 'OGPを取得できませんでした。手入力で登録できます' ), 'OGP 503 failure returns actionable Japanese guidance' );
+product_card_check( ! str_contains( wp_json_encode( $data_503 ), 'Failed to fetch OGP data' ), 'Raw technical 503 string is not exposed to editor users' );
+product_card_check( 'B098765432' === ( $data_503['asin'] ?? '' ), 'ASIN is still extracted from URL on 503 failure' );
+
+// Manual fallback after 503 renders a valid product card.
+$manual_after_503 = $library->render_product_card_block(
+	array(
+		'title'       => '手入力テスト商品',
+		'price'       => '￥4,980',
+		'imageUrl'    => 'https://example.com/manual.jpg',
+		'asin'        => $data_503['asin'] ?? '',
+		'nintendoUrl' => 'https://store-jp.nintendo.com/item/software/D70010000130791',
+	)
+);
+product_card_check( str_contains( $manual_after_503, '手入力テスト商品' ) && str_contains( $manual_after_503, 'Amazonで見る' ) && str_contains( $manual_after_503, 'My Nintendo Storeで見る' ), 'Card renders cleanly with manual input after 503 fallback' );
+remove_filter( 'pre_http_request', $http_503_mock, 10 );
+
+// Ocarina of Time (My Nintendo Store) via Nintendo public search JSON API.
+$ocarina_url      = 'https://store-jp.nintendo.com/item/software/D70010000130791';
+$nintendo_api_mock = static function ( $preempt, $args, $url ) {
+	if ( str_contains( $url, 'search.nintendo.jp/nintendo_soft/search.json' ) && str_contains( $url, '70010000130791' ) ) {
+		return array(
+			'headers'  => array( 'content-type' => 'application/json; charset=utf-8' ),
+			'body'     => wp_json_encode(
+				array(
+					'result' => array(
+						'total' => 1,
+						'items' => array(
+							array(
+								'id'            => '70010000130791',
+								'title'         => 'ゼルダの伝説 時のオカリナ',
+								'current_price' => 7980.0,
+								'iurl'          => 'ac28612fa15a103adba3546e77dc9ffd0286b22f55c48d1220813cdaaa1f8d40',
+							),
+						),
+					),
+				)
+			),
+			'response' => array(
+				'code'    => 200,
+				'message' => 'OK',
+			),
+		);
+	}
+	return $preempt;
+};
+delete_transient( 'node_lib_nintendo_api_v1_' . md5( 'nsuid_70010000130791' ) );
+add_filter( 'pre_http_request', $nintendo_api_mock, 10, 3 );
+$req_ocarina = new WP_REST_Request( 'GET', '/node-library/v1/fetch-ogp' );
+$req_ocarina->set_param( 'url', $ocarina_url );
+$res_ocarina  = $library->handle_fetch_ogp( $req_ocarina );
+$data_ocarina = $res_ocarina instanceof WP_REST_Response ? $res_ocarina->get_data() : array();
+remove_filter( 'pre_http_request', $nintendo_api_mock, 10 );
+delete_transient( 'node_lib_nintendo_api_v1_' . md5( 'nsuid_70010000130791' ) );
+
+product_card_check( false === ( $data_ocarina['ogp_error'] ?? true ), 'Ocarina of Time Nintendo Store fetch succeeds via public Nintendo JSON API' );
+product_card_check( 'ゼルダの伝説 時のオカリナ' === ( $data_ocarina['title'] ?? '' ) && '￥7,980' === ( $data_ocarina['price'] ?? '' ), 'Ocarina of Time title and price are populated' );
+product_card_check( 'https://img-eshop.cdn.nintendo.net/i/ac28612fa15a103adba3546e77dc9ffd0286b22f55c48d1220813cdaaa1f8d40.jpg' === ( $data_ocarina['image'] ?? '' ), 'Ocarina of Time image URL is resolved from iurl hash' );
+$ocarina_card = $library->render_product_card_block(
+	array(
+		'title'       => $data_ocarina['title'] ?? '',
+		'price'       => $data_ocarina['price'] ?? '',
+		'imageUrl'    => $data_ocarina['image'] ?? '',
+		'nintendoUrl' => $data_ocarina['nintendo_url'] ?? '',
+	)
+);
+product_card_check( str_contains( $ocarina_card, 'ゼルダの伝説 時のオカリナ' ) && str_contains( $ocarina_card, '￥7,980' ) && str_contains( $ocarina_card, 'My Nintendo Storeで見る' ), 'Ocarina of Time product card renders completely' );
+
 $library->enqueue_block_assets();
 product_card_check( str_contains( implode( '', wp_scripts()->get_data( 'node-library-block-editor', 'before' ) ), '"productCardAvailable":true' ), 'Editor receives available renderer state' );
 echo "Mode: {$mode}; failures: {$GLOBALS['product_card_failures']}\n";

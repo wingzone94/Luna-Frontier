@@ -485,61 +485,247 @@ final class Node_Library {
 	}
 
 	/**
-	 * OGP 取得ハンドラ (自己完結型)
+	 * URL からストア種別に応じた初期属性を抽出する。
+	 */
+	public static function extract_product_store_fields( string $url ): array {
+		$fields = [];
+		$host   = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+
+		if ( 'store-jp.nintendo.com' === $host ) {
+			$fields['nintendo_url'] = $url;
+		} elseif ( 'rakuten.co.jp' === $host || str_ends_with( $host, '.rakuten.co.jp' ) ) {
+			$fields['rakuten_url'] = $url;
+		} elseif ( 'amazon.co.jp' === $host || str_ends_with( $host, '.amazon.co.jp' ) || 'amazon.com' === $host || str_ends_with( $host, '.amazon.com' ) || 'amzn.to' === $host || 'amzn.asia' === $host ) {
+			if ( preg_match( '/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i', $url, $matches ) ) {
+				$fields['asin'] = strtoupper( $matches[1] );
+			} else {
+				$fields['amazon_url'] = $url;
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * My Nintendo Store URL から任天堂の公開ソフト検索 JSON API 経由で商品情報を取得する。
+	 *
+	 * store-jp.nintendo.com は Queue-it / Akamai による待合室・ボット対策があるため、
+	 * 待合室回避は行わず、公開 JSON API（search.nintendo.jp）が使えるソフトのみ取得する。
+	 */
+	private function fetch_nintendo_api_product_data( string $url ): ?array {
+		$path  = (string) wp_parse_url( $url, PHP_URL_PATH );
+		$query = '';
+		$key   = '';
+
+		if ( preg_match( '#/item/software/(?:[A-Z]_?)?([0-9]{14})\b#i', $path, $matches ) ) {
+			$key   = 'nsuid_' . $matches[1];
+			$query = 'nsuid_s:' . $matches[1];
+		} elseif ( preg_match( '#/item/software/(?:HAC|BEE)_[A-Z]_([A-Z0-9]{5})\b#i', $path, $matches ) ) {
+			$icode = strtoupper( $matches[1] );
+			$key   = 'icode_' . $icode;
+			$query = 'icode_s:' . $icode;
+		}
+
+		if ( '' === $query ) {
+			return null;
+		}
+
+		$transient_key = 'node_lib_nintendo_api_v1_' . md5( $key );
+		$cached        = get_transient( $transient_key );
+		if ( is_array( $cached ) && ! empty( $cached['title'] ) ) {
+			return $cached;
+		}
+
+		$api_url  = add_query_arg(
+			[
+				'fq'    => $query,
+				'limit' => 1,
+			],
+			'https://search.nintendo.jp/nintendo_soft/search.json'
+		);
+		$response = wp_safe_remote_get(
+			$api_url,
+			[
+				'timeout'     => 5,
+				'redirection' => 2,
+			]
+		);
+
+		if ( is_wp_error( $response ) ) {
+			error_log( '[node-library] Nintendo API fetch failed: ' . $response->get_error_message() );
+			return null;
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status ) {
+			error_log( '[node-library] Nintendo API fetch failed: HTTP ' . $status );
+			return null;
+		}
+
+		$decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$item    = $decoded['result']['items'][0] ?? null;
+		if ( ! is_array( $item ) ) {
+			return null;
+		}
+
+		$title = isset( $item['title'] ) && is_scalar( $item['title'] ) ? trim( (string) $item['title'] ) : '';
+		$image = '';
+		$iurl  = isset( $item['iurl'] ) && is_scalar( $item['iurl'] ) ? trim( (string) $item['iurl'] ) : '';
+		if ( 1 === preg_match( '/^[a-f0-9]{64}$/i', $iurl ) ) {
+			$image = 'https://img-eshop.cdn.nintendo.net/i/' . strtolower( $iurl ) . '.jpg';
+		} elseif ( str_starts_with( $iurl, '/' ) ) {
+			$image = 'https://www.nintendo.com' . $iurl;
+		} elseif ( preg_match( '~^https?://~i', $iurl ) ) {
+			$image = esc_url_raw( $iurl, [ 'http', 'https' ] );
+		}
+
+		$price     = '';
+		$raw_price = $item['current_price'] ?? $item['dprice'] ?? $item['pprice'] ?? null;
+		if ( is_numeric( $raw_price ) && (float) $raw_price > 0 ) {
+			$price = '￥' . number_format( (int) round( (float) $raw_price ) );
+		}
+
+		if ( '' === $title && '' === $image && '' === $price ) {
+			return null;
+		}
+
+		$data = [
+			'title'  => $title,
+			'image'  => $image,
+			'price'  => $price,
+			'source' => 'nintendo_api',
+		];
+		set_transient( $transient_key, $data, DAY_IN_SECONDS );
+
+		return $data;
+	}
+
+	/**
+	 * OGP 取得失敗時のフォールバックレスポンスを生成する（登録フローを止めない）。
+	 */
+	private function build_ogp_fallback_response( string $url, string $log_reason ): WP_REST_Response {
+		error_log( sprintf( '[node-library] Failed to fetch OGP data (%s): %s', $url, $log_reason ) );
+
+		$payload = array_merge(
+			[
+				'title'     => '',
+				'image'     => '',
+				'price'     => '',
+				'ogp_error' => true,
+				'partial'   => false,
+				'message'   => 'OGPを取得できませんでした。手入力で登録できます',
+			],
+			self::extract_product_store_fields( $url )
+		);
+
+		return rest_ensure_response( $payload );
+	}
+
+	/**
+	 * OGP 取得ハンドラ (自己完結型・グレースフルデグラデーション対応)
 	 */
 	public function handle_fetch_ogp( $request ) {
-		$url = $request->get_param( 'url' );
-		
-		// 外部サイトからの取得ロジックを統合
+		$url = trim( (string) $request->get_param( 'url' ) );
+		if ( '' === $url || ! preg_match( '~^https?://~i', $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			return new WP_Error( 'invalid_url', '有効な商品 URL（http/https）を入力してください。', [ 'status' => 400 ] );
+		}
+
+		$host         = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$store_fields = self::extract_product_store_fields( $url );
+
+		if ( 'store-jp.nintendo.com' === $host ) {
+			$nintendo_data = $this->fetch_nintendo_api_product_data( $url );
+			if ( is_array( $nintendo_data ) ) {
+				return rest_ensure_response(
+					array_merge(
+						$nintendo_data,
+						$store_fields,
+						[
+							'ogp_error' => false,
+							'partial'   => '' === $nintendo_data['title'] || '' === $nintendo_data['image'],
+						]
+					)
+				);
+			}
+		}
+
 		$transient_key = 'node_lib_ogp_utf8_v3_' . md5( $url );
-		$data = get_transient( $transient_key );
+		$data          = get_transient( $transient_key );
 
 		if ( false === $data ) {
-			$response = wp_safe_remote_get( $url, [
-				'timeout'    => 15,
-				'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-			] );
+			$request_args = [
+				'timeout'     => 8,
+				'redirection' => 'store-jp.nintendo.com' === $host ? 0 : 3,
+				'user-agent'  => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+			];
+			$response     = wp_safe_remote_get( $url, $request_args );
 
-			if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-				$error_msg = is_wp_error( $response ) ? $response->get_error_message() : 'HTTP ' . wp_remote_retrieve_response_code( $response );
-				return new WP_Error( 'fetch_failed', 'Failed to fetch OGP data: ' . $error_msg, [ 'status' => 404 ] );
+			if ( is_wp_error( $response ) ) {
+				return $this->build_ogp_fallback_response( $url, $response->get_error_message() );
 			}
 
-			$html = wp_remote_retrieve_body( $response );
-			if ( empty( $html ) ) {
-				return new WP_Error( 'empty_body', 'Fetched content is empty.', [ 'status' => 404 ] );
+			$status_code = (int) wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $status_code ) {
+				$location = (string) wp_remote_retrieve_header( $response, 'location' );
+				$reason   = '' !== $location ? 'HTTP ' . $status_code . ' -> ' . $location : 'HTTP ' . $status_code;
+				return $this->build_ogp_fallback_response( $url, $reason );
+			}
+
+			$html = (string) wp_remote_retrieve_body( $response );
+			if ( '' === trim( $html ) ) {
+				return $this->build_ogp_fallback_response( $url, 'empty body' );
+			}
+
+			// Queue-it 待合室ページを商品 OGP として誤認・キャッシュしない。
+			if ( str_contains( $html, 'store-jp-wr.nintendo.com' ) || str_contains( $html, 'queue-it.net' ) ) {
+				return $this->build_ogp_fallback_response( $url, 'Queue-it waiting room' );
 			}
 
 			$html = self::normalize_ogp_encoding( $html, (string) wp_remote_retrieve_header( $response, 'content-type' ) );
 
 			// Parse normalized UTF-8 directly: legacy charset meta tags must not
 			// cause libxml to reinterpret the already converted document.
-			$data = [ 'title' => '', 'image' => '' ];
+			$data = [ 'title' => '', 'image' => '', 'price' => '' ];
 			$tags = new WP_HTML_Tag_Processor( $html );
 			while ( $tags->next_tag( 'META' ) ) {
 				$property = strtolower( (string) $tags->get_attribute( 'property' ) );
-				$value = $tags->get_attribute( 'content' );
+				$value    = $tags->get_attribute( 'content' );
 				if ( 'og:title' === $property && is_string( $value ) ) {
 					$data['title'] = trim( $value );
 				} elseif ( 'og:image' === $property && is_string( $value ) ) {
-					$data['image'] = $value;
+					$data['image'] = trim( $value );
+				} elseif ( ( 'og:price:amount' === $property || 'product:price:amount' === $property ) && is_string( $value ) && '' === $data['price'] ) {
+					$amount = trim( $value );
+					if ( is_numeric( $amount ) && (float) $amount > 0 ) {
+						$data['price'] = '￥' . number_format( (int) round( (float) $amount ) );
+					}
 				}
 			}
-			if ( '' === $data['title'] && preg_match( '~<title\\b[^>]*>(.*?)</title\\s*>~is', $html, $title ) ) {
+			if ( '' === $data['title'] && preg_match( '~<title\b[^>]*>(.*?)</title\s*>~is', $html, $title ) ) {
 				$data['title'] = trim( html_entity_decode( wp_strip_all_tags( $title[1] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+			}
+
+			if ( '' === $data['title'] && '' === $data['image'] ) {
+				return $this->build_ogp_fallback_response( $url, 'OGP tags not found' );
 			}
 
 			set_transient( $transient_key, $data, WEEK_IN_SECONDS );
 		}
 
-		// Amazon URL の場合は ASIN を抽出
-		if ( strpos( $url, 'amazon.co.jp' ) !== false ) {
-			if ( preg_match( '/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/', $url, $matches ) ) {
-				$data['asin'] = $matches[1];
-			}
-		}
+		$is_partial = '' === ( $data['title'] ?? '' ) || '' === ( $data['image'] ?? '' );
 
-		return rest_ensure_response( $data );
+		return rest_ensure_response(
+			array_merge(
+				[
+					'title'     => (string) ( $data['title'] ?? '' ),
+					'image'     => (string) ( $data['image'] ?? '' ),
+					'price'     => (string) ( $data['price'] ?? '' ),
+					'ogp_error' => false,
+					'partial'   => $is_partial,
+				],
+				$store_fields
+			)
+		);
 	}
 
 	/**
