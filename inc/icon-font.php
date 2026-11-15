@@ -68,6 +68,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'desktop_windows',
 			'devices',
 			'do_not_disturb_on',
+			'download',
 			'edit',
 			'edit_note',
 			'error',

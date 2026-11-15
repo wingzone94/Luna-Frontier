@@ -132,6 +132,36 @@ $nintendo_amazon = luminous_nexus_render_product_card(
 );
 product_card_check( str_contains( $nintendo_amazon, 'Amazonで見る' ) && str_contains( $nintendo_amazon, 'My Nintendo Storeで見る' ), 'Nintendo + Amazon card renders both buttons' );
 product_card_check( 1 === substr_count( $nintendo_amazon, 'rel="noopener noreferrer sponsored"' ) && 1 === substr_count( $nintendo_amazon, 'rel="noopener noreferrer"' ), 'Amazon keeps sponsored rel while Nintendo uses non-sponsored rel' );
+
+// Task 2: Amazon download indicator and info popover.
+$download_msg   = 'この商品はダウンロード専用です。返品等はできません。ご了承ください。';
+$download_short = luminous_nexus_product_card_shortcode(
+	array(
+		'title'           => 'オンラインコード版テスト',
+		'asin'            => 'B012345678',
+		'amazon_download' => '1',
+	)
+);
+$download_block = $library->render_product_card_block(
+	array(
+		'title'          => 'オンラインコード版テスト',
+		'asin'           => 'B012345678',
+		'amazonDownload' => true,
+		'showAmazonDisclosure'  => false,
+		'showRakutenDisclosure' => false,
+	)
+);
+product_card_check( str_contains( $download_short, 'data-icon="download"' ) && str_contains( $download_short, 'data-icon="info"' ), 'Download and info data-icon spans render when amazon_download is enabled' );
+product_card_check( str_contains( $download_short, '<button type="button"' ) && str_contains( $download_short, 'aria-label=' ) && str_contains( $download_short, 'aria-expanded="false"' ), 'Download info control is an accessible button element' );
+product_card_check( str_contains( $download_short, $download_msg ) && str_contains( $download_block, $download_msg ), 'Shortcode and block both render the exact download popover message' );
+product_card_check( ! str_contains( $plain_short, 'data-icon="download"' ) && ! str_contains( $plain_short, 'data-product-download-info-toggle' ) && ! str_contains( $plain_short, $download_msg ), 'Download indicator and popover are omitted when amazon_download is disabled' );
+$nintendo_only_download = luminous_nexus_render_product_card(
+	array(
+		'nintendo_url'    => $nintendo_url,
+		'amazon_download' => true,
+	)
+);
+product_card_check( ! str_contains( $nintendo_only_download, 'data-icon="download"' ) && ! str_contains( $nintendo_only_download, $download_msg ), 'Download indicator is omitted when no Amazon button is present' );
 $library->enqueue_block_assets();
 product_card_check( str_contains( implode( '', wp_scripts()->get_data( 'node-library-block-editor', 'before' ) ), '"productCardAvailable":true' ), 'Editor receives available renderer state' );
 echo "Mode: {$mode}; failures: {$GLOBALS['product_card_failures']}\n";

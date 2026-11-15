@@ -29,7 +29,7 @@ function luminous_nexus_normalize_product_card( array $attributes ): array {
 		$normalized[ $key ] = isset( $attributes[ $key ] ) && is_scalar( $attributes[ $key ] )
 			? (string) $attributes[ $key ] : '';
 	}
-	foreach ( array( 'show_amazon_disclosure', 'show_rakuten_disclosure' ) as $key ) {
+	foreach ( array( 'show_amazon_disclosure', 'show_rakuten_disclosure', 'amazon_download' ) as $key ) {
 		$value = $attributes[ $key ] ?? false;
 		$normalized[ $key ] = true === $value || '1' === $value;
 	}
@@ -103,13 +103,51 @@ function luminous_nexus_render_product_card( array $attributes ): string {
 
 				<div class="m3-product-card__actions">
 					<?php if ( $has_amazon ) : ?>
-					<a href="<?php echo esc_url( $atts['amazon_url'] ); ?>"
-					   class="m3-product-btn m3-product-btn--amazon m3-ripple-host"
-					   target="_blank"
-					   rel="noopener noreferrer sponsored">
-						<img src="https://www.google.com/s2/favicons?domain=amazon.co.jp&sz=32" alt="" class="m3-product-btn__icon">
-						<?php esc_html_e( 'Amazonで見る', 'luminous-nexus' ); ?>
-					</a>
+						<?php if ( $atts['amazon_download'] ) : ?>
+							<?php
+							static $download_popover_counter = 0;
+							++$download_popover_counter;
+							$download_popover_id = 'm3-product-download-popover-' . $download_popover_counter;
+							?>
+							<div class="m3-product-action-group m3-product-action-group--amazon">
+								<a href="<?php echo esc_url( $atts['amazon_url'] ); ?>"
+								   class="m3-product-btn m3-product-btn--amazon m3-ripple-host"
+								   target="_blank"
+								   rel="noopener noreferrer sponsored">
+									<img src="https://www.google.com/s2/favicons?domain=amazon.co.jp&sz=32" alt="" class="m3-product-btn__icon">
+									<?php esc_html_e( 'Amazonで見る', 'luminous-nexus' ); ?>
+								</a>
+								<span class="m3-product-card__download-meta">
+									<span class="m3-product-card__download-badge" title="<?php esc_attr_e( 'ダウンロード専用', 'luminous-nexus' ); ?>" aria-label="<?php esc_attr_e( 'ダウンロード専用', 'luminous-nexus' ); ?>">
+										<span class="material-symbols-outlined" data-icon="download" aria-hidden="true"></span>
+									</span>
+									<span class="m3-product-card__popover-anchor">
+										<button type="button"
+										        class="m3-product-card__download-info-btn"
+										        aria-label="<?php esc_attr_e( 'ダウンロード商品の注意事項を表示', 'luminous-nexus' ); ?>"
+										        aria-expanded="false"
+										        aria-controls="<?php echo esc_attr( $download_popover_id ); ?>"
+										        data-product-download-info-toggle>
+											<span class="material-symbols-outlined" data-icon="info" aria-hidden="true"></span>
+										</button>
+										<div id="<?php echo esc_attr( $download_popover_id ); ?>"
+										     class="m3-product-card__download-popover"
+										     role="region"
+										     aria-label="<?php esc_attr_e( 'ダウンロード商品の注意事項', 'luminous-nexus' ); ?>"
+										     hidden
+										     data-product-download-info-popover><?php echo esc_html( 'この商品はダウンロード専用です。返品等はできません。ご了承ください。' ); ?></div>
+									</span>
+								</span>
+							</div>
+						<?php else : ?>
+							<a href="<?php echo esc_url( $atts['amazon_url'] ); ?>"
+							   class="m3-product-btn m3-product-btn--amazon m3-ripple-host"
+							   target="_blank"
+							   rel="noopener noreferrer sponsored">
+								<img src="https://www.google.com/s2/favicons?domain=amazon.co.jp&sz=32" alt="" class="m3-product-btn__icon">
+								<?php esc_html_e( 'Amazonで見る', 'luminous-nexus' ); ?>
+							</a>
+						<?php endif; ?>
 					<?php endif; ?>
 
 					<?php if ( $has_rakuten ) : ?>

@@ -63,6 +63,11 @@ const optionalInitializers = [
         name: 'initSeriesToc',
         shouldRun: () => document.querySelector('.m3-series-toc__toggle'),
         load: () => import('./scripts/series-toc')
+    },
+    {
+        name: 'initProductCardPopovers',
+        shouldRun: () => document.querySelector('[data-product-download-info-toggle]'),
+        load: () => import('./scripts/product-card-popover')
     }
 ];
 

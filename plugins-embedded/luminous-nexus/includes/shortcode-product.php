@@ -22,13 +22,15 @@ function luminous_nexus_product_card_shortcode( $atts ): string {
 			'rakuten_url'             => '',
 			'nintendo_url'            => '',
 			'asin'                    => '',
+			'amazon_download'         => '',
 			'show_amazon_disclosure'  => '',
 			'show_rakuten_disclosure' => '',
 		),
 		$atts,
 		'product_card'
 	);
-	$atts['show_amazon_disclosure'] = '1' === $atts['show_amazon_disclosure'];
+	$atts['amazon_download']         = '1' === $atts['amazon_download'];
+	$atts['show_amazon_disclosure']  = '1' === $atts['show_amazon_disclosure'];
 	$atts['show_rakuten_disclosure'] = '1' === $atts['show_rakuten_disclosure'];
 	return luminous_nexus_render_product_card( $atts );
 }

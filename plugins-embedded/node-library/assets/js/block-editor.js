@@ -4,6 +4,7 @@
     var SelectControl = components.SelectControl;
     var TextControl = components.TextControl;
     var CheckboxControl = components.CheckboxControl;
+    var ToggleControl = components.ToggleControl || CheckboxControl;
     var PanelBody = components.PanelBody;
     var InspectorControls = blockEditor.InspectorControls;
     var Spinner = components.Spinner;
@@ -418,6 +419,7 @@
             imageUrl: { type: 'string', default: '' },
             amazonUrl: { type: 'string', default: '' },
             asin: { type: 'string', default: '' },
+            amazonDownload: { type: 'boolean', default: false },
             rakutenUrl: { type: 'string', default: '' },
             nintendoUrl: { type: 'string', default: '' },
             showAmazonDisclosure: { type: 'boolean', default: true },
@@ -474,6 +476,14 @@
                             checked: attributes.showRakutenDisclosure,
                             onChange: function (val) { setAttributes({ showRakutenDisclosure: val }); }
                         })
+                    ),
+                    el(PanelBody, { title: 'Amazon ダウンロード設定', initialOpen: true },
+                        el(ToggleControl, {
+                            label: 'オンラインコード版（ダウンロード専用）',
+                            help: 'Amazon ボタンの横にダウンロードアイコンと注意事項を表示します。',
+                            checked: Boolean(attributes.amazonDownload),
+                            onChange: function (val) { setAttributes({ amazonDownload: Boolean(val) }); }
+                        })
                     )
                 ),
                 el('div', { className: 'node-library-block-editor', key: 'editor' },
@@ -523,6 +533,11 @@
                             el(TextControl, { label: '参考価格', value: attributes.price, placeholder: '￥2,980', onChange: function (val) { setAttributes({ price: val }); } }),
                             el(TextControl, { label: '画像 URL', value: attributes.imageUrl, onChange: function (val) { setAttributes({ imageUrl: val }); } }),
                             el(TextControl, { label: 'Amazon ASIN', value: attributes.asin, placeholder: 'B0XXXXXXXX', onChange: function (val) { setAttributes({ asin: val }); } }),
+                            el(ToggleControl, {
+                                label: 'Amazon オンラインコード版（ダウンロード専用）',
+                                checked: Boolean(attributes.amazonDownload),
+                                onChange: function (val) { setAttributes({ amazonDownload: Boolean(val) }); }
+                            }),
                             el(TextControl, { label: '楽天 URL', value: attributes.rakutenUrl, onChange: function (val) { setAttributes({ rakutenUrl: val }); } }),
                             el(TextControl, { label: 'My Nintendo Store URL', value: attributes.nintendoUrl, placeholder: 'https://store-jp.nintendo.com/...', onChange: function (val) { setAttributes({ nintendoUrl: val }); } })
                         )
