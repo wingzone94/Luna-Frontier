@@ -150,6 +150,11 @@
     color: #ffffff;
 }
 
+.m3-product-card-container--nexus .m3-product-btn--nintendo {
+    background: #E60012;
+    color: #ffffff;
+}
+
 /* Disclosure Section */
 .m3-product-card-container--nexus .m3-product-card__disclosure {
     margin-top: 8px;

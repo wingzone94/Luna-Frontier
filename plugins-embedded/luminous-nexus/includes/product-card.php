@@ -25,7 +25,7 @@ function luminous_nexus_product_url( string $url ): string {
 /** Normalize the shared input; callers retain their own disclosure defaults. */
 function luminous_nexus_normalize_product_card( array $attributes ): array {
 	$normalized = array();
-	foreach ( array( 'title', 'price', 'image_url', 'amazon_url', 'rakuten_url', 'asin' ) as $key ) {
+	foreach ( array( 'title', 'price', 'image_url', 'amazon_url', 'rakuten_url', 'nintendo_url', 'asin' ) as $key ) {
 		$normalized[ $key ] = isset( $attributes[ $key ] ) && is_scalar( $attributes[ $key ] )
 			? (string) $attributes[ $key ] : '';
 	}
@@ -52,8 +52,9 @@ function luminous_nexus_product_card_links( array $attributes ): array {
 		}
 	}
 	return array(
-		'amazon_url'  => $amazon,
-		'rakuten_url' => luminous_nexus_product_url( $attributes['rakuten_url'] ),
+		'amazon_url'   => $amazon,
+		'rakuten_url'  => luminous_nexus_product_url( $attributes['rakuten_url'] ),
+		'nintendo_url' => luminous_nexus_product_url( $attributes['nintendo_url'] ),
 	);
 }
 
@@ -62,13 +63,19 @@ function luminous_nexus_render_product_card( array $attributes ): string {
 	$atts = luminous_nexus_normalize_product_card( $attributes );
 	$atts = array_merge( $atts, luminous_nexus_product_card_links( $atts ) );
 	$atts['image_url'] = luminous_nexus_product_url( $atts['image_url'] );
-	$has_amazon = '' !== $atts['amazon_url'];
-	$has_rakuten = '' !== $atts['rakuten_url'];
-	if ( ! $has_amazon && ! $has_rakuten ) {
+	$has_amazon   = '' !== $atts['amazon_url'];
+	$has_rakuten  = '' !== $atts['rakuten_url'];
+	$has_nintendo = '' !== $atts['nintendo_url'];
+	if ( ! $has_amazon && ! $has_rakuten && ! $has_nintendo ) {
 		return '';
 	}
-	$disclosure_amazon = get_option( 'luminous_nexus_disclosure_amazon', 'Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。' );
+	$has_affiliate      = $has_amazon || $has_rakuten;
+	$disclosure_amazon  = get_option( 'luminous_nexus_disclosure_amazon', 'Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。' );
 	$disclosure_rakuten = get_option( 'luminous_nexus_disclosure_rakuten', '当メディアは、楽天アフィリエイト・プログラムの参加者です。' );
+	$show_disclosures   = $has_affiliate && (
+		( $atts['show_amazon_disclosure'] && ! empty( $disclosure_amazon ) ) ||
+		( $atts['show_rakuten_disclosure'] && ! empty( $disclosure_rakuten ) )
+	);
 
 	ob_start();
 	?>
@@ -114,10 +121,21 @@ function luminous_nexus_render_product_card( array $attributes ): string {
 						<?php esc_html_e( '楽天市場で見る', 'luminous-nexus' ); ?>
 					</a>
 					<?php endif; ?>
+
+					<?php if ( $has_nintendo ) : ?>
+					<a href="<?php echo esc_url( $atts['nintendo_url'] ); ?>"
+					   class="m3-product-btn m3-product-btn--nintendo m3-ripple-host"
+					   target="_blank"
+					   rel="noopener noreferrer">
+						<img src="https://www.google.com/s2/favicons?domain=store-jp.nintendo.com&sz=32" alt="" class="m3-product-btn__icon">
+						<?php esc_html_e( 'My Nintendo Storeで見る', 'luminous-nexus' ); ?>
+					</a>
+					<?php endif; ?>
 				</div>
 			</div>
 		</div>
 
+		<?php if ( $show_disclosures ) : ?>
 		<div class="m3-product-card__disclosures">
 			<?php if ( $atts['show_amazon_disclosure'] && ! empty( $disclosure_amazon ) ) : ?>
 				<div class="m3-product-card__disclosure">
@@ -133,6 +151,7 @@ function luminous_nexus_render_product_card( array $attributes ): string {
 				</div>
 			<?php endif; ?>
 		</div>
+		<?php endif; ?>
 	</div>
 	<?php
 	return ob_get_clean();

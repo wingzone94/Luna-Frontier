@@ -34,6 +34,7 @@ for (const available of [true, false]) {
     assert.equal(writes, 0, 'Dependency state never rewrites saved attributes');
     assert.equal(block.save(), null, 'The block remains dynamic');
     assert.equal(block.attributes.showAmazonDisclosure.default, true);
+    assert.equal(block.attributes.nintendoUrl.default, '');
     assert.ok(registry.has('node-library/item-card'), 'Other blocks stay registered');
   });
 }

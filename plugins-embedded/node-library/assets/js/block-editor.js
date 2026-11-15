@@ -408,10 +408,10 @@
     // --- 商品リンクカード ---
     registerBlockType('node-library/product-card', {
         title: '商品リンクカード',
-        description: 'Amazon / 楽天の URL から商品情報を取得してカード表示します。',
+        description: 'Amazon / 楽天 / My Nintendo Store の URL から商品情報を取得してカード表示します。',
         icon: 'cart',
         category: 'node',
-        keywords: ['product', 'amazon', 'rakuten', '商品', 'アフィリエイト'],
+        keywords: ['product', 'amazon', 'rakuten', 'nintendo', '商品', 'アフィリエイト', '任天堂'],
         attributes: {
             title: { type: 'string', default: '' },
             price: { type: 'string', default: '' },
@@ -419,6 +419,7 @@
             amazonUrl: { type: 'string', default: '' },
             asin: { type: 'string', default: '' },
             rakutenUrl: { type: 'string', default: '' },
+            nintendoUrl: { type: 'string', default: '' },
             showAmazonDisclosure: { type: 'boolean', default: true },
             showRakutenDisclosure: { type: 'boolean', default: true }
         },
@@ -443,6 +444,8 @@
                             setAttributes({ asin: data.asin, showAmazonDisclosure: true });
                         } else if (urlInput.indexOf('rakuten.co.jp') !== -1) {
                             setAttributes({ rakutenUrl: urlInput, showRakutenDisclosure: true });
+                        } else if (urlInput.indexOf('store-jp.nintendo.com') !== -1) {
+                            setAttributes({ nintendoUrl: urlInput });
                         }
                         setIsFetching(false);
                         setUrlInput('');
@@ -477,7 +480,7 @@
                     el(Placeholder, {
                         icon: 'cart',
                         label: '商品リンクカード',
-                        instructions: 'Amazon や楽天の商品 URL を貼り付けて「情報を取得」を押してください。'
+                        instructions: 'Amazon・楽天・My Nintendo Store の商品 URL を貼り付けて「情報を取得」を押してください。'
                     },
                         el('div', { style: { width: '100%', display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' } },
                             el(TextControl, {
@@ -520,7 +523,8 @@
                             el(TextControl, { label: '参考価格', value: attributes.price, placeholder: '￥2,980', onChange: function (val) { setAttributes({ price: val }); } }),
                             el(TextControl, { label: '画像 URL', value: attributes.imageUrl, onChange: function (val) { setAttributes({ imageUrl: val }); } }),
                             el(TextControl, { label: 'Amazon ASIN', value: attributes.asin, placeholder: 'B0XXXXXXXX', onChange: function (val) { setAttributes({ asin: val }); } }),
-                            el(TextControl, { label: '楽天 URL', value: attributes.rakutenUrl, onChange: function (val) { setAttributes({ rakutenUrl: val }); } })
+                            el(TextControl, { label: '楽天 URL', value: attributes.rakutenUrl, onChange: function (val) { setAttributes({ rakutenUrl: val }); } }),
+                            el(TextControl, { label: 'My Nintendo Store URL', value: attributes.nintendoUrl, placeholder: 'https://store-jp.nintendo.com/...', onChange: function (val) { setAttributes({ nintendoUrl: val }); } })
                         )
                     )
                 )

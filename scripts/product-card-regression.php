@@ -94,12 +94,44 @@ foreach ( array( 'kept-22', '' ) as $existing_tag ) {
 product_card_check( 'https://www.amazon.co.jp/dp/B098765432?tag=fixture-22' === product_test_links( array( 'asin' => 'B098765432', 'amazon_url' => $short['amazon_url'] ) )['amazon_url'], 'Valid ASIN takes precedence' );
 product_card_check( '' === product_test_links( array( 'asin' => '../bad?tag=evil' ) )['amazon_url'], 'Invalid ASIN cannot generate a malformed purchase URL' );
 foreach ( array( 'javascript:alert(1)', 'data:text/html,bad', '/relative', 'example.com', 'https://', 'https://user:pass@example.com/a' ) as $invalid ) {
-	product_card_check( '' === luminous_nexus_render_product_card( array( 'amazon_url' => $invalid, 'rakuten_url' => $invalid ) ), 'Unsafe/invalid links are not rendered: ' . $invalid );
+	product_card_check( '' === luminous_nexus_render_product_card( array( 'amazon_url' => $invalid, 'rakuten_url' => $invalid, 'nintendo_url' => $invalid ) ), 'Unsafe/invalid links are not rendered: ' . $invalid );
 }
 product_card_check( '' === luminous_nexus_render_product_card( array() ), 'No links produces no empty card' );
 $rakuten = luminous_nexus_render_product_card( array( 'rakuten_url' => $short['rakuten_url'], 'image_url' => 'javascript:bad' ) );
 product_card_check( 1 === substr_count( $rakuten, 'rel="noopener noreferrer sponsored"' ) && ! str_contains( $rakuten, 'm3-product-card__image' ), 'Single shop and invalid/missing image work without empty elements' );
 product_card_check( $short['rakuten_url'] === $links['rakuten_url'], 'Rakuten URL is not rewritten' );
+
+// Task 1: My Nintendo Store single-store and multi-store rendering.
+$nintendo_url   = 'https://store-jp.nintendo.com/item/software/D70010000130791';
+$nintendo_short = luminous_nexus_product_card_shortcode(
+	array(
+		'title'        => 'ゼルダの伝説 時のオカリナ',
+		'price'        => '￥7,980',
+		'nintendo_url' => $nintendo_url,
+	)
+);
+$nintendo_block = $library->render_product_card_block(
+	array(
+		'title'       => 'ゼルダの伝説 時のオカリナ',
+		'price'       => '￥7,980',
+		'nintendoUrl' => $nintendo_url,
+	)
+);
+product_card_check( '' !== $nintendo_short && $nintendo_short === $nintendo_block, 'Nintendo-only card renders identically via shortcode and block' );
+product_card_check( str_contains( $nintendo_short, 'My Nintendo Storeで見る' ) && str_contains( $nintendo_short, 'm3-product-btn--nintendo' ), 'Nintendo button text and class are rendered' );
+product_card_check( str_contains( $nintendo_short, 'https://www.google.com/s2/favicons?domain=store-jp.nintendo.com&amp;sz=32' ) || str_contains( $nintendo_short, 'https://www.google.com/s2/favicons?domain=store-jp.nintendo.com&sz=32' ), 'Nintendo button uses Google favicon for store-jp.nintendo.com' );
+product_card_check( ! str_contains( $nintendo_short, 'sponsored' ) && ! str_contains( $nintendo_short, 'm3-product-card__disclosures' ), 'Nintendo-only card omits sponsored rel and affiliate disclosures' );
+
+$nintendo_amazon = luminous_nexus_render_product_card(
+	array(
+		'title'                  => 'ゼルダの伝説 時のオカリナ',
+		'asin'                   => 'B012345678',
+		'nintendo_url'           => $nintendo_url,
+		'show_amazon_disclosure' => true,
+	)
+);
+product_card_check( str_contains( $nintendo_amazon, 'Amazonで見る' ) && str_contains( $nintendo_amazon, 'My Nintendo Storeで見る' ), 'Nintendo + Amazon card renders both buttons' );
+product_card_check( 1 === substr_count( $nintendo_amazon, 'rel="noopener noreferrer sponsored"' ) && 1 === substr_count( $nintendo_amazon, 'rel="noopener noreferrer"' ), 'Amazon keeps sponsored rel while Nintendo uses non-sponsored rel' );
 $library->enqueue_block_assets();
 product_card_check( str_contains( implode( '', wp_scripts()->get_data( 'node-library-block-editor', 'before' ) ), '"productCardAvailable":true' ), 'Editor receives available renderer state' );
 echo "Mode: {$mode}; failures: {$GLOBALS['product_card_failures']}\n";

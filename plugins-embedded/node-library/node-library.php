@@ -629,6 +629,7 @@ final class Node_Library {
 				'amazonUrl'             => [ 'type' => 'string', 'default' => '' ],
 				'asin'                  => [ 'type' => 'string', 'default' => '' ],
 				'rakutenUrl'            => [ 'type' => 'string', 'default' => '' ],
+				'nintendoUrl'           => [ 'type' => 'string', 'default' => '' ],
 				'showAmazonDisclosure'  => [ 'type' => 'boolean', 'default' => true ],
 				'showRakutenDisclosure' => [ 'type' => 'boolean', 'default' => true ],
 			],
@@ -652,6 +653,7 @@ final class Node_Library {
 				'amazon_url'              => $attributes['amazonUrl'] ?? '',
 				'asin'                    => $attributes['asin'] ?? '',
 				'rakuten_url'             => $attributes['rakutenUrl'] ?? '',
+				'nintendo_url'            => $attributes['nintendoUrl'] ?? '',
 				'show_amazon_disclosure'  => $attributes['showAmazonDisclosure'] ?? true,
 				'show_rakuten_disclosure' => $attributes['showRakutenDisclosure'] ?? true,
 			)

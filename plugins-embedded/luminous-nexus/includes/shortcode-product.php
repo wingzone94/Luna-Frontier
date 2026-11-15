@@ -20,6 +20,7 @@ function luminous_nexus_product_card_shortcode( $atts ): string {
 			'image_url'               => '',
 			'amazon_url'              => '',
 			'rakuten_url'             => '',
+			'nintendo_url'            => '',
 			'asin'                    => '',
 			'show_amazon_disclosure'  => '',
 			'show_rakuten_disclosure' => '',
