@@ -44,7 +44,7 @@ export function initSearchBar() {
         closeSuggestions();
         searchBar.classList.remove('is-active');
         header?.classList.remove('search-is-active');
-        searchInput.blur();
+        searchToggle.focus({ preventScroll: true });
     };
 
     // --- Search keyword suggestions (Luna Library / categories) ---
@@ -464,6 +464,9 @@ export function initSearchBar() {
     let activeTagSuggestion = -1;
 
     const closeTagSuggestions = () => {
+        clearTimeout(tagSuggestionTimer);
+        tagRequestController?.abort();
+        tagRequestController = undefined;
         tagSuggestions?.replaceChildren();
         tagSuggestions?.classList.remove('is-active');
         tagInput?.setAttribute('aria-expanded', 'false');
@@ -498,6 +501,7 @@ export function initSearchBar() {
         if (!tagSuggestions || !tagInput) return;
         tagSuggestions.replaceChildren();
         activeTagSuggestion = -1;
+        tagInput.removeAttribute('aria-activedescendant');
 
         terms.forEach((term, index) => {
             const option = document.createElement('button');
@@ -571,7 +575,9 @@ export function initSearchBar() {
             event.preventDefault();
             const activeOption = tagSuggestions.querySelectorAll('[role="option"]')[activeTagSuggestion];
             activeOption?.click();
-        } else if (event.key === 'Escape') {
+        } else if (event.key === 'Escape' && tagInput.getAttribute('aria-expanded') === 'true') {
+            event.preventDefault();
+            event.stopPropagation();
             closeTagSuggestions();
         }
     });
