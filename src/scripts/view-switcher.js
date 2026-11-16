@@ -4,7 +4,7 @@ import { initViewModeSuggest } from './view-mode-suggest.js';
 
 export const VIEW_MODE_ICON = {
     pc: 'computer',
-    tablet: 'tablet_mac',
+    tablet: 'tablet',
     mobile: 'smartphone',
 };
 
