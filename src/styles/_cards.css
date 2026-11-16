@@ -440,7 +440,7 @@
 }
 
 :is(.c-card__title, .m3-card__title) a:focus-visible::after {
-    outline: 2px solid var(--md-sys-color-primary);
+    outline: 2px solid var(--md-sys-color-accent-text);
     outline-offset: -2px;
     border-radius: var(--node-card-radius);
 }
@@ -654,8 +654,18 @@
         align-content: flex-start;
         column-gap: 6px;
         row-gap: 10px;
-        max-block-size: calc(0.75rem * 1.2 + 14px);
+        font-size: 0.75rem;
+        line-height: 1.2;
+        max-block-size: calc(1lh + 14px);
         overflow: hidden;
+    }
+
+    /* Keep every category and its focus indicator visible during keyboard use. */
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__category-container, .m3-card__category-container):focus-within,
+    :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-article__category-group:focus-within {
+        max-block-size: none;
+        /* The archive stylesheet has an unlayered overflow rule. */
+        overflow: visible !important;
     }
 
     /* チップは縮めない。
