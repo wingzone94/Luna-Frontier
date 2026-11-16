@@ -216,6 +216,11 @@ export function initSearchBar() {
     document.getElementById('m3-search-mobile-close')?.addEventListener('click', closeSearch);
 
     searchInput.addEventListener('keydown', (e) => {
+        // Safari can report the IME confirmation key as 229 after compositionend.
+        if (e.isComposing || e.keyCode === 229) {
+            if (e.key === 'Enter') e.preventDefault();
+            return;
+        }
         const options = suggestionOptions();
 
         if (e.key === 'ArrowDown' && options.length) {
@@ -551,6 +556,10 @@ export function initSearchBar() {
         tagSuggestionTimer = setTimeout(requestTagSuggestions, 250);
     });
     tagInput?.addEventListener('keydown', (event) => {
+        if (event.isComposing || event.keyCode === 229) {
+            if (event.key === 'Enter') event.preventDefault();
+            return;
+        }
         const optionCount = tagSuggestions?.querySelectorAll('[role="option"]').length || 0;
         if (event.key === 'ArrowDown' && optionCount) {
             event.preventDefault();

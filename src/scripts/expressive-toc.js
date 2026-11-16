@@ -132,15 +132,27 @@ export function initExpressiveFloatingTOC() {
         });
 
         tocContainer.querySelectorAll('.m3-toc-link').forEach((link) => {
-            link.classList.toggle('is-active', link.dataset.tocTarget === currentId);
+            const isActive = link.dataset.tocTarget === currentId
+                && link.getAttribute('href')?.startsWith('#');
+            link.classList.toggle('is-active', isActive);
+            if (isActive) {
+                link.setAttribute('aria-current', 'location');
+            } else {
+                link.removeAttribute('aria-current');
+            }
         });
     };
 
-    const setPanelOpen = (open) => {
+    const setPanelOpen = (open, { restoreFocus = true } = {}) => {
         ensureShell();
 
         const { tocPanel, tocTrigger } = getRefs();
         if (!tocPanel) return;
+        const wasOpen = tocPanel.classList.contains('is-active');
+
+        if (!open && wasOpen && restoreFocus && tocPanel.contains(document.activeElement)) {
+            tocTrigger?.focus({ preventScroll: true });
+        }
 
         let scrim = document.querySelector('.m3-toc-scrim');
         if (!scrim) {
@@ -163,6 +175,11 @@ export function initExpressiveFloatingTOC() {
 
         if (open) {
             updateActiveLink();
+            if (!wasOpen) {
+                const focusTarget = tocPanel.querySelector('#m3-toc-close')
+                    || tocPanel.querySelector('.m3-toc-link');
+                focusTarget?.focus({ preventScroll: true });
+            }
         }
     };
 
@@ -242,7 +259,8 @@ export function initExpressiveFloatingTOC() {
         tocTrigger?.classList.add('toc-ready');
         tocTrigger?.setAttribute('aria-label', '目次を表示');
         tocTrigger?.setAttribute('aria-controls', 'm3-sticky-toc');
-        tocTrigger?.setAttribute('aria-haspopup', 'menu');
+        tocTrigger?.setAttribute('aria-expanded', String(tocPanel?.classList.contains('is-active') || false));
+        tocTrigger?.removeAttribute('aria-haspopup');
         backToTopTrigger?.setAttribute('aria-label', '最上部へ戻る');
         actionStack?.classList.add('is-has-toc', 'is-visible');
         bindTriggerFallback(tocTrigger);
@@ -389,9 +407,18 @@ export function initExpressiveFloatingTOC() {
                 const heading = document.getElementById(targetId);
                 if (!heading) return;
                 event.preventDefault();
-                window.scrollTo({ top: getScrollTarget(heading), behavior: 'smooth' });
+                if (!heading.hasAttribute('tabindex')) {
+                    heading.setAttribute('tabindex', '-1');
+                    heading.addEventListener('blur', () => heading.removeAttribute('tabindex'), { once: true });
+                }
+                heading.focus({ preventScroll: true });
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                window.scrollTo({
+                    top: getScrollTarget(heading),
+                    behavior: prefersReducedMotion ? 'instant' : 'smooth'
+                });
                 history.replaceState(null, '', `#${targetId}`);
-                setPanelOpen(false);
+                setPanelOpen(false, { restoreFocus: false });
                 return;
             }
 
@@ -420,7 +447,10 @@ export function initExpressiveFloatingTOC() {
         }, true);
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') setPanelOpen(false);
+            if (event.key === 'Escape' && getRefs().tocPanel?.classList.contains('is-active')) {
+                event.preventDefault();
+                setPanelOpen(false);
+            }
         });
 
         window.addEventListener('scroll', updateActiveLink, { passive: true });

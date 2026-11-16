@@ -110,6 +110,8 @@ body.is-active-toc .m3-action-stack .m3-fab:not(#m3-toc-trigger) {
 body.is-active-toc #m3-sticky-toc {
     opacity: 1;
     visibility: visible;
+    /* Make the opening panel focusable immediately, before its visual transition. */
+    transition-property: transform, opacity;
     transform: translateY(0) scale(1);
 }
 
@@ -626,7 +628,7 @@ body.is-active-toc #m3-sticky-toc {
     }
 
     :where(html:not(.lf-tablet-pc)) .m3-action-stack.has-pull-tab .m3-action-pull-tab:focus-visible {
-        outline: 2px solid var(--md-sys-color-primary, #FF9900);
+        outline: 2px solid var(--md-sys-color-accent-text, #935400);
         outline-offset: 2px;
     }
 
