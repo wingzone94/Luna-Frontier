@@ -1055,6 +1055,7 @@ final class Node_Library {
 			'nodeLibraryAdmin',
 			array(
 				'generatePath' => '/node-library/v1/generate-game-info',
+				'fetchStorePath' => '/node-library/v1/fetch-store',
 			)
 		);
 
@@ -1629,6 +1630,8 @@ function node_library_init() {
 require_once NODE_LIBRARY_DIR . 'includes/class-library-structured-meta.php';
 Node_Library_Structured_Meta::init();
 require_once NODE_LIBRARY_DIR . 'includes/class-library-store-id-migration.php';
+require_once NODE_LIBRARY_DIR . 'includes/class-library-store.php';
+Node_Library_Store::init();
 
 add_action( 'plugins_loaded', 'node_library_init' );
 
