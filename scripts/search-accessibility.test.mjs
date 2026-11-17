@@ -14,7 +14,7 @@ const fixture = `<!doctype html><html lang="ja"><body>
 <button id="m3-advanced-search-trigger">詳細検索</button>
 <dialog id="m3-advanced-search-modal"><button id="m3-advanced-search-close">閉じる</button>
 <label for="m3-tag-input">タグ</label><input id="m3-tag-input">
-<div id="m3-tag-suggestions"></div></dialog></body></html>`;
+<div id="m3-tag-suggestions"></div><button id="m3-advanced-search-apply">適用</button><section id="m3-search-rest-results" hidden><p id="m3-search-rest-results-status" role="status"></p><ul id="m3-search-rest-results-list"></ul></section></dialog></body></html>`;
 
 async function withSearch(run) {
     const browser = await chromium.launch({ headless: true });
@@ -86,3 +86,23 @@ test('composing Enter and Safari 229 never submit; normal Enter submits once', a
         assert.deepEqual(result, [0, 0, 1]);
     });
 });
+
+for (const reducedMotion of ['reduce', 'no-preference']) {
+    test(`search results honor reduced motion: ${reducedMotion}`, async () => {
+        await withSearch(async page => {
+            await page.emulateMedia({ reducedMotion });
+            await page.route('http://search.test/results*', route => route.fulfill({ json: { total: 0, results: [] } }));
+            await page.evaluate(() => {
+                window.m3_ajax.home_url = 'http://search.test/';
+                window.m3_ajax.result_search_url = '/results';
+                window.resultScroll = [];
+                document.querySelector('#m3-search-rest-results').scrollIntoView = options => resultScroll.push(options);
+                document.querySelector('dialog').showModal();
+            });
+            await page.locator('#m3-advanced-search-apply').click();
+            await page.waitForFunction(() => window.resultScroll.length > 0);
+            assert.deepEqual(await page.evaluate(() => resultScroll), [{ behavior: reducedMotion === 'reduce' ? 'instant' : 'smooth', block: 'start' }]);
+            assert.equal(await page.locator('[role=status]').textContent(), '条件に一致する記事はありませんでした。');
+        });
+    });
+}
