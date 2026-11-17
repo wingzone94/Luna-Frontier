@@ -44,6 +44,10 @@ body.lf-theme .m3-header #m3-advanced-search-trigger { flex-shrink: 0; order: -1
 	}
 }
 body.lf-theme .m3-header:not(.search-is-active) #m3-advanced-search-trigger { display: none; }
+/* Opening must expose the input in the tap event, before the visual transition. */
+body.lf-theme .m3-header.search-is-active .m3-search-input-wrapper {
+ transition-property: width, max-width, opacity, transform, background-color, box-shadow;
+}
 body.lf-theme .m3-header:not(.search-is-active) .m3-search-input-wrapper {
  visibility: hidden;
 }
