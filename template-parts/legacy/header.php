@@ -189,6 +189,7 @@ declare(strict_types=1);
                         <button type="button" class="m3-icon-button m3-search-mobile-close" id="m3-search-mobile-close" aria-label="検索を閉じる">
                             <span class="material-symbols-outlined" data-icon="arrow_back"></span>
                         </button>
+                        <label class="screen-reader-text" for="m3-search-input">記事を検索</label>
                         <input type="search" class="m3-search-bar__input" id="m3-search-input" placeholder="検索..." value="<?php echo esc_attr( get_search_query() ); ?>" name="s" autocomplete="off" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="m3-search-suggestions">
                         <div class="m3-search-actions-inline">
                             <button type="button" class="m3-icon-button m3-search-clear" id="m3-search-clear" aria-label="キーワードをクリア"<?php echo get_search_query() ? '' : ' hidden'; ?>>
@@ -409,7 +410,7 @@ declare(strict_types=1);
                                 </div>
                             </div>
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="sell"></span> タグ</label>
+                                <label class="m3-search-section-label" for="m3-tag-input"><span class="material-symbols-outlined" data-icon="sell" aria-hidden="true"></span> タグ</label>
                                 <div class="m3-textfield-wrapper">
                                     <input type="text" name="m3_tag" id="m3-tag-input" class="m3-text-input" placeholder="タグ名を入力..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="m3-tag-suggestions">
                                     <div id="m3-tag-suggestions" class="m3-suggestions-list" role="listbox" aria-label="タグ候補"></div>
