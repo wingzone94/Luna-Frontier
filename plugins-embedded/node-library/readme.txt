@@ -60,6 +60,19 @@ Amazon側のアクセス制限やNintendo Storeの待合室などで自動取得
 * _node_library_capabilities: crossplay / crosssave / online / hdr のbool、max_fpsの正整数、resolutionの文字列。
 未設定のキーは省略。falseは非対応。フォームにないフィールドは保持し、明示的な空欄は削除します。新規アダプタは Node_Library_Structured_Meta::sanitize() と同じ形式を使用してください。
 
+== 旧リンクからのストアID移行（WP-CLI） ==
+
+最初にデータベースをバックアップし、変更なしの全件レポートを確認してください。対象は公開・下書き・非公開・ゴミ箱を含む全ライブラリ項目です。
+
+    wp node-library migrate-store-ids --format=json > library-preview.json
+    wp node-library migrate-store-ids --apply --format=json > library-migration.json
+
+--apply を付けるまでデータを書き換えません。--format=csv または table も選べます。JSONには全件のitem_id、タイトル、success / needs_manual、抽出ID、URL別の理由と集計を含みます。既存IDは上書きせず、旧リンクは一切変更しません。複数エディションのIDが競合するストアは自動選択しません。
+
+Microsoft/Xbox、Steam App、Amazon ASIN、NintendoのソフトID、PSの個別商品ID、Apple App ID、Google PlayのパッケージIDを抽出します。短縮URLの展開や外部通信は行いません。Epic/GOGのスラッグ、PS concept、URLにIDがないページは推測せず手作業対象です。invalid_existing_store_ids は既存IDメタの不正形式、database_write_failed はDB書き込み失敗を示します。
+
+適用済みでもプレビューは何度でもできます。手作業修正後の再適用は --apply --force を明示します。処理は100件ずつ読み込み、実行開始時点の全件を対象にします。DB書き込み失敗時は終了コード1で、完了フラグを付けません。中断後にロックが残った場合は実行中プロセスがないことを確認してから wp option delete node_library_store_id_migration_lock で解除し、再実行してください。node_library_store_id_migration optionには最終適用日時と集計だけを保存します。全件レポートはCLI出力をファイルに保存してください。
+
 == ソースと配布 ==
 
 単体版1.5.1を統合した plugins-embedded/node-library が単一ソースです。このディレクトリを node-library/ としてパッケージすることで単体版を配布します。別実装や outputs/ 配下のコピーを継続編集しません。有効な単体版を優先し、未導入時だけテーマ内蔵版が動作します。単体導入時はテーマを必要としませんが、商品カード等のテーマ連携表示は対応する描画機能が必要です。
