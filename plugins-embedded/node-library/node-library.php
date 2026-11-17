@@ -136,7 +136,7 @@ function node_library_normalize_hardware( $value ): string {
 }
 
 /**
- * Geminiや既存入力のplatform名から対応ハードを推定する。
+ * 既存入力のplatform名から対応ハードを推定する。
  *
  * @param string $platform プラットフォーム名。
  * @return string
@@ -247,21 +247,7 @@ final class Node_Library {
 			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
 		] );
 
-		register_rest_route( 'node-library/v1', '/generate-game-info', [
-			'methods'             => 'POST',
-			'callback'            => [ $this, 'handle_generate_game_info' ],
-			'permission_callback' => function() { return current_user_can( 'edit_posts' ); },
-			'args'                => [
-				'title' => [
-					'required'          => true,
-					'sanitize_callback' => 'sanitize_text_field',
-				],
-				'type' => [
-					'default'           => 'game',
-					'sanitize_callback' => 'sanitize_key',
-				],
-			],
-		] );
+
 	}
 
 	/**
@@ -295,178 +281,6 @@ final class Node_Library {
 		);
 
 		return rest_ensure_response( $items );
-	}
-
-	/**
-	 * Gemini API からゲーム・アプリ紹介文の下書きを取得する。
-	 */
-	public function handle_generate_game_info( $request ) {
-		$title = trim( (string) $request->get_param( 'title' ) );
-		$type  = 'app' === $request->get_param( 'type' ) ? 'app' : 'game';
-		if ( '' === $title ) {
-			return new WP_Error( 'missing_title', 'ゲームまたはアプリのタイトルを入力してください。', [ 'status' => 400 ] );
-		}
-
-		if ( ! function_exists( 'node_get_user_gemini_api_key' ) || ! function_exists( 'node_get_user_gemini_model' ) || ! function_exists( 'node_is_valid_gemini_model_id' ) ) {
-			return new WP_Error( 'gemini_unavailable', 'Gemini API 設定を読み込めませんでした。', [ 'status' => 500 ] );
-		}
-
-		$api_key = node_get_user_gemini_api_key();
-		$model   = node_get_user_gemini_model();
-
-		if ( '' === $api_key ) {
-			return new WP_Error( 'missing_api_key', 'ユーザープロフィールで Gemini API キーを設定してください。', [ 'status' => 400 ] );
-		}
-
-		if ( ! node_is_valid_gemini_model_id( $model ) ) {
-			return new WP_Error( 'invalid_model', 'Geminiモデルの設定が無効です。', [ 'status' => 400 ] );
-		}
-
-		$prompt = sprintf(
-			'%1$s「%2$s」の情報をGoogle検索で確認してください。記事内カード用の日本語紹介文と、配信中の公式ストアページを取得してください。紹介文はジャンルまたは用途、提供元、主な対応プラットフォーム、特徴を180〜260文字で簡潔にまとめてください。リンクはSteam、Nintendo Store、PlayStation Store、Microsoft Store、Microsoft Store（Xbox）、App Store、Google Play、Amazon Appstore、GeForce NOW、Epic Games Storeなど、実際に確認できた公式ストアの商品ページだけにしてください。Nintendo StoreはNintendo Switch版とNintendo Switch 2版が別商品ページとして存在する場合、片方にまとめず、platformを「Nintendo Switch」「Nintendo Switch 2」として両方返してください。PlayStation StoreはPS4版とPS5版が別商品ページとして存在する場合、platformを「PlayStation 4」「PlayStation 5」として両方返してください。Xbox / Microsoft Store（Xbox）はXbox One版とXbox Series X|S版が別商品ページとして存在する場合、platformを「Xbox One」「Xbox Series X|S」として両方返してください。Windows/PC向けのMicrosoft Storeリンクはplatformを「Microsoft Store (Windows)」にし、Xbox向けリンクは「Microsoft Store（Xbox）」または機種別のXbox名にしてください。各リンクには表示タブを示す category と対応ハードを示す hardware を付けてください。category は次のいずれかです: "pc"（Steam・Epic・GOG・Microsoft Store (Windows)・Mac App Store・GeForce NOW など）、"mobile"（App Store・Google Play・Amazon Appstore などスマホ/タブレット）、"console"（Nintendo・PlayStation・Xbox などコンソール）。hardware は次のいずれかです: "auto", "windows-pc", "mac", "iphone-ipad", "android", "amazon-fire", "nintendo-switch", "nintendo-switch-2", "playstation-4", "playstation-5", "playstation-crossgen", "xbox-one", "xbox-series", "xbox-crossgen"。判断できない場合は "auto" としてください。推測したURL、検索結果ページ、攻略サイト、ニュース記事、公式トップページは含めないでください。返答はMarkdownを使わず、必ず {"summary":"紹介文","links":[{"platform":"プラットフォーム名","url":"https://...","category":"pc|mobile|console|auto","hardware":"auto|windows-pc|mac|iphone-ipad|android|amazon-fire|nintendo-switch|nintendo-switch-2|playstation-4|playstation-5|playstation-crossgen|xbox-one|xbox-series|xbox-crossgen"}]} 形式のJSONだけにしてください。',
-			'app' === $type ? 'アプリ' : 'ゲーム',
-			$title
-		);
-
-		$endpoint = sprintf(
-			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
-			rawurlencode( $model )
-		);
-		$response = wp_remote_post(
-			$endpoint,
-			[
-				'timeout' => 45,
-				'headers' => [
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				],
-				'body'    => wp_json_encode(
-					[
-						'contents'         => [
-							[
-								'parts' => [ [ 'text' => $prompt ] ],
-							],
-						],
-						'tools'            => [
-							[ 'google_search' => (object) [] ],
-						],
-						'generationConfig' => [
-							'maxOutputTokens' => 4096,
-						],
-					]
-				),
-			]
-		);
-
-		if ( is_wp_error( $response ) ) {
-			$err_msg = $response->get_error_message();
-			if ( strpos( $err_msg, 'timed out' ) !== false ) {
-				return new WP_Error( 'gemini_timeout', 'Gemini APIからの応答がタイムアウトしました。しばらく待ってから再度お試しください。', [ 'status' => 504 ] );
-			}
-			return new WP_Error( 'gemini_request_failed', 'Gemini APIへの接続に失敗しました。詳細: ' . $err_msg, [ 'status' => 502 ] );
-		}
-
-		$status = (int) wp_remote_retrieve_response_code( $response );
-		$body   = (string) wp_remote_retrieve_body( $response );
-		$data   = json_decode( $body, true );
-		if ( 200 !== $status || ! is_array( $data ) || isset( $data['error'] ) ) {
-			$message = function_exists( 'node_gemini_format_api_error' )
-				? node_gemini_format_api_error( $status, $data, $body )
-				: 'Gemini APIから情報を取得できませんでした。';
-			$code    = ( 429 === $status ) ? 'gemini_quota_exceeded' : ( ( 503 === $status ) ? 'gemini_model_unavailable' : 'gemini_response_failed' );
-			return new WP_Error( $code, $message, [ 'status' => ( 429 === $status || 503 === $status ) ? $status : 502 ] );
-		}
-
-		$parts = $data['candidates'][0]['content']['parts'] ?? [];
-		$text  = '';
-		foreach ( (array) $parts as $part ) {
-			if ( is_array( $part ) && isset( $part['text'] ) ) {
-				$text .= (string) $part['text'];
-			}
-		}
-
-		$json_text = trim( $text );
-		$json_text = preg_replace( '/^```(?:json)?\s*|\s*```$/i', '', $json_text );
-		$result    = json_decode( (string) $json_text, true );
-
-		if ( ! is_array( $result ) ) {
-			$start = strpos( $json_text, '{' );
-			$end   = strrpos( $json_text, '}' );
-			if ( false !== $start && false !== $end && $end > $start ) {
-				$result = json_decode( substr( $json_text, $start, $end - $start + 1 ), true );
-			}
-		}
-
-		if ( ! is_array( $result ) ) {
-			return new WP_Error( 'invalid_gemini_response', 'Gemini APIの応答をゲーム・アプリ情報として解析できませんでした。', [ 'status' => 502 ] );
-		}
-
-		$summary = sanitize_textarea_field( trim( (string) ( $result['summary'] ?? '' ) ) );
-		if ( '' === $summary ) {
-			return new WP_Error( 'empty_gemini_response', 'Gemini APIから紹介文が返されませんでした。', [ 'status' => 502 ] );
-		}
-
-		$links = [];
-		$allowed_store_domains = [
-			'amazon.co.jp',
-			'amazon.com',
-			'apps.apple.com',
-			'apps.microsoft.com',
-			'epicgames.com',
-			'geforcenow.com',
-			'gog.com',
-			'itch.io',
-			'microsoft.com',
-			'nintendo.com',
-			'nvidia.com',
-			'play.google.com',
-			'playstation.com',
-			'steamcommunity.com',
-			'steampowered.com',
-			'xbox.com',
-		];
-		foreach ( (array) ( $result['links'] ?? [] ) as $link ) {
-			if ( ! is_array( $link ) ) {
-				continue;
-			}
-
-			$platform = sanitize_text_field( (string) ( $link['platform'] ?? '' ) );
-			if ( false !== stripos( $platform, 'xbox' ) ) {
-				$platform = 'Microsoft Store（Xbox）';
-			}
-			$url      = esc_url_raw( (string) ( $link['url'] ?? '' ), [ 'https' ] );
-			$host     = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
-			$is_store = false;
-			foreach ( $allowed_store_domains as $domain ) {
-				if ( $host === $domain || str_ends_with( $host, '.' . $domain ) ) {
-					$is_store = true;
-					break;
-				}
-			}
-
-			if ( '' === $platform || '' === $url || 'https' !== wp_parse_url( $url, PHP_URL_SCHEME ) || ! $is_store ) {
-				continue;
-			}
-
-			$links[] = [
-				'platform' => $platform,
-				'url'      => $url,
-				'category' => node_library_normalize_category( $link['category'] ?? '' ),
-				'hardware' => node_library_normalize_hardware( $link['hardware'] ?? node_library_infer_hardware_from_platform( $platform ) ),
-			];
-
-			if ( count( $links ) >= 10 ) {
-				break;
-			}
-		}
-
-		return rest_ensure_response(
-			[
-				'summary' => $summary,
-				'links'   => $links,
-				'model'   => $model,
-			]
-		);
 	}
 
 	/** Normalize UTF-8, Shift_JIS and EUC-JP pages before OGP parsing. */
@@ -1054,7 +868,6 @@ final class Node_Library {
 			'node-library-admin-meta',
 			'nodeLibraryAdmin',
 			array(
-				'generatePath' => '/node-library/v1/generate-game-info',
 				'fetchStorePath' => '/node-library/v1/fetch-store',
 			)
 		);
@@ -1197,14 +1010,7 @@ final class Node_Library {
 			<p>
 				<label><strong>紹介文・レビュー:</strong></label><br>
 				<textarea name="node_library_summary" rows="4" style="width:100%;" placeholder="作品の魅力やレビューを自由に記載してください。"><?php echo esc_textarea( $summary ); ?></textarea>
-				<span style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
-					<button type="button" class="button button-secondary" id="node-library-generate-info">
-						<span class="dashicons dashicons-superhero-alt" aria-hidden="true"></span>
-						ゲーム（アプリ）情報を取得
-					</button>
-					<span id="node-library-generate-status" role="status" aria-live="polite"></span>
-				</span>
-				<p class="description" style="margin-top:8px;">Geminiが作成した下書きを確認・修正してから保存してください。</p>
+				<span class="description"><?php esc_html_e( 'ストアの説明文を確認・編集するか、紹介文を手入力してください。', 'node-library' ); ?></span>
 			</p>
 			
 			<div id="node-library-links-editor">
