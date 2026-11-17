@@ -9,13 +9,13 @@ export const VIEW_MODE_ICON = {
 };
 
 const VIEW_MODE_LABEL = {
-    pc: 'PC表示モード',
-    mobile: 'モバイル表示モード',
+    pc: 'モバイル表示に切り替える',
+    mobile: 'PC表示に切り替える',
 };
 
 const VIEW_MODE_TOOLTIP = {
-    pc: 'PC表示モード（タップでモバイル表示）',
-    mobile: 'モバイル表示モード（タップでPC表示）',
+    pc: '現在はPC表示です',
+    mobile: '現在はモバイル表示です',
 };
 
 /**
@@ -81,6 +81,8 @@ export function syncViewToggleUI(btn) {
     btn.dataset.viewMode = mode;
     btn.setAttribute('aria-label', VIEW_MODE_LABEL[mode]);
     btn.dataset.tooltip = VIEW_MODE_TOOLTIP[mode];
+    const fallback = document.getElementById('m3-view-toggle-fallback');
+    if (fallback) fallback.textContent = mode === 'pc' ? 'PC' : 'スマホ';
 }
 
 export function initViewSwitcher() {
@@ -89,6 +91,54 @@ export function initViewSwitcher() {
 
     syncViewToggleUI(btn);
     initViewModeSuggest();
+
+    const icon = document.getElementById('m3-view-toggle-icon');
+    const fallback = document.getElementById('m3-view-toggle-fallback');
+    const updateFontState = async () => {
+        let ready = false;
+        try {
+            // check() alone returns true when a failed stylesheet registered no faces.
+            const faces = await document.fonts?.load('24px "Material Symbols Outlined"', icon?.dataset.icon || '');
+            ready = Boolean(faces?.length && faces.every(face => face.status === 'loaded'));
+        } catch {
+            // Keep the readable fallback when the font request fails.
+        }
+        btn.dataset.viewIconReady = String(ready);
+        if (fallback) fallback.hidden = ready;
+    };
+    updateFontState();
+    document.fonts?.addEventListener('loadingdone', updateFontState);
+
+    const tooltip = document.createElement('span');
+    tooltip.id = 'm3-view-toggle-tooltip';
+    tooltip.className = 'm3-view-toggle-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.textContent = btn.dataset.tooltip;
+    tooltip.hidden = true;
+    btn.after(tooltip);
+    btn.setAttribute('aria-describedby', tooltip.id);
+    let hideTimer;
+    const showTooltip = () => {
+        clearTimeout(hideTimer);
+        tooltip.hidden = false;
+    };
+    const hideTooltip = () => { tooltip.hidden = true; };
+    const scheduleHide = () => {
+        clearTimeout(hideTimer);
+        if (!btn.matches(':focus-visible')) hideTimer = setTimeout(hideTooltip, 150);
+    };
+    btn.addEventListener('focus', showTooltip);
+    btn.addEventListener('blur', scheduleHide);
+    btn.addEventListener('pointerenter', showTooltip);
+    btn.addEventListener('pointerleave', scheduleHide);
+    tooltip.addEventListener('pointerenter', showTooltip);
+    tooltip.addEventListener('pointerleave', scheduleHide);
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            clearTimeout(hideTimer);
+            hideTooltip();
+        }
+    });
 
     btn.addEventListener('click', () => {
         const current = getViewMode();

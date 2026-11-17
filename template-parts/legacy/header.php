@@ -341,6 +341,7 @@ declare(strict_types=1);
             <!-- View: スマホ / タブレット / PC で常時表示 -->
             <button class="m3-icon-button m3-tooltip-target m3-view-toggle--tablet" id="m3-view-toggle" type="button" aria-label="モバイル表示モード" data-tooltip="モバイル表示モード（タップでPC表示）" data-view-mode="mobile">
                 <span class="material-symbols-outlined" data-icon="smartphone" id="m3-view-toggle-icon" aria-hidden="true"></span>
+                <span id="m3-view-toggle-fallback" class="m3-view-toggle-fallback" aria-hidden="true">表示</span>
             </button>
 
         </div>
