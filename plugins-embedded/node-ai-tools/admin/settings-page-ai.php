@@ -169,6 +169,10 @@ add_action(
 			)
 		);
 
+		register_setting( 'node_ai_group', 'node_ai_fc_provider', array( 'sanitize_callback' => static function ( $value ) {
+			return is_string( $value ) && isset( Node_AI_Core::FACT_CHECK_PROVIDERS[ $value ] ) ? $value : 'gemini';
+		} ) );
+
 		register_setting( 'node_ai_group', 'node_ai_openai_preset', array( 'sanitize_callback' => static function ( $value ) {
 			return is_string( $value ) && isset( Node_AI_Provider_OpenAI::presets()[ $value ] ) ? $value : 'local';
 		} ) );
@@ -440,12 +444,6 @@ function node_ai_render_settings_page(): void {
 					</table>
 				</details>
 
-				<h3>ファクトチェックのモデル（無料枠優先）</h3>
-				<p class="description">
-					ファクトチェックは Gemini API の無料枠だけで完結するように動きます。
-					有料モデルや有料機能へ自動で切り替えることはありません。
-				</p>
-				<?php node_ai_render_fact_check_model_fields(); ?>
 			</div>
 
 			<!-- OpenAI compatible -->
@@ -533,6 +531,26 @@ function node_ai_render_settings_page(): void {
 					</table>
 				</details>
 			</div>
+
+			<hr />
+			<h2>ファクトチェック専用の接続先</h2>
+			<p>全体の接続先とは独立しています。自動実行はこの設定を使用し、手動実行時は記事の編集画面で変更できます。「使用しない」は全AI機能に優先します。</p>
+			<p><label for="node-ai-fc-provider">既定の接続先</label><br>
+			<select id="node-ai-fc-provider" name="node_ai_fc_provider">
+			<?php foreach ( Node_AI_Core::FACT_CHECK_PROVIDERS as $id => $label ) : ?>
+				<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $core->get_fact_check_provider_id(), $id ); ?>><?php echo esc_html( $label ); ?></option>
+			<?php endforeach; ?>
+			</select></p>
+			<p class="description">Gemini: <?php echo esc_html( Node_AI_Core::fact_check_provider_description( 'gemini' ) ); ?><br>
+			Ollama / OpenAI互換: <?php echo esc_html( Node_AI_Core::fact_check_provider_description( 'ollama' ) ); ?></p>
+			<p class="description">接続先URL・モデル・キーは各プロバイダと共通です。Gemini無料枠の設定はGemini選択時だけ適用します。</p>
+
+				<h3>ファクトチェックのモデル（無料枠優先）</h3>
+				<p class="description">
+					ファクトチェックは Gemini API の無料枠だけで完結するように動きます。
+					有料モデルや有料機能へ自動で切り替えることはありません。
+				</p>
+				<?php node_ai_render_fact_check_model_fields(); ?>
 
 			<?php submit_button( '設定を保存' ); ?>
 		</form>

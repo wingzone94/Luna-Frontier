@@ -36,6 +36,20 @@ final class Node_AI_Core {
 		return in_array( $provider, self::PROVIDERS, true ) ? $provider : 'ollama';
 	}
 
+	/** Fact-check selection is independent of the general provider. */
+	public const FACT_CHECK_PROVIDERS = array( 'gemini' => 'Gemini', 'ollama' => 'Ollama', 'openai' => 'OpenAI互換' );
+
+	public function get_fact_check_provider_id(): string {
+		$id = (string) get_option( 'node_ai_fc_provider', 'gemini' );
+		return isset( self::FACT_CHECK_PROVIDERS[ $id ] ) ? $id : 'gemini';
+	}
+
+	public static function fact_check_provider_description( string $id ): string {
+		return 'gemini' === $id
+			? 'Google検索による裏取り（Grounding）あり。無料枠・検索設定・利用上限により検索できない場合は結果に明記します。'
+			: '検索なし・モデル知識とガイドライン照合のみ（本文先頭1500字・ガイドライン先頭750字、主張最大3件）';
+	}
+
 	/** Copy the complete legacy tuple once, never mixing keys with another configured endpoint. */
 	public static function migrate_provider_settings(): void {
 		$provider = get_option( 'node_ai_provider', '' );
@@ -149,12 +163,12 @@ final class Node_AI_Core {
 	 *
 	 * @return array{text: string, grounding: array, guidelines_used: bool, context: array}|WP_Error
 	 */
-	public function fact_check( string $content, string $title = '', int $user_id = 0, int $post_id = 0 ) {
+	public function fact_check( string $content, string $title = '', int $user_id = 0, int $post_id = 0, string $provider = '' ) {
 		if ( ! class_exists( 'Node_AI_Fact_Check_Runner' ) ) {
 			return new WP_Error( 'fact_check_unavailable', 'ファクトチェック処理を読み込めませんでした。' );
 		}
 
-		return Node_AI_Fact_Check_Runner::run( $content, $title, $user_id, $post_id );
+		return Node_AI_Fact_Check_Runner::run( $content, $title, $user_id, $post_id, $provider );
 	}
 
 	/**
@@ -284,7 +298,11 @@ type は次のいずれかを厳密に使うこと:
 	 * @return string|array<string, mixed>|WP_Error
 	 */
 	public function generate( string $feature, string $prompt, array $options = array(), int $user_id = 0, int $post_id = 0 ) {
-		$provider = $this->get_provider( $user_id );
+		if ( ! $this->is_enabled() ) {
+			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
+		}
+		$provider = $this->get_provider( $user_id, (string) ( $options['provider'] ?? '' ) );
+		unset( $options['provider'] );
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}

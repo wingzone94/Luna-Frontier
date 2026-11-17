@@ -35,7 +35,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 		$this->user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $this->user_id );
 
-		foreach ( array( 'node_ai_provider', 'node_ai_gemini_api_key', 'node_ai_gemini_model', 'node_ai_qwen_endpoint', 'node_ai_qwen_api_key', 'node_ai_qwen_model', 'node_ai_ollama_url', 'node_ai_ollama_model', Node_AI_Core::USAGE_LOG_OPTION ) as $option ) {
+		foreach ( array( 'node_ai_provider', 'node_ai_fc_provider', 'node_ai_gemini_api_key', 'node_ai_gemini_model', 'node_ai_qwen_endpoint', 'node_ai_qwen_api_key', 'node_ai_qwen_model', 'node_ai_ollama_url', 'node_ai_ollama_model', Node_AI_Core::USAGE_LOG_OPTION ) as $option ) {
 			delete_option( $option );
 		}
 		$this->captured = null;
@@ -282,8 +282,10 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 	}
 
 	public function test_core_fact_check_via_openai_compatible_provider() {
-		update_option( 'node_ai_provider', 'qwen' );
-		update_option( 'node_ai_qwen_api_key', 'sk-test-123' );
+		update_option( 'node_ai_provider', 'ollama' );
+		update_option( 'node_ai_fc_provider', 'openai' );
+		update_option( 'node_ai_openai_preset', 'dashscope' );
+		update_option( 'node_ai_openai_api_key', 'sk-test-123' );
 
 		$this->openai_response_text = '{"summary":"s","overall_risk":"low","claims":[{"claim":"c","status":"uncertain","confidence":"low","note":"n"}]}';
 		add_filter( 'pre_http_request', array( $this, 'mock_capture_openai_success' ), 10, 3 );

@@ -22,7 +22,7 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
 	?>
 	<div class="node-fact-check-meta-box">
 		<p class="description">
-			Gemini API + Google Search Grounding + Luminous Core ガイドライン（Google ドキュメント）によるファクトチェック補助です。
+			選択したAIとLuminous Coreガイドラインによるファクトチェック補助です。
 			これは確認箇所の抽出支援であり、真偽の最終判定は必ず人間の編集者が行ってください。
 			「編集者が結果を確認済み」にチェックを入れると、記事ページ（1ページ目）に公開表示されます。
 		</p>
@@ -56,33 +56,15 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
 		</p>
         
         <?php
-        // Model selection
-        $user_id = get_current_user_id();
-        $current_model = function_exists('node_get_user_gemini_model') ? node_get_user_gemini_model($user_id) : '';
-        // 保存値は `<モデルID>@<思考量>` 形式。一覧はモデルIDのみのため分解して照合する
-        $current_model = function_exists('node_split_gemini_model') ? node_split_gemini_model($current_model)['model'] : $current_model;
-        // Pro など無料枠で使えないモデルは一覧に出さない（選んでも必ず 429 になるため）
-        $models = class_exists('Node_AI_Fact_Check_Models') ? Node_AI_Fact_Check_Models::usable_options($user_id) : [];
-        
-        $is_gemini = ! function_exists( 'node_ai_core' ) || 'gemini' === node_ai_core()->get_provider_id();
-
-        // ファクトチェックのモデルは「設定 → Luna AI」の方針（既定は自動・無料枠）で決まる。
-        // ここのプルダウンは要約・校正など他機能の既定モデルとして保存される
-        if ( $is_gemini && class_exists( 'Node_AI_Fact_Check_Models' ) ) {
-            $fc_model = Node_AI_Fact_Check_Models::select();
-            echo '<p class="description">ファクトチェックには無料枠のモデルを自動選択して使います（現在: <code>'
-                . esc_html( is_wp_error( $fc_model ) ? '利用可能なモデルなし' : $fc_model )
-                . '</code>）。変更は「設定 → Luna AI」から行えます。</p>';
+        $fc_provider = node_ai_core()->get_fact_check_provider_id();
+        echo '<p><label for="node-ai-fc-runtime">今回の接続先</label><br><select id="node-ai-fc-runtime" style="max-width:100%">';
+        foreach ( Node_AI_Core::FACT_CHECK_PROVIDERS as $id => $label ) {
+            echo '<option value="' . esc_attr( $id ) . '" ' . selected( $fc_provider, $id, false ) . '>' . esc_html( $label ) . '</option>';
         }
+        echo '</select></p>';
+        echo '<p id="node-ai-fc-runtime-description" class="description">' . esc_html( Node_AI_Core::fact_check_provider_description( $fc_provider ) ) . '</p>';
+        echo '<p class="description">GeminiのモデルはLuna AIの無料枠ポリシーで選択します。Ollama / OpenAI互換は各接続設定を使います。</p>';
 
-        if ( $is_gemini && ! empty( $models ) ) {
-            echo '<p><strong>使用モデル:</strong><br>';
-            echo '<select id="node_ai_gemini_model_fact_check" style="width:100%;">';
-            foreach ( $models as $id => $label ) {
-                echo '<option value="' . esc_attr( $id ) . '" ' . selected( $id, $current_model, false ) . '>' . esc_html( $label ) . '</option>';
-            }
-            echo '</select></p>';
-        }
         ?>
 
 		<p>
@@ -155,6 +137,10 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
 			if (data.grounded) {
 				html += '<p class="node-fact-check__grounded"><small>Google Search Grounding 有効</small></p>';
 			}
+			if (!data.grounded) { html += '<p><small>Google検索: なし</small></p>'; }
+			if (data.provider) { html += '<p><small>接続先: ' + $('<div>').text(data.provider).html() + '</small></p>'; }
+			if (data.model) { html += '<p><small>モデル: ' + $('<div>').text(data.model).html() + '</small></p>'; }
+			(data.notices || []).forEach(function(notice) { html += '<p><small>' + $('<div>').text(notice).html() + '</small></p>'; });
 			if (data.guidelines_used) {
 				html += '<p class="node-fact-check__grounded"><small>Luminous Core ガイドライン参照済み</small></p>';
 			}
@@ -179,6 +165,9 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
 			$('input[name="node_ai_fact_check_approved"]').prop('checked', false);
 		}
 
+		var providerDescriptions = <?php echo wp_json_encode( array_map( array( 'Node_AI_Core', 'fact_check_provider_description' ), array_combine( array_keys( Node_AI_Core::FACT_CHECK_PROVIDERS ), array_keys( Node_AI_Core::FACT_CHECK_PROVIDERS ) ) ), JSON_UNESCAPED_UNICODE ); ?>;
+		$('#node-ai-fc-runtime').on('change', function() { $('#node-ai-fc-runtime-description').text(providerDescriptions[this.value] || ''); });
+
 		$('#node_fact_check_btn').on('click', function(e) {
 			e.preventDefault();
 			var btn = $(this);
@@ -186,12 +175,11 @@ function node_ai_render_fact_check_meta_box( WP_Post $post ): void {
 			btn.prop('disabled', true);
 			status.text('検証中... (しばらくお待ちください)').css('color', '#FF9900');
 
-			var geminiModel = $('#node_ai_gemini_model_fact_check').length ? $('#node_ai_gemini_model_fact_check').val() : '';
 
 			$.post(ajaxurl, {
 				action: 'node_ai_fact_check',
 				post_id: btn.data('post-id'),
-				gemini_model: geminiModel,
+				fact_check_provider: $('#node-ai-fc-runtime').val(),
 				nonce: $('#node_ai_fact_check_nonce').val()
 			}, function(response) {
 				btn.prop('disabled', false);
