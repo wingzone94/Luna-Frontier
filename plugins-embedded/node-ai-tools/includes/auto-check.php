@@ -21,15 +21,19 @@ if ( ! function_exists( 'node_ai_author_has_api_key' ) ) {
 	 */
 	function node_ai_author_has_api_key( int $user_id ): bool {
 		if ( function_exists( 'node_ai_core' ) ) {
-			$provider_id = node_ai_core()->get_provider_id();
+			$provider_id = node_ai_core()->get_fact_check_provider_id();
+			if ( ! node_ai_core()->is_enabled() ) {
+				return false;
+			}
 			if ( 'off' === $provider_id ) {
 				return false;
 			}
 			if ( 'ollama' === $provider_id ) {
 				return true;
 			}
-			if ( 'qwen' === $provider_id ) {
-				return '' !== trim( (string) get_option( 'node_ai_qwen_api_key', '' ) );
+			if ( 'openai' === $provider_id ) {
+				$preset = (string) get_option( 'node_ai_openai_preset', 'local' );
+				return ! in_array( $preset, array( 'openai', 'dashscope' ), true ) || '' !== trim( (string) get_option( 'node_ai_openai_api_key', '' ) );
 			}
 		}
 
@@ -112,6 +116,7 @@ if ( ! function_exists( 'node_ai_store_fact_check_result' ) ) {
 			'checked_at'      => current_time( 'mysql' ),
 			// 内部追跡用（UI へ全部は出さない）
 			'premises'        => (array) ( $context['premises'] ?? array() ),
+			'provider'        => sanitize_key( (string) ( $context['provider'] ?? 'gemini' ) ),
 			'model'           => sanitize_text_field( (string) ( $context['model'] ?? '' ) ),
 			'notices'         => array_map( 'sanitize_text_field', (array) ( $context['notices'] ?? array() ) ),
 		);
@@ -177,7 +182,7 @@ if ( ! function_exists( 'node_ai_store_fact_check_result' ) ) {
 		delete_post_meta( $post_id, '_node_ai_fact_check_error' );
 
 		// 検索なしで実行した結果は暫定。枠が回復したら自動で取り直す（node_ai_fc_recheck_degraded）
-		if ( $grounded ) {
+		if ( $grounded || 'gemini' !== $payload['provider'] ) {
 			delete_post_meta( $post_id, '_node_ai_fact_check_degraded' );
 		} else {
 			update_post_meta( $post_id, '_node_ai_fact_check_degraded', '1' );
@@ -208,7 +213,7 @@ if ( ! function_exists( 'node_ai_fc_run_degraded_recheck' ) ) {
 		}
 
 		// Gemini 以外は検索併用がないため、取り直しても結果は変わらない
-		if ( 'gemini' !== node_ai_core()->get_provider_id() ) {
+		if ( 'gemini' !== node_ai_core()->get_fact_check_provider_id() ) {
 			return;
 		}
 
