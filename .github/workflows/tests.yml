@@ -171,3 +171,21 @@ jobs:
 
       - name: Run hero CSS sync test
         run: npm run verify:hero-css
+
+  ui-accessibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+      - name: Install Chromium
+        run: bun x playwright install --with-deps chromium
+      - name: Build frontend
+        run: bun run build
+      - name: Check search, view controls and enlarged text
+        run: node --test scripts/search-accessibility.test.mjs scripts/search-open-focus.test.mjs scripts/list-text-reflow.test.mjs scripts/view-mode-accessibility.test.mjs scripts/view-mode-suggest.test.mjs
