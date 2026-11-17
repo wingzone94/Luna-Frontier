@@ -45,9 +45,9 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 	// プロバイダー解決
 	// ------------------------------------------------------------------
 
-	public function test_default_provider_is_gemini() {
-		$this->assertSame( 'gemini', node_ai_core()->get_provider_id() );
-		$this->assertInstanceOf( 'Node_AI_Provider_Gemini', node_ai_core()->get_provider() );
+	public function test_default_provider_is_ollama() {
+		$this->assertSame( 'ollama', node_ai_core()->get_provider_id() );
+		$this->assertInstanceOf( 'Node_AI_Provider_Ollama', node_ai_core()->get_provider() );
 		$this->assertTrue( node_ai_core()->is_enabled() );
 	}
 
@@ -59,7 +59,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'Node_AI_Provider_Ollama', node_ai_core()->get_provider() );
 
 		update_option( 'node_ai_provider', 'invalid-provider' );
-		$this->assertSame( 'gemini', node_ai_core()->get_provider_id() );
+		$this->assertSame( 'ollama', node_ai_core()->get_provider_id() );
 	}
 
 	public function test_provider_off_disables_generation() {
@@ -253,6 +253,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 	}
 
 	public function test_core_normalizes_gemini_quota_error_and_logs_failure() {
+		update_option( 'node_ai_provider', 'gemini' );
 		update_user_meta( $this->user_id, 'node_gemini_api_key', 'user-key' );
 
 		$this->mock_status = 429;
@@ -304,6 +305,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 	}
 
 	public function test_core_fact_check_via_gemini_uses_grounding_wording() {
+		update_option( 'node_ai_provider', 'gemini' );
 		update_user_meta( $this->user_id, 'node_gemini_api_key', 'user-key' );
 
 		$this->gemini_response_text = '{"summary":"s","overall_risk":"low","claims":[{"claim":"c"}]}';
