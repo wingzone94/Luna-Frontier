@@ -152,7 +152,7 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 
 	public function test_summary_store_records_provider_time_and_connect_event() {
 		update_option( 'node_ai_provider', 'qwen' );
-		update_option( 'node_ai_qwen_model', 'qwen-max' );
+		update_user_meta( $this->author_id, 'node_gemini_model', 'gemini-2.5-flash' );
 		$post_id = $this->make_draft();
 		$events  = array();
 
@@ -169,8 +169,8 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( '保存テスト', get_post_meta( $post_id, '_node_ai_summary', true ) );
-		$this->assertSame( 'Qwen', get_post_meta( $post_id, '_node_ai_summary_provider', true ) );
-		$this->assertSame( 'qwen-max', get_post_meta( $post_id, '_node_ai_summary_model', true ) );
+		$this->assertSame( 'Gemini', get_post_meta( $post_id, '_node_ai_summary_provider', true ) );
+		$this->assertSame( 'gemini-2.5-flash', get_post_meta( $post_id, '_node_ai_summary_model', true ) );
 		$this->assertNotSame( '', get_post_meta( $post_id, '_node_ai_summary_generated_at', true ) );
 		$this->assertSame( 'ai_summary_completed', $events[0][0] );
 		$this->assertSame( $post_id, $events[0][1]['post_id'] );

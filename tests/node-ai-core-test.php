@@ -198,7 +198,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 		update_user_meta( $this->user_id, 'node_gemini_api_key', 'user-key' );
 
 		add_filter( 'pre_http_request', array( $this, 'mock_capture_gemini_success' ), 10, 3 );
-		$result = ( new Node_AI_Provider_Gemini( $this->user_id ) )->generate( 'x', array( 'json' => true ) );
+		$result = ( new Node_AI_Provider_Gemini( $this->user_id ) )->generate( 'x', array( 'json' => true, 'feature' => 'summarize' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_capture_gemini_success' ), 10 );
 
 		$this->assertSame( 'gemini response', $result );
@@ -211,7 +211,7 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 		update_option( 'node_ai_gemini_api_key', 'site-wide-key' );
 
 		add_filter( 'pre_http_request', array( $this, 'mock_capture_gemini_success' ), 10, 3 );
-		$result = ( new Node_AI_Provider_Gemini( $this->user_id ) )->generate( 'x' );
+		$result = ( new Node_AI_Provider_Gemini( $this->user_id ) )->generate( 'x', array( 'feature' => 'summarize' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_capture_gemini_success' ), 10 );
 
 		$this->assertSame( 'gemini response', $result );
@@ -233,19 +233,19 @@ class Node_AI_Core_Test extends WP_UnitTestCase {
 	// Core: 機能API・利用履歴・エラー正規化
 	// ------------------------------------------------------------------
 
-	public function test_core_summarize_records_usage() {
+	public function test_core_title_suggestion_records_usage() {
 		update_option( 'node_ai_provider', 'qwen' );
 		update_option( 'node_ai_qwen_api_key', 'sk-test-123' );
 
 		add_filter( 'pre_http_request', array( $this, 'mock_capture_openai_success' ), 10, 3 );
-		$result = node_ai_core()->summarize( '本文テスト', array(), $this->user_id, 123 );
+		$result = node_ai_core()->suggest_titles( '本文テスト', $this->user_id, 123 );
 		remove_filter( 'pre_http_request', array( $this, 'mock_capture_openai_success' ), 10 );
 
 		$this->assertSame( 'mocked response', $result );
 
 		$log = node_ai_core()->get_usage_log();
 		$this->assertCount( 1, $log );
-		$this->assertSame( 'summarize', $log[0]['feature'] );
+		$this->assertSame( 'suggest_titles', $log[0]['feature'] );
 		$this->assertSame( 'Qwen', $log[0]['provider'] );
 		$this->assertSame( 123, $log[0]['post_id'] );
 		$this->assertTrue( $log[0]['ok'] );

@@ -18,6 +18,7 @@ class Node_Gemini_API {
      * API Key
      */
     private string $api_key;
+    private int $user_id;
 
     /**
      * API URL Base
@@ -26,6 +27,7 @@ class Node_Gemini_API {
 
     public function __construct( ?int $user_id = null ) {
         $user_id = $user_id ?? get_current_user_id();
+        $this->user_id = $user_id;
 
         if ( function_exists( 'node_get_user_gemini_api_key' ) && $user_id > 0 ) {
             $this->api_key = node_get_user_gemini_api_key( $user_id );
@@ -50,10 +52,17 @@ class Node_Gemini_API {
      * 高度なコンテンツ生成 (システム指示対応)
      */
     public function generate_content(string $prompt, array $options = []): string|array|WP_Error {
+        if ( ! class_exists( 'Node_AI_Core' ) || ! in_array( $options['feature'] ?? '', Node_AI_Core::GEMINI_FEATURES, true ) ) {
+            return new WP_Error( 'ai_feature_restricted', 'GeminiはAI要約・TTS・ファクトチェック専用です。' );
+        }
+        if ( ! in_array( $options['feature'], array( 'fact_check', 'fact_check_premise' ), true ) && ! empty( $options['google_search_grounding'] ) ) {
+            return new WP_Error( 'ai_feature_restricted', 'Google検索はGeminiのファクトチェックでのみ使用します。' );
+        }
+
         if (empty($this->api_key)) {
             return new WP_Error(
                 'missing_api_key',
-                'Gemini API キーが設定されていません。ユーザー → プロフィール の「Gemini API（個人設定）」から、あなた専用のキーを登録してください。'
+                'Gemini API キーが設定されていません。ユーザー → プロフィール の「Gemini API（要約・TTS・ファクトチェック専用）」から、あなた専用のキーを登録してください。'
             );
         }
 
@@ -71,7 +80,7 @@ class Node_Gemini_API {
             'thinking_level' => '',
         ]);
 
-        $user_id = get_current_user_id();
+        $user_id = $this->user_id;
         if ( '' !== trim( (string) $options['model'] ) ) {
             // 明示指定（ファクトチェックは無料枠のモデルを自動選択して渡す）
             $model_name = trim( (string) $options['model'] );
@@ -206,6 +215,14 @@ class Node_Gemini_API {
 
         // HTTP エラー / API エラー応答（429 の利用上限超過を含む）を分かりやすく返す。
         if (200 !== $status || (is_array($data) && isset($data['error']))) {
+            if ( 402 === $status ) {
+                return new WP_Error(
+                    'ai_billing_unavailable',
+                    'Gemini APIがプロジェクトの課金状態により生成を拒否しました（HTTP 402）。プリペイド残高または無料枠を利用可能なプロジェクトの設定を確認してください。モデルの自動切り替えや再試行は行いません。',
+                    array( 'status' => 402, 'model' => $model_name )
+                );
+            }
+
             if ( function_exists( 'node_gemini_record_quota_error' ) ) {
                 node_gemini_record_quota_error( $user_id, $quota_key, $status, $data );
             }
@@ -296,36 +313,11 @@ class Node_Gemini_API {
      * デザイナー品質の要約を生成する
      */
     public function generate_summary(string $content, string $custom_prompt = '', array $options = []): string|WP_Error {
-        $options = wp_parse_args($options, [
-            'max_lines' => 3,
-            'max_chars' => 120
-        ]);
-
-        $system_prompt = "あなたは先進的な技術ブログ 'Luminous Core' の編集長です。
-提供された記事を解析し、以下の JSON フォーマットでレスポンスしてください。
-・必ず、要約は {$options['max_lines']} 行以内、かつ {$options['max_chars']} 文字以内厳守で作成してください。
-・Markdownのコードブロック（```json ... ```）は絶対に使わず、生の中括弧 { } から始まる純粋なJSON文字列のみを出力してください。
-・要約内に改行を含めないでください。
-{
-  \"summary\": \"読者の好奇心を刺激する、情緒的で洗練された要約。\",
-  \"tone_color\": \"記事のトーンを表す色（hexコード）。\",
-  \"vibe_keywords\": [\"キーワード1\", \"キーワード2\"]
-}";
-
-        $prompt = "以下の記事を解析し、最高の要約を生成してください：\n\n" . mb_substr($content, 0, 5000);
-
-        if ( ! empty( $custom_prompt ) ) {
-            $prompt .= "\n\n【追加の指示（プロンプト）】\n" . $custom_prompt;
+        if ( ! function_exists( 'node_ai_core' ) ) {
+            return new WP_Error( 'ai_unavailable', 'AI基盤を読み込めませんでした。' );
         }
-
-        $result = $this->generate_content($prompt, [
-            'system_instruction' => $system_prompt,
-            'response_mime_type' => 'application/json',
-            'temperature' => 0.4,
-            'max_tokens' => 2048
-        ]);
-        
-        return $result;
+        $options['custom_prompt'] = $custom_prompt;
+        return node_ai_core()->summarize( $content, $options, $this->user_id );
     }
 
     /**
@@ -341,7 +333,7 @@ class Node_Gemini_API {
             return new WP_Error( 'fact_check_unavailable', 'ファクトチェック処理を読み込めませんでした。' );
         }
 
-        return Node_AI_Fact_Check_Runner::run( $content, $title, get_current_user_id(), 0 );
+        return Node_AI_Fact_Check_Runner::run( $content, $title, $this->user_id, 0 );
     }
 
     /**
@@ -357,7 +349,7 @@ class Node_Gemini_API {
     public function analyze_image( string $path ) {
         // Compatibility entry point: image work follows the common provider, never a direct Gemini request.
         return function_exists( 'node_ai_core' )
-            ? node_ai_core()->analyze_image( $path, get_current_user_id() )
+            ? node_ai_core()->analyze_image( $path, $this->user_id )
             : new WP_Error( 'ai_unavailable', 'AI基盤を読み込めませんでした。' );
     }
 
@@ -366,9 +358,8 @@ class Node_Gemini_API {
      */
     public function generate_reading_time_estimate(string $content): string|WP_Error {
         $prompt = "以下の記事の読了目安時間を推定し、「〇分〇秒」という形式で回答してください。日本語として自然な読書速度（分速400〜600文字程度）を基準にしつつ、内容の難易度や構成（コード、リスト、画像等）も加味して人間が読み終えるのにかかる時間を算出してください。解説は不要です。結果の数値のみを返してください。\n\n" . mb_substr($content, 0, 4000);
-        return $this->generate_content($prompt, [
-            'max_tokens'  => 10,
-            'temperature' => 0.1
-        ]);
+        return function_exists( 'node_ai_core' )
+            ? node_ai_core()->generate( 'reading_time', $prompt, array( 'max_tokens' => 32, 'temperature' => 0.1 ), $this->user_id )
+            : new WP_Error( 'ai_unavailable', 'AI基盤を読み込めませんでした。' );
     }
 }
