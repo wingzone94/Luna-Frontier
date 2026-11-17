@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import { chromium } from 'playwright';
+
+const css = ['style', 'luna-archive'].map(name => readFileSync(new URL(`../dist/css/${name}.css`, import.meta.url), 'utf8')).join('\n');
+const title = 'OpenAI「28日間チャレンジ」後半戦まとめ！CodexやChatGPT Workの改善を振り返る';
+const fixture = `<!doctype html><html lang="ja"><body class="lf-theme lf-legacy-archive"><main id="primary">
+<section class="m3-archive-header"><div class="m3-headlines__header"><h1 id="all-articles-title" class="m3-headlines__title m3-section-title">ALL ARTICLES <span class="m3-section-title__sub">記事一覧</span></h1></div></section>
+<div class="m3-post-grid"><div class="m3-post-grid__container">
+<article class="m3-card c-card"><div class="m3-card__visual"><a class="m3-card__image-link" href="#article"><img width="320" height="180" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'/%3E"></a></div>
+<div class="m3-card__content"><div class="m3-card__category-container"><div class="m3-article__category-group"><a class="m3-label--category" href="#category">非常に長い日本語のカテゴリ名も省略せず読めるようにします</a><a class="m3-label--category" href="#second">二つ目</a></div></div>
+<h2 class="m3-card__title"><a href="#article">${title}</a></h2></div></article></div></div></main></body></html>`;
+
+test('mobile cards preserve compact rows, then reveal full text at 200/400% text scale', async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+        const page = await browser.newPage();
+        await page.setContent(fixture);
+        await page.addStyleTag({ content: css });
+        for (const width of [390, 430]) {
+            await page.setViewportSize({ width, height: 844 });
+            for (const theme of ['light', 'dark']) {
+                for (const size of [16, 32, 64]) {
+                    await page.evaluate(({ size, theme }) => {
+                        document.documentElement.style.fontSize = `${size}px`;
+                        document.documentElement.dataset.theme = theme;
+                    }, { size, theme });
+                    const result = await page.evaluate(() => {
+                        const title = document.querySelector('h2');
+                        const chip = document.querySelector('.m3-label--category');
+                        const image = document.querySelector('.m3-card__visual').getBoundingClientRect();
+                        const content = document.querySelector('.m3-card__content').getBoundingClientRect();
+                        const heading = document.querySelector('h1').getBoundingClientRect();
+                        return { clippedTitle: title.scrollHeight - title.clientHeight, clippedChip: chip.scrollHeight - chip.clientHeight, imageBottom: image.bottom, contentTop: content.top, imageTop: image.top, headingRight: heading.right, overflow: document.documentElement.scrollWidth - innerWidth };
+                    });
+                    const context = JSON.stringify({ width, theme, size, result });
+                    assert.ok(result.headingRight <= width + 1, context);
+                    assert.ok(result.overflow <= 1, context);
+                    if (size === 16) assert.ok(Math.abs(result.imageTop - result.contentTop) <= 1, context);
+                    else {
+                        assert.ok(result.contentTop >= result.imageBottom - 1, context);
+                        assert.ok(result.clippedTitle <= 1, context);
+                        assert.ok(result.clippedChip <= 1, context);
+                    }
+                }
+            }
+        }
+    } finally {
+        await browser.close();
+    }
+});
