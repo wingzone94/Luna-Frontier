@@ -814,7 +814,8 @@ export function initSearchBar() {
         searchResultsAll?.toggleAttribute('hidden', total === 0);
         searchResultsRegion.hidden = false;
         searchResultsRegion.removeAttribute('aria-busy');
-        searchResultsRegion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        searchResultsRegion.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' });
     }
 
     function requestSearchResults(params, destinationUrl) {
