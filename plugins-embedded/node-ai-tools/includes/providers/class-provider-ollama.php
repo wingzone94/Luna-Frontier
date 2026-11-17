@@ -54,6 +54,13 @@ class Node_AI_Provider_Ollama implements Node_AI_Provider {
 			'content' => $prompt,
 		);
 
+		if ( ! empty( $options['image'] ) ) {
+			if ( ! is_array( $options['image'] ) || ! is_string( $options['image']['data'] ?? null ) || '' === $options['image']['data'] ) {
+				return new WP_Error( 'ai_bad_image', '画像入力が不正です。' );
+			}
+			$messages[ count( $messages ) - 1 ]['images'] = array( $options['image']['data'] );
+		}
+
 		$body = array(
 			'model'    => $this->get_model(),
 			'messages' => $messages,

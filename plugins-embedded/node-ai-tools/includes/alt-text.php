@@ -65,7 +65,7 @@ if ( ! function_exists( 'node_ai_maybe_schedule_alt_generation' ) ) {
 	 * @param WP_Post $post    投稿。
 	 */
 	function node_ai_maybe_schedule_alt_generation( $post_id, $post ): void {
-		if ( ! node_ai_auto_alt_enabled() ) {
+		if ( ! node_ai_auto_alt_enabled() || ! function_exists( 'node_ai_core' ) || ! node_ai_core()->is_enabled() ) {
 			return;
 		}
 
@@ -105,7 +105,7 @@ if ( ! function_exists( 'node_ai_run_auto_alt' ) ) {
 	function node_ai_run_auto_alt( $attachment_id ): void {
 		$attachment_id = (int) $attachment_id;
 
-		if ( ! $attachment_id || ! class_exists( 'Node_Gemini_API' ) ) {
+		if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) || ! node_ai_auto_alt_enabled() || ! function_exists( 'node_ai_core' ) || ! node_ai_core()->is_enabled() ) {
 			return;
 		}
 
@@ -119,8 +119,7 @@ if ( ! function_exists( 'node_ai_run_auto_alt' ) ) {
 			return;
 		}
 
-		$api    = new Node_Gemini_API();
-		$result = $api->analyze_image( (string) $path );
+		$result = node_ai_core()->analyze_image( (string) $path, (int) get_post_field( 'post_author', $attachment_id ), $attachment_id );
 
 		if ( is_wp_error( $result ) ) {
 			update_post_meta( $attachment_id, '_node_ai_alt_error', sanitize_text_field( $result->get_error_message() ) );

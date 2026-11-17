@@ -355,52 +355,10 @@ class Node_Gemini_API {
      * @return array{alt_suggestion: string}|WP_Error
      */
     public function analyze_image( string $path ) {
-        if ( ! file_exists( $path ) || ! is_readable( $path ) ) {
-            return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
-        }
-
-        $mime = (string) ( wp_check_filetype( $path )['type'] ?? '' );
-        if ( '' === $mime || 0 !== strpos( $mime, 'image/' ) ) {
-            return new WP_Error( 'image_unsupported', '対応していない画像形式です。' );
-        }
-
-        $system_prompt = 'あなたは日本語メディアの編集者です。渡された画像の代替テキスト（alt）を作成します。
-画像の「出典」「引用元」「配信元」は絶対に推測しないでください（画像の見た目からは特定できません）。
-以下の JSON 形式のみで回答してください（コードブロック禁止）。
-
-{ "alt_suggestion": "画像の内容を説明する日本語の代替テキスト（80文字以内、句点で終える）" }
-
-読み上げ環境の利用者に画像の情報が伝わるよう、写っているものと画像内の文字を簡潔にまとめてください。
-「画像」「写真」といった語での説明の始まりは避け、内容そのものから書き始めてください。';
-
-        $result = $this->generate_content(
-            'この画像の代替テキストを作成してください。',
-            array(
-                'system_instruction' => $system_prompt,
-                'response_mime_type' => 'application/json',
-                'temperature'        => 0.1,
-                'max_tokens'         => 2048,
-                'timeout'            => 60,
-                'image'              => array(
-                    'mime' => $mime,
-                    'data' => base64_encode( (string) file_get_contents( $path ) ),
-                ),
-            )
-        );
-
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
-
-        $data = function_exists( 'node_ai_parse_json_response' )
-            ? node_ai_parse_json_response( is_array( $result ) ? (string) ( $result['text'] ?? '' ) : (string) $result )
-            : null;
-
-        if ( null === $data || ! isset( $data['alt_suggestion'] ) ) {
-            return new WP_Error( 'image_parse_failed', '代替テキストの生成結果を解析できませんでした。' );
-        }
-
-        return array( 'alt_suggestion' => (string) $data['alt_suggestion'] );
+        // Compatibility entry point: image work follows the common provider, never a direct Gemini request.
+        return function_exists( 'node_ai_core' )
+            ? node_ai_core()->analyze_image( $path, get_current_user_id() )
+            : new WP_Error( 'ai_unavailable', 'AI基盤を読み込めませんでした。' );
     }
 
     /**
