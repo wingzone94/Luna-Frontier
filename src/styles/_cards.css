@@ -718,6 +718,17 @@
             white-space: normal;
             overflow-wrap: anywhere;
         }
+
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__dates, .m3-card__dates, .c-card__date, .m3-card__date) {
+            min-inline-size: 0;
+            max-inline-size: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__date, .m3-card__date) > :not(.material-symbols-outlined) {
+            min-inline-size: 0;
+        }
     }
 
     /* 書き手は一覧では全カード同じになりがちで、走査の手がかりにならない。
