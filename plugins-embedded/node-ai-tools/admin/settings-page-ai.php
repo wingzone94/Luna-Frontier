@@ -430,14 +430,7 @@ function node_ai_render_settings_page(): void {
 							<th scope="row">サイト既定モデルID</th>
 							<td>
 								<input type="text" name="node_ai_gemini_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_gemini_model', '' ) ); ?>" class="regular-text" placeholder="空欄で自動選択（Flash系優先）" />
-								<p class="description" style="margin-top:12px;">
-									<input type="hidden" name="node_ai_auto_alt" value="0" />
-									<label>
-										<input type="checkbox" name="node_ai_auto_alt" value="1" <?php checked( function_exists( 'node_ai_auto_alt_enabled' ) && node_ai_auto_alt_enabled() ); ?> />
-										アイキャッチの代替テキスト（alt）が未設定のとき、保存後に自動生成する
-									</label><br>
-									<span>既に alt がある画像は書き換えません。生成は保存の約30秒後にバックグラウンドで実行され、失敗しても公開は妨げません。</span>
-								</p>
+
 								<p class="description">個人設定でモデル未選択のライターに適用される既定モデルです。</p>
 							</td>
 						</tr>
@@ -532,6 +525,17 @@ function node_ai_render_settings_page(): void {
 				</details>
 			</div>
 
+			<hr />
+			<h2>画像の代替テキスト（alt）</h2>
+								<p class="description" style="margin-top:12px;">
+									<input type="hidden" name="node_ai_auto_alt" value="0" />
+									<label>
+										<input type="checkbox" name="node_ai_auto_alt" value="1" <?php checked( function_exists( 'node_ai_auto_alt_enabled' ) && node_ai_auto_alt_enabled() ); ?> />
+										アイキャッチの代替テキスト（alt）が未設定のとき、保存後に自動生成する
+									</label><br>
+									<span>既に alt がある画像は書き換えません。生成は保存の約30秒後にバックグラウンドで実行され、失敗しても公開は妨げません。</span>
+								</p>
+			<p class="description">全体の接続先の画像対応モデルを使用します。OllamaのGemma 3 4Bなどを選択してください。元画像は変更せず、送信時だけ最大768pxに縮小します。</p>
 			<hr />
 			<h2>ファクトチェック専用の接続先</h2>
 			<p>全体の接続先とは独立しています。自動実行はこの設定を使用し、手動実行時は記事の編集画面で変更できます。「使用しない」は全AI機能に優先します。</p>

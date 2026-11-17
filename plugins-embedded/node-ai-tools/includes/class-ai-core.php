@@ -283,6 +283,91 @@ type は次のいずれかを厳密に使うこと:
 		);
 	}
 
+	/** Generate alt through the configured provider; only real local raster files are accepted. */
+	public function analyze_image( string $path, int $user_id = 0, int $attachment_id = 0 ) {
+		if ( ! $this->is_enabled() ) {
+			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
+		}
+		if ( wp_is_stream( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		if ( filesize( $path ) > 10 * MB_IN_BYTES ) {
+			return new WP_Error( 'image_too_large', '画像は10MB以下で用意してください。' );
+		}
+		$mime = wp_get_image_mime( $path );
+		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp' ), true ) ) {
+			return new WP_Error( 'image_unsupported', '代替テキスト生成はJPEG・PNG・WebP画像に対応します。' );
+		}
+
+		// Bound vision inference cost without changing the attachment's original file.
+		$input_path = $path;
+		$temp_path = '';
+		$size = wp_getimagesize( $path );
+		if ( $size && max( $size[0], $size[1] ) > 768 ) {
+			$editor = wp_get_image_editor( $path );
+			if ( is_wp_error( $editor ) ) {
+				return new WP_Error( 'image_resize_failed', '画像の読み込みサイズを調整できませんでした。' );
+			}
+			$resized = $editor->resize( 768, 768, false );
+			if ( is_wp_error( $resized ) ) {
+				return $resized;
+			}
+			$temp_path = wp_tempnam( 'node-ai-alt' );
+			if ( ! $temp_path ) {
+				return new WP_Error( 'image_resize_failed', '画像処理用ファイルを作成できませんでした。' );
+			}
+			$saved = $editor->save( $temp_path, 'image/jpeg' );
+			if ( is_wp_error( $saved ) ) {
+				wp_delete_file( $temp_path );
+				return $saved;
+			}
+			$input_path = $saved['path'];
+			$mime = 'image/jpeg';
+		}
+		try {
+			$bytes = file_get_contents( $input_path );
+			if ( false === $bytes || '' === $bytes ) {
+				return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+			}
+			$result = $this->generate(
+				'alt_text',
+				'この画像の代替テキストを日本語で作成してください。',
+				array(
+					'system_instruction' => '画像に写っているものや読める文字を簡潔に説明してください。出典・配信元・写っていない情報を推測しないでください。「画像」「写真」から書き始めず、80文字以内、句点で終えてください。JSONのみで回答: {"alt_suggestion":"説明。"}',
+					'json' => true,
+					'temperature' => 0.1,
+					'max_tokens' => 512,
+					'image' => array( 'mime' => $mime, 'data' => base64_encode( $bytes ) ),
+				),
+				$user_id,
+				$attachment_id
+			);
+		} finally {
+			if ( '' !== $temp_path ) {
+				wp_delete_file( $input_path );
+				if ( $temp_path !== $input_path ) {
+					wp_delete_file( $temp_path );
+				}
+			}
+		}
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		$data = node_ai_parse_json_response( is_array( $result ) ? (string) ( $result['text'] ?? '' ) : $result );
+		if ( ! is_array( $data ) || ! is_string( $data['alt_suggestion'] ?? null ) || '' === trim( $data['alt_suggestion'] ) ) {
+			return new WP_Error( 'image_parse_failed', '代替テキストの生成結果を解析できませんでした。画像対応モデルを確認してください。' );
+		}
+		$alt = trim( sanitize_text_field( $data['alt_suggestion'] ) );
+		if ( '' === $alt ) {
+			return new WP_Error( 'image_parse_failed', '代替テキストの生成結果が空です。' );
+		}
+		$alt = mb_substr( $alt, 0, 80 );
+		if ( ! preg_match( '/[。！？]$/u', $alt ) ) {
+			$alt = mb_substr( $alt, 0, 79 ) . '。';
+		}
+		return array( 'alt_suggestion' => $alt );
+	}
+
 	// ------------------------------------------------------------------
 	// 共通処理
 	// ------------------------------------------------------------------

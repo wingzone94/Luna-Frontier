@@ -95,6 +95,17 @@ class Node_AI_Provider_OpenAI implements Node_AI_Provider {
 			'content' => $prompt,
 		);
 
+		if ( ! empty( $options['image'] ) ) {
+			$image = $options['image'];
+			if ( ! is_array( $image ) || ! in_array( $image['mime'] ?? '', array( 'image/jpeg', 'image/png', 'image/webp' ), true ) || ! is_string( $image['data'] ?? null ) || '' === $image['data'] ) {
+				return new WP_Error( 'ai_bad_image', '画像入力が不正です。' );
+			}
+			$messages[ count( $messages ) - 1 ]['content'] = array(
+				array( 'type' => 'text', 'text' => $prompt ),
+				array( 'type' => 'image_url', 'image_url' => array( 'url' => 'data:' . $image['mime'] . ';base64,' . $image['data'] ) ),
+			);
+		}
+
 		$body = array(
 			'model'       => $this->get_model(),
 			'messages'    => $messages,

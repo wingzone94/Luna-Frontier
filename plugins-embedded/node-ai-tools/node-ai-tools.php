@@ -3,7 +3,7 @@
  * Plugin Name:  Luna AI Tools
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  複数AIプロバイダーによる要約生成・ファクトチェック補助・校正・読了時間自動計算。Luna Frontier テーマと連携。
- * Version:      1.5.1
+ * Version:      1.5.2
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // A standalone activation can follow an embedded copy in the same request.
 if ( ! class_exists( 'Node_AI_Tools', false ) && ! function_exists( 'node_ai_core_init' ) ) {
 
-define( 'NODE_AI_VERSION', '1.5.1' );
+define( 'NODE_AI_VERSION', '1.5.2' );
 define( 'NODE_AI_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_ai_embedded_dir = get_template_directory() . '/plugins-embedded/node-ai-tools/';
