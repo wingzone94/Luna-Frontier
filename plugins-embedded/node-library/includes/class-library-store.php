@@ -77,6 +77,18 @@ final class Node_Library_Store {
 		return Node_Library_Microsoft_Store::fetch( $input );
 	}
 
+	public static function price_stores(): array {
+		return array( 'microsoft' );
+	}
+
+	/** @return array|null|WP_Error Current public offer, no offer, or an acquisition error. */
+	public static function fetch_price( string $store, string $id ) {
+		if ( 'microsoft' === $store ) {
+			return Node_Library_Microsoft_Store::fetch_price( $id );
+		}
+		return new WP_Error( 'unsupported_store', '価格取得に対応していないストアです。', array( 'status' => 400 ) );
+	}
+
 	public static function preview( WP_REST_Request $request ) {
 		$result = self::fetch( $request['store'] ?: 'microsoft', $request['input'] );
 		if ( is_wp_error( $result ) ) {
@@ -380,6 +392,22 @@ final class Node_Library_Microsoft_Store {
 			}
 		}
 		return array( 'store' => 'microsoft', 'id' => $product['ProductId'], 'title' => sanitize_text_field( $summary['title'] ), 'summary' => sanitize_textarea_field( $summary['description'] ?? $localized['ProductDescription'] ?? '' ), 'url' => 'https://www.xbox.com/ja-JP/games/store/-/' . $product['ProductId'], 'image_url' => $image, 'price' => self::price( $product ), 'meta' => $meta, 'features' => $flags, 'editions' => array_values( array_filter( $summary['editions'] ?? array(), static fn( $id ) => is_string( $id ) && 1 === preg_match( '/^[A-Z0-9]{12}$/D', $id ) ) ), 'subscriptions' => $summary['includedWithPassesProductIds'] ?? array(), 'subscription_metadata' => $summary['passMetadataByPassProductId'] ?? array(), 'platforms' => $platforms, 'relations' => $relations, 'fetched_at' => gmdate( 'c' ), 'source' => 'microsoft_catalog' );
+	}
+
+	/** Poll the purchase catalogue without fetching slower editorial metadata or DLC. */
+	public static function fetch_price( string $id ) {
+		if ( ! preg_match( '/^[A-Z0-9]{12}$/D', $id ) ) {
+			return new WP_Error( 'invalid_store_id', 'Microsoft StoreのプロダクトIDが無効です。', array( 'status' => 400 ) );
+		}
+		$raw = self::request( 'https://displaycatalog.mp.microsoft.com/v7.0/products/' . $id . '?market=JP&languages=ja-jp' );
+		if ( is_wp_error( $raw ) ) {
+			return $raw;
+		}
+		$product = $raw['Product'] ?? null;
+		if ( ! is_array( $product ) || $id !== ( $product['ProductId'] ?? '' ) || ! is_array( $product['DisplaySkuAvailabilities'] ?? null ) ) {
+			return new WP_Error( 'invalid_store_response', '商品の価格カタログ形式が不正です。', array( 'status' => 502 ) );
+		}
+		return self::price( $product );
 	}
 
 	/** Only public, currently purchasable, non-trial, non-subscription offers count. */
