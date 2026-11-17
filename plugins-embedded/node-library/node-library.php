@@ -1628,6 +1628,7 @@ function node_library_init() {
 }
 require_once NODE_LIBRARY_DIR . 'includes/class-library-structured-meta.php';
 Node_Library_Structured_Meta::init();
+require_once NODE_LIBRARY_DIR . 'includes/class-library-store-id-migration.php';
 
 add_action( 'plugins_loaded', 'node_library_init' );
 
