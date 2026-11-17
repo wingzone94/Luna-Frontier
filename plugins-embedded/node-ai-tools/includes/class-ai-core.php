@@ -17,7 +17,7 @@ final class Node_AI_Core {
 	public const USAGE_LOG_OPTION = 'node_ai_usage_log';
 	public const USAGE_LOG_LIMIT  = 200;
 
-	public const PROVIDERS = array( 'gemini', 'qwen', 'ollama', 'off' );
+	public const PROVIDERS = array( 'ollama', 'openai', 'gemini', 'qwen', 'off' );
 
 	private static ?self $instance = null;
 
@@ -29,11 +29,36 @@ final class Node_AI_Core {
 	}
 
 	/**
-	 * 選択中のプロバイダーID（gemini / qwen / ollama / off）
+	 * 選択中のプロバイダーID（ollama / openai / gemini / qwen / off）
 	 */
 	public function get_provider_id(): string {
-		$provider = (string) get_option( 'node_ai_provider', 'gemini' );
-		return in_array( $provider, self::PROVIDERS, true ) ? $provider : 'gemini';
+		$provider = (string) get_option( 'node_ai_provider', 'ollama' );
+		return in_array( $provider, self::PROVIDERS, true ) ? $provider : 'ollama';
+	}
+
+	/** Copy the complete legacy tuple once, never mixing keys with another configured endpoint. */
+	public static function migrate_provider_settings(): void {
+		$provider = get_option( 'node_ai_provider', '' );
+		if ( '1' === get_option( 'node_ai_openai_migration' ) ) {
+			return;
+		}
+		$legacy = 'qwen' === $provider;
+		$configured = false;
+		foreach ( array( 'endpoint', 'model', 'api_key' ) as $field ) {
+			$legacy = $legacy || '' !== (string) get_option( 'node_ai_qwen_' . $field, '' );
+			$configured = $configured || false !== get_option( 'node_ai_openai_' . $field, false );
+		}
+		$configured = $configured || false !== get_option( 'node_ai_openai_preset', false );
+		if ( $legacy && ! $configured ) {
+			add_option( 'node_ai_openai_endpoint', get_option( 'node_ai_qwen_endpoint', '' ), '', false );
+			add_option( 'node_ai_openai_model', get_option( 'node_ai_qwen_model', '' ), '', false );
+			add_option( 'node_ai_openai_api_key', get_option( 'node_ai_qwen_api_key', '' ), '', false );
+			add_option( 'node_ai_openai_preset', 'dashscope', '', false );
+		}
+		if ( 'qwen' === $provider ) {
+			update_option( 'node_ai_provider', 'openai' );
+		}
+		update_option( 'node_ai_openai_migration', '1', false );
 	}
 
 	public function is_enabled(): bool {
@@ -53,6 +78,8 @@ final class Node_AI_Core {
 		switch ( $id ) {
 			case 'gemini':
 				return new Node_AI_Provider_Gemini( $user_id > 0 ? $user_id : null );
+			case 'openai':
+				return new Node_AI_Provider_OpenAI();
 			case 'qwen':
 				return new Node_AI_Provider_Qwen();
 			case 'ollama':
@@ -136,6 +163,8 @@ final class Node_AI_Core {
 	 * @return string|WP_Error 生テキスト（JSON文字列想定）。
 	 */
 	public function proofread( string $content, int $user_id = 0, int $post_id = 0 ) {
+		$local = 'ollama' === $this->get_provider_id() || ( 'openai' === $this->get_provider_id() && 'local' === get_option( 'node_ai_openai_preset', 'local' ) );
+		$issue_limit = $local ? 3 : 15;
 		$system = 'あなたは商業メディア水準の日本語校閲者です。読者に配信して恥ずかしくない日本語かを厳しく見てください。
 以下の JSON 形式のみで回答してください（コードブロック禁止）。指摘は最大15件。
 
@@ -166,6 +195,8 @@ type は次のいずれかを厳密に使うこと:
   ]
 }';
 
+		$system = str_replace( '指摘は最大15件。', '指摘は最大' . $issue_limit . '件。誤りがなければ issues は空配列にすること。修正不要な箇所や原文と同じ修正案は出力しないこと。', $system );
+
 		return $this->generate(
 			'proofread',
 			"以下の記事本文を校正してください：\n\n" . mb_substr( $content, 0, 8000 ),
@@ -173,9 +204,8 @@ type は次のいずれかを厳密に使うこと:
 				'system_instruction' => $system,
 				'json'               => true,
 				'temperature'        => 0.2,
-				// 思考モデルは maxOutputTokens を思考にも消費するため、
-				// JSON が途中で切れないよう長めに確保する
-				'max_tokens'         => 8192,
+				// クラウドの思考モデル用の上限を保ち、ローカルは指摘件数に合わせる。
+				'max_tokens'         => $local ? 2048 : 8192,
 			),
 			$user_id,
 			$post_id

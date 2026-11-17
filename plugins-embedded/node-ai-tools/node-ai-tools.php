@@ -3,7 +3,7 @@
  * Plugin Name:  Luna AI Tools
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  複数AIプロバイダーによる要約生成・ファクトチェック補助・校正・読了時間自動計算。Luna Frontier テーマと連携。
- * Version:      1.4.0
+ * Version:      1.5.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -17,15 +17,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_AI_VERSION', '1.4.0' );
+// A standalone activation can follow an embedded copy in the same request.
+if ( ! class_exists( 'Node_AI_Tools', false ) && ! function_exists( 'node_ai_core_init' ) ) {
+
+define( 'NODE_AI_VERSION', '1.5.0' );
 define( 'NODE_AI_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_ai_embedded_dir = get_template_directory() . '/plugins-embedded/node-ai-tools/';
 define(
 	'NODE_AI_URL',
-	is_dir( $node_ai_embedded_dir )
+	wp_normalize_path( NODE_AI_DIR ) === wp_normalize_path( $node_ai_embedded_dir )
 		? get_template_directory_uri() . '/plugins-embedded/node-ai-tools/'
-		: content_url( '/plugins/node-ai-tools/' )
+		: plugin_dir_url( __FILE__ )
 );
 
 /**
@@ -45,6 +48,7 @@ final class Node_AI_Tools {
 	private function __construct() {
 		$this->load_dependencies();
 		$this->register_hooks();
+		add_action( 'init', array( 'Node_AI_Core', 'migrate_provider_settings' ), 5 );
 	}
 
 	private function load_dependencies(): void {
@@ -206,7 +210,7 @@ final class Node_AI_Tools {
         $post    = get_post();
         $post_id = $post instanceof \WP_Post ? (int) $post->ID : 0;
         $user_id = get_current_user_id();
-        $provider_id = function_exists( 'node_ai_core' ) ? node_ai_core()->get_provider_id() : 'gemini';
+        $provider_id = function_exists( 'node_ai_core' ) ? node_ai_core()->get_provider_id() : 'ollama';
 
         // 保存値は `<モデルID>@<思考量>` 形式（1.2 系と互換）。UI では2つに分けて出す
         $stored_model = function_exists( 'node_get_user_gemini_model' ) ? node_get_user_gemini_model( $user_id ) : '';
@@ -395,3 +399,5 @@ function node_ai_clear_scheduled_events(): void {
 	}
 }
 register_deactivation_hook( __FILE__, 'node_ai_clear_scheduled_events' );
+
+} // End shared plugin bootstrap guard.
