@@ -47,10 +47,11 @@ for (const fontState of ['loaded', 'missing', 'failed', 'delayed']) {
             await page.waitForTimeout(200);
             assert.equal(await tooltip.isVisible(), true);
             if (fontState === 'delayed') {
+                const beforeFont = await control.boundingBox();
                 await page.evaluate(() => window.resolveFont([{ status: 'loaded' }]));
                 await page.waitForFunction(() => document.querySelector('#m3-view-toggle').dataset.viewIconReady === 'true');
                 assert.equal(await fallback.isVisible(), false);
-                assert.deepEqual(await control.boundingBox(), box);
+                assert.deepEqual(await control.boundingBox(), beforeFont);
             }
         } finally {
             await browser.close();
