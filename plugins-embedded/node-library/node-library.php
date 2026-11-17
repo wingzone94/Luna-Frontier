@@ -3,7 +3,9 @@
  * Plugin Name:  Luna Library
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  ゲーム・アプリ情報の管理と表示。カスタム投稿タイプによるリスト管理と、記事への紐付け機能を提供。
- * Version:      1.4.0
+ * Version:      1.6.0
+ * Requires at least: 6.5
+ * Requires PHP: 8.0
  * Author:       Luminous Core Teams
  * License:      MIT
  * Text Domain:  node-library
@@ -15,21 +17,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_LIBRARY_VERSION', '1.4.0' );
+// WordPress activation loads the candidate after the active theme. Its embedded
+// Library may already own these symbols; the standalone copy takes over on the
+// next request. Conditional declarations also prevent function redeclaration.
+if ( ! class_exists( 'Node_Library', false ) && ! function_exists( 'node_library_init' ) ) {
+
+define( 'NODE_LIBRARY_VERSION', '1.6.0' );
 define( 'NODE_LIBRARY_DIR', plugin_dir_path( __FILE__ ) );
 $node_library_embedded_dir = get_template_directory() . '/plugins-embedded/node-library/';
-define(
-	'NODE_LIBRARY_BADGE_BASE_URL',
-	is_dir( $node_library_embedded_dir )
-		? get_template_directory_uri() . '/plugins-embedded/node-library/assets/images/'
-		: plugin_dir_url( __FILE__ ) . 'assets/images/'
-);
+$node_library_is_embedded  = wp_normalize_path( NODE_LIBRARY_DIR ) === wp_normalize_path( $node_library_embedded_dir );
 define(
 	'NODE_LIBRARY_URL',
-	is_dir( $node_library_embedded_dir )
+	$node_library_is_embedded
 		? get_template_directory_uri() . '/plugins-embedded/node-library/'
-		: content_url( '/plugins/node-library/' )
+		: plugin_dir_url( __FILE__ )
 );
+define( 'NODE_LIBRARY_BADGE_BASE_URL', NODE_LIBRARY_URL . 'assets/images/' );
 
 /**
  * 手動タブ分類で選べるカテゴリ（タブ）の一覧。
@@ -496,7 +499,7 @@ final class Node_Library {
 		} elseif ( 'rakuten.co.jp' === $host || str_ends_with( $host, '.rakuten.co.jp' ) ) {
 			$fields['rakuten_url'] = $url;
 		} elseif ( 'amazon.co.jp' === $host || str_ends_with( $host, '.amazon.co.jp' ) || 'amazon.com' === $host || str_ends_with( $host, '.amazon.com' ) || 'amzn.to' === $host || 'amzn.asia' === $host ) {
-			if ( preg_match( '/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i', $url, $matches ) ) {
+			if ( preg_match( '~/(?:dp|gp/product|gp/aw/d)/([A-Z0-9]{10})(?:[/?#]|$)~i', $url, $matches ) ) {
 				$fields['asin'] = strtoupper( $matches[1] );
 			} else {
 				$fields['amazon_url'] = $url;
@@ -600,11 +603,56 @@ final class Node_Library {
 		return $data;
 	}
 
+	/** Extract only Product structured data, never arbitrary recommendation images. */
+	private static function structured_product_metadata( string $html, string $url ): array {
+		$result = array( 'title' => '', 'image' => '' );
+		$visit = static function ( $value, int $depth = 0 ) use ( &$visit, $url ) {
+			if ( ! is_array( $value ) || $depth > 8 ) {
+				return null;
+			}
+			if ( in_array( 'Product', (array) ( $value['@type'] ?? array() ), true ) ) {
+				$candidate_url = $value['url'] ?? $value['offers']['url'] ?? '';
+				$product_url = is_string( $candidate_url ) ? $candidate_url : '';
+				if ( '' === $product_url || wp_parse_url( $product_url, PHP_URL_PATH ) === wp_parse_url( $url, PHP_URL_PATH ) ) {
+					return $value;
+				}
+			}
+			foreach ( $value as $child ) {
+				if ( is_array( $child ) ) {
+					$found = $visit( $child, $depth + 1 );
+					if ( is_array( $found ) ) {
+						return $found;
+					}
+				}
+			}
+			return null;
+		};
+		if ( preg_match_all( '~<script\b[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script\s*>~is', $html, $scripts ) ) {
+			foreach ( $scripts[1] as $json ) {
+				$item = $visit( json_decode( $json, true ) );
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+				$image = $item['image'] ?? '';
+				if ( is_array( $image ) && isset( $image[0] ) ) {
+					$image = $image[0];
+				}
+				if ( is_array( $image ) ) {
+					$image = $image['url'] ?? $image['contentUrl'] ?? '';
+				}
+				$result['title'] = is_string( $item['name'] ?? null ) ? sanitize_text_field( $item['name'] ) : '';
+				$result['image'] = is_string( $image ) && '' !== $image ? esc_url_raw( WP_Http::make_absolute_url( $image, $url ), array( 'https', 'http' ) ) : '';
+				break;
+			}
+		}
+		return $result;
+	}
+
 	/**
 	 * OGP 取得失敗時のフォールバックレスポンスを生成する（登録フローを止めない）。
 	 */
-	private function build_ogp_fallback_response( string $url, string $log_reason ): WP_REST_Response {
-		error_log( sprintf( '[node-library] Failed to fetch OGP data (%s): %s', $url, $log_reason ) );
+	private function build_ogp_fallback_response( string $url, string $log_reason, string $status = 'fetch_failed' ): WP_REST_Response {
+		error_log( sprintf( '[node-library] Product metadata: %s (%s)', $status, (string) wp_parse_url( $url, PHP_URL_HOST ) ) );
 
 		$payload = array_merge(
 			[
@@ -613,7 +661,9 @@ final class Node_Library {
 				'price'     => '',
 				'ogp_error' => true,
 				'partial'   => false,
-				'message'   => 'OGPを取得できませんでした。手入力で登録できます',
+				'message'   => 'blocked' === $status ? '商品ページへのアクセスが制限されています。ブラウザーから商品情報を取り込めます。' : ( 'image_missing' === $status ? '商品画像が見つかりません。ブラウザーから商品情報を取り込めます。' : 'OGPを取得できませんでした。手入力またはブラウザーから取り込めます。' ),
+				'status'    => $status,
+				'source'    => 'none',
 			],
 			self::extract_product_store_fields( $url )
 		);
@@ -621,12 +671,47 @@ final class Node_Library {
 		return rest_ensure_response( $payload );
 	}
 
+	/** Match actual Amazon hosts, never lookalike domains or query strings. */
+	private static function is_amazon_product_host( string $url ): bool {
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		return in_array( $host, array( 'amazon.co.jp', 'www.amazon.co.jp', 'amazon.com', 'www.amazon.com' ), true );
+	}
+
+	/** Amazon product pages can omit og:image while providing a main image. */
+	private static function amazon_product_image( string $html ): string {
+		$tags = new WP_HTML_Tag_Processor( $html );
+		while ( $tags->next_tag( 'IMG' ) ) {
+			if ( ! in_array( $tags->get_attribute( 'id' ), array( 'landingImage', 'imgBlkFront', 'main-image' ), true ) ) {
+				continue;
+			}
+			$candidates = array( $tags->get_attribute( 'data-old-hires' ) );
+			$images = json_decode( (string) $tags->get_attribute( 'data-a-dynamic-image' ), true );
+			if ( is_array( $images ) ) {
+				// Largest variant first; src can be a transparent loading pixel.
+				uasort( $images, static function ( $a, $b ) {
+					$area_a = is_array( $a ) ? (float) ( $a[0] ?? 0 ) * (float) ( $a[1] ?? 0 ) : 0;
+					$area_b = is_array( $b ) ? (float) ( $b[0] ?? 0 ) * (float) ( $b[1] ?? 0 ) : 0;
+					return $area_b <=> $area_a;
+				} );
+				$candidates = array_merge( $candidates, array_keys( $images ) );
+			}
+			$candidates[] = $tags->get_attribute( 'src' );
+			foreach ( $candidates as $candidate ) {
+				$image = is_string( $candidate ) ? esc_url_raw( $candidate, array( 'https', 'http' ) ) : '';
+				if ( '' !== $image && wp_parse_url( $image, PHP_URL_HOST ) && ! preg_match( '~(?:transparent-pixel|\.gif(?:[?#]|$))~i', $image ) ) {
+					return $image;
+				}
+			}
+		}
+		return '';
+	}
+
 	/**
 	 * OGP 取得ハンドラ (自己完結型・グレースフルデグラデーション対応)
 	 */
 	public function handle_fetch_ogp( $request ) {
 		$url = trim( (string) $request->get_param( 'url' ) );
-		if ( '' === $url || ! preg_match( '~^https?://~i', $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+		if ( '' === $url || ! preg_match( '~^https?://~i', $url ) || ! filter_var( $url, FILTER_VALIDATE_URL ) || wp_parse_url( $url, PHP_URL_USER ) || wp_parse_url( $url, PHP_URL_PASS ) ) {
 			return new WP_Error( 'invalid_url', '有効な商品 URL（http/https）を入力してください。', [ 'status' => 400 ] );
 		}
 
@@ -642,6 +727,7 @@ final class Node_Library {
 						$store_fields,
 						[
 							'ogp_error' => false,
+							'status'    => '' !== $nintendo_data['title'] && '' !== $nintendo_data['image'] ? 'complete' : 'partial',
 							'partial'   => '' === $nintendo_data['title'] || '' === $nintendo_data['image'],
 						]
 					)
@@ -649,13 +735,14 @@ final class Node_Library {
 			}
 		}
 
-		$transient_key = 'node_lib_ogp_utf8_v3_' . md5( $url );
+		$transient_key = 'node_lib_ogp_utf8_v5_' . md5( $url );
 		$data          = get_transient( $transient_key );
 
 		if ( false === $data ) {
 			$request_args = [
 				'timeout'     => 8,
 				'redirection' => 'store-jp.nintendo.com' === $host ? 0 : 3,
+				'limit_response_size' => 2 * MB_IN_BYTES,
 				'user-agent'  => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
 			];
 			$response     = wp_safe_remote_get( $url, $request_args );
@@ -668,7 +755,7 @@ final class Node_Library {
 			if ( 200 !== $status_code ) {
 				$location = (string) wp_remote_retrieve_header( $response, 'location' );
 				$reason   = '' !== $location ? 'HTTP ' . $status_code . ' -> ' . $location : 'HTTP ' . $status_code;
-				return $this->build_ogp_fallback_response( $url, $reason );
+				return $this->build_ogp_fallback_response( $url, $reason, ( in_array( $status_code, array( 403, 429 ), true ) || preg_match( '~(?:store-jp-wr\.nintendo\.com|queue-it\.net)~i', $location ) ) ? 'blocked' : 'fetch_failed' );
 			}
 
 			$html = (string) wp_remote_retrieve_body( $response );
@@ -677,15 +764,15 @@ final class Node_Library {
 			}
 
 			// Queue-it 待合室ページを商品 OGP として誤認・キャッシュしない。
-			if ( str_contains( $html, 'store-jp-wr.nintendo.com' ) || str_contains( $html, 'queue-it.net' ) ) {
-				return $this->build_ogp_fallback_response( $url, 'Queue-it waiting room' );
+			if ( str_contains( $html, 'store-jp-wr.nintendo.com' ) || str_contains( $html, 'queue-it.net' ) || preg_match( '~(?:action=[\"\'][^\"\']*validateCaptcha|id=[\"\']captchacharacters|<title[^>]*>\s*Robot Check)~i', $html ) ) {
+				return $this->build_ogp_fallback_response( $url, 'Challenge page', 'blocked' );
 			}
 
 			$html = self::normalize_ogp_encoding( $html, (string) wp_remote_retrieve_header( $response, 'content-type' ) );
 
 			// Parse normalized UTF-8 directly: legacy charset meta tags must not
 			// cause libxml to reinterpret the already converted document.
-			$data = [ 'title' => '', 'image' => '', 'price' => '' ];
+			$data = [ 'title' => '', 'image' => '', 'price' => '', 'source' => 'ogp' ];
 			$tags = new WP_HTML_Tag_Processor( $html );
 			while ( $tags->next_tag( 'META' ) ) {
 				$property = strtolower( (string) $tags->get_attribute( 'property' ) );
@@ -701,17 +788,49 @@ final class Node_Library {
 					}
 				}
 			}
+
+
+			if ( 'store-jp.nintendo.com' === $host ) {
+				$product = self::structured_product_metadata( $html, $url );
+				foreach ( array( 'title', 'image' ) as $field ) {
+					if ( '' === $data[ $field ] && '' !== $product[ $field ] ) {
+						$data[ $field ] = $product[ $field ];
+						$data['source'] = 'product_page';
+					}
+				}
+			}
+
 			if ( '' === $data['title'] && preg_match( '~<title\b[^>]*>(.*?)</title\s*>~is', $html, $title ) ) {
 				$data['title'] = trim( html_entity_decode( wp_strip_all_tags( $title[1] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 			}
 
-			if ( '' === $data['title'] && '' === $data['image'] ) {
-				return $this->build_ogp_fallback_response( $url, 'OGP tags not found' );
+			// Amazon product images are not always exposed as Open Graph metadata.
+			$resolved_url = $url;
+			if ( isset( $response['http_response'] ) && $response['http_response'] instanceof WP_HTTP_Requests_Response ) {
+				$resolved_url = $response['http_response']->get_response_object()->url;
+			}
+			$amazon_url = self::is_amazon_product_host( $resolved_url ) ? $resolved_url : $url;
+			if ( self::is_amazon_product_host( $amazon_url ) ) {
+				$data['resolved_store_fields'] = self::extract_product_store_fields( $amazon_url );
+				if ( '' === $data['image'] ) {
+					$data['image'] = self::amazon_product_image( $html );
+					if ( '' !== $data['image'] ) {
+						$data['source'] = 'product_page';
+					}
+				}
+				if ( '' === $data['image'] ) {
+					return $this->build_ogp_fallback_response( $url, 'Amazon product image unavailable', 'image_missing' );
+				}
 			}
 
-			set_transient( $transient_key, $data, WEEK_IN_SECONDS );
+			if ( '' === $data['title'] && '' === $data['image'] ) {
+				return $this->build_ogp_fallback_response( $url, 'OGP tags not found', 'metadata_missing' );
+			}
+
+			set_transient( $transient_key, $data, '' !== $data['image'] ? WEEK_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
 		}
 
+		$store_fields = array_merge( $store_fields, $data['resolved_store_fields'] ?? [] );
 		$is_partial = '' === ( $data['title'] ?? '' ) || '' === ( $data['image'] ?? '' );
 
 		return rest_ensure_response(
@@ -722,6 +841,8 @@ final class Node_Library {
 					'price'     => (string) ( $data['price'] ?? '' ),
 					'ogp_error' => false,
 					'partial'   => $is_partial,
+					'status'    => '' === ( $data['image'] ?? '' ) ? 'image_missing' : ( $is_partial ? 'partial' : 'complete' ),
+					'source'    => (string) ( $data['source'] ?? 'ogp' ),
 				],
 				$store_fields
 			)
@@ -884,10 +1005,11 @@ final class Node_Library {
 	 * ブロックエディタ用アセットの読み込み
 	 */
 	public function enqueue_block_assets(): void {
+		wp_enqueue_script( 'node-library-product-import', NODE_LIBRARY_URL . 'assets/js/product-import.js', array(), NODE_LIBRARY_VERSION . '.' . filemtime( NODE_LIBRARY_DIR . 'assets/js/product-import.js' ), true );
 		wp_enqueue_script(
 			'node-library-block-editor',
 			NODE_LIBRARY_URL . 'assets/js/block-editor.js',
-			[ 'wp-blocks', 'wp-element', 'wp-components', 'wp-data', 'wp-api-fetch', 'wp-block-editor' ],
+			[ 'wp-blocks', 'wp-element', 'wp-components', 'wp-data', 'wp-api-fetch', 'wp-block-editor', 'node-library-product-import' ],
 			NODE_LIBRARY_VERSION . '.' . filemtime( NODE_LIBRARY_DIR . 'assets/js/block-editor.js' ),
 			true
 		);
@@ -1504,4 +1626,9 @@ final class Node_Library {
 function node_library_init() {
 	Node_Library::instance();
 }
+require_once NODE_LIBRARY_DIR . 'includes/class-library-structured-meta.php';
+Node_Library_Structured_Meta::init();
+
 add_action( 'plugins_loaded', 'node_library_init' );
+
+} // End Library bootstrap guard.
