@@ -60,6 +60,20 @@ Amazon側のアクセス制限やNintendo Storeの待合室などで自動取得
 * _node_library_capabilities: crossplay / crosssave / online / hdr のbool、max_fpsの正整数、resolutionの文字列。
 未設定のキーは省略。falseは非対応。フォームにないフィールドは保持し、明示的な空欄は削除します。新規アダプタは Node_Library_Structured_Meta::sanitize() と同じ形式を使用してください。
 
+== Microsoft Store / Xboxのカタログ取得 ==
+
+ライブラリの編集画面にある「ストアカタログから取得」で12桁のプロダクトIDまたは公式ストアURLを入力します。タイトル入力・AIキーは不要です。「カタログを取得」でプレビューし、「確認した情報を編集欄へ反映」を押してから下書き保存・更新してください。取得ボタンだけでは投稿を保存しません。既存リンクと他ストアのIDは保持します。
+
+タイトル・ストア説明文・発売元・開発元・ジャンル・レーティング・日本語の音声/字幕/UI・能力フラグ・対応機種をマッピングします。発売日は日本市場の日付（Asia/Tokyo）。購入可能な公開オファーから現在価格・定価・通貨・セール終了UTCを取得し、試用版、引き換え専用、会員限定オファーは価格に混ぜません。購入可能な価格がなければnullを返し、無料とは推測しません。APIが日本語対応の内訳を提供しない場合は未設定のままです。
+
+関連商品は専用テーブル {prefix}node_library_relations に保存します。dlcはこの項目の追加コンテンツ、included_inはこの項目を含むバンドル/本編、bundle_containsはこのバンドルに含まれる商品です。DLCは公式APIの継続トークンを追跡し、全件取得できなければエラーにします。価格・画像などの現在の取得スナップショットは _node_library_catalog のストア別マップに保存します。関係リストはpostmetaに重複保存しません。価格履歴はまだ蓄積しません。
+
+REST: POST /node-library/v1/fetch-store
+入力: {"store":"microsoft","input":"9NBLGGH537BL","post_id":123}
+対象node_libraryの編集権限とWordPress REST nonceが必要です。出力は store / id / title / summary / url / image_url / price / meta / features / platforms / relations / editions / subscriptions / subscription_metadata / fetched_at / source と、確認保存用ticketです。ticketは取得した編集者と投稿IDにひも付き、2時間で期限切れになります。取得失敗時はWP_Errorを返し、部分情報のticketは発行しません。確認保存には編集画面のcatalog nonceも必要です。
+
+取得元はMicrosoft Display Catalogと、Xbox公式ストアが使用するEmeraldの商品・browse API。任意URLへアクセスせず、HTTPS検証を維持します。APIのスキーマ・ページ送りが変わった場合は理由付きエラーとなり、既存表示は保存済み情報を使用できます。
+
 == 旧リンクからのストアID移行（WP-CLI） ==
 
 最初にデータベースをバックアップし、変更なしの全件レポートを確認してください。対象は公開・下書き・非公開・ゴミ箱を含む全ライブラリ項目です。
