@@ -245,8 +245,8 @@ test('syncViewToggleUI writes tablet/computer/smartphone without altering 2-stat
         assert.equal(tabletPc.btn.dataset.viewMode, 'pc');
         assert.equal(tabletPc.icon.dataset.icon, 'tablet');
         assert.equal(tabletPc.icon.textContent, '');
-        assert.equal(tabletPc.attrs.get('aria-label'), 'PC表示モード');
-        assert.equal(tabletPc.btn.dataset.tooltip, 'PC表示モード（タップでモバイル表示）');
+        assert.equal(tabletPc.attrs.get('aria-label'), 'モバイル表示に切り替える');
+        assert.equal(tabletPc.btn.dataset.tooltip, '現在はPC表示です');
 
         // Tablet explicit mobile
         const tabletMobile = runSync({
@@ -259,7 +259,7 @@ test('syncViewToggleUI writes tablet/computer/smartphone without altering 2-stat
         assert.equal(tabletMobile.btn.dataset.viewMode, 'mobile');
         assert.equal(tabletMobile.icon.dataset.icon, 'smartphone');
         assert.equal(tabletMobile.icon.textContent, '');
-        assert.equal(tabletMobile.attrs.get('aria-label'), 'モバイル表示モード');
+        assert.equal(tabletMobile.attrs.get('aria-label'), 'PC表示に切り替える');
 
         // Desktop PC
         const desktopPc = runSync({
