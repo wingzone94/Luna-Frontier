@@ -3,7 +3,7 @@
  * Plugin Name:  Luna Library
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  ゲーム・アプリ情報の管理と表示。カスタム投稿タイプによるリスト管理と、記事への紐付け機能を提供。
- * Version:      1.6.0
+ * Version:      1.7.0
  * Requires at least: 6.5
  * Requires PHP: 8.0
  * Author:       Luminous Core Teams
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // next request. Conditional declarations also prevent function redeclaration.
 if ( ! class_exists( 'Node_Library', false ) && ! function_exists( 'node_library_init' ) ) {
 
-define( 'NODE_LIBRARY_VERSION', '1.6.0' );
+define( 'NODE_LIBRARY_VERSION', '1.7.0' );
 define( 'NODE_LIBRARY_DIR', plugin_dir_path( __FILE__ ) );
 $node_library_embedded_dir = get_template_directory() . '/plugins-embedded/node-library/';
 $node_library_is_embedded  = wp_normalize_path( NODE_LIBRARY_DIR ) === wp_normalize_path( $node_library_embedded_dir );
@@ -1438,6 +1438,8 @@ Node_Library_Structured_Meta::init();
 require_once NODE_LIBRARY_DIR . 'includes/class-library-store-id-migration.php';
 require_once NODE_LIBRARY_DIR . 'includes/class-library-store.php';
 Node_Library_Store::init();
+require_once NODE_LIBRARY_DIR . 'includes/class-library-prices.php';
+Node_Library_Prices::init();
 
 add_action( 'plugins_loaded', 'node_library_init' );
 

@@ -2,7 +2,7 @@
 Contributors: luminous-core-teams
 Requires at least: 6.5
 Requires PHP: 8.0
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: MIT
 
 ゲーム・アプリ情報の管理と商品リンクカード。Amazon・楽天・My Nintendo Storeに対応します。
@@ -113,3 +113,10 @@ Microsoft/Xbox、Steam App、Amazon ASIN、NintendoのソフトID、PSの個別�
 * Nintendo周辺機器のProduct構造化データ取得に対応。
 * Amazon主画像による補完と、不完全な取得結果のキャッシュを改善。
 * 単体プラグインが自身のエディターJS・画像を読み込むよう修正。
+
+= 価格履歴と定期取得 =
+公開済みのライブラリ項目に登録したストアIDを巡回します。セール中または公開記事にライブラリカードがある項目は約2時間、それ以外は日次で取得対象になります。1回の巡回には処理件数と時間の上限があり、混雑・ストア障害時は遅れることがあります。取得失敗が続くストアは待機時間が延び、ライブラリ一覧に最終成功時刻と再開予定を表示します。
+
+価格・定価・通貨・セール終了日時に変化がある場合だけ専用の node_library_price_history テーブルへ記録します。金額0と購入可能な価格がない状態は区別します。過去最安値は同じ商品の同一通貨で計算し、セール回数は履歴で確認できた開始回数です。
+
+ConoHaなどアクセスに依存しない環境では、サーバーcronからサイトのPHPとWP-CLIで `wp cron event run --due-now --path=/path/to/wordpress` を実行してください。1分ごとの実行を想定しています。既存の外部cronがある場合は同じスケジュールに統合してください。
