@@ -437,14 +437,66 @@
             var noticeState = element.useState(null);
             var fetchNotice = noticeState[0];
             var setFetchNotice = noticeState[1];
+            var importer = window.nodeLibraryProductImport;
+            var importOpenState = element.useState(false);
+            var importTextState = element.useState('');
+            var importPreviewState = element.useState(null);
+            var importErrorState = element.useState('');
+            var replaceState = element.useState(false);
+            var requestGeneration = element.useRef(0);
+            var importPreview = importPreviewState[0];
+            var importedIdentity = importPreview && importer.identity(importPreview.url);
+            var existingIdentity = importer && (importPreview && importPreview.store === 'amazon' && attributes.asin
+                ? 'amazon:' + attributes.asin.toUpperCase()
+                : importer.identity(importPreview && importPreview.store === 'nintendo' ? attributes.nintendoUrl : attributes.amazonUrl));
+            var requestedIdentity = importer && importer.identity(urlInput);
+            var replacesProduct = Boolean(importPreview && (
+                (existingIdentity && existingIdentity !== importedIdentity) ||
+                (requestedIdentity && requestedIdentity !== importedIdentity)
+            ));
+
+            var prepareImport = function () {
+                importPreviewState[1](null);
+                replaceState[1](false);
+                try {
+                    importPreviewState[1](importer.parse(importTextState[0]));
+                    importErrorState[1]('');
+                } catch (err) {
+                    importErrorState[1](err.message);
+                }
+            };
+            var applyImport = function () {
+                if (!importPreview || (replacesProduct && !replaceState[0])) return;
+                requestGeneration.current++;
+                var patch = { title: importPreview.title, imageUrl: importPreview.image };
+                if (importPreview.store === 'amazon') {
+                    patch.asin = importPreview.productId;
+                    patch.amazonUrl = importPreview.url;
+                    patch.showAmazonDisclosure = true;
+                } else {
+                    patch.nintendoUrl = importPreview.url;
+                }
+                setAttributes(patch);
+                setIsFetching(false);
+                setUrlInput('');
+                setFetchNotice({ status: 'success', message: 'ブラウザーの商品情報を反映しました。価格と他ストアのリンクは変更していません。内容を確認して記事を保存してください。' });
+                importOpenState[1](false);
+                importPreviewState[1](null);
+                importTextState[1]('');
+            };
+
 
             var extractStoreAttributes = function (rawUrl, data) {
                 var next = {};
                 var sourceUrl = (rawUrl || '').trim();
                 var asin = (data && data.asin) ? String(data.asin) : '';
+                var host = '';
+                try { host = new URL(sourceUrl).hostname.toLowerCase(); } catch (err) { /* Invalid URLs are handled by the endpoint. */ }
+                var isAmazon = /^(www\.)?amazon\.(co\.jp|com)$/.test(host);
 
-                if (!asin && /(?:amazon\.co\.jp|amazon\.com)/i.test(sourceUrl)) {
-                    var asinMatch = sourceUrl.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+
+                if (!asin && isAmazon) {
+                    var asinMatch = sourceUrl.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})(?:[/?#]|$)/i);
                     if (asinMatch) {
                         asin = asinMatch[1].toUpperCase();
                     }
@@ -456,7 +508,7 @@
                 } else if (data && data.amazon_url) {
                     next.amazonUrl = data.amazon_url;
                     next.showAmazonDisclosure = true;
-                } else if (/(?:amazon\.co\.jp|amazon\.com|amzn\.to|amzn\.asia)/i.test(sourceUrl)) {
+                } else if ((isAmazon || host === 'amzn.to' || host === 'amzn.asia')) {
                     next.amazonUrl = sourceUrl;
                     next.showAmazonDisclosure = true;
                 }
@@ -464,14 +516,14 @@
                 if (data && data.rakuten_url) {
                     next.rakutenUrl = data.rakuten_url;
                     next.showRakutenDisclosure = true;
-                } else if (/rakuten\.co\.jp/i.test(sourceUrl)) {
+                } else if (/(^|\.)rakuten\.co\.jp$/.test(host)) {
                     next.rakutenUrl = sourceUrl;
                     next.showRakutenDisclosure = true;
                 }
 
                 if (data && data.nintendo_url) {
                     next.nintendoUrl = data.nintendo_url;
-                } else if (/store-jp\.nintendo\.com/i.test(sourceUrl)) {
+                } else if (host === 'store-jp.nintendo.com') {
                     next.nintendoUrl = sourceUrl;
                 }
 
@@ -480,10 +532,12 @@
 
             var fetchProductInfo = function () {
                 if (!urlInput) return;
+                var generation = ++requestGeneration.current;
                 setIsFetching(true);
                 setFetchNotice(null);
                 apiFetch({ path: '/node-library/v1/fetch-ogp?url=' + encodeURIComponent(urlInput) })
                     .then(function (data) {
+                        if (generation !== requestGeneration.current) return;
                         var safeData = data || {};
                         var nextAttrs = extractStoreAttributes(urlInput, safeData);
                         var cleanTitle = (safeData.title || '').replace(/^Amazon\s*\|\s*/i, '').replace(/[\s|]+Amazon\.co\.jp$/i, '').trim();
@@ -502,7 +556,14 @@
                             setAttributes(nextAttrs);
                         }
 
-                        if (safeData.ogp_error) {
+                        var messages = {
+                            blocked: '商品ページへのアクセスが制限されています。「商品ページから取り込む」を利用してください。',
+                            image_missing: '商品画像が見つかりません。「商品ページから取り込む」で補完できます。',
+                            metadata_missing: '商品情報が見つかりません。「商品ページから取り込む」を利用してください。'
+                        };
+                        if (messages[safeData.status]) {
+                            setFetchNotice({ status: 'warning', message: messages[safeData.status] });
+                        } else if (safeData.ogp_error) {
                             setFetchNotice({
                                 status: 'warning',
                                 message: safeData.message || 'OGPを取得できませんでした。手入力で登録できます'
@@ -518,6 +579,7 @@
                         setUrlInput('');
                     })
                     .catch(function (err) {
+                        if (generation !== requestGeneration.current) return;
                         var fallbackAttrs = extractStoreAttributes(urlInput, null);
                         if (Object.keys(fallbackAttrs).length > 0) {
                             setAttributes(fallbackAttrs);
@@ -566,7 +628,7 @@
                         label: '商品リンクカード',
                         instructions: 'Amazon・楽天・My Nintendo Store の商品 URL を貼り付けて「情報を取得」を押してください。'
                     },
-                        el('div', { style: { width: '100%', display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' } },
+                        el('div', { style: { width: '100%', display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', alignItems: 'flex-end' } },
                             el(TextControl, {
                                 label: '商品 URL',
                                 value: urlInput,
@@ -587,6 +649,45 @@
                                 onRemove: function () { setFetchNotice(null); }
                             }, fetchNotice.message)
                             : null,
+                        importer ? el('div', { style: { width: '100%', marginBottom: '16px' } },
+                            el(Button, {
+                                isSecondary: true,
+                                onClick: function () { importOpenState[1](!importOpenState[0]); },
+                                'aria-expanded': importOpenState[0]
+                            }, '商品ページから取り込む'),
+                            importOpenState[0] ? el('div', { style: { marginTop: '12px', width: '100%' } },
+                                el('p', null, '商品ページを開き、登録した「商品情報取込」ブックマークを実行します。コピーされたデータを下に貼り付けてください（macOS Chrome対応）。'),
+                                el('details', null,
+                                    el('summary', null, '初回設定：取り込み用ブックマークを登録'),
+                                    el('p', null, 'Chromeでブックマークを作成し、名前を「商品情報取込」、URLを下のコードに置き換えて保存してください。商品詳細ページ上で実行します。外部への送信は行いません。'),
+                                    el(components.TextareaControl, {
+                                        label: 'ブックマークのURL用コード', value: importer.bookmarklet(), readOnly: true, rows: 3,
+                                        onFocus: function (event) { event.target.select(); }
+                                    })
+                                ),
+                                el(components.TextareaControl, {
+                                    label: '商品ページでコピーしたデータ', value: importTextState[0], rows: 4,
+                                    onChange: function (value) {
+                                        importTextState[1](value);
+                                        importPreviewState[1](null);
+                                        importErrorState[1]('');
+                                        replaceState[1](false);
+                                    }
+                                }),
+                                el(Button, { isSecondary: true, onClick: prepareImport, disabled: !importTextState[0].trim() }, '取り込み内容を確認'),
+                                importErrorState[0] ? el(components.Notice, { status: 'error', isDismissible: false }, importErrorState[0]) : null,
+                                importPreview ? el('div', { style: { marginTop: '12px', overflowWrap: 'anywhere' } },
+                                    el('p', null, el('strong', null, importPreview.title)),
+                                    el('img', { src: importPreview.image, alt: '取り込む商品画像', style: { display: 'block', maxWidth: '160px', maxHeight: '160px', objectFit: 'contain' } }),
+                                    el('p', null, importPreview.url),
+                                    replacesProduct ? el(CheckboxControl, {
+                                        label: '別商品の情報で上書きする（価格・他ストアのリンクは要確認）',
+                                        checked: replaceState[0], onChange: replaceState[1]
+                                    }) : null,
+                                    el(Button, { isPrimary: true, onClick: applyImport, disabled: replacesProduct && !replaceState[0] }, 'この情報をカードに反映')
+                                ) : null
+                            ) : null
+                        ) : null,
                         attributes.title || attributes.imageUrl
                             ? el('div', {
                                 style: {

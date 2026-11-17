@@ -71,7 +71,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 		$this->assertNotSame( '', $this->contents( $this->theme_zip(), self::THEME_ROOT . 'dist/' . $vendor_file ), 'vendor バンドルが ZIP に無い' );
 	}
 
-	public function test_embedded_plugins_use_luna_brand_and_140_version(): void {
+	public function test_embedded_plugins_use_luna_brand_and_expected_versions(): void {
 		$zip = new ZipArchive();
 		$this->assertTrue( true === $zip->open( $this->theme_zip() ) );
 		$found = 0;
@@ -85,15 +85,15 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 				continue;
 			}
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( $header, 0, 1200 ), $name );
-			$expected_version = str_contains( $name, '/luna-interactive/' ) ? '1.5.0' : '1.4.0';
+			$expected_version = str_contains( $name, '/luna-interactive/' ) ? '1.5.0' : ( str_contains( $name, '/node-library/' ) ? '1.6.0' : '1.4.0' );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( $header, 0, 1200 ), $name );
 			$found++;
 		}
 		$zip->close();
-		$this->assertSame( 13, $found, 'Lunaブランドの埋め込みプラグイン数（luna-interactive は 1.5.0、他は 1.4.0）' );
+		$this->assertSame( 13, $found, 'Lunaブランドの埋め込みプラグイン数' );
 	}
 
-	public function test_standalone_plugin_archives_keep_slug_and_luna_140_header(): void {
+	public function test_standalone_plugin_archives_keep_slug_and_expected_header(): void {
 		$archives = glob( $this->repo_dir() . '/production_plugins/*.zip' ) ?: [];
 		$this->assertCount( 11, $archives );
 		foreach ( $archives as $archive ) {
@@ -112,7 +112,8 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 			$this->assertSame( [ pathinfo( $archive, PATHINFO_FILENAME ) => true ], $roots, basename( $archive ) . ' のZIPルート/slug' );
 			$this->assertNotNull( $main, basename( $archive ) . ' のメインファイル' );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
-			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*1\.4\.0\s*$/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
+			$expected_version = 'node-library.zip' === basename( $archive ) ? '1.6.0' : '1.4.0';
+			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
 		}
 	}
 
