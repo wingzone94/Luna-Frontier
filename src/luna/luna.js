@@ -208,7 +208,7 @@ function fitTitle(el) {
   el.removeAttribute('title');
   applyStep(el, 0);
 
-  if (!overflows(el) || isCollapsed(el)) return;
+  if (getComputedStyle(el).overflow === 'visible' || !overflows(el) || isCollapsed(el)) return;
 
   for (let step = 1; step < FIT_STEPS.length; step += 1) {
     applyStep(el, step);
@@ -241,6 +241,19 @@ function setupTitleAutoFit() {
     clearTimeout(timer);
     timer = window.setTimeout(run, 150);
   });
+
+  // Text-size changes can activate container reflow without a viewport resize.
+  if (typeof ResizeObserver !== 'undefined') {
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        run();
+      });
+    });
+    titles.forEach(title => observer.observe(title));
+  }
 }
 
 const ARTICLE_HEADING_SELECTOR = 'h2, h3, h4, h5, h6';
