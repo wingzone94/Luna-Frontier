@@ -10,7 +10,7 @@ const fixture = `<!doctype html><html lang="ja"><body class="lf-theme lf-legacy-
 <div class="m3-post-grid"><div class="m3-post-grid__container">
 <article class="m3-card c-card"><div class="m3-card__visual"><a class="m3-card__image-link" href="#article"><img width="320" height="180" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'/%3E"></a></div>
 <div class="m3-card__content"><div class="m3-card__category-container"><div class="m3-article__category-group"><a class="m3-label--category" href="#category">非常に長い日本語のカテゴリ名も省略せず読めるようにします</a><a class="m3-label--category" href="#second">二つ目</a></div></div>
-<h2 class="m3-card__title"><a href="#article">${title}</a></h2></div></article></div></div></main></body></html>`;
+<h2 class="m3-card__title"><a href="#article">${title}</a></h2><div class="m3-card__footer"><div class="m3-card__dates"><div class="m3-card__date"><span>2026年10月23日</span></div><div class="m3-card__date m3-card__date--modified"><time>追記 10/24</time></div></div></div></div></article></div></div></main></body></html>`;
 
 test('mobile cards preserve compact rows, then reveal full text at 200/400% text scale', async () => {
     const browser = await chromium.launch({ headless: true });
@@ -32,7 +32,7 @@ test('mobile cards preserve compact rows, then reveal full text at 200/400% text
                         const image = document.querySelector('.m3-card__visual').getBoundingClientRect();
                         const content = document.querySelector('.m3-card__content').getBoundingClientRect();
                         const heading = document.querySelector('h1').getBoundingClientRect();
-                        return { cardWidth: document.querySelector('.m3-card').clientWidth, titleWidth: title.clientWidth, titleFont: parseFloat(getComputedStyle(title).fontSize), clippedTitle: title.scrollHeight - title.clientHeight, clippedChip: chip.scrollHeight - chip.clientHeight, imageBottom: image.bottom, contentTop: content.top, imageTop: image.top, headingRight: heading.right, overflow: document.documentElement.scrollWidth - innerWidth };
+                        return { dateOverflow: Math.max(...[...document.querySelectorAll('.m3-card__date')].map(x => x.scrollWidth-x.clientWidth)), cardWidth: document.querySelector('.m3-card').clientWidth, titleWidth: title.clientWidth, titleFont: parseFloat(getComputedStyle(title).fontSize), clippedTitle: title.scrollHeight - title.clientHeight, clippedChip: chip.scrollHeight - chip.clientHeight, imageBottom: image.bottom, contentTop: content.top, imageTop: image.top, headingRight: heading.right, overflow: document.documentElement.scrollWidth - innerWidth };
                     });
                     const context = JSON.stringify({ width, theme, size, result });
                     assert.ok(result.headingRight <= width + 1, context);
@@ -42,6 +42,7 @@ test('mobile cards preserve compact rows, then reveal full text at 200/400% text
                         assert.ok(result.contentTop >= result.imageBottom - 1, context);
                         assert.ok(result.clippedTitle <= 1, context);
                         assert.ok(result.clippedChip <= 1, context);
+                        assert.ok(result.dateOverflow <= 1, context);
                     } else {
                         // Wider cards retain the existing two-line preview, with usable text width.
                         assert.ok(result.titleWidth >= 8 * result.titleFont, context);
