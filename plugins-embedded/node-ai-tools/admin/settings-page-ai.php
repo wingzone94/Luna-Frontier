@@ -2,7 +2,7 @@
 /**
  * Luna AI 設定画面（NODE-1.3.md §4.3 / §4.4）
  *
- * プロバイダー選択（Ollama既定 / OpenAI互換 / Gemini / 使用しない）→ 選択したプロバイダーの
+ * 通常プロバイダー選択（Ollama既定 / OpenAI互換 / 使用しない）→ 選択したプロバイダーの
  * 項目だけ表示。各プロバイダーに接続テスト。詳細なモデルIDは「詳細設定」に分離。
  * APIキーはマスク表示・input への再出力なし・空欄保存で既存値維持。
  *
@@ -52,7 +52,7 @@ add_action(
 			array(
 				'sanitize_callback' => static function ( $value ): string {
 					$value = (string) $value;
-					return in_array( $value, Node_AI_Core::PROVIDERS, true ) ? $value : 'ollama';
+					return in_array( $value, Node_AI_Core::GENERAL_PROVIDERS, true ) ? $value : 'ollama';
 				},
 			)
 		);
@@ -387,7 +387,6 @@ function node_ai_render_settings_page(): void {
 				$provider_labels = array(
 					'ollama' => 'Ollama（既定） — ローカルAI。APIキー不要',
 					'openai' => 'OpenAI互換 — OpenAI・DashScope・ローカルの互換サーバー',
-					'gemini' => 'Gemini — GoogleのクラウドAI',
 					'off'    => '使用しない — AI機能をすべて無効化',
 				);
 				if ( 'qwen' === $provider_id ) {
@@ -403,41 +402,6 @@ function node_ai_render_settings_page(): void {
 					</p>
 				<?php endforeach; ?>
 			</fieldset>
-
-			<!-- Gemini -->
-			<div class="node-ai-provider-section" data-provider="gemini" style="<?php echo 'gemini' === $provider_id ? '' : 'display:none;'; ?>">
-				<hr />
-				<h2>Gemini 設定</h2>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row">サイト共通 API キー</th>
-						<td>
-							<?php if ( '' !== $gemini_key ) : ?>
-								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $gemini_key ) ); ?></code>（設定済み）</p>
-							<?php endif; ?>
-							<input type="password" name="node_ai_gemini_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $gemini_key ? '空欄のままで現在のキーを維持' : 'AIza… または AQ.…'; ?>" />
-							<?php if ( '' !== $gemini_key ) : ?>
-								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_gemini_api_key_clear" value="1" /> キーを削除</label>
-							<?php endif; ?>
-							<p class="description">ライター個人のキー（プロフィール設定）が優先され、未登録のライターにはこのサイト共通キーが使われます。</p>
-						</td>
-					</tr>
-				</table>
-				<details>
-					<summary>詳細設定（通常は変更不要）</summary>
-					<table class="form-table" role="presentation">
-						<tr>
-							<th scope="row">サイト既定モデルID</th>
-							<td>
-								<input type="text" name="node_ai_gemini_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_gemini_model', '' ) ); ?>" class="regular-text" placeholder="空欄で自動選択（Flash系優先）" />
-
-								<p class="description">個人設定でモデル未選択のライターに適用される既定モデルです。</p>
-							</td>
-						</tr>
-					</table>
-				</details>
-
-			</div>
 
 			<!-- OpenAI compatible -->
 			<div class="node-ai-provider-section" data-provider="openai" style="<?php echo 'openai' === $provider_id ? '' : 'display:none;'; ?>">
@@ -537,6 +501,42 @@ function node_ai_render_settings_page(): void {
 								</p>
 			<p class="description">全体の接続先の画像対応モデルを使用します。OllamaのGemma 3 4Bなどを選択してください。元画像は変更せず、送信時だけ最大768pxに縮小します。</p>
 			<hr />
+			<!-- Gemini: dedicated features only -->
+			<div class="node-ai-gemini-section">
+				<hr />
+				<h2>Gemini専用設定（AI要約・TTS・ファクトチェック）</h2>
+				<p>Intelligence SummaryはGeminiを使用します。校正・タイトル提案・SNS文案・alt生成は上の全体設定を使い、Geminiには送信しません。</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">サイト共通 API キー</th>
+						<td>
+							<?php if ( '' !== $gemini_key ) : ?>
+								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $gemini_key ) ); ?></code>（設定済み）</p>
+							<?php endif; ?>
+							<input type="password" name="node_ai_gemini_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $gemini_key ? '空欄のままで現在のキーを維持' : 'AIza… または AQ.…'; ?>" />
+							<?php if ( '' !== $gemini_key ) : ?>
+								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_gemini_api_key_clear" value="1" /> キーを削除</label>
+							<?php endif; ?>
+							<p class="description">ライター個人のキー（プロフィール設定）が優先され、未登録のライターにはこのサイト共通キーが使われます。</p>
+						</td>
+					</tr>
+				</table>
+				<details>
+					<summary>詳細設定（通常は変更不要）</summary>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">Gemini専用のサイト既定モデルID</th>
+							<td>
+								<input type="text" name="node_ai_gemini_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_gemini_model', '' ) ); ?>" class="regular-text" placeholder="空欄で自動選択（Flash系優先）" />
+
+								<p class="description">個人設定でモデル未選択のライターに適用される既定モデルです。</p>
+							</td>
+						</tr>
+					</table>
+				</details>
+
+			</div>
+
 			<h2>ファクトチェック専用の接続先</h2>
 			<p>全体の接続先とは独立しています。自動実行はこの設定を使用し、手動実行時は記事の編集画面で変更できます。「使用しない」は全AI機能に優先します。</p>
 			<p><label for="node-ai-fc-provider">既定の接続先</label><br>
@@ -565,6 +565,16 @@ function node_ai_render_settings_page(): void {
 				<input type="hidden" name="action" value="node_ai_test_connection" />
 				<input type="hidden" name="provider" value="<?php echo esc_attr( $provider_id ); ?>" />
 				<?php submit_button( '接続テスト（保存済みの設定で確認）', 'secondary', 'submit', false ); ?>
+			</form>
+		<?php endif; ?>
+
+
+		<?php if ( 'off' !== $provider_id ) : ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'node_ai_test_connection' ); ?>
+				<input type="hidden" name="action" value="node_ai_test_connection" />
+				<input type="hidden" name="provider" value="gemini" />
+				<?php submit_button( 'Gemini専用接続テスト（要約・TTS・ファクトチェック）', 'secondary', 'submit', false ); ?>
 			</form>
 		<?php endif; ?>
 

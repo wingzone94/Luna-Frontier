@@ -845,6 +845,9 @@ evidence には実際に参照した URL のみを入れ、無い場合は空配
 
 				$last_error  = $result;
 				$last_status = $status;
+				if ( 402 === $status ) {
+					return $result;
+				}
 
 				// 通信断・タイムアウトはモデルを替えても直らない。原因が分かる形でそのまま返す。
 				if ( in_array( $status, array( 502, 504 ), true ) ) {

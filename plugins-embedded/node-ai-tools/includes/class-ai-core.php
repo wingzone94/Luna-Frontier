@@ -18,6 +18,8 @@ final class Node_AI_Core {
 	public const USAGE_LOG_LIMIT  = 200;
 
 	public const PROVIDERS = array( 'ollama', 'openai', 'gemini', 'qwen', 'off' );
+	public const GENERAL_PROVIDERS = array( 'ollama', 'openai', 'qwen', 'off' );
+	public const GEMINI_FEATURES = array( 'summarize', 'tts', 'fact_check', 'fact_check_premise' );
 
 	private static ?self $instance = null;
 
@@ -29,11 +31,11 @@ final class Node_AI_Core {
 	}
 
 	/**
-	 * 選択中のプロバイダーID（ollama / openai / gemini / qwen / off）
+	 * 通常機能のプロバイダーID（ollama / openai / qwen / off）
 	 */
 	public function get_provider_id(): string {
 		$provider = (string) get_option( 'node_ai_provider', 'ollama' );
-		return in_array( $provider, self::PROVIDERS, true ) ? $provider : 'ollama';
+		return in_array( $provider, self::GENERAL_PROVIDERS, true ) ? $provider : 'ollama';
 	}
 
 	/** Fact-check selection is independent of the general provider. */
@@ -52,6 +54,13 @@ final class Node_AI_Core {
 
 	/** Copy the complete legacy tuple once, never mixing keys with another configured endpoint. */
 	public static function migrate_provider_settings(): void {
+		if ( '1' !== get_option( 'node_ai_gemini_scope_migration' ) ) {
+			if ( 'gemini' === get_option( 'node_ai_provider' ) ) {
+				update_option( 'node_ai_provider', 'ollama' );
+			}
+			update_option( 'node_ai_gemini_scope_migration', '1', false );
+		}
+
 		$provider = get_option( 'node_ai_provider', '' );
 		if ( '1' === get_option( 'node_ai_openai_migration' ) ) {
 			return;
@@ -386,8 +395,18 @@ type は次のいずれかを厳密に使うこと:
 		if ( ! $this->is_enabled() ) {
 			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
 		}
-		$provider = $this->get_provider( $user_id, (string) ( $options['provider'] ?? '' ) );
+		$id = (string) ( $options['provider'] ?? $this->get_provider_id() );
+		if ( in_array( $feature, array( 'summarize', 'tts' ), true ) ) {
+			$id = 'gemini';
+		} elseif ( in_array( $feature, array( 'fact_check', 'fact_check_premise' ), true ) && empty( $options['provider'] ) ) {
+			$id = $this->get_fact_check_provider_id();
+		}
+		if ( 'gemini' === $id && ! in_array( $feature, self::GEMINI_FEATURES, true ) ) {
+			return new WP_Error( 'ai_feature_restricted', 'GeminiはAI要約・TTS・ファクトチェック専用です。この機能はOllamaまたはOpenAI互換を使用してください。' );
+		}
+		$provider = $this->get_provider( $user_id, $id );
 		unset( $options['provider'] );
+		$options['feature'] = $feature;
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}

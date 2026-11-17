@@ -1014,7 +1014,7 @@ class Node_AI_Fact_Check_Free_Tier_Test extends WP_UnitTestCase {
 		update_user_meta( $this->user_id, 'node_gemini_model', 'gemini-2.5-pro@high' );
 
 		$api    = new Node_Gemini_API( $this->user_id );
-		$result = $api->generate_content( 'test', array( 'system_instruction' => '基礎前提' ) );
+		$result = $api->generate_content( 'test', array( 'system_instruction' => '基礎前提', 'feature' => 'fact_check_premise' ) );
 
 		$this->assertNotWPError( $result );
 		$this->assertNotEmpty( $this->requests );

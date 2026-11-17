@@ -53,7 +53,7 @@ if ( ! function_exists( 'node_ai_store_summary_result' ) ) {
         update_post_meta( $post_id, '_node_ai_summary_generated_at', current_time( 'mysql' ) );
 
         if ( function_exists( 'node_ai_core' ) ) {
-            $provider = node_ai_core()->get_provider( $user_id );
+            $provider = node_ai_core()->get_provider( $user_id, 'gemini' );
             if ( ! is_wp_error( $provider ) ) {
                 update_post_meta( $post_id, '_node_ai_summary_provider', sanitize_text_field( $provider->get_label() ) );
                 update_post_meta( $post_id, '_node_ai_summary_model', sanitize_text_field( $provider->get_model() ) );

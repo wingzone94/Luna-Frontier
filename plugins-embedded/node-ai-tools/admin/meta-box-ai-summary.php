@@ -30,8 +30,8 @@ function node_ai_render_summary_meta_box($post) {
         ? Node_AI_Fact_Check_Models::usable_options($user_id)
         : ( function_exists('node_get_gemini_model_options_for_user') ? node_get_gemini_model_options_for_user($user_id) : [] );
     
-    $is_gemini = ! function_exists( 'node_ai_core' ) || 'gemini' === node_ai_core()->get_provider_id();
-    if ( $is_gemini && ! empty( $models ) ) {
+    echo '<p class="description">Intelligence SummaryはGemini専用です。全体のAI接続先とは独立しています。</p>';
+    if ( ! empty( $models ) ) {
         echo '<p><strong>使用モデル:</strong></p>';
         echo '<select id="node_ai_gemini_model" name="node_ai_gemini_model" style="width:100%; margin-bottom:10px;">';
         foreach ( $models as $id => $label ) {
