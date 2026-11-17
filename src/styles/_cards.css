@@ -581,6 +581,8 @@
     :is(.l-card-grid__items, .m3-post-grid__container) > :is(.c-card, .m3-card):is(.c-card, .m3-card) {
         flex-direction: row;
         align-items: stretch;
+        flex-wrap: wrap;
+        container: lf-card / inline-size;
         height: auto;
         min-height: 0;
     }
@@ -614,6 +616,7 @@
        サムネイルごと画面外へ出る。 */
     :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__content, .m3-card__content) {
         min-width: 0;
+        flex: 1 1 8rem;
         justify-content: center;
         padding: var(--m3-spacing-s) var(--m3-spacing-m) var(--m3-spacing-s) var(--m3-spacing-s);
     }
@@ -691,6 +694,30 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    /* Font-relative queries also respond to enlarged text, not only narrow viewports. */
+    @container lf-card (max-width: 12rem) {
+        :is(.l-card-grid__items, .m3-post-grid__container) > :is(.c-card, .m3-card):is(.c-card, .m3-card) > :is(.c-card__visual, .m3-card__visual) {
+            flex-basis: 100%;
+            inline-size: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__content, .m3-card__content) {
+            flex-basis: 100%;
+        }
+
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) :is(.c-card__title, .m3-card__title),
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-article__category-group {
+            max-block-size: none;
+            overflow: visible;
+        }
+
+        :is(.l-card-grid__items, .m3-post-grid__container) :is(.c-card, .m3-card) .m3-label--category {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
     }
 
     /* 書き手は一覧では全カード同じになりがちで、走査の手がかりにならない。

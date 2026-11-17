@@ -305,17 +305,17 @@ test('フィルタ追加候補は未登録エラーと登録確認済みの両�
  assert.deepEqual(result.needsRuntime.map(([name]) => name), ['audit_glyph']);
 });
 
-test('未使用の key は登録削除済みで、node-image-compressor 用4種と tablet_mac が登録されている', async () => {
+test('未使用の key は登録削除済みで、node-image-compressor 用4種と tablet が登録されている', async () => {
 	const declared = await declaredIcons();
 	assert.ok(!declared.has('key'), '未使用の key が inc/icon-font.php に残っている');
-	for (const name of ['block', 'do_not_disturb_on', 'pending', 'restart_alt', 'tablet_mac']) {
+	for (const name of ['block', 'do_not_disturb_on', 'pending', 'restart_alt', 'tablet']) {
 		assert.ok(declared.has(name), `${name} が inc/icon-font.php に無い`);
 	}
 
 	const { seen } = await scanNames();
 	const switcherText = await readFile(join(ROOT, 'src/scripts/view-switcher.js'), 'utf8');
 	const switcherHigh = new Set(extractScopedHighRefs('src/scripts/view-switcher.js', switcherText).map((h) => h.name));
-	for (const name of ['computer', 'tablet_mac', 'smartphone']) {
+	for (const name of ['computer', 'tablet', 'smartphone']) {
 		assert.ok(seen.has(name), `${name} が参照走査に含まれていない`);
 		assert.ok(switcherHigh.has(name), `view-switcher.js の ${name} が高信頼で抽出されていない`);
 	}

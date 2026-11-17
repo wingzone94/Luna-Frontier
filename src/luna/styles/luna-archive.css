@@ -40,3 +40,14 @@ body.lf-theme.lf-legacy-archive .lf-system-label {
 	letter-spacing: .08em;
 	text-transform: uppercase;
 }
+
+/* Let the archive heading shrink and wrap when text is enlarged. */
+body.lf-theme.lf-legacy-archive .m3-headlines__header {
+	min-inline-size: 0;
+}
+body.lf-theme.lf-legacy-archive #all-articles-title {
+	min-inline-size: 0;
+	max-inline-size: 100%;
+	flex-wrap: wrap;
+	overflow-wrap: anywhere;
+}

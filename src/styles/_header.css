@@ -1549,6 +1549,41 @@
     justify-content: center;
 }
 
+/* Reserve the icon slot, but never expose a font ligature as visible text. */
+#m3-view-toggle:not([data-view-icon-ready="true"]) #m3-view-toggle-icon {
+    visibility: hidden;
+}
+#m3-view-toggle .m3-view-toggle-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .6875rem;
+    line-height: 1.2;
+}
+#m3-view-toggle .m3-view-toggle-fallback[hidden] {
+    display: none;
+}
+.m3-view-toggle-tooltip {
+    position: absolute;
+    inset-inline-end: 12px;
+    inset-block-start: calc(100% + 8px);
+    z-index: 10002;
+    max-inline-size: min(18rem, calc(100vw - 24px));
+    padding: 8px 12px;
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: 12px;
+    background: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-surface);
+    font-size: .8125rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.m3-view-toggle-tooltip[hidden] {
+    display: none;
+}
+
 #m3-view-toggle[data-view-mode="pc"] .material-symbols-outlined {
     color: var(--md-sys-color-on-surface-variant);
 }
