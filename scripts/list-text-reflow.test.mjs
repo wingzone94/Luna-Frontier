@@ -54,3 +54,39 @@ test('mobile cards preserve compact rows, then reveal full text at 200/400% text
         await browser.close();
     }
 });
+
+test('Luna search cards restore full titles and metadata when text size changes', async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+        const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.setContent(fixture.replace('lf-legacy-archive', 'search search-results'));
+        const lunaCss = ['style', 'luna-style'].map(name => readFileSync(new URL(`../dist/css/${name}.css`, import.meta.url), 'utf8')).join('\n');
+        await page.addStyleTag({ content: lunaCss });
+        const luna = readFileSync(new URL('../src/luna/luna.js', import.meta.url), 'utf8');
+        const titleLogic = luna.slice(luna.indexOf('const TITLE_SELECTOR'), luna.indexOf('const ARTICLE_HEADING_SELECTOR'));
+        await page.evaluate(`${titleLogic};setupTitleAutoFit();`);
+        for (const size of [16, 32, 64, 16]) {
+            await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; }, size);
+            if (size > 16) await page.waitForFunction(() => {
+                const title = document.querySelector('h2');
+                return title.querySelector('a').textContent === title.dataset.lfTitle && getComputedStyle(title).overflow === 'visible';
+            });
+            const result = await page.evaluate(() => {
+                const title = document.querySelector('h2');
+                const image = document.querySelector('.m3-card__visual').getBoundingClientRect();
+                const content = document.querySelector('.m3-card__content').getBoundingClientRect();
+                return { titleHidden: title.scrollHeight-title.clientHeight, imageTop: image.top, contentTop: content.top, imageBottom: image.bottom, dateHidden: Math.max(...[...document.querySelectorAll('.m3-card__date')].map(x=>x.scrollWidth-x.clientWidth)) };
+            });
+            if (size > 16) {
+                assert.ok(result.titleHidden <= 2, JSON.stringify(result));
+                assert.ok(result.dateHidden <= 1, JSON.stringify(result));
+                assert.ok(result.contentTop >= result.imageBottom-1, JSON.stringify(result));
+            } else assert.ok(Math.abs(result.imageTop-result.contentTop)<=1, JSON.stringify(result));
+        }
+        assert.deepEqual(errors, []);
+    } finally {
+        await browser.close();
+    }
+});

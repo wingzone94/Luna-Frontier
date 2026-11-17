@@ -485,6 +485,32 @@ body.lf-theme :is(
 	body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card .m3-card__title {
 		min-block-size: 0;
 	}
+
+	/* Match the base card's font-relative reflow in the unlayered Luna styles. */
+	@container lf-card (max-width: 12rem) {
+		body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card > .m3-card__content {
+			flex-basis: 100%;
+			padding-inline: min(var(--lf-space-s), 16px);
+		}
+		body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card > .m3-card__visual {
+			flex-basis: 100%;
+			aspect-ratio: 16 / 9;
+		}
+		body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card .m3-card__title {
+			display: block;
+			-webkit-line-clamp: unset;
+			max-block-size: none;
+			overflow: visible;
+		}
+		body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card .m3-card__footer {
+			padding-inline: 0;
+			min-inline-size: 0;
+		}
+		body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container) > .m3-card .m3-card__dates {
+			inline-size: 100%;
+			margin-inline-start: 0;
+		}
+	}
 }
 
 /* ---------------------------------------------------------------------
