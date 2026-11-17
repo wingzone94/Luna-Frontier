@@ -131,6 +131,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'stop_circle',
 			'straighten',
 			'sync',
+			'tablet',
 			'tablet_mac',
 			'thumb_down',
 			'thumb_up',

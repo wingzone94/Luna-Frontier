@@ -158,15 +158,15 @@ test('applying the suggestion clears the mismatch', () => {
     assert.equal(after, null);
 });
 
-test('view-toggle icon resolves tablet_mac for tablet pc mode and preserves computer/smartphone', () => {
+test('view-toggle icon resolves tablet for tablet pc mode and preserves computer/smartphone', () => {
     assert.deepEqual(VIEW_MODE_ICON, {
         pc: 'computer',
-        tablet: 'tablet_mac',
+        tablet: 'tablet',
         mobile: 'smartphone',
     });
 
     assert.equal(resolveViewToggleIconKey('pc', 'tablet'), 'tablet');
-    assert.equal(resolveViewToggleIcon('pc', 'tablet'), 'tablet_mac');
+    assert.equal(resolveViewToggleIcon('pc', 'tablet'), 'tablet');
 
     assert.equal(resolveViewToggleIconKey('mobile', 'tablet'), 'mobile');
     assert.equal(resolveViewToggleIcon('mobile', 'tablet'), 'smartphone');
@@ -180,7 +180,7 @@ test('view-toggle icon resolves tablet_mac for tablet pc mode and preserves comp
     assert.equal(resolveViewToggleIcon('pc', 'phone'), 'computer');
 });
 
-test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-state labels or viewMode', () => {
+test('syncViewToggleUI writes tablet/computer/smartphone without altering 2-state labels or viewMode', () => {
     const origDoc = globalThis.document;
     const origWin = globalThis.window;
     const origNavDesc = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
@@ -243,7 +243,7 @@ test('syncViewToggleUI writes tablet_mac/computer/smartphone without altering 2-
             maxTouchPoints: 5,
         });
         assert.equal(tabletPc.btn.dataset.viewMode, 'pc');
-        assert.equal(tabletPc.icon.dataset.icon, 'tablet_mac');
+        assert.equal(tabletPc.icon.dataset.icon, 'tablet');
         assert.equal(tabletPc.icon.textContent, '');
         assert.equal(tabletPc.attrs.get('aria-label'), 'PC表示モード');
         assert.equal(tabletPc.btn.dataset.tooltip, 'PC表示モード（タップでモバイル表示）');
