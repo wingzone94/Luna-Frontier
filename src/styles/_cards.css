@@ -445,6 +445,13 @@
     border-radius: var(--node-card-radius);
 }
 
+body.lf-theme.lf-legacy-archive .m3-card__title:lang(ja) {
+    line-break: strict;
+    word-break: normal;
+    word-break: auto-phrase;
+    overflow-wrap: anywhere;
+}
+
 /* 4. Footer */
 :is(.c-card__footer, .m3-card__footer) {
     margin-top: auto;
