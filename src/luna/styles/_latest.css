@@ -418,10 +418,14 @@ body.lf-theme .c-headline-card__title {
 	max-block-size: 3lh;
 }
 
-/* JS が段階的に詰めるときの縮尺。1em は要素の文字サイズ基準。 */
+/* JS が段階的に縮めるときの縮尺。カード見出しは --lf-text-m を基準に保つ。 */
 body.lf-theme .lf-title-fit {
 	font-size: calc(1em * var(--lf-title-fit, 1));
 	letter-spacing: var(--lf-title-tracking, -0.005em);
+}
+
+body.lf-theme .m3-card__title.lf-title-fit {
+	font-size: calc(var(--lf-text-m) * var(--lf-title-fit, 1));
 }
 
 /*
