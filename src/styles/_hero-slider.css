@@ -442,6 +442,21 @@
 }
 
 @media (min-width: 768px) {
+	.lf-hero-slider {
+		--lf-hero-scrim: linear-gradient(
+			90deg,
+			rgb(18 24 38 / 0.96) 0%,
+			rgb(18 24 38 / 0.84) 38%,
+			rgb(18 24 38 / 0.2) 68%,
+			rgb(18 24 38 / 0.04) 100%
+		);
+	}
+
+	.lf-hero-thumb__label {
+		display: block;
+		overflow: visible;
+	}
+
 	.lf-hero-slide__image {
 		object-position: 72% top;
 	}

@@ -467,6 +467,15 @@ body.lf-theme .m3-breadcrumbs__item--current {
 	font-weight: 600;
 }
 
+@media (min-width: 701px) {
+	body.lf-theme .m3-breadcrumbs__item--current > span {
+		max-inline-size: none;
+		white-space: normal;
+		overflow: visible;
+		overflow-wrap: anywhere;
+	}
+}
+
 @media (max-width: 700px) {
 	body.lf-theme .m3-breadcrumbs__list {
 		gap: 8px;
