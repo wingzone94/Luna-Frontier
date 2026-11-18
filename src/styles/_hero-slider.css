@@ -449,6 +449,53 @@
 	.lf-hero-slide__card { min-height: clamp(300px, 46vw, 400px); }
 }
 
+@media (min-width: 768px) {
+	.lf-hero-slider {
+		--lf-hero-scrim: linear-gradient(
+			90deg,
+			rgb(18 24 38 / 0.96) 0%,
+			rgb(18 24 38 / 0.84) 38%,
+			rgb(18 24 38 / 0.2) 68%,
+			rgb(18 24 38 / 0.04) 100%
+		);
+	}
+
+	.lf-hero-thumb__label {
+		display: block;
+		overflow: visible;
+	}
+
+	.lf-hero-slide__image {
+		object-position: 72% top;
+	}
+
+	.lf-hero-slider__stage {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		row-gap: var(--m3-spacing-s, 8px);
+	}
+
+	.lf-hero-slider__controls {
+		position: absolute;
+		grid-area: 1 / 1 / 2 / 2;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.lf-hero-slider__nav {
+		pointer-events: auto;
+	}
+
+	.lf-hero-slider__pagination {
+		position: relative;
+		inset: auto;
+		justify-self: center;
+		transform: none;
+		background: rgb(16 18 24 / 0.9);
+		backdrop-filter: none;
+	}
+}
+
 @media (max-width: 767px) {
 	.lf-hero-slider { padding-inline: 12px; }
 	.lf-hero-slide { flex-basis: 100%; }

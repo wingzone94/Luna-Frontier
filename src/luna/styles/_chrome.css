@@ -122,6 +122,29 @@ body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
 
 /* Desktop feature shelf shows one complete title at a time. */
 @media (min-width: 1001px) {
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+		scrollbar-width: thin;
+		scrollbar-color: var(--lf-on-surface-muted) transparent;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar {
+		display: block;
+		block-size: 5px;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar-thumb {
+		background: var(--lf-on-surface-muted);
+		border-radius: var(--lf-shape-full);
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)[data-lf-scroll-more]:not(:focus-within) {
+		mask-image: linear-gradient(to right, #000 calc(100% - 1.25rem), transparent);
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)[data-lf-scroll-more]:dir(rtl):not(:focus-within) {
+		mask-image: linear-gradient(to left, #000 calc(100% - 1.25rem), transparent);
+	}
+
 	body.lf-theme .lf-topic-nav__features {
 		flex: 1 1 0;
 		container-type: inline-size;
@@ -287,6 +310,13 @@ body.lf-theme .lf-footer {
 	border-radius: var(--lf-shape-paper);
 }
 
+@media (min-width: 768px) {
+	body.lf-theme .lf-footer {
+		margin-block-start: var(--lf-space-m);
+		padding-block-start: 0;
+	}
+}
+
 body.lf-theme .lf-footer__main {
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
@@ -435,6 +465,15 @@ body.lf-theme .m3-breadcrumbs__item--current {
 	max-inline-size: 32rem;
 	color: var(--lf-brand-text);
 	font-weight: 600;
+}
+
+@media (min-width: 701px) {
+	body.lf-theme .m3-breadcrumbs__item--current > span {
+		max-inline-size: none;
+		white-space: normal;
+		overflow: visible;
+		overflow-wrap: anywhere;
+	}
 }
 
 @media (max-width: 700px) {
