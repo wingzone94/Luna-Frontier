@@ -69,6 +69,11 @@ body.lf-theme .lf-aside-list__item a {
 		border-color var(--lf-motion-fast) var(--lf-easing-standard);
 }
 
+body.lf-theme .lf-aside-block--toc .lf-toc__link {
+	padding-inline-end: var(--lf-space-2xs);
+	overflow-wrap: anywhere;
+}
+
 body.lf-theme .lf-aside-list__item a:hover {
 	color: var(--lc-accent);
 	border-inline-start-color: var(--lc-accent);
@@ -291,6 +296,7 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		max-block-size: calc(100vh - var(--lf-toc-offset) - var(--lf-space-xl));
 		flex-shrink: 0;
 		overflow-y: auto;
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
 }

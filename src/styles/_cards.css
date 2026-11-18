@@ -205,6 +205,37 @@
     overflow: visible;
 }
 
+/* Decorative document tile for templates without a thumbnail element. */
+body.lf-theme.lf-legacy-archive .m3-card--no-image::before,
+body.lf-theme .m3-elevated-nav-card--plain::before {
+    content: "article";
+    content: "article" / "";
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    aspect-ratio: 16 / 9;
+    background: var(--lf-paper-sunken);
+    color: var(--lf-on-surface-muted);
+    font: 2.25rem/1 "Material Symbols Outlined";
+    font-feature-settings: "liga";
+}
+
+body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+    inline-size: 35%;
+}
+
+@media (max-width: 700px) {
+    body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+        inline-size: clamp(88px, 27vw, 116px);
+    }
+
+    @container lf-card (max-width: 12rem) {
+        body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+            inline-size: 100%;
+        }
+    }
+}
+
 /* Category Container (Moved from visual to content area) */
 :is(.c-card__category-container, .m3-card__category-container) {
     display: flex;
@@ -265,6 +296,14 @@
     gap: 6px;
     margin-left: auto;
     flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+    /* Allow category chips to reflow at zoom while reserving room for +N. */
+    body.lf-theme :is(.l-card-grid__items, .m3-post-grid__container):is(:not(.l-card-grid--list, .m3-post-grid--list), .m3-post-grid--2col-list) .m3-card__topline {
+        align-items: flex-start;
+        min-block-size: calc(2 * (0.75rem * 1.2 + 12px) + 6px);
+    }
 }
 
 /* Label Styling */
@@ -445,6 +484,13 @@
     border-radius: var(--node-card-radius);
 }
 
+body.lf-theme.lf-legacy-archive .m3-card__title:lang(ja) {
+    line-break: strict;
+    word-break: normal;
+    word-break: auto-phrase;
+    overflow-wrap: anywhere;
+}
+
 /* 4. Footer */
 :is(.c-card__footer, .m3-card__footer) {
     margin-top: auto;
@@ -483,6 +529,13 @@
     min-width: 0;
     /* フッターが2段組に折り返した際も右寄せを維持 */
     margin-left: auto;
+}
+
+@media (min-width: 1024px) {
+    /* Keep the absolute publication date and make space for the update label. */
+    body.lf-theme .m3-card__dates:has(.m3-card__date--modified) .m3-card__date-rel {
+        display: none;
+    }
 }
 
 /* 極小幅では相対時間「（N時間前）」を隠して1行を維持する */

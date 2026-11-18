@@ -2,38 +2,11 @@
 
 declare( strict_types=1 );
 /**
- * Luna Frontier 2.0 / SkyAlow — カテゴリラベルの on-color
+ * Luna Frontier のカテゴリバッジとアクション配色。
  *
- * ■ 何が壊れていたか
- * 既存の node_get_category_label_props()（inc/utilities.php）は文字色を
- * '#ffffff' にハードコードし、色が未設定のカテゴリでは面を '#FF9900' へ
- * フォールバックする。実測（cybernode.local, 60 カテゴリ）:
- *
- *   色未設定 52 件 → #FF9900 に白文字 = 2.14:1   （記事数上位 10 件は全部これ）
- *   設定済み  8 件 → うち 5 件が白文字で AA 未達（最悪 #eeee22 の 1.24:1）
- *
- * さらに Node 由来の src/styles/_cards.css に
- *   .m3-label--category, :visited, :hover, :focus-visible { color: #ffffff !important }
- * があり、PHP が style 属性で出す --category-on-color は既に死んでいる。
- * つまり「変数を直す」だけでは文字色は動かない。
- *
- * ■ 直し方
- * 該当箇所にフィルタが無く pluggable でもないので、関数の中からは介入できない。
- * 出力バッファ置換は style 属性という壊れやすい足場を舐めることになるので採らない。
- * そこで **PHP でカテゴリ色を読んで CSS を生成し**、Luna のスタイルシートの直後へ
- * wp_add_inline_style で載せる。出すルールは 3 種類だけ:
- *
- *   1. 変数を復活させる 1 行（既存の白ベタ !important を無効化）
- *   2. 色未設定（data-color 属性が付かない）→ --lf-on-brand
- *   3. 設定済み → [data-color="..."] ごとに算出した on-color
- *
- * インライン style 属性のカスタムプロパティは通常宣言では上書きできないため、
- * ここだけは !important が要る。増やすのはこの 2 種類に限定する。
- *
- * ■ on-color の決め方
- * 「白が AA を満たすならそのまま。満たさないなら同色相の暗インクへ落とす」の
- * 1 規則だけ。既に AA を満たしている赤・青・紫系は見た目が変わらない。
- * 算出にはこのテーマの luna_frontier_oklch_on_color() を使う。
+ * 主カテゴリはカテゴリ色を使い、白文字とのコントラストが足りない面は
+ * 暗いトーンに寄せる。カテゴリ色が未設定のときは濃いブランドオレンジを
+ * 使い、副カテゴリはテーマ共通の中立色で表示する。
  *
  * @package LunaFrontier
  */
@@ -42,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v5';
+const LUNA_FRONTIER_CATEGORY_CSS_TRANSIENT = 'luna_frontier_category_on_css_v6';
 
 /**
  * 「押せる場所」の面と文字。
@@ -78,7 +51,7 @@ function luna_frontier_category_on_color( string $face ): string {
 	return luna_frontier_oklch_on_color( $face, $oklch['h'], $oklch['c'] );
 }
 
-/** Preserve the existing hero ink, adjusting only insufficient background tones. */
+/** Keep the specified ink color and bring the background up to AA contrast. */
 function luna_frontier_hero_category_face( string $face, string $ink ): string {
 	if ( luna_frontier_contrast_ratio( $ink, $face ) >= 4.5 ) {
 		return $face;
@@ -202,10 +175,11 @@ function luna_frontier_the_card_category_labels( ?int $post_id = null ): void {
 /**
  * カテゴリラベル用の CSS を組み立てる。
  *
- * 既存関数と同じ結果を得るため、色の取得は必ず node_get_category_label_props() 経由に
- * する（term description 内の hex というレガシー経路もそちらが拾うため）。
+ * node_get_category_label_props() は term description 内の旧形式の色も読む。
+ *
+ * @param bool $badges_only 既存アーカイブでは共通のバッジ色だけを適用する。
  */
-function luna_frontier_build_category_css(): string {
+function luna_frontier_build_category_css( bool $badges_only = false ): string {
 	if ( ! function_exists( 'node_get_category_label_props' ) ) {
 		return '';
 	}
@@ -239,83 +213,33 @@ function luna_frontier_build_category_css(): string {
 
 	$rules = array();
 
-	/*
-	 * 1) 変数の復活。
-	 * 既存 CSS は .m3-label--category と :visited / :hover / :focus-visible を列挙して
-	 * color:#ffffff!important を当てている（最大 (0,2,0)）。
-	 * body.lf-theme を前置した :is() は (0,2,0) 同士で並ぶが、疑似クラス側も
-	 * 明示して (0,3,0) にしておけば順序に頼らずに勝てる。
-	 * 同型のバグが AI ラベル（_cards.css の .m3-label--ai 系、_article.css の
-	 * ai-disclosure）にもあり、面が同じ #FF9900 なので一緒に直す。
-	 */
-	/*
-	 * .is-secondary（非プライマリの淡色チップ）は除外する。
-	 * こちらは面が白で、既存 CSS が color-mix(--category-color 72%, black) で文字色を
-	 * 導出している。ここに白を強制すると白地に白文字（1.00:1）になって消える。
-	 * --category-color は下で深いオレンジに差し替えるので、既存の導出結果も
-	 * 自動的にそれに追従する（枠線・文字ともコントラストが上がる）。
-	 */
-	$labels = ':is(.m3-label--category,.m3-label--ai,.m3-label--ai-summary,.m3-article__ai-disclosure-expressive):not(.is-secondary)';
-	$color  = 'color:var(--category-on-color,var(--lf-on-brand,#2b1700))!important';
+	$primary = ':is(.m3-label--category:not(.is-secondary),.lf-hero-slide__category,.lf-home-story__category)';
+	$rules[] = 'body.lf-theme ' . $primary . '{--category-on-color:#fff!important;color:#fff!important}';
+	$rules[] = 'body.lf-theme ' . $primary . ':not([data-color]){--category-color:#b84b00!important}';
 
-	$rules[] = sprintf(
-		'body.lf-theme %1$s,body.lf-theme %1$s:visited,body.lf-theme %1$s:hover,body.lf-theme %1$s:focus-visible{%2$s}',
-		$labels,
-		$color
-	);
-
-	/*
-		 * 2) 色未設定。面はブランドオレンジ #FF9900 のまま、文字だけ
-		 * --lf-on-brand 相当の暗色へ寄せて AA を満たす。
-	 */
-	$rules[] = sprintf(
-		'body.lf-theme .m3-label--category:not([data-color]){--category-color:%1$s!important;--category-on-color:%2$s!important}',
-		LUNA_FRONTIER_BRAND_FACE,
-		LUNA_FRONTIER_BRAND_ON
-	);
-
-	/*
-	 * AI ラベルも同じ面。
-	 */
-	$rules[] = sprintf(
-		'body.lf-theme :is(.m3-label--ai,.m3-label--ai-summary,.m3-article__ai-disclosure-expressive){--category-color:%1$s!important;--category-on-color:%2$s!important;background-color:%1$s!important}',
-		LUNA_FRONTIER_BRAND_FACE,
-		LUNA_FRONTIER_BRAND_ON
-	);
-
-	/*
-	 * 3) 設定済み。属性値は既存出力の文字列そのもの。大文字小文字の揺れに
-	 * 備えて i フラグを付ける。
-	 */
 	foreach ( $by_color as $face ) {
-		$on = luna_frontier_category_on_color( $face );
-		$hero_ink  = node_get_readable_text_color( $face );
-		$hero_face = luna_frontier_hero_category_face( $face, $hero_ink );
-		if ( $hero_face !== $face ) {
-			$rules[] = sprintf(
-				'body.lf-theme .lf-hero-slide__category[data-color="%1$s" i]{--category-color:%2$s!important}',
-				esc_attr( $face ),
-				esc_attr( $hero_face )
-			);
-		}
-
 		$rules[] = sprintf(
-			'body.lf-theme .m3-label--category[data-color="%1$s" i]{--category-on-color:%2$s!important}',
+			'body.lf-theme %1$s[data-color="%2$s" i]{--category-color:%3$s!important}',
+			$primary,
 			esc_attr( $face ),
-			esc_attr( $on )
+			esc_attr( luna_frontier_hero_category_face( $face, '#ffffff' ) )
 		);
 	}
 
-	// 非プライマリは Tonal Filled。通常時は枠線なし。ホバーは淡色を少し強めるだけで、濃い塗りにはしない。
-	// 角丸・高さ・文字サイズ・余白は主カテゴリの既存ルールに任せ、ここでは色だけを変える。
-	// 色未設定でも --category-color がブランドオレンジへ落ちる（上の :not([data-color])）。
-	$tone          = 'var(--category-color, ' . LUNA_FRONTIER_BRAND_FACE . ')';
-	$tonal_bg      = 'color-mix(in srgb,' . $tone . ' 16%,var(--md-sys-color-surface-container-low))';
-	$tonal_bg_hover = 'color-mix(in srgb,' . $tone . ' 28%,var(--md-sys-color-surface-container-low))';
-	$tonal_ink     = 'color-mix(in srgb,' . $tone . ' 46%,var(--md-sys-color-on-surface))';
-	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary{background-color:' . $tonal_bg . '!important;border:none!important;box-shadow:none!important;color:' . $tonal_ink . '!important}';
-	$rules[] = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:focus-visible{outline:2px solid var(--md-sys-color-primary,' . LUNA_FRONTIER_BRAND_FACE . ')!important;outline-offset:2px}';
-	$rules[] = '@media (hover: hover) and (pointer: fine){body.lf-theme .m3-article__category-group .m3-label--category.is-secondary:hover{background-color:' . $tonal_bg_hover . '!important;border:none!important;color:' . $tonal_ink . '!important}}';
+	$secondary = 'body.lf-theme .m3-article__category-group .m3-label--category.is-secondary';
+	$rules[] = $secondary . '{background-color:var(--md-sys-color-surface-container-high)!important;border:none!important;box-shadow:none!important;color:var(--md-sys-color-on-surface)!important}';
+	$rules[] = $secondary . ':focus-visible{outline:2px solid var(--md-sys-color-accent-text)!important;outline-offset:2px}';
+	$rules[] = '@media (hover:hover) and (pointer:fine){' . $secondary . ':hover{background-color:var(--md-sys-color-surface-container-highest)!important}}';
+
+	if ( $badges_only ) {
+		return "@layer reset{\n@media screen{\n" . implode( "\n", $rules ) . "\n} }";
+	}
+
+	$rules[] = sprintf(
+		'body.lf-theme :is(.m3-label--ai,.m3-label--ai-summary,.m3-article__ai-disclosure-expressive){--category-color:%1$s!important;--category-on-color:%2$s!important;background-color:%1$s!important;color:%2$s!important}',
+		LUNA_FRONTIER_BRAND_FACE,
+		LUNA_FRONTIER_BRAND_ON
+	);
 
 	/*
 	 * 4) 塗りボタンと FAB を「プライマリカテゴリラベルの色」へ同期させる。
@@ -392,6 +316,11 @@ function luna_frontier_build_category_css(): string {
  * manifest 欠損時は handle 自体が無いので wp_style_is で守る。
  */
 function luna_frontier_print_category_css(): void {
+	if ( wp_style_is( 'luna-frontier-archive', 'enqueued' ) ) {
+		wp_add_inline_style( 'luna-frontier-archive', luna_frontier_build_category_css( true ) );
+		return;
+	}
+
 	if ( ! wp_style_is( 'luna-frontier', 'enqueued' ) ) {
 		return;
 	}
