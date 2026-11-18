@@ -82,6 +82,17 @@
     font-size: 20px;
 }
 
+/* Disclosure stays in the card's content row and clear of the image. */
+body.lf-theme .m3-card__labels--inline > .m3-label--ai.m3-label--icon-only {
+    position: static;
+    inline-size: 24px;
+    block-size: 24px;
+}
+
+body.lf-theme .m3-card__labels--inline > .m3-label--ai.m3-label--icon-only .material-symbols-outlined {
+    font-size: 16px;
+}
+
 /* Node 1.2.x parity: these axes are base values shared by PC and mobile.
  * Keep them unlayered so external Material Symbols CSS cannot override them. */
 :is(.c-card__date, .m3-card__date) .material-symbols-outlined {
