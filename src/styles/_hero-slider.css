@@ -241,15 +241,16 @@
 	width: 48px;
 	height: 48px;
 	padding: 0;
-	border: 1px solid rgb(255 255 255 / 0.28);
+	border: 1.5px solid rgb(255 255 255 / 0.52);
 	border-radius: 50%;
-	background: #FF9900;
+	background: rgb(16 18 24 / 0.72);
 	color: #fff;
-	box-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+	box-shadow: 0 4px 16px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(0 0 0 / 0.18);
 	backdrop-filter: blur(10px);
 	cursor: pointer;
 
 	transition: background-color 200ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
+		border-color 200ms var(--m3-motion-easing, cubic-bezier(0.2, 0, 0, 1)),
 		opacity 200ms ease;
 }
 
@@ -262,7 +263,8 @@
 }
 
 .lf-hero-slider__nav:hover {
-	background: #FF9900;
+	background: rgb(16 18 24 / 0.9);
+	border-color: #FF9900;
 }
 
 .lf-hero-slider__nav:disabled {
