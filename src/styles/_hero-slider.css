@@ -176,6 +176,14 @@
 	font-size: clamp(0.95rem, 1.5vw, 1.35rem);
 }
 
+.lf-hero-slide__title[data-lf-hero-title-kerning="tight"] {
+	letter-spacing: -0.03em;
+}
+
+.lf-hero-slide__title[data-lf-hero-title-kerning="tighter"] {
+	letter-spacing: -0.05em;
+}
+
 .lf-hero-slide__title-link {
 	color: inherit;
 	text-decoration: none;

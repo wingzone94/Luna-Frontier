@@ -334,6 +334,7 @@
   };
 
   const HERO_TITLE_STEPS = ['lg', 'md', 'sm'];
+  const HERO_KERNING_STEPS = ['tight', 'tighter'];
 
   const titleExceedsLines = (el, maxLines = 3) => {
     const cs = getComputedStyle(el);
@@ -352,13 +353,24 @@
   const fitHeroTitles = (root) => {
     const titles = root.querySelectorAll('.lf-hero-slide__title');
     titles.forEach((title) => {
+      title.removeAttribute('data-lf-hero-title-kerning');
+      let fits = false;
       for (const step of HERO_TITLE_STEPS) {
         if (step === 'lg') {
           title.removeAttribute('data-lf-hero-title-size');
         } else {
           title.setAttribute('data-lf-hero-title-size', step);
         }
-        if (!titleExceedsLines(title, 3)) break;
+        if (!titleExceedsLines(title, 3)) {
+          fits = true;
+          break;
+        }
+      }
+      if (!fits) {
+        for (const kern of HERO_KERNING_STEPS) {
+          title.setAttribute('data-lf-hero-title-kerning', kern);
+          if (!titleExceedsLines(title, 3)) break;
+        }
       }
     });
   };
