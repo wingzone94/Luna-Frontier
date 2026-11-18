@@ -24,9 +24,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    let currentPage = 1;
+    let currentPage = Math.max(1, parseInt(nodeFlowSettings.currentPage, 10) || 1);
     let isLoading = false;
     let hasMore = true;
+
+    const seenPostIds = new Set(
+        Array.from(container.querySelectorAll('[id^="post-"]')).map((el) => el.id)
+    );
 
     // 【プログレッシブ・エンハンスメント】
     // JSが実行され、かつ次ページがある場合のみ標準のページネーションを非表示にする
@@ -102,19 +106,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
+            let appendedCount = 0;
+
             if (data.html) {
                 // DOMパーサーを使って安全に要素を追加する
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data.html, 'text/html');
                 const newItems = doc.body.childNodes;
                 
-                // 追加される要素をループでappendChild
+                // 既読IDを除外しながら追加
                 Array.from(newItems).forEach(item => {
+                    if (item.nodeType === 1 && item.id && item.id.startsWith('post-')) {
+                        if (seenPostIds.has(item.id)) {
+                            return;
+                        }
+                        seenPostIds.add(item.id);
+                    }
                     container.appendChild(item.cloneNode(true));
+                    if (item.nodeType === 1) {
+                        appendedCount++;
+                    }
                 });
             }
 
-            hasMore = data.hasMore;
+            hasMore = Boolean(data.hasMore) && appendedCount > 0;
 
             if (!hasMore) {
                 triggerEl.style.display = 'none';

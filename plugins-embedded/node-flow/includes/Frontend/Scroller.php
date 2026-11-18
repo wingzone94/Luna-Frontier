@@ -34,10 +34,11 @@ class Scroller {
 
         // API URL や Nonce などの設定をJSに渡す
         wp_localize_script( 'node-flow-scroller', 'nodeFlowSettings', [
-            'restUrl' => esc_url_raw( rest_url( 'node-flow/v1/posts' ) ),
-            'nonce'   => wp_create_nonce( 'wp_rest' ),
+            'restUrl'     => esc_url_raw( rest_url( 'node-flow/v1/posts' ) ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
+            'currentPage' => max( 1, (int) get_query_var( 'paged' ) ),
             // 現在のクエリパラメータ（カテゴリIDや検索キーワード）を渡す
-            'query'   => $this->get_current_query_vars()
+            'query'       => $this->get_current_query_vars()
         ]);
     }
 
@@ -47,8 +48,13 @@ class Scroller {
     private function get_current_query_vars() {
         global $wp_query;
         $vars = $wp_query->query_vars;
+        // メインクエリの posts_per_page はページネーション境界を一致させるため保持する
+        $posts_per_page = (int) $wp_query->get( 'posts_per_page' );
+        if ( $posts_per_page > 0 ) {
+            $vars['posts_per_page'] = $posts_per_page;
+        }
         // 不要なパラメータを整理
-        unset( $vars['paged'], $vars['posts_per_page'], $vars['error'], $vars['m'] );
+        unset( $vars['paged'], $vars['error'], $vars['m'] );
         return $vars;
     }
 
@@ -97,11 +103,20 @@ class Scroller {
             'w',
             // シリーズ（node_series タクソノミー）
             'node_series',
+            // メインクエリと一致させる1ページあたり件数
+            'posts_per_page',
         ];
 
         $safe = [];
         foreach ( $allowed_keys as $key ) {
             if ( isset( $query_params[ $key ] ) && '' !== $query_params[ $key ] && [] !== $query_params[ $key ] ) {
+                if ( 'posts_per_page' === $key ) {
+                    $per_page = absint( $query_params[ $key ] );
+                    if ( $per_page > 0 ) {
+                        $safe[ $key ] = min( 100, $per_page );
+                    }
+                    continue;
+                }
                 $safe[ $key ] = $query_params[ $key ];
             }
         }
@@ -125,9 +140,10 @@ class Scroller {
         $safe_query = $this->whitelist_query_vars( $query_params );
 
         $args = array_merge( $safe_query, [
-            'paged'       => $page,
-            'post_type'   => 'post',
-            'post_status' => 'publish',
+            'paged'               => $page,
+            'post_type'           => 'post',
+            'post_status'         => 'publish',
+            'ignore_sticky_posts' => true,
         ]);
 
         $query = new \WP_Query( $args );
