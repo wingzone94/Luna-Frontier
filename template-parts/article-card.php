@@ -77,6 +77,10 @@ $has_topline_labels = ('' !== $badges_html) || ('' !== $series_banner_html);
                 <div class="m3-card__image-gradient c-card__image-gradient"></div>
             </a>
         </div>
+    <?php else : ?>
+        <div class="m3-card__visual c-card__visual lf-post-placeholder-frame" aria-hidden="true">
+            <span class="lf-post-placeholder material-symbols-outlined" data-icon="article"></span>
+        </div>
     <?php endif; ?>
 
     <div class="m3-card__content c-card__content">

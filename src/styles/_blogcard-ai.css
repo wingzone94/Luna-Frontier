@@ -83,7 +83,7 @@
     max-width: 100% !important;
     margin: 0 !important;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: inherit !important;
 }
 
@@ -103,10 +103,6 @@
     height: auto;
     min-height: 0;
     aspect-ratio: 16 / 9;
-}
-
-.m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__image img {
-    object-fit: contain;
 }
 
 .m3-blogcard-wrap[data-node-scheduled-post] .m3-blogcard__title {
@@ -337,10 +333,6 @@
 .m3-blogcard--brand .m3-blogcard__image {
     width: clamp(150px, 34%, 230px);
     background: #FF9900;
-}
-
-.m3-blogcard--brand .m3-blogcard__image img {
-    object-fit: contain;
 }
 
 /* ---- Store card (Nintendo / PlayStation / Xbox / Steam) ----

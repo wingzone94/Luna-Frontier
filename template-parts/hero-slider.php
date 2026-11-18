@@ -21,15 +21,6 @@ if ( empty( $slides ) ) {
 
 $total           = count( $slides );
 $slider_id       = wp_unique_id( 'lf-hero-slider-' );
-$fallback        = function_exists( 'get_theme_file_uri' )
-	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3.webp' ) )
-	: '';
-$fallback_mobile = function_exists( 'get_theme_file_uri' )
-	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-mobile.webp' ) )
-	: '';
-$fallback_center = function_exists( 'get_theme_file_uri' )
-	? node_local_image_relative_url( get_theme_file_uri( 'assets/images/luminous-core-card-image-m3-center.webp' ) )
-	: '';
 ?>
 <section
 	id="<?php echo esc_attr( $slider_id ); ?>"
@@ -66,15 +57,8 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 							<div class="lf-hero-slide__media" aria-hidden="true">
 								<?php if ( $slide['has_image'] && $slide['image_html'] ) : ?>
 									<?php echo $is_current ? $slide['image_html'] : node_defer_image_html( $slide['image_html'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-								<?php elseif ( $fallback ) : ?>
-									<picture class="lf-hero-slide__picture">
-										<?php if ( $fallback_mobile ) : ?>
-											<source media="(max-width: 767px)" srcset="<?php echo esc_url( $fallback_mobile ); ?>">
-										<?php endif; ?>
-										<img class="lf-hero-slide__image lf-hero-slide__image--fallback" src="<?php echo esc_url( $fallback ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="<?php echo $is_current ? 'eager' : 'lazy'; ?>"<?php echo $is_current ? ' fetchpriority="high"' : ''; ?>>
-									</picture>
 								<?php else : ?>
-									<div class="lf-hero-slide__fallback"></div>
+									<span class="lf-post-placeholder material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
 								<?php endif; ?>
 							</div>
 
@@ -165,8 +149,8 @@ $fallback_center = function_exists( 'get_theme_file_uri' )
 				<span class="lf-hero-thumb__media" aria-hidden="true">
 					<?php if ( $slide['image_url'] ) : ?>
 						<img src="<?php echo esc_url( $slide['image_url'] ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="lazy">
-					<?php elseif ( $fallback ) : ?>
-						<img src="<?php echo esc_url( $fallback_center ?: $fallback ); ?>" alt="<?php echo esc_attr( $slide['title'] ); ?>" loading="lazy">
+					<?php else : ?>
+						<span class="lf-post-placeholder material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
 					<?php endif; ?>
 				</span>
 				<span class="lf-hero-thumb__label"><?php echo esc_html( $slide['title'] ); ?></span>
