@@ -693,8 +693,24 @@ function setupCalendarMonth() {
   });
 }
 
+function setupTopicScrollHint() {
+  const shelves = document.querySelectorAll('.lf-topic-nav__features, .lf-topic-nav__list');
+  shelves.forEach(shelf => {
+    const update = () => {
+      const hasMore = Math.abs(shelf.scrollLeft) + shelf.clientWidth < shelf.scrollWidth - 1;
+      shelf.toggleAttribute('data-lf-scroll-more', hasMore);
+    };
+    update();
+    shelf.addEventListener('scroll', update, { passive: true });
+    const resize = new ResizeObserver(update);
+    resize.observe(shelf);
+    for (const item of shelf.children) resize.observe(item);
+  });
+}
+
 function init() {
   syncTabletPcClass();
+  setupTopicScrollHint();
   const headerSearch = document.getElementById('m3-search-input');
   if (headerSearch) {
     headerSearch.placeholder = 'キーワードで検索';
