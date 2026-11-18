@@ -205,6 +205,37 @@
     overflow: visible;
 }
 
+/* Decorative document tile for templates without a thumbnail element. */
+body.lf-theme.lf-legacy-archive .m3-card--no-image::before,
+body.lf-theme .m3-elevated-nav-card--plain::before {
+    content: "article";
+    content: "article" / "";
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    aspect-ratio: 16 / 9;
+    background: var(--lf-paper-sunken);
+    color: var(--lf-on-surface-muted);
+    font: 2.25rem/1 "Material Symbols Outlined";
+    font-feature-settings: "liga";
+}
+
+body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+    inline-size: 35%;
+}
+
+@media (max-width: 700px) {
+    body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+        inline-size: clamp(88px, 27vw, 116px);
+    }
+
+    @container lf-card (max-width: 12rem) {
+        body.lf-theme.lf-legacy-archive .m3-card--no-image::before {
+            inline-size: 100%;
+        }
+    }
+}
+
 /* Category Container (Moved from visual to content area) */
 :is(.c-card__category-container, .m3-card__category-container) {
     display: flex;
