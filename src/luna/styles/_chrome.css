@@ -287,6 +287,13 @@ body.lf-theme .lf-footer {
 	border-radius: var(--lf-shape-paper);
 }
 
+@media (min-width: 768px) {
+	body.lf-theme .lf-footer {
+		margin-block-start: var(--lf-space-m);
+		padding-block-start: 0;
+	}
+}
+
 body.lf-theme .lf-footer__main {
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
