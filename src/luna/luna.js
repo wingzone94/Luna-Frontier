@@ -134,6 +134,95 @@ const TITLE_SELECTOR = [
   '.m3-game-card__title',
 ].join(', ');
 
+const PHRASE_ONLY_TITLE_SELECTOR = [
+  '.lf-article-header__title',
+  '.lf-home-story h3',
+  '.lf-hero-slide__title',
+  '.lf-hero-thumb__label',
+  '.m3-blogcard__title',
+].join(', ');
+
+const PHRASE_SPECIAL_RE = /([0-9０-９]+(?:\.[0-9０-９]+)?(?:日間|年間|ヶ月|か月|周年|[種類個本枚回件日年月時間分秒版弾つ名社%％])|[ァ-ヶー]{2,16})/gu;
+const PHRASE_JA_RE = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
+const PHRASE_SUFFIX_RE = /^(?:[ぁ-ん]{1,2}|[版社用風])$/u;
+const PHRASE_PUNCT_RE = /[\s「」『』（）()【】［］\[\]、。，．！？!?：:；;・…“”"']/u;
+
+function tokenizeTitlePhrases(text) {
+  const rawParts = text.split(PHRASE_SPECIAL_RE);
+  const tokens = [];
+
+  for (let i = 0; i < rawParts.length; i += 1) {
+    const part = rawParts[i];
+    if (!part) continue;
+    if (i % 2 === 1) {
+      tokens.push(part);
+      continue;
+    }
+    if (!TITLE_WORD_SEGMENTER) {
+      tokens.push(part);
+      continue;
+    }
+    for (const { segment } of TITLE_WORD_SEGMENTER.segment(part)) {
+      if (!segment) continue;
+      const prev = tokens[tokens.length - 1];
+      if (
+        prev &&
+        !PHRASE_PUNCT_RE.test(prev) &&
+        !PHRASE_PUNCT_RE.test(segment) &&
+        PHRASE_JA_RE.test(prev) &&
+        PHRASE_SUFFIX_RE.test(segment) &&
+        prev.length + segment.length <= 12
+      ) {
+        tokens[tokens.length - 1] = prev + segment;
+      } else {
+        tokens.push(segment);
+      }
+    }
+  }
+  return tokens;
+}
+
+function buildPhraseFragment(text) {
+  const frag = document.createDocumentFragment();
+  const tokens = tokenizeTitlePhrases(text);
+  for (const token of tokens) {
+    if (
+      token.length >= 2 &&
+      token.length <= 16 &&
+      PHRASE_JA_RE.test(token) &&
+      !PHRASE_PUNCT_RE.test(token)
+    ) {
+      const span = document.createElement('span');
+      span.className = 'lf-phrase-unit';
+      span.textContent = token;
+      frag.appendChild(span);
+    } else {
+      frag.appendChild(document.createTextNode(token));
+    }
+  }
+  return frag;
+}
+
+function setHostPhraseText(host, text) {
+  if (!host) return;
+  const hasNonPhraseElement = Array.from(host.children).some(
+    (child) => !child.classList.contains('lf-phrase-unit')
+  );
+  if (hasNonPhraseElement) return;
+  host.replaceChildren(buildPhraseFragment(text));
+}
+
+function setupTitlePhraseWrap() {
+  document.querySelectorAll(PHRASE_ONLY_TITLE_SELECTOR).forEach((el) => {
+    if (el.dataset.lfPhraseWrapped === 'true') return;
+    const host = textHostOf(el);
+    const text = host.textContent;
+    if (!text || !PHRASE_JA_RE.test(text)) return;
+    setHostPhraseText(host, text.trim());
+    el.dataset.lfPhraseWrapped = 'true';
+  });
+}
+
 // [font-size 倍率, letter-spacing]
 const FIT_STEPS = [
   [1, null],
@@ -212,7 +301,7 @@ function fitTitle(el) {
   if (!el.dataset.lfTitle) el.dataset.lfTitle = host.textContent.trim();
 
   // 毎回まっさらな状態から測り直す（リサイズで枠が広がった場合に戻せるように）
-  host.textContent = el.dataset.lfTitle;
+  setHostPhraseText(host, el.dataset.lfTitle);
   el.classList.remove('lf-title-truncated');
   el.removeAttribute('title');
   applyStep(el, 0);
@@ -722,6 +811,7 @@ function init() {
   setupCalendarMonth();
   setupFootnoteRelocation();
   setupTableGuides();
+  setupTitlePhraseWrap();
   setupTitleAutoFit();
   setupHeadingTocAccess();
   setupAsideTocProgress();

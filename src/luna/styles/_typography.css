@@ -206,6 +206,13 @@ body.lf-theme :is(
 	overflow-wrap: anywhere;
 }
 
+/* タイトル内のカタカナ語・数字+助数詞・短い文節が途中で割れるのを防ぐ（極狭幅では折り返し可）。 */
+body.lf-theme .lf-phrase-unit {
+	display: inline-block;
+	max-inline-size: 100%;
+	vertical-align: baseline;
+}
+
 /* H2: 大区切り。埋め込みの既存寸法を保ち、本文見出しだけを強調する。 */
 body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) {
 	--lf-heading-rule-length: clamp(5.5rem, 18%, 9rem);
