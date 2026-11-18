@@ -122,6 +122,29 @@ body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) > li {
 
 /* Desktop feature shelf shows one complete title at a time. */
 @media (min-width: 1001px) {
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list) {
+		scrollbar-width: thin;
+		scrollbar-color: var(--lf-on-surface-muted) transparent;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar {
+		display: block;
+		block-size: 5px;
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)::-webkit-scrollbar-thumb {
+		background: var(--lf-on-surface-muted);
+		border-radius: var(--lf-shape-full);
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)[data-lf-scroll-more]:not(:focus-within) {
+		mask-image: linear-gradient(to right, #000 calc(100% - 1.25rem), transparent);
+	}
+
+	body.lf-theme :is(.lf-topic-nav__features, .lf-topic-nav__list)[data-lf-scroll-more]:dir(rtl):not(:focus-within) {
+		mask-image: linear-gradient(to left, #000 calc(100% - 1.25rem), transparent);
+	}
+
 	body.lf-theme .lf-topic-nav__features {
 		flex: 1 1 0;
 		container-type: inline-size;
