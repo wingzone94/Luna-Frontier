@@ -333,8 +333,45 @@
     root.setAttribute('data-lf-ready', '');
   };
 
+  const HERO_TITLE_STEPS = ['lg', 'md', 'sm'];
+
+  const titleExceedsLines = (el, maxLines = 3) => {
+    const cs = getComputedStyle(el);
+    const lh = parseFloat(cs.lineHeight);
+    if (!Number.isFinite(lh) || lh <= 0) return false;
+    const prevClamp = el.style.webkitLineClamp;
+    const prevDisplay = el.style.display;
+    el.style.webkitLineClamp = 'unset';
+    el.style.display = 'block';
+    const height = el.scrollHeight;
+    el.style.webkitLineClamp = prevClamp;
+    el.style.display = prevDisplay;
+    return height > lh * maxLines + 2;
+  };
+
+  const fitHeroTitles = (root) => {
+    const titles = root.querySelectorAll('.lf-hero-slide__title');
+    titles.forEach((title) => {
+      for (const step of HERO_TITLE_STEPS) {
+        if (step === 'lg') {
+          title.removeAttribute('data-lf-hero-title-size');
+        } else {
+          title.setAttribute('data-lf-hero-title-size', step);
+        }
+        if (!titleExceedsLines(title, 3)) break;
+      }
+    });
+  };
+
   const boot = () => {
-    document.querySelectorAll('[data-lf-hero-slider]').forEach(init);
+    document.querySelectorAll('[data-lf-hero-slider]').forEach((root) => {
+      init(root);
+      fitHeroTitles(root);
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => fitHeroTitles(root));
+      }
+      window.addEventListener('resize', () => fitHeroTitles(root), { passive: true });
+    });
   };
 
   if (document.readyState === 'loading') {
