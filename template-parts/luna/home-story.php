@@ -12,7 +12,7 @@ $lf_terms = function_exists( 'node_get_post_categories_for_display' ) ? node_get
 $lf_title = get_the_title( $lf_story );
 $lf_title = '' !== trim( $lf_title ) ? $lf_title : __( 'タイトルなし', 'node' );
 // Keep summaries plain text, including articles containing block markup.
-$lf_excerpt = wp_trim_words( wp_strip_all_tags( strip_shortcodes( get_the_excerpt( $lf_story ) ) ), 46, '…' );
+$lf_excerpt = wp_strip_all_tags( strip_shortcodes( get_the_excerpt( $lf_story ) ) );
 $lf_category = $lf_terms ? node_render_category_label(
 	$lf_terms[0],
 	array(
