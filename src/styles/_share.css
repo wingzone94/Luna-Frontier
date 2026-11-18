@@ -126,11 +126,16 @@
 
 /* システムシェアは navigator.share 対応ブラウザでのみJSが hidden を外す。
    上の display:flex !important に負けないよう明示的に隠す */
-.m3-share-buttons .m3-share-btn--system[hidden] {
+.m3-share-buttons .m3-share-btn.m3-share-btn--system[hidden] {
     display: none !important;
 }
 
 @media (min-width: 600px) {
+    /* Three even rows for the nine-button set, including the optional Print action. */
+    .m3-share-buttons:not(.is-compact):has(> :nth-child(9 of .m3-share-btn:not([hidden]))):not(:has(> :nth-child(10 of .m3-share-btn:not([hidden])))) {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
     .m3-share-buttons.is-compact {
         display: flex !important;
         flex-wrap: wrap !important;
@@ -187,6 +192,11 @@
         padding: 0 12px !important;
         box-sizing: border-box !important;
     }
+    .m3-share-buttons:has(> :nth-child(9 of .m3-share-btn:not([hidden]))):not(:has(> :nth-child(10 of .m3-share-btn:not([hidden])))) {
+        display: grid !important;
+        grid-template-columns: repeat(3, 48px) !important;
+    }
+
     .m3-share-buttons .m3-share-btn.m3-share-btn {
         display: flex !important;
         width: 48px !important;

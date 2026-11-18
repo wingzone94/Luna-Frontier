@@ -184,6 +184,28 @@ body.lf-theme .m3-article__body h2:not(:where(.m3-notice *))::before {
 	background: var(--lf-heading-line-h2);
 }
 
+/* 日本語の文節を優先し、収まらない英数字や URL も折り返す。 */
+body.lf-theme :is(
+	.lf-article-header__title,
+	.m3-article__body :is(h1, h2, h3, h4, p, li, dd):not(:where(pre *, .m3-notice *)),
+	.m3-card__title,
+	.c-card__title,
+	.m3-related-card__title,
+	.m3-headline-card__title,
+	.c-headline-card__title,
+	.lf-home-story h3,
+	.lf-home-story__excerpt,
+	.lf-hero-slide__title,
+	.lf-hero-thumb__label,
+	.m3-blogcard__title,
+	.m3-breadcrumbs__item > :is(a, span)
+):lang(ja) {
+	line-break: strict;
+	word-break: normal;
+	word-break: auto-phrase;
+	overflow-wrap: anywhere;
+}
+
 /* H2: 大区切り。埋め込みの既存寸法を保ち、本文見出しだけを強調する。 */
 body.lf-theme .m3-article__body h2:not(:where(.m3-notice *)) {
 	--lf-heading-rule-length: clamp(5.5rem, 18%, 9rem);

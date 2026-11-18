@@ -277,36 +277,43 @@ body.lf-theme .m3-card:hover .m3-card__title a {
 	color: var(--lf-brand-text);
 }
 
-/*
- * 画像なしカード。
- *
- * グリッドの行は最も高いカード（＝画像ありカード）に高さが揃う。
- * フッターは content 内で auto マージンを取っているため、上詰めのままだと
- * タイトルとフッターの間に大きな空洞が残っていた。
- * そこで画像スロットと同じ比率の装飾面を与え、カードの構造自体を揃える。
- * ブランドオレンジの薄いハッチで「画像の代わり」だと分かるようにする。
- */
-body.lf-theme .m3-card--no-image::before {
-	content: "";
-	display: block;
-	flex: 0 0 auto;
-	aspect-ratio: 16 / 10;
-	border-block-end: 1px solid var(--lf-rule);
-	background:
-		repeating-linear-gradient(
-			135deg,
-			transparent 0 15px,
-			color-mix(in srgb, var(--lf-brand) 8%, transparent) 15px 16px
-		),
-		linear-gradient(
-			160deg,
-			color-mix(in srgb, var(--lf-brand) 14%, var(--lf-paper)) 0%,
-			var(--lf-paper) 72%
-		);
+/* アイキャッチなし。各カードの画像枠に既存の文書アイコンを表示する。 */
+body.lf-theme :is(.lf-post-placeholder, .lf-home-story .lf-home-story__placeholder) {
+	display: grid;
+	place-items: center;
+	inline-size: 100%;
+	block-size: 100%;
+	background: var(--lf-paper-sunken);
+	color: var(--lf-on-surface-muted);
+	font-size: 2.25rem;
 }
 
-body.lf-theme .m3-hot-card.m3-card--no-image::before {
+body.lf-theme .lf-post-placeholder-frame {
+	block-size: auto;
+	flex: 0 0 auto;
+	aspect-ratio: 16 / 9;
+	border-block-end: 1px solid var(--lf-rule);
+	display: flex;
+}
+
+body.lf-theme .m3-hot-card .lf-post-placeholder-frame {
 	aspect-ratio: 16 / 7;
+}
+
+body.lf-theme .lf-post-placeholder-frame > .lf-post-placeholder {
+	block-size: auto;
+}
+
+body.lf-theme .lf-hero-slide__media > .lf-post-placeholder {
+	justify-items: end;
+	padding-inline-end: 22%;
+}
+
+@media (max-width: 767px) {
+	body.lf-theme .lf-hero-slide__media > .lf-post-placeholder {
+		place-items: start center;
+		padding: var(--lf-space-xl) 0 0;
+	}
 }
 
 body.lf-theme .m3-card--no-image .m3-card__content {

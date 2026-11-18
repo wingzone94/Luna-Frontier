@@ -111,6 +111,13 @@ endif;
             <textarea id="comment" name="comment" class="m3-textfield__input" placeholder="温かいコメントをお待ちしております..." required aria-required="true"></textarea>
         </div>';
 
+    // WordPress の翻訳とリンクを使い、ログイン案内の後で行を分ける。
+    $node_space_required_note = static function ( $message ) {
+        $required_note = wp_required_field_message();
+        return $required_note ? str_replace( $required_note, '<br>' . $required_note, $message ) : $message;
+    };
+    add_filter( 'comment_form_logged_in', $node_space_required_note );
+
     comment_form( array(
         'title_reply'          => esc_html__( 'コメントを投稿する', 'node' ),
         'label_submit'         => esc_html__( '送信する', 'node' ),
@@ -121,6 +128,7 @@ endif;
         'title_reply_before'   => '<h3 id="reply-title" class="comment-reply-title m3-title-medium">',
         'title_reply_after'    => '</h3>',
     ) );
+    remove_filter( 'comment_form_logged_in', $node_space_required_note );
     ?>
 
 </div>
