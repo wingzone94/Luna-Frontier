@@ -13,6 +13,18 @@
         margin-top: var(--m3-spacing-xl);
     }
 }
+@media (min-width: 768px) {
+    body.lf-theme .m3-comments-section {
+        margin-block-start: var(--m3-spacing-l);
+        padding-block: var(--m3-spacing-l);
+    }
+
+    body.lf-theme .m3-comments-section > .m3-comments-section {
+        margin-block-start: 0;
+        padding-block: 0;
+    }
+}
+
 .m3-comment-list { list-style: none; padding: 0; margin: 0; }
 .m3-comment-bubble-container { display: flex; gap: var(--m3-spacing-m); margin-bottom: var(--m3-spacing-xl); align-items: flex-start; }
  

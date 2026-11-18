@@ -64,7 +64,7 @@ $permalink = get_permalink($post_id);
             <div class="m3-card__topline c-card__topline">
                 <?php if ($has_category) : ?>
                     <div class="m3-card__category-container c-card__category-container">
-                        <?php node_the_category_labels(); ?>
+                        <?php luna_frontier_the_card_category_labels( $post_id ); ?>
                     </div>
                 <?php endif; ?>
 

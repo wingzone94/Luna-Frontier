@@ -167,21 +167,30 @@ function textHostOf(el) {
   return el.querySelector('a') || el;
 }
 
+const TITLE_WORD_SEGMENTER = typeof Intl.Segmenter === 'function'
+  ? new Intl.Segmenter(document.documentElement.lang || undefined, { granularity: 'word' })
+  : null;
+
 function truncate(el) {
   const host = textHostOf(el);
   const full = el.dataset.lfTitle;
+  const ends = TITLE_WORD_SEGMENTER
+    ? Array.from(TITLE_WORD_SEGMENTER.segment(full))
+      .filter(({ isWordLike, segment }) => isWordLike || /[。！？!?）」』]$/u.test(segment))
+      .map(({ index, segment }) => index + segment.length)
+    : Array.from(full.matchAll(/\S+(?=\s)/gu), match => match.index + match[0].length);
   let lo = 0;
-  let hi = full.length;
+  let hi = ends[ends.length - 1] === full.length ? ends.length - 1 : ends.length;
 
-  // 収まる最大の文字数を二分探索する
+  // 収まる最後の単語境界を二分探索する。
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
-    host.textContent = full.slice(0, mid) + '…';
+    host.textContent = full.slice(0, ends[mid - 1]) + '…';
     if (overflows(el)) hi = mid - 1;
     else lo = mid;
   }
 
-  host.textContent = lo > 0 ? full.slice(0, lo) + '…' : full;
+  host.textContent = lo > 0 ? full.slice(0, ends[lo - 1]) + '…' : full;
   el.classList.add('lf-title-truncated');
   el.title = full;
 }
@@ -683,8 +692,24 @@ function setupCalendarMonth() {
   });
 }
 
+function setupTopicScrollHint() {
+  const shelves = document.querySelectorAll('.lf-topic-nav__features, .lf-topic-nav__list');
+  shelves.forEach(shelf => {
+    const update = () => {
+      const hasMore = Math.abs(shelf.scrollLeft) + shelf.clientWidth < shelf.scrollWidth - 1;
+      shelf.toggleAttribute('data-lf-scroll-more', hasMore);
+    };
+    update();
+    shelf.addEventListener('scroll', update, { passive: true });
+    const resize = new ResizeObserver(update);
+    resize.observe(shelf);
+    for (const item of shelf.children) resize.observe(item);
+  });
+}
+
 function init() {
   syncTabletPcClass();
+  setupTopicScrollHint();
   const headerSearch = document.getElementById('m3-search-input');
   if (headerSearch) {
     headerSearch.placeholder = 'キーワードで検索';
