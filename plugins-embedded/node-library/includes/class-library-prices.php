@@ -9,7 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Node_Library_Prices {
-	public const CRON_HOOK = 'node_library_poll_prices';
+	public const CRON_HOOK     = 'node_library_poll_prices';
+	public const CRON_SCHEDULE = 'node_library_15min';
 
 	public static function init(): void {
 		add_action( 'init', array( self::class, 'install' ), 6 );
@@ -51,14 +52,22 @@ final class Node_Library_Prices {
 	}
 
 	public static function intervals( array $schedules ): array {
-		$schedules['node_library_minute'] = array( 'interval' => MINUTE_IN_SECONDS, 'display' => 'Luna Library: 1分ごと' );
+		$schedules[ self::CRON_SCHEDULE ] = array(
+			'interval' => 15 * MINUTE_IN_SECONDS,
+			'display'  => 'Luna Library: 15分ごと',
+		);
 		return $schedules;
 	}
 
 	public static function schedule(): void {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time() + MINUTE_IN_SECONDS, 'node_library_minute', self::CRON_HOOK );
+		$event = function_exists( 'wp_get_scheduled_event' ) ? wp_get_scheduled_event( self::CRON_HOOK ) : false;
+		if ( $event && self::CRON_SCHEDULE === $event->schedule ) {
+			return;
 		}
+		if ( $event ) {
+			wp_clear_scheduled_hook( self::CRON_HOOK );
+		}
+		wp_schedule_event( time() + 15 * MINUTE_IN_SECONDS, self::CRON_SCHEDULE, self::CRON_HOOK );
 	}
 
 	public static function unschedule(): void {
