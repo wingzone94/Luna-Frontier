@@ -170,6 +170,8 @@ final class Node_Library {
 	private const LIBRARY_DEPENDENCY_META    = '_node_library_card_dependency';
 	private const REUSABLE_DEPENDENCY_META   = '_node_library_reusable_block_dependency';
 	private const REFERENCE_INDEX_VERSION    = '3';
+	private const REWRITE_SLUG               = 'library';
+	private const LEGACY_REWRITE_SLUG        = 'node-library';
 
 	private static ?self $instance = null;
 
@@ -182,7 +184,11 @@ final class Node_Library {
 
 	private function __construct() {
 		add_action( 'init', [ $this, 'register_cpt' ] );
+		add_action( 'template_redirect', [ $this, 'redirect_legacy_library_urls' ], 0 );
 		add_filter( 'query_vars', [ $this, 'register_library_archive_query_var' ] );
+		add_action( 'pre_get_posts', 'node_library_filter_archive_query', 20 );
+		add_filter( 'posts_where', 'node_library_archive_posts_where', 10, 2 );
+		add_filter( 'posts_clauses', 'node_library_archive_posts_clauses', 10, 2 );
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 		add_action( 'save_post', [ $this, 'save_meta_boxes' ] );
 		add_action( 'wp_after_insert_post', [ $this, 'synchronize_library_card_references_after_save' ], 20, 4 );
@@ -994,7 +1000,7 @@ final class Node_Library {
 			'show_in_menu'        => true,
 			'show_in_rest'        => true, 
 			'query_var'           => true,
-			'rewrite'             => [ 'slug' => 'node-library' ],
+			'rewrite'             => [ 'slug' => self::REWRITE_SLUG ],
 			'capability_type'     => 'post',
 			'has_archive'         => true,
 			'hierarchical'        => false,
@@ -1006,14 +1012,85 @@ final class Node_Library {
 		register_post_type( 'node_library', $args );
 
 		add_rewrite_tag( '%node_library_type%', '(game|app)' );
-		add_rewrite_rule( '^node-library/(game|app)/page/([0-9]{1,})/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]&paged=$matches[2]', 'top' );
-		add_rewrite_rule( '^node-library/(game|app)/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]', 'top' );
+		add_rewrite_rule( '^' . self::REWRITE_SLUG . '/(game|app)/page/([0-9]{1,})/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]&paged=$matches[2]', 'top' );
+		add_rewrite_rule( '^' . self::REWRITE_SLUG . '/(game|app)/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]', 'top' );
 
-		$current_flush_version = get_option( 'node_library_flushed_version', '0' );
-		if ( version_compare( $current_flush_version, NODE_LIBRARY_VERSION, '<' ) ) {
+		$current_flush_version = (string) get_option( 'node_library_flushed_version', '0' );
+		$current_rewrite_slug  = (string) get_option( 'node_library_rewrite_slug', '' );
+		if ( version_compare( $current_flush_version, NODE_LIBRARY_VERSION, '<' ) || self::REWRITE_SLUG !== $current_rewrite_slug ) {
 			flush_rewrite_rules();
 			update_option( 'node_library_flushed_version', NODE_LIBRARY_VERSION );
+			update_option( 'node_library_rewrite_slug', self::REWRITE_SLUG );
 		}
+	}
+
+	/**
+	 * 旧 /node-library/ を /library/ へ 301 転送する。
+	 *
+	 * アーカイブ、タイプ別、ページ送り、個別項目は先頭セグメントの置換で揃える。
+	 * プラグイン内で完結させ、サーバー設定には依存しない。
+	 *
+	 * @param bool $exit 転送後に終了するか。テストからヘッダだけ確認するときに false。
+	 * @return string|null 転送先。対象外のリクエストでは null。
+	 */
+	public function redirect_legacy_library_urls( bool $exit = true ): ?string {
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return null;
+		}
+
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( (string) $_SERVER['REQUEST_URI'] ) : '';
+		$target      = $this->legacy_library_redirect_url( $request_uri );
+		if ( null === $target ) {
+			return null;
+		}
+
+		wp_safe_redirect( $target, 301 );
+		if ( $exit ) {
+			exit;
+		}
+
+		return $target;
+	}
+
+	/**
+	 * 旧ライブラリ URL に対応する新 URL。対象外なら null。
+	 *
+	 * @param string $request_uri リクエスト URI（パスとクエリ）。
+	 * @return string|null
+	 */
+	public function legacy_library_redirect_url( string $request_uri ): ?string {
+		$parts = wp_parse_url( $request_uri );
+		$path  = ( is_array( $parts ) && isset( $parts['path'] ) && is_string( $parts['path'] ) ) ? $parts['path'] : '';
+		if ( '' === $path ) {
+			return null;
+		}
+
+		$home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_path = is_string( $home_path ) ? untrailingslashit( $home_path ) : '';
+		$relative  = $path;
+		if ( '' !== $home_path && str_starts_with( $path, $home_path . '/' ) ) {
+			$relative = substr( $path, strlen( $home_path ) );
+		}
+
+		$legacy = preg_quote( self::LEGACY_REWRITE_SLUG, '#' );
+		if ( ! preg_match( '#^/' . $legacy . '(?:/|$)#', $relative ) ) {
+			return null;
+		}
+
+		$rewritten = preg_replace( '#^/' . $legacy . '#', '/' . self::REWRITE_SLUG, $relative, 1 );
+		if ( ! is_string( $rewritten ) || $rewritten === $relative ) {
+			return null;
+		}
+
+		// canonical の2段目301を避ける。パーマリンク設定の末尾スラッシュに揃えて1回で届ける。
+		$rewritten = user_trailingslashit( $rewritten );
+		$target    = untrailingslashit( home_url( '/' ) ) . $rewritten;
+		$query  = ( is_array( $parts ) && isset( $parts['query'] ) && is_string( $parts['query'] ) ) ? $parts['query'] : '';
+		if ( '' !== $query ) {
+			$target .= '?' . $query;
+		}
+
+		return $target;
 	}
 
 	/**
@@ -1024,6 +1101,10 @@ final class Node_Library {
 	 */
 	public function register_library_archive_query_var( array $query_vars ): array {
 		$query_vars[] = 'node_library_type';
+		$query_vars[] = 'q';
+		$query_vars[] = 'tab';
+		$query_vars[] = 'sort';
+		$query_vars[] = 'dir';
 		return array_values( array_unique( $query_vars ) );
 	}
 
@@ -1496,6 +1577,707 @@ final class Node_Library {
 		include NODE_LIBRARY_DIR . 'templates/card-library.php';
 	}
 
+}
+
+/**
+ * 一覧の分類フィルター初期値。既存タブ分類を起点にし、後続の条件はフィルターで足す。
+ *
+ * @return array<string,string>
+ */
+function node_library_archive_tab_filters(): array {
+	$tabs = node_library_tab_categories();
+	$filtered = apply_filters( 'node_library_archive_tab_filters', $tabs );
+	if ( ! is_array( $filtered ) ) {
+		return $tabs;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $label ) {
+		$key = sanitize_key( (string) $key );
+		if ( '' === $key || ! is_string( $label ) || '' === trim( $label ) ) {
+			continue;
+		}
+		$clean[ $key ] = $label;
+	}
+
+	return $clean ? $clean : $tabs;
+}
+
+/**
+ * 一覧の並び順。発売日の実値は node_library_archive_release_date_meta_key が指すメタ。
+ *
+ * @return array<string,string>
+ */
+function node_library_archive_sort_options(): array {
+	$options = [
+		''      => '標準',
+		'date'  => '発売日',
+		'title' => 'タイトル',
+	];
+	$filtered = apply_filters( 'node_library_archive_sort_options', $options );
+	if ( ! is_array( $filtered ) ) {
+		return $options;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $label ) {
+		$key = sanitize_key( (string) $key );
+		if ( ! is_string( $label ) || '' === trim( $label ) ) {
+			continue;
+		}
+		$clean[ $key ] = $label;
+	}
+
+	return isset( $clean[''] ) ? $clean : $options;
+}
+
+/**
+ * 発売日ソートが読むメタキー。未保存の項目は除外せず末尾に回す。
+ * Task L1 の `_node_library_release_date` を既定にし、キー自体はここでは保存しない。
+ */
+function node_library_archive_release_date_meta_key(): string {
+	$key = apply_filters( 'node_library_archive_release_date_meta_key', '_node_library_release_date' );
+	return is_string( $key ) ? sanitize_key( $key ) : '';
+}
+
+/**
+ * リクエストから一覧ツールバーの状態を読む。
+ *
+ * @param WP_Query|null $query Query whose vars should win over the global request.
+ * @return array{q:string,tab:string,sort:string,dir:string}
+ */
+function node_library_archive_toolbar_state( ?WP_Query $query = null ): array {
+	$tabs  = node_library_archive_tab_filters();
+	$sorts = node_library_archive_sort_options();
+	$q     = node_library_archive_request_text( 'q', $query );
+	$q     = trim( (string) preg_replace( '/\s+/u', ' ', $q ) );
+	if ( function_exists( 'mb_substr' ) ) {
+		$q = mb_substr( $q, 0, 80 );
+	} else {
+		$q = substr( $q, 0, 80 );
+	}
+
+	$tab  = sanitize_key( node_library_archive_request_text( 'tab', $query ) );
+	$sort = sanitize_key( node_library_archive_request_text( 'sort', $query ) );
+	$dir  = sanitize_key( node_library_archive_request_text( 'dir', $query ) );
+	if ( ! isset( $tabs[ $tab ] ) ) {
+		$tab = '';
+	}
+	if ( '' !== $sort && ! isset( $sorts[ $sort ] ) ) {
+		$sort = '';
+	}
+	if ( ! in_array( $dir, [ 'asc', 'desc' ], true ) ) {
+		$dir = '';
+	}
+
+	return [
+		'q'    => $q,
+		'tab'  => $tab,
+		'sort' => $sort,
+		'dir'  => $dir,
+	];
+}
+
+/**
+ * 公開クエリ変数、なければ GET から文字列を読む。
+ *
+ * @param WP_Query|null $query Query to read before the global request.
+ */
+function node_library_archive_request_text( string $key, ?WP_Query $query = null ): string {
+	$value = $query instanceof WP_Query ? $query->get( $key ) : get_query_var( $key );
+	if ( ! is_string( $value ) || '' === $value ) {
+		if ( isset( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$raw = wp_unslash( $_GET[ $key ] );
+			$value = is_string( $raw ) ? $raw : '';
+		}
+	}
+
+	$value = is_string( $value ) ? sanitize_text_field( $value ) : '';
+	return $value;
+}
+
+/**
+ * 並び方向。タイトルの初期値は昇順、発売日の初期値は降順。
+ */
+function node_library_archive_effective_dir( string $sort, string $dir ): string {
+	if ( in_array( $dir, [ 'asc', 'desc' ], true ) ) {
+		return $dir;
+	}
+
+	return 'title' === $sort ? 'asc' : 'desc';
+}
+
+/**
+ * ページ送りや種類タブに、今の検索条件だけを足す。
+ */
+function node_library_archive_toolbar_query_args(): array {
+	$state = node_library_archive_toolbar_state();
+	$args  = [];
+	if ( '' !== $state['q'] ) {
+		$args['q'] = $state['q'];
+	}
+	if ( '' !== $state['tab'] ) {
+		$args['tab'] = $state['tab'];
+	}
+	if ( '' !== $state['sort'] ) {
+		$args['sort'] = $state['sort'];
+		$args['dir']  = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	}
+
+	/**
+	 * 後続の条件（価格帯など）をページ送りとタブのリンクへ引き継ぐ。
+	 *
+	 * @param array<string,string>         $args  引き継ぐクエリ引数。
+	 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+	 */
+	$filtered = apply_filters( 'node_library_archive_toolbar_query_args', $args, $state );
+	if ( ! is_array( $filtered ) ) {
+		return $args;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $value ) {
+		$key = sanitize_key( (string) $key );
+		if ( '' === $key || is_array( $value ) || is_object( $value ) ) {
+			continue;
+		}
+		$value = sanitize_text_field( (string) $value );
+		if ( '' === $value ) {
+			continue;
+		}
+		$clean[ $key ] = $value;
+	}
+
+	return $clean;
+}
+
+/**
+ * @param string $url Archive or filter URL.
+ */
+function node_library_archive_with_toolbar_args( string $url ): string {
+	$args = node_library_archive_toolbar_query_args();
+	if ( ! $args ) {
+		return $url;
+	}
+
+	return add_query_arg( $args, $url );
+}
+
+/**
+ * ストアリンクの保存分類。auto のままなら自動判定結果を返す。
+ *
+ * @param array<string,mixed> $link Link row.
+ */
+function node_library_link_effective_tab( array $link ): string {
+	$stored = node_library_normalize_category( $link['category'] ?? '' );
+	if ( 'auto' !== $stored ) {
+		return $stored;
+	}
+
+	return node_library_auto_category( (string) ( $link['platform'] ?? '' ) );
+}
+
+/**
+ * 項目が分類タブに合うか。未知の分類は node_library_archive_item_matches_tab に委譲する。
+ *
+ * @param mixed $links Stored links.
+ */
+function node_library_item_matches_archive_tab( int $post_id, string $tab, $links ): bool {
+	if ( ! is_array( $links ) ) {
+		$links = [];
+	}
+
+	$matched = apply_filters( 'node_library_archive_item_matches_tab', null, $post_id, $tab, $links );
+	if ( null !== $matched ) {
+		return (bool) $matched;
+	}
+
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$stored = node_library_normalize_category( $link['category'] ?? '' );
+		if ( 'auto' === $tab ) {
+			if ( 'auto' === $stored ) {
+				return true;
+			}
+			continue;
+		}
+		if ( node_library_link_effective_tab( $link ) === $tab ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * ライブラリ一覧の検索・分類・ソート。条件が無いときはクエリを変えない。
+ *
+ * @param WP_Query $query Main query.
+ */
+function node_library_filter_archive_query( $query ): void {
+	if ( ! $query instanceof WP_Query || is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+
+	// 個別ページは post_type が node_library でもアーカイブではない。?q= / ?tab= で 404 にしない。
+	if ( $query->is_singular() || ! $query->is_post_type_archive( 'node_library' ) ) {
+		return;
+	}
+
+	$state         = node_library_archive_toolbar_state( $query );
+	$has_id_filter = has_filter( 'node_library_archive_filter_post_ids' );
+	if ( '' === $state['q'] && '' === $state['tab'] && '' === $state['sort'] && ! $has_id_filter ) {
+		return;
+	}
+
+	if ( '' !== $state['q'] ) {
+		$query->set( 'node_library_keyword', $state['q'] );
+	}
+
+	if ( '' !== $state['tab'] || $has_id_filter ) {
+		$ids = get_posts(
+			[
+				'post_type'              => 'node_library',
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'suppress_filters'       => true,
+			]
+		);
+		$ids = array_values( array_filter( array_map( 'absint', is_array( $ids ) ? $ids : [] ) ) );
+
+		/**
+		 * 別テーブル参照の絞り込みを、項目ごとの問い合わせなしで一括適用する。
+		 *
+		 * @param array<int,int> $ids   候補の投稿 ID。
+		 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+		 */
+		$filtered_ids = apply_filters( 'node_library_archive_filter_post_ids', $ids, $state );
+		if ( ! is_array( $filtered_ids ) ) {
+			$filtered_ids = [];
+		}
+		$ids = [];
+		foreach ( $filtered_ids as $post_id ) {
+			$post_id = absint( $post_id );
+			if ( $post_id > 0 ) {
+				$ids[] = $post_id;
+			}
+		}
+		$ids = array_values( array_unique( $ids ) );
+
+		if ( '' !== $state['tab'] ) {
+			if ( $ids ) {
+				update_meta_cache( 'post', $ids );
+			}
+
+			$matched = [];
+			foreach ( $ids as $post_id ) {
+				$links = get_post_meta( $post_id, '_node_library_links', true );
+				if ( node_library_item_matches_archive_tab( $post_id, $state['tab'], $links ) ) {
+					$matched[] = $post_id;
+				}
+			}
+			$ids = $matched;
+		}
+
+		$query->set( 'post__in', $ids ? $ids : [ 0 ] );
+	}
+
+	if ( '' === $state['sort'] ) {
+		return;
+	}
+
+	$dir = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	$handled = apply_filters( 'node_library_archive_apply_sort', false, $query, $state['sort'], $dir );
+	if ( $handled ) {
+		return;
+	}
+
+	if ( 'title' === $state['sort'] ) {
+		$query->set( 'orderby', 'title' );
+		$query->set( 'order', strtoupper( $dir ) );
+		return;
+	}
+
+	if ( 'date' === $state['sort'] ) {
+		$query->set( 'node_library_sort', 'date' );
+		$query->set( 'node_library_sort_dir', $dir );
+		if ( '' === node_library_archive_release_date_meta_key() ) {
+			$query->set( 'orderby', 'date' );
+			$query->set( 'order', strtoupper( $dir ) );
+		}
+	}
+}
+
+/**
+ * タイトルと既存の紹介文（_node_library_summary）だけをキーワード検索する。
+ *
+ * @param string   $where SQL WHERE.
+ * @param WP_Query $query Query.
+ */
+function node_library_archive_posts_where( $where, $query ): string {
+	if ( ! $query instanceof WP_Query ) {
+		return $where;
+	}
+
+	$keyword = (string) $query->get( 'node_library_keyword' );
+	if ( '' === $keyword ) {
+		return $where;
+	}
+
+	global $wpdb;
+	$like   = '%' . $wpdb->esc_like( $keyword ) . '%';
+	$where .= $wpdb->prepare(
+		" AND ( {$wpdb->posts}.post_title LIKE %s OR {$wpdb->posts}.ID IN ( SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_node_library_summary' AND meta_value LIKE %s ) )",
+		$like,
+		$like
+	);
+
+	return $where;
+}
+
+/**
+ * 発売日メタが無い項目も残し、空の日付は末尾へ寄せる。
+ *
+ * @param array<string,string> $clauses SQL clauses.
+ * @param WP_Query             $query   Query.
+ * @return array<string,string>
+ */
+function node_library_archive_posts_clauses( $clauses, $query ): array {
+	if ( ! $query instanceof WP_Query || 'date' !== $query->get( 'node_library_sort' ) ) {
+		return $clauses;
+	}
+
+	$meta_key = node_library_archive_release_date_meta_key();
+	if ( '' === $meta_key ) {
+		return $clauses;
+	}
+
+	global $wpdb;
+	$dir = 'ASC' === strtoupper( (string) $query->get( 'node_library_sort_dir' ) ) ? 'ASC' : 'DESC';
+	$clauses['distinct'] = 'DISTINCT';
+	$clauses['join'] .= $wpdb->prepare(
+		" LEFT JOIN {$wpdb->postmeta} AS node_library_release_sort ON ( {$wpdb->posts}.ID = node_library_release_sort.post_id AND node_library_release_sort.meta_key = %s ) ",
+		$meta_key
+	);
+	$clauses['orderby'] = "CASE WHEN node_library_release_sort.meta_value IS NULL OR node_library_release_sort.meta_value = '' THEN 1 ELSE 0 END ASC, node_library_release_sort.meta_value {$dir}, {$wpdb->posts}.post_date DESC";
+
+	return $clauses;
+}
+
+/**
+ * 一覧の検索・分類・ソート。カードの中身は変えない。
+ */
+function node_library_render_archive_toolbar(): void {
+	$state   = node_library_archive_toolbar_state();
+	$tabs    = node_library_archive_tab_filters();
+	$sorts   = node_library_archive_sort_options();
+	$archive = get_post_type_archive_link( 'node_library' );
+	if ( ! is_string( $archive ) || '' === $archive ) {
+		return;
+	}
+
+	$type = sanitize_key( (string) get_query_var( 'node_library_type' ) );
+	if ( '' === $type && isset( $_GET['type'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$type_raw = wp_unslash( $_GET['type'] );
+		$type     = sanitize_key( is_string( $type_raw ) ? $type_raw : '' );
+	}
+	$action = in_array( $type, [ 'game', 'app' ], true ) ? trailingslashit( $archive . $type ) : $archive;
+	$dir         = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	$public_tabs = $tabs;
+	unset( $public_tabs['auto'] );
+	?>
+	<form id="node-library-tools" class="node-library-tools" method="get" action="<?php echo esc_url( $action ); ?>" role="search">
+		<label class="node-library-tools__field node-library-tools__field--keyword">
+			<span><?php esc_html_e( 'キーワード', 'node' ); ?></span>
+			<input class="node-library-tools__control" type="search" name="q" maxlength="80" value="<?php echo esc_attr( $state['q'] ); ?>" placeholder="<?php esc_attr_e( 'タイトル・紹介文', 'node' ); ?>">
+		</label>
+		<label class="node-library-tools__field">
+			<span><?php esc_html_e( '分類', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="tab">
+				<option value=""><?php esc_html_e( 'すべて', 'node' ); ?></option>
+				<?php foreach ( $public_tabs as $tab_value => $tab_label ) : ?>
+					<option value="<?php echo esc_attr( $tab_value ); ?>" <?php selected( $state['tab'], $tab_value ); ?>><?php echo esc_html( $tab_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label class="node-library-tools__field">
+			<span><span class="material-symbols-outlined" data-icon="sort" aria-hidden="true"></span><?php esc_html_e( '並び順', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="sort">
+				<?php foreach ( $sorts as $sort_value => $sort_label ) : ?>
+					<option value="<?php echo esc_attr( $sort_value ); ?>" <?php selected( $state['sort'], $sort_value ); ?>><?php echo esc_html( $sort_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label class="node-library-tools__field">
+			<span><?php esc_html_e( '順序', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="dir">
+				<option value="desc" <?php selected( $dir, 'desc' ); ?>><?php esc_html_e( '降順', 'node' ); ?></option>
+				<option value="asc" <?php selected( $dir, 'asc' ); ?>><?php esc_html_e( '昇順', 'node' ); ?></option>
+			</select>
+		</label>
+		<button class="node-library-tools__submit" type="submit">
+			<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
+			<?php esc_html_e( '検索', 'node' ); ?>
+		</button>
+		<?php
+		/**
+		 * フォーム内に後続の条件フィールドを足す。表示だけの追加は node_library_archive_toolbar_after。
+		 *
+		 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+		 */
+		do_action( 'node_library_archive_toolbar_fields', $state );
+		?>
+	</form>
+	<?php
+	do_action( 'node_library_archive_toolbar_after', $state );
+}
+
+/**
+ * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種・入手先だけを返す。
+ *
+ * @return array<int, array{label:string,value:string,links?:array<int,array{platform:string,url:string}>}>
+ */
+function node_library_get_spec_rows( int $post_id ): array {
+	$post = get_post( $post_id );
+	if ( ! $post instanceof WP_Post || 'node_library' !== $post->post_type ) {
+		return [];
+	}
+
+	$type = get_post_meta( $post_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	$rows = [
+		[
+			'label' => '種別',
+			'value' => 'app' === $type ? 'アプリ' : 'ゲーム',
+		],
+	];
+
+	$summary = trim( (string) get_post_meta( $post_id, '_node_library_summary', true ) );
+	if ( '' !== $summary ) {
+		$rows[] = [
+			'label' => '紹介文',
+			'value' => $summary,
+		];
+	}
+
+	$hardware = node_library_spec_hardware_labels( $post_id );
+	if ( $hardware ) {
+		$rows[] = [
+			'label' => '対応機種',
+			'value' => implode( '、', $hardware ),
+		];
+	}
+
+	$links = node_library_spec_store_links( $post_id );
+	if ( $links ) {
+		$rows[] = [
+			'label' => '入手先',
+			'value' => '',
+			'links' => $links,
+		];
+	}
+
+	$filtered = apply_filters( 'node_library_spec_rows', $rows, $post_id );
+	return is_array( $filtered ) ? $filtered : $rows;
+}
+
+/**
+ * リンクに保存された対応ハードを、既存の表示名へ揃える。
+ *
+ * @return array<int, string>
+ */
+function node_library_spec_hardware_labels( int $post_id ): array {
+	$links   = get_post_meta( $post_id, '_node_library_links', true );
+	$options = node_library_hardware_options();
+	$labels  = [];
+	if ( ! is_array( $links ) ) {
+		return [];
+	}
+
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$hardware = node_library_normalize_hardware( $link['hardware'] ?? '' );
+		if ( 'auto' === $hardware ) {
+			$hardware = node_library_infer_hardware_from_platform( (string) ( $link['platform'] ?? '' ) );
+		}
+		if ( ! isset( $options[ $hardware ] ) || 'auto' === $hardware ) {
+			continue;
+		}
+		$label = $options[ $hardware ];
+		if ( ! in_array( $label, $labels, true ) ) {
+			$labels[] = $label;
+		}
+	}
+
+	return $labels;
+}
+
+/**
+ * スペック表と JSON-LD が共有する入手先。
+ *
+ * @return array<int, array{platform:string,url:string}>
+ */
+function node_library_spec_store_links( int $post_id ): array {
+	$stored = get_post_meta( $post_id, '_node_library_links', true );
+	$links  = [];
+	if ( ! is_array( $stored ) ) {
+		return [];
+	}
+
+	foreach ( $stored as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$platform = sanitize_text_field( (string) ( $link['platform'] ?? '' ) );
+		$url      = esc_url_raw( (string) ( $link['url'] ?? '' ) );
+		if ( '' === $platform || '' === $url ) {
+			continue;
+		}
+		$links[] = [
+			'platform' => $platform,
+			'url'      => $url,
+		];
+	}
+
+	return $links;
+}
+
+/**
+ * schema.org/Product の土台。Offer は node_library_product_jsonld_offers が配列を返したときだけ入る。
+ *
+ * @return array<string, mixed>
+ */
+function node_library_get_product_jsonld( int $post_id ): array {
+	$post = get_post( $post_id );
+	if ( ! $post instanceof WP_Post || 'node_library' !== $post->post_type ) {
+		return [];
+	}
+
+	$type    = get_post_meta( $post_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	$summary = trim( (string) get_post_meta( $post_id, '_node_library_summary', true ) );
+	$data    = [
+		'@context' => 'https://schema.org',
+		'@type'    => 'Product',
+		'name'     => node_library_jsonld_text( get_the_title( $post ) ),
+		'url'      => get_permalink( $post ),
+		'category' => 'app' === $type ? 'アプリ' : 'ゲーム',
+	];
+	if ( '' !== $summary ) {
+		$data['description'] = node_library_jsonld_text( $summary );
+	}
+
+	$hardware = node_library_spec_hardware_labels( $post_id );
+	if ( $hardware ) {
+		$data['additionalProperty'] = [
+			[
+				'@type' => 'PropertyValue',
+				'name'  => '対応機種',
+				'value' => implode( '、', $hardware ),
+			],
+		];
+	}
+
+	$same_as = array_values( array_unique( array_column( node_library_spec_store_links( $post_id ), 'url' ) ) );
+	if ( $same_as ) {
+		$data['sameAs'] = $same_as;
+	}
+
+	$offers = apply_filters( 'node_library_product_jsonld_offers', null, $post_id );
+	if ( is_array( $offers ) && $offers ) {
+		$data['offers'] = $offers;
+	}
+
+	$filtered = apply_filters( 'node_library_product_jsonld', $data, $post_id );
+	return is_array( $filtered ) ? $filtered : $data;
+}
+
+/**
+ * 詳細のスペック表。記事内カードのマークアップは変えない。
+ */
+function node_library_render_spec_table( int $post_id ): void {
+	$rows = node_library_get_spec_rows( $post_id );
+	if ( ! $rows ) {
+		return;
+	}
+	?>
+	<section class="node-library-single__specs" aria-labelledby="node-library-specs-title">
+		<div class="node-library-single__section-heading">
+			<span class="material-symbols-outlined" data-icon="info" aria-hidden="true"></span>
+			<h2 id="node-library-specs-title"><?php esc_html_e( '仕様', 'node' ); ?></h2>
+		</div>
+		<table class="node-library-specs">
+			<tbody>
+			<?php foreach ( $rows as $row ) : ?>
+				<?php
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$links = ( isset( $row['links'] ) && is_array( $row['links'] ) ) ? $row['links'] : [];
+				$value = trim( (string) ( $row['value'] ?? '' ) );
+				if ( '' === $value && ! $links ) {
+					continue;
+				}
+				?>
+				<tr>
+					<th scope="row"><?php echo esc_html( (string) ( $row['label'] ?? '' ) ); ?></th>
+					<td>
+						<?php if ( $links ) : ?>
+							<ul class="node-library-specs__links">
+								<?php foreach ( $links as $link ) : ?>
+									<?php
+									if ( ! is_array( $link ) ) {
+										continue;
+									}
+									$url = esc_url( (string) ( $link['url'] ?? '' ) );
+									if ( '' === $url ) {
+										continue;
+									}
+									?>
+									<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( (string) ( $link['platform'] ?? $url ) ); ?></a></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php else : ?>
+							<span class="node-library-specs__text"><?php echo esc_html( $value ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+	</section>
+	<?php
+	do_action( 'node_library_single_after_specs', $post_id );
+}
+
+/**
+ * Product の JSON-LD を出力する。価格の Offer はフィルターが返すまで出さない。
+ */
+function node_library_render_product_jsonld( int $post_id ): void {
+	$data = node_library_get_product_jsonld( $post_id );
+	if ( ! $data ) {
+		return;
+	}
+
+	echo '<script type="application/ld+json">';
+	echo wp_json_encode(
+		$data,
+		JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+	);
+	echo '</script>';
+}
+
+/**
+ * JSON-LD に入れる前に HTML エンティティを文字へ戻す。
+ */
+function node_library_jsonld_text( string $text ): string {
+	return html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 }
 
 /**
