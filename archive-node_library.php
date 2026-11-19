@@ -20,6 +20,14 @@ $filter_items  = array(
 	'app'  => __( 'アプリ', 'node' ),
 );
 $archive_url   = get_post_type_archive_link( 'node_library' );
+$library_toolbar_state = function_exists( 'node_library_archive_toolbar_state' )
+	? node_library_archive_toolbar_state()
+	: array(
+		'q'    => '',
+		'tab'  => '',
+		'sort' => '',
+		'dir'  => '',
+	);
 $archive_titles = array(
 	''     => __( 'ゲームとアプリのライブラリ', 'node' ),
 	'game' => __( 'ゲームライブラリ', 'node' ),
@@ -97,12 +105,20 @@ if ( ! empty( $archive_library_ids ) ) {
 				$filter_url = '' === $filter_value
 					? $archive_url
 					: trailingslashit( $archive_url . $filter_value );
+				if ( is_string( $filter_url ) && function_exists( 'node_library_archive_with_toolbar_args' ) ) {
+					$filter_url = node_library_archive_with_toolbar_args( $filter_url );
+				}
 				?>
 				<a class="node-library-filter__item<?php echo $selected_type === $filter_value ? ' is-current' : ''; ?>" href="<?php echo esc_url( $filter_url ); ?>"<?php echo $selected_type === $filter_value ? ' aria-current="page"' : ''; ?>>
 					<?php echo esc_html( $filter_label ); ?>
 				</a>
 			<?php endforeach; ?>
 		</nav>
+		<?php
+		if ( function_exists( 'node_library_render_archive_toolbar' ) ) {
+			node_library_render_archive_toolbar();
+		}
+		?>
 	</section>
 
 	<section class="node-library-archive__collection" aria-label="<?php esc_attr_e( 'ライブラリ一覧', 'node' ); ?>">
@@ -263,7 +279,7 @@ if ( ! empty( $archive_library_ids ) ) {
 			<div class="node-library-empty-state">
 				<span class="material-symbols-outlined" data-icon="inventory_2" aria-hidden="true"></span>
 				<p><?php esc_html_e( '現在、該当するライブラリ項目はありません。', 'node' ); ?></p>
-				<?php if ( $selected_type ) : ?><a href="<?php echo esc_url( $archive_url ); ?>"><?php esc_html_e( 'すべての作品を見る', 'node' ); ?></a><?php endif; ?>
+				<?php if ( $selected_type || '' !== $library_toolbar_state['q'] || '' !== $library_toolbar_state['tab'] ) : ?><a href="<?php echo esc_url( $archive_url ); ?>"><?php esc_html_e( 'すべての作品を見る', 'node' ); ?></a><?php endif; ?>
 			</div>
 		<?php endif; ?>
 	</section>
@@ -275,6 +291,9 @@ if ( ! empty( $archive_library_ids ) ) {
 			$pagination_base     = $selected_type
 				? trailingslashit( $archive_url . $selected_type ) . 'page/%#%/'
 				: str_replace( 999999999, '%#%', esc_url_raw( get_pagenum_link( 999999999 ) ) );
+			$pagination_add_args = function_exists( 'node_library_archive_toolbar_query_args' )
+				? node_library_archive_toolbar_query_args()
+				: array();
 			?>
 			<nav class="node-library-pagination" aria-label="<?php esc_attr_e( 'ページ送り', 'node' ); ?>">
 				<div class="node-library-pagination__navigation">
@@ -291,7 +310,7 @@ if ( ! empty( $archive_library_ids ) ) {
 								'current'   => $pagination_current,
 								'total'     => $pagination_total,
 								'type'      => 'list',
-								'add_args'  => false,
+								'add_args'  => $pagination_add_args ? $pagination_add_args : false,
 								'prev_text' => '<span class="screen-reader-text">' . esc_html__( '前へ', 'node' ) . '</span><span class="material-symbols-outlined" data-icon="chevron_left" aria-hidden="true"></span>',
 								'next_text' => '<span class="screen-reader-text">' . esc_html__( '次へ', 'node' ) . '</span><span class="material-symbols-outlined" data-icon="chevron_right" aria-hidden="true"></span>',
 							)
