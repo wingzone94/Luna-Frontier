@@ -1978,6 +1978,238 @@ function node_library_render_archive_toolbar(): void {
 }
 
 /**
+ * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種・入手先だけを返す。
+ *
+ * @return array<int, array{label:string,value:string,links?:array<int,array{platform:string,url:string}>}>
+ */
+function node_library_get_spec_rows( int $post_id ): array {
+	$post = get_post( $post_id );
+	if ( ! $post instanceof WP_Post || 'node_library' !== $post->post_type ) {
+		return [];
+	}
+
+	$type = get_post_meta( $post_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	$rows = [
+		[
+			'label' => '種別',
+			'value' => 'app' === $type ? 'アプリ' : 'ゲーム',
+		],
+	];
+
+	$summary = trim( (string) get_post_meta( $post_id, '_node_library_summary', true ) );
+	if ( '' !== $summary ) {
+		$rows[] = [
+			'label' => '紹介文',
+			'value' => $summary,
+		];
+	}
+
+	$hardware = node_library_spec_hardware_labels( $post_id );
+	if ( $hardware ) {
+		$rows[] = [
+			'label' => '対応機種',
+			'value' => implode( '、', $hardware ),
+		];
+	}
+
+	$links = node_library_spec_store_links( $post_id );
+	if ( $links ) {
+		$rows[] = [
+			'label' => '入手先',
+			'value' => '',
+			'links' => $links,
+		];
+	}
+
+	$filtered = apply_filters( 'node_library_spec_rows', $rows, $post_id );
+	return is_array( $filtered ) ? $filtered : $rows;
+}
+
+/**
+ * リンクに保存された対応ハードを、既存の表示名へ揃える。
+ *
+ * @return array<int, string>
+ */
+function node_library_spec_hardware_labels( int $post_id ): array {
+	$links   = get_post_meta( $post_id, '_node_library_links', true );
+	$options = node_library_hardware_options();
+	$labels  = [];
+	if ( ! is_array( $links ) ) {
+		return [];
+	}
+
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$hardware = node_library_normalize_hardware( $link['hardware'] ?? '' );
+		if ( 'auto' === $hardware ) {
+			$hardware = node_library_infer_hardware_from_platform( (string) ( $link['platform'] ?? '' ) );
+		}
+		if ( ! isset( $options[ $hardware ] ) || 'auto' === $hardware ) {
+			continue;
+		}
+		$label = $options[ $hardware ];
+		if ( ! in_array( $label, $labels, true ) ) {
+			$labels[] = $label;
+		}
+	}
+
+	return $labels;
+}
+
+/**
+ * スペック表と JSON-LD が共有する入手先。
+ *
+ * @return array<int, array{platform:string,url:string}>
+ */
+function node_library_spec_store_links( int $post_id ): array {
+	$stored = get_post_meta( $post_id, '_node_library_links', true );
+	$links  = [];
+	if ( ! is_array( $stored ) ) {
+		return [];
+	}
+
+	foreach ( $stored as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$platform = sanitize_text_field( (string) ( $link['platform'] ?? '' ) );
+		$url      = esc_url_raw( (string) ( $link['url'] ?? '' ) );
+		if ( '' === $platform || '' === $url ) {
+			continue;
+		}
+		$links[] = [
+			'platform' => $platform,
+			'url'      => $url,
+		];
+	}
+
+	return $links;
+}
+
+/**
+ * schema.org/Product の土台。Offer は node_library_product_jsonld_offers が配列を返したときだけ入る。
+ *
+ * @return array<string, mixed>
+ */
+function node_library_get_product_jsonld( int $post_id ): array {
+	$post = get_post( $post_id );
+	if ( ! $post instanceof WP_Post || 'node_library' !== $post->post_type ) {
+		return [];
+	}
+
+	$type    = get_post_meta( $post_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	$summary = trim( (string) get_post_meta( $post_id, '_node_library_summary', true ) );
+	$data    = [
+		'@context' => 'https://schema.org',
+		'@type'    => 'Product',
+		'name'     => get_the_title( $post ),
+		'url'      => get_permalink( $post ),
+		'category' => 'app' === $type ? 'アプリ' : 'ゲーム',
+	];
+	if ( '' !== $summary ) {
+		$data['description'] = $summary;
+	}
+
+	$hardware = node_library_spec_hardware_labels( $post_id );
+	if ( $hardware ) {
+		$data['additionalProperty'] = [
+			[
+				'@type' => 'PropertyValue',
+				'name'  => '対応機種',
+				'value' => implode( '、', $hardware ),
+			],
+		];
+	}
+
+	$same_as = array_values( array_unique( array_column( node_library_spec_store_links( $post_id ), 'url' ) ) );
+	if ( $same_as ) {
+		$data['sameAs'] = $same_as;
+	}
+
+	$offers = apply_filters( 'node_library_product_jsonld_offers', null, $post_id );
+	if ( is_array( $offers ) && $offers ) {
+		$data['offers'] = $offers;
+	}
+
+	$filtered = apply_filters( 'node_library_product_jsonld', $data, $post_id );
+	return is_array( $filtered ) ? $filtered : $data;
+}
+
+/**
+ * 詳細のスペック表。記事内カードのマークアップは変えない。
+ */
+function node_library_render_spec_table( int $post_id ): void {
+	$rows = node_library_get_spec_rows( $post_id );
+	if ( ! $rows ) {
+		return;
+	}
+	?>
+	<section class="node-library-single__specs" aria-labelledby="node-library-specs-title">
+		<div class="node-library-single__section-heading">
+			<span class="material-symbols-outlined" data-icon="info" aria-hidden="true"></span>
+			<h2 id="node-library-specs-title"><?php esc_html_e( '仕様', 'node' ); ?></h2>
+		</div>
+		<table class="node-library-specs">
+			<tbody>
+			<?php foreach ( $rows as $row ) : ?>
+				<?php
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$links = ( isset( $row['links'] ) && is_array( $row['links'] ) ) ? $row['links'] : [];
+				$value = trim( (string) ( $row['value'] ?? '' ) );
+				if ( '' === $value && ! $links ) {
+					continue;
+				}
+				?>
+				<tr>
+					<th scope="row"><?php echo esc_html( (string) ( $row['label'] ?? '' ) ); ?></th>
+					<td>
+						<?php if ( $links ) : ?>
+							<ul class="node-library-specs__links">
+								<?php foreach ( $links as $link ) : ?>
+									<?php
+									if ( ! is_array( $link ) ) {
+										continue;
+									}
+									$url = esc_url( (string) ( $link['url'] ?? '' ) );
+									if ( '' === $url ) {
+										continue;
+									}
+									?>
+									<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( (string) ( $link['platform'] ?? $url ) ); ?></a></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php else : ?>
+							<span class="node-library-specs__text"><?php echo esc_html( $value ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+	</section>
+	<?php
+	do_action( 'node_library_single_after_specs', $post_id );
+}
+
+/**
+ * Product の JSON-LD を出力する。価格の Offer はフィルターが返すまで出さない。
+ */
+function node_library_render_product_jsonld( int $post_id ): void {
+	$data = node_library_get_product_jsonld( $post_id );
+	if ( ! $data ) {
+		return;
+	}
+
+	echo '<script type="application/ld+json">';
+	echo wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	echo '</script>';
+}
+
+/**
  * 起動
  */
 function node_library_init() {
