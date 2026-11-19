@@ -61,6 +61,10 @@ final class Node_Library_Prices {
 		}
 	}
 
+	public static function unschedule(): void {
+		wp_clear_scheduled_hook( self::CRON_HOOK );
+	}
+
 	public static function delete_item( int $id, WP_Post $post ): void {
 		if ( 'node_library' === $post->post_type && '1' === get_option( 'node_library_price_schema' ) ) {
 			global $wpdb;
