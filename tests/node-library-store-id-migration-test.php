@@ -128,6 +128,28 @@ class Node_Library_Store_ID_Migration_Test extends WP_UnitTestCase {
 		}
 		$this->assertSame( 105, Node_Library_Store_ID_Migration::run()['total'] );
 	}
+	public function test_multiple_stores_in_reverse_link_order_apply_and_rerun_cleanly(): void {
+		$id = $this->item( array(
+			'https://play.google.com/store/apps/details?id=com.example.app',
+			'https://store.steampowered.com/app/123/',
+		) );
+		$applied = Node_Library_Store_ID_Migration::run( true );
+		$this->assertSame( 0, $applied['write_errors'] );
+		$this->assertSame( 1, $applied['updated'] );
+		$this->assertSame( 1, $applied['success'] );
+		$this->assertSame( 0, $applied['needs_manual'] );
+		$this->assertIsArray( get_option( 'node_library_store_id_migration' ) );
+		$this->assertSame(
+			array( 'steam' => '123', 'googleplay' => 'com.example.app' ),
+			get_post_meta( $id, '_node_library_store_ids', true )
+		);
+
+		$rerun = Node_Library_Store_ID_Migration::run( true, true );
+		$this->assertSame( 0, $rerun['write_errors'] );
+		$this->assertSame( 0, $rerun['updated'] );
+		$this->assertSame( 1, $rerun['success'] );
+	}
+
 	public function test_invalid_existing_ids_are_reported_without_rewriting_them(): void {
 		global $wpdb;
 		$id = $this->item( array( 'https://store.steampowered.com/app/123/' ) );
