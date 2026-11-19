@@ -130,4 +130,37 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 		$this->assertSame( '1000', $data['offers']['price'] );
 		$this->assertArrayNotHasKey( 'offers', node_library_get_product_jsonld( $this->item_id ) );
 	}
+
+	public function test_jsonld_escapes_script_breakout_and_decodes_entities(): void {
+		$payload = '</script><script>alert(1)</script>';
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->posts,
+			array(
+				'post_title' => 'Tom &#038; Jerry ' . $payload,
+			),
+			array( 'ID' => $this->item_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+		clean_post_cache( $this->item_id );
+		update_post_meta( $this->item_id, '_node_library_summary', '紹介 &#038; ' . $payload );
+
+		ob_start();
+		node_library_render_product_jsonld( $this->item_id );
+		$html = (string) ob_get_clean();
+
+		$this->assertSame( 1, substr_count( $html, '</script>' ) );
+		$this->assertSame( 1, preg_match( '/<script type="application\/ld\+json">(.*)<\/script>/s', $html, $matches ) );
+		$json = $matches[1];
+		$this->assertStringNotContainsString( '</script>', $json );
+		$this->assertStringNotContainsString( '&#038;', $json );
+		$this->assertStringNotContainsString( '<', $json );
+
+		$decoded = json_decode( $json, true );
+		$this->assertSame( JSON_ERROR_NONE, json_last_error() );
+		$this->assertIsArray( $decoded );
+		$this->assertSame( 'Tom & Jerry ' . $payload, $decoded['name'] );
+		$this->assertSame( '紹介 & ' . $payload, $decoded['description'] );
+	}
 }

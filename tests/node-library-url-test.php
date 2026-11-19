@@ -87,13 +87,15 @@ class Node_Library_Url_Test extends WP_UnitTestCase {
 	public function test_legacy_patterns_redirect_with_301(): void {
 		$cases = array(
 			'/node-library/'                    => '/library/',
-			'/node-library'                     => '/library',
+			'/node-library'                     => '/library/',
 			'/node-library/page/2/'             => '/library/page/2/',
 			'/node-library/game/'               => '/library/game/',
+			'/node-library/game'                => '/library/game/',
 			'/node-library/app/'                => '/library/app/',
 			'/node-library/game/page/2/'        => '/library/game/page/2/',
 			'/node-library/app/page/3/'         => '/library/app/page/3/',
 			'/node-library/sample-title/'       => '/library/sample-title/',
+			'/node-library/sample-title'        => '/library/sample-title/',
 			'/node-library/sample-title/?utm=1' => '/library/sample-title/?utm=1',
 		);
 

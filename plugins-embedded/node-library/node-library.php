@@ -1082,7 +1082,9 @@ final class Node_Library {
 			return null;
 		}
 
-		$target = untrailingslashit( home_url( '/' ) ) . $rewritten;
+		// canonical の2段目301を避ける。パーマリンク設定の末尾スラッシュに揃えて1回で届ける。
+		$rewritten = user_trailingslashit( $rewritten );
+		$target    = untrailingslashit( home_url( '/' ) ) . $rewritten;
 		$query  = ( is_array( $parts ) && isset( $parts['query'] ) && is_string( $parts['query'] ) ) ? $parts['query'] : '';
 		if ( '' !== $query ) {
 			$target .= '?' . $query;
@@ -1722,7 +1724,31 @@ function node_library_archive_toolbar_query_args(): array {
 		$args['dir']  = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
 	}
 
-	return $args;
+	/**
+	 * 後続の条件（価格帯など）をページ送りとタブのリンクへ引き継ぐ。
+	 *
+	 * @param array<string,string>         $args  引き継ぐクエリ引数。
+	 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+	 */
+	$filtered = apply_filters( 'node_library_archive_toolbar_query_args', $args, $state );
+	if ( ! is_array( $filtered ) ) {
+		return $args;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $value ) {
+		$key = sanitize_key( (string) $key );
+		if ( '' === $key || is_array( $value ) || is_object( $value ) ) {
+			continue;
+		}
+		$value = sanitize_text_field( (string) $value );
+		if ( '' === $value ) {
+			continue;
+		}
+		$clean[ $key ] = $value;
+	}
+
+	return $clean;
 }
 
 /**
@@ -1795,13 +1821,14 @@ function node_library_filter_archive_query( $query ): void {
 		return;
 	}
 
-	$is_library = $query->is_post_type_archive( 'node_library' ) || 'node_library' === $query->get( 'post_type' );
-	if ( ! $is_library ) {
+	// 個別ページは post_type が node_library でもアーカイブではない。?q= / ?tab= で 404 にしない。
+	if ( $query->is_singular() || ! $query->is_post_type_archive( 'node_library' ) ) {
 		return;
 	}
 
-	$state = node_library_archive_toolbar_state( $query );
-	if ( '' === $state['q'] && '' === $state['tab'] && '' === $state['sort'] ) {
+	$state         = node_library_archive_toolbar_state( $query );
+	$has_id_filter = has_filter( 'node_library_archive_filter_post_ids' );
+	if ( '' === $state['q'] && '' === $state['tab'] && '' === $state['sort'] && ! $has_id_filter ) {
 		return;
 	}
 
@@ -1809,7 +1836,7 @@ function node_library_filter_archive_query( $query ): void {
 		$query->set( 'node_library_keyword', $state['q'] );
 	}
 
-	if ( '' !== $state['tab'] ) {
+	if ( '' !== $state['tab'] || $has_id_filter ) {
 		$ids = get_posts(
 			[
 				'post_type'              => 'node_library',
@@ -1822,19 +1849,43 @@ function node_library_filter_archive_query( $query ): void {
 				'suppress_filters'       => true,
 			]
 		);
-		$ids = array_map( 'absint', $ids );
-		if ( $ids ) {
-			update_meta_cache( 'post', $ids );
-		}
+		$ids = array_values( array_filter( array_map( 'absint', is_array( $ids ) ? $ids : [] ) ) );
 
-		$matched = [];
-		foreach ( $ids as $post_id ) {
-			$links = get_post_meta( $post_id, '_node_library_links', true );
-			if ( node_library_item_matches_archive_tab( $post_id, $state['tab'], $links ) ) {
-				$matched[] = $post_id;
+		/**
+		 * 別テーブル参照の絞り込みを、項目ごとの問い合わせなしで一括適用する。
+		 *
+		 * @param array<int,int> $ids   候補の投稿 ID。
+		 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+		 */
+		$filtered_ids = apply_filters( 'node_library_archive_filter_post_ids', $ids, $state );
+		if ( ! is_array( $filtered_ids ) ) {
+			$filtered_ids = [];
+		}
+		$ids = [];
+		foreach ( $filtered_ids as $post_id ) {
+			$post_id = absint( $post_id );
+			if ( $post_id > 0 ) {
+				$ids[] = $post_id;
 			}
 		}
-		$query->set( 'post__in', $matched ? $matched : [ 0 ] );
+		$ids = array_values( array_unique( $ids ) );
+
+		if ( '' !== $state['tab'] ) {
+			if ( $ids ) {
+				update_meta_cache( 'post', $ids );
+			}
+
+			$matched = [];
+			foreach ( $ids as $post_id ) {
+				$links = get_post_meta( $post_id, '_node_library_links', true );
+				if ( node_library_item_matches_archive_tab( $post_id, $state['tab'], $links ) ) {
+					$matched[] = $post_id;
+				}
+			}
+			$ids = $matched;
+		}
+
+		$query->set( 'post__in', $ids ? $ids : [ 0 ] );
 	}
 
 	if ( '' === $state['sort'] ) {
@@ -1937,9 +1988,11 @@ function node_library_render_archive_toolbar(): void {
 		$type     = sanitize_key( is_string( $type_raw ) ? $type_raw : '' );
 	}
 	$action = in_array( $type, [ 'game', 'app' ], true ) ? trailingslashit( $archive . $type ) : $archive;
-	$dir    = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	$dir         = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	$public_tabs = $tabs;
+	unset( $public_tabs['auto'] );
 	?>
-	<form class="node-library-tools" method="get" action="<?php echo esc_url( $action ); ?>" role="search">
+	<form id="node-library-tools" class="node-library-tools" method="get" action="<?php echo esc_url( $action ); ?>" role="search">
 		<label class="node-library-tools__field node-library-tools__field--keyword">
 			<span><?php esc_html_e( 'キーワード', 'node' ); ?></span>
 			<input class="node-library-tools__control" type="search" name="q" maxlength="80" value="<?php echo esc_attr( $state['q'] ); ?>" placeholder="<?php esc_attr_e( 'タイトル・紹介文', 'node' ); ?>">
@@ -1948,7 +2001,7 @@ function node_library_render_archive_toolbar(): void {
 			<span><?php esc_html_e( '分類', 'node' ); ?></span>
 			<select class="node-library-tools__control" name="tab">
 				<option value=""><?php esc_html_e( 'すべて', 'node' ); ?></option>
-				<?php foreach ( $tabs as $tab_value => $tab_label ) : ?>
+				<?php foreach ( $public_tabs as $tab_value => $tab_label ) : ?>
 					<option value="<?php echo esc_attr( $tab_value ); ?>" <?php selected( $state['tab'], $tab_value ); ?>><?php echo esc_html( $tab_label ); ?></option>
 				<?php endforeach; ?>
 			</select>
@@ -1972,6 +2025,14 @@ function node_library_render_archive_toolbar(): void {
 			<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
 			<?php esc_html_e( '検索', 'node' ); ?>
 		</button>
+		<?php
+		/**
+		 * フォーム内に後続の条件フィールドを足す。表示だけの追加は node_library_archive_toolbar_after。
+		 *
+		 * @param array{q:string,tab:string,sort:string,dir:string} $state ツールバーの状態。
+		 */
+		do_action( 'node_library_archive_toolbar_fields', $state );
+		?>
 	</form>
 	<?php
 	do_action( 'node_library_archive_toolbar_after', $state );
@@ -2104,12 +2165,12 @@ function node_library_get_product_jsonld( int $post_id ): array {
 	$data    = [
 		'@context' => 'https://schema.org',
 		'@type'    => 'Product',
-		'name'     => get_the_title( $post ),
+		'name'     => node_library_jsonld_text( get_the_title( $post ) ),
 		'url'      => get_permalink( $post ),
 		'category' => 'app' === $type ? 'アプリ' : 'ゲーム',
 	];
 	if ( '' !== $summary ) {
-		$data['description'] = $summary;
+		$data['description'] = node_library_jsonld_text( $summary );
 	}
 
 	$hardware = node_library_spec_hardware_labels( $post_id );
@@ -2205,8 +2266,18 @@ function node_library_render_product_jsonld( int $post_id ): void {
 	}
 
 	echo '<script type="application/ld+json">';
-	echo wp_json_encode( $data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+	echo wp_json_encode(
+		$data,
+		JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+	);
 	echo '</script>';
+}
+
+/**
+ * JSON-LD に入れる前に HTML エンティティを文字へ戻す。
+ */
+function node_library_jsonld_text( string $text ): string {
+	return html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 }
 
 /**

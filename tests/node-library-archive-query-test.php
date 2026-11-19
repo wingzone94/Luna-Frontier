@@ -21,6 +21,14 @@ class Node_Library_Archive_Query_Test extends WP_UnitTestCase {
 		flush_rewrite_rules( false );
 	}
 
+	public function tear_down(): void {
+		unset( $_GET['q'], $_GET['tab'], $_GET['sort'], $_GET['dir'], $_GET['price_max'] );
+		remove_all_filters( 'node_library_archive_toolbar_query_args' );
+		remove_all_filters( 'node_library_archive_filter_post_ids' );
+		remove_all_actions( 'node_library_archive_toolbar_fields' );
+		parent::tear_down();
+	}
+
 	public function test_plain_archive_keeps_the_default_query(): void {
 		$this->go_to( home_url( '/library/' ) );
 
@@ -140,16 +148,104 @@ class Node_Library_Archive_Query_Test extends WP_UnitTestCase {
 		$html = (string) ob_get_clean();
 
 		$this->assertTrue( $seen );
+		$this->assertStringContainsString( 'id="node-library-tools"', $html );
 		$this->assertStringContainsString( 'name="q"', $html );
 		$this->assertStringContainsString( 'name="tab"', $html );
 		$this->assertStringContainsString( 'name="sort"', $html );
 		$this->assertStringContainsString( 'name="dir"', $html );
 		$this->assertStringContainsString( '発売日', $html );
 		$this->assertStringContainsString( 'タイトル', $html );
+		$this->assertArrayHasKey( 'auto', $tabs );
+		$this->assertStringNotContainsString( 'value="auto"', $html );
+		$this->assertStringNotContainsString( '自動判定', $html );
 		foreach ( $tabs as $value => $label ) {
+			if ( 'auto' === $value ) {
+				continue;
+			}
 			$this->assertStringContainsString( 'value="' . $value . '"', $html );
 			$this->assertStringContainsString( $label, $html );
 		}
+	}
+
+	public function test_singular_query_ignores_archive_toolbar_params(): void {
+		$item_id = $this->create_item( 'Singular ' . self::TOKEN, self::TOKEN . '-single' );
+		$permalink = get_permalink( $item_id );
+		$this->assertIsString( $permalink );
+
+		$this->go_to( add_query_arg(
+			array(
+				'q'   => 'missing-' . self::TOKEN,
+				'tab' => 'pc',
+			),
+			$permalink
+		) );
+
+		global $wp_query;
+		$this->assertTrue( $wp_query->is_singular( 'node_library' ) );
+		$this->assertFalse( $wp_query->is_404() );
+		$this->assertSame( $item_id, (int) $wp_query->get_queried_object_id() );
+		$this->assertEmpty( $wp_query->get( 'post__in' ) );
+		$this->assertSame( '', (string) $wp_query->get( 'node_library_keyword' ) );
+		$this->assertSame( '', (string) $wp_query->get( 'node_library_sort' ) );
+	}
+
+	public function test_toolbar_fields_hook_renders_inside_the_form(): void {
+		add_action(
+			'node_library_archive_toolbar_fields',
+			static function (): void {
+				echo '<input type="hidden" name="price_max" value="1000">';
+			}
+		);
+		add_action(
+			'node_library_archive_toolbar_after',
+			static function (): void {
+				echo '<p class="node-library-tools-after">after</p>';
+			}
+		);
+
+		ob_start();
+		node_library_render_archive_toolbar();
+		$html = (string) ob_get_clean();
+
+		$form_end = strpos( $html, '</form>' );
+		$field    = strpos( $html, 'name="price_max"' );
+		$after    = strpos( $html, 'node-library-tools-after' );
+		$this->assertNotFalse( $form_end );
+		$this->assertNotFalse( $field );
+		$this->assertNotFalse( $after );
+		$this->assertLessThan( $form_end, $field );
+		$this->assertGreaterThan( $form_end, $after );
+	}
+
+	public function test_toolbar_query_args_filter_is_kept_on_archive_links(): void {
+		$_GET['q'] = 'alpha';
+		add_filter(
+			'node_library_archive_toolbar_query_args',
+			static function ( array $args ): array {
+				$args['price_max'] = '1000';
+				return $args;
+			}
+		);
+
+		$url = node_library_archive_with_toolbar_args( home_url( '/library/page/2/' ) );
+		$this->assertStringContainsString( 'q=alpha', $url );
+		$this->assertStringContainsString( 'price_max=1000', $url );
+	}
+
+	public function test_post_id_filter_narrows_archive_candidates(): void {
+		$keep = $this->create_item( 'Keep ' . self::TOKEN, self::TOKEN . '-ids' );
+		$drop = $this->create_item( 'Drop ' . self::TOKEN, self::TOKEN . '-ids' );
+		add_filter(
+			'node_library_archive_filter_post_ids',
+			static function ( array $ids ) use ( $drop ): array {
+				return array_values( array_diff( array_map( 'intval', $ids ), array( $drop ) ) );
+			}
+		);
+
+		$this->go_to( home_url( '/library/?q=' . rawurlencode( self::TOKEN . '-ids' ) ) );
+		$found = $this->found_ids();
+		$this->assertContains( $keep, $found );
+		$this->assertNotContains( $drop, $found );
 	}
 
 	/**
