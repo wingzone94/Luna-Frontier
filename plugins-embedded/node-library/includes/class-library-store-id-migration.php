@@ -121,6 +121,10 @@ final class Node_Library_Store_ID_Migration {
 			}
 		}
 
+		if ( $can_apply ) {
+			$ids = Node_Library_Structured_Meta::sanitize( 'store_ids', $ids );
+		}
+
 		return array(
 			'item_id'   => $item_id,
 			'title'     => get_the_title( $item_id ),
