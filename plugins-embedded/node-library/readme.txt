@@ -48,7 +48,7 @@ Amazon側のアクセス制限やNintendo Storeの待合室などで自動取得
 
 == 構造化カタログ情報 ==
 
-「カタログ情報（任意）」でストアID、開発元、発売元、発売日、ジャンル、CERO/ESRB、日本語の音声・字幕・UI、能力・映像仕様を保存できます。対応フラグは未設定・対応・非対応を区別します。ストアIDはURLではなくIDを入力してください。既存の紹介文・リンク・対応機種分類と公開表示は変更しません。この版ではストア情報の自動取得・旧リンクからの移行は行いません。
+「カタログ情報（任意）」でストアID、開発元、発売元、発売日、ジャンル、CERO/ESRB、日本語の音声・字幕・UI、能力・映像仕様、サブスク在籍を保存できます。対応フラグは未設定・対応・非対応を区別します。ストアIDはURLではなくIDを入力してください。既存の紹介文・リンク・対応機種分類と公開表示は変更しません。この版ではストア情報の自動取得・旧リンクからの移行は行いません。
 
 開発用メタ契約（すべて single / 任意 / 公開RESTには未公開）:
 * _node_library_store_ids: microsoft / steam / nintendo / ps / amazon_asin / epic / gog / apple / googleplay の文字列マップ。先頭ゼロを保持。
@@ -58,6 +58,8 @@ Amazon側のアクセス制限やNintendo Storeの待合室などで自動取得
 * _node_library_rating: cero / esrb の文字列マップ。
 * _node_library_japanese: audio / subtitles / ui のboolマップ。
 * _node_library_capabilities: crossplay / crosssave / online / hdr のbool、max_fpsの正整数、resolutionの文字列。
+* _node_library_subscriptions: gamepass / psplus / nso / ea_play / ubisoft_plus / apple_arcade の現在在籍フラグ（boolマップ、在籍中のみ保持。在籍の履歴管理は Task L7 の範囲）。
+価格フィールドは L1 メタには持たせません（価格は時系列データであり Task L3 の価格履歴テーブルで扱います）。
 未設定のキーは省略。falseは非対応。フォームにないフィールドは保持し、明示的な空欄は削除します。新規アダプタは Node_Library_Structured_Meta::sanitize() と同じ形式を使用してください。
 
 == ソースと配布 ==

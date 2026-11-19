@@ -120,6 +120,47 @@ class Node_Library_Structured_Meta_Test extends WP_UnitTestCase {
 		$this->assertSame( $links, get_post_meta( $this->item_id, '_node_library_links', true ) );
 		$this->assertSame( 'Legacy summary', get_post_meta( $this->item_id, '_node_library_summary', true ) );
 	}
+	public function test_subscriptions_round_trip_unknown_keys_and_empty_deletion(): void {
+		$this->submit( array(
+			'subscriptions' => array(
+				'_present'     => '1',
+				'gamepass'     => '1',
+				'psplus'       => '0',
+				'nso'          => true,
+				'ea_play'      => false,
+				'ubisoft_plus' => array( 'attack' ),
+				'unknown_sub'  => '1',
+			),
+		) );
+		$this->assertSame(
+			array( 'gamepass' => true, 'nso' => true ),
+			get_post_meta( $this->item_id, '_node_library_subscriptions', true )
+		);
+
+		ob_start();
+		Node_Library_Structured_Meta::render( get_post( $this->item_id ) );
+		$html = ob_get_clean();
+		$this->assertMatchesRegularExpression( '/id="node-library-structured-subscriptions-gamepass"[^>]*checked=\'checked\'/', $html );
+		$this->assertMatchesRegularExpression( '/id="node-library-structured-subscriptions-nso"[^>]*checked=\'checked\'/', $html );
+		$this->assertDoesNotMatchRegularExpression( '/id="node-library-structured-subscriptions-psplus"[^>]*checked=/', $html );
+
+		// Omitting subscriptions from another submission keeps the stored flags.
+		$this->submit( array( 'developer' => 'Keep Subs' ) );
+		$this->assertSame(
+			array( 'gamepass' => true, 'nso' => true ),
+			get_post_meta( $this->item_id, '_node_library_subscriptions', true )
+		);
+
+		// All false or unchecked submission removes the metadata like other fields.
+		$this->submit( array( 'subscriptions' => array( 'gamepass' => false, 'psplus' => '0' ) ) );
+		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_subscriptions' ) );
+
+		$this->submit( array( 'subscriptions' => array( 'apple_arcade' => '1' ) ) );
+		$this->assertSame( array( 'apple_arcade' => true ), get_post_meta( $this->item_id, '_node_library_subscriptions', true ) );
+		$this->submit( array( 'subscriptions' => array( '_present' => '1' ) ) );
+		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_subscriptions' ) );
+	}
+
 	public function test_standalone_package_matches_canonical_source(): void {
 		$root = dirname( __DIR__ );
 		$zip  = new ZipArchive();

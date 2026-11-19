@@ -32,17 +32,30 @@ final class Node_Library_Structured_Meta {
 		);
 	}
 
+	/** @return array<string, string> Supported subscription service identifiers. */
+	public static function subscriptions(): array {
+		return array(
+			'gamepass'     => 'Xbox / PC Game Pass',
+			'psplus'       => 'PlayStation Plus',
+			'nso'          => 'Nintendo Switch Online',
+			'ea_play'      => 'EA Play',
+			'ubisoft_plus' => 'Ubisoft+',
+			'apple_arcade' => 'Apple Arcade',
+		);
+	}
+
 	/** @return array<string, array<string, string>> Fields shared by registration and forms. */
 	public static function fields(): array {
 		return array(
-			'store_ids'    => array( 'label' => __( 'ストアID', 'node-library' ), 'type' => 'object' ),
-			'developer'    => array( 'label' => __( '開発元', 'node-library' ), 'type' => 'string' ),
-			'publisher'    => array( 'label' => __( '発売元', 'node-library' ), 'type' => 'string' ),
-			'release_date' => array( 'label' => __( '発売日', 'node-library' ), 'type' => 'string' ),
-			'genres'       => array( 'label' => __( 'ジャンル（1行に1つ）', 'node-library' ), 'type' => 'array' ),
-			'rating'       => array( 'label' => __( 'レーティング', 'node-library' ), 'type' => 'object' ),
-			'japanese'     => array( 'label' => __( '日本語対応', 'node-library' ), 'type' => 'object' ),
-			'capabilities' => array( 'label' => __( '能力・映像仕様', 'node-library' ), 'type' => 'object' ),
+			'store_ids'     => array( 'label' => __( 'ストアID', 'node-library' ), 'type' => 'object' ),
+			'developer'     => array( 'label' => __( '開発元', 'node-library' ), 'type' => 'string' ),
+			'publisher'     => array( 'label' => __( '発売元', 'node-library' ), 'type' => 'string' ),
+			'release_date'  => array( 'label' => __( '発売日', 'node-library' ), 'type' => 'string' ),
+			'genres'        => array( 'label' => __( 'ジャンル（1行に1つ）', 'node-library' ), 'type' => 'array' ),
+			'rating'        => array( 'label' => __( 'レーティング', 'node-library' ), 'type' => 'object' ),
+			'japanese'      => array( 'label' => __( '日本語対応', 'node-library' ), 'type' => 'object' ),
+			'capabilities'  => array( 'label' => __( '能力・映像仕様', 'node-library' ), 'type' => 'object' ),
+			'subscriptions' => array( 'label' => __( 'サブスク在籍', 'node-library' ), 'type' => 'object' ),
 		);
 	}
 
@@ -143,6 +156,12 @@ final class Node_Library_Structured_Meta {
 					$result['resolution'] = $resolution;
 				}
 			}
+		} elseif ( 'subscriptions' === $field ) {
+			foreach ( self::subscriptions() as $service => $label ) {
+				if ( true === self::flag( $value[ $service ] ?? null ) ) {
+					$result[ $service ] = true;
+				}
+			}
 		}
 		return $result;
 	}
@@ -176,6 +195,12 @@ final class Node_Library_Structured_Meta {
 				if ( 'capabilities' === $field ) {
 					self::input( $field, 'max_fps', __( '最大FPS', 'node-library' ), $value['max_fps'] ?? '', 'number' );
 					self::input( $field, 'resolution', __( '解像度（例：3840×2160）', 'node-library' ), $value['resolution'] ?? '' );
+				}
+			} elseif ( 'subscriptions' === $field ) {
+				echo '<input type="hidden" name="node_library_structured[subscriptions][_present]" value="1">';
+				foreach ( self::subscriptions() as $service => $label ) {
+					$id = 'node-library-structured-subscriptions-' . $service;
+					echo '<p><label for="' . esc_attr( $id ) . '"><input id="' . esc_attr( $id ) . '" name="node_library_structured[subscriptions][' . esc_attr( $service ) . ']" type="checkbox" value="1"' . checked( ! empty( $value[ $service ] ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
 				}
 			} elseif ( 'genres' === $field ) {
 				echo '<label class="screen-reader-text" for="node-library-structured-genres">' . esc_html( $definition['label'] ) . '</label><textarea id="node-library-structured-genres" name="node_library_structured[genres]" rows="3" class="large-text">' . esc_textarea( implode( "\n", $value ) ) . '</textarea>';
