@@ -240,7 +240,8 @@
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center;
 }
 
 .m3-elevated-nav-card:hover {
