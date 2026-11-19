@@ -173,6 +173,8 @@ final class Node_Library {
 	private const LIBRARY_DEPENDENCY_META    = '_node_library_card_dependency';
 	private const REUSABLE_DEPENDENCY_META   = '_node_library_reusable_block_dependency';
 	private const REFERENCE_INDEX_VERSION    = '3';
+	private const REWRITE_SLUG               = 'library';
+	private const LEGACY_REWRITE_SLUG        = 'node-library';
 
 	private static ?self $instance = null;
 
@@ -185,6 +187,7 @@ final class Node_Library {
 
 	private function __construct() {
 		add_action( 'init', [ $this, 'register_cpt' ] );
+		add_action( 'template_redirect', [ $this, 'redirect_legacy_library_urls' ], 0 );
 		add_filter( 'query_vars', [ $this, 'register_library_archive_query_var' ] );
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 		add_action( 'save_post', [ $this, 'save_meta_boxes' ] );
@@ -930,7 +933,7 @@ final class Node_Library {
 			'show_in_menu'        => true,
 			'show_in_rest'        => true, 
 			'query_var'           => true,
-			'rewrite'             => [ 'slug' => 'node-library' ],
+			'rewrite'             => [ 'slug' => self::REWRITE_SLUG ],
 			'capability_type'     => 'post',
 			'has_archive'         => true,
 			'hierarchical'        => false,
@@ -942,14 +945,83 @@ final class Node_Library {
 		register_post_type( 'node_library', $args );
 
 		add_rewrite_tag( '%node_library_type%', '(game|app)' );
-		add_rewrite_rule( '^node-library/(game|app)/page/([0-9]{1,})/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]&paged=$matches[2]', 'top' );
-		add_rewrite_rule( '^node-library/(game|app)/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]', 'top' );
+		add_rewrite_rule( '^' . self::REWRITE_SLUG . '/(game|app)/page/([0-9]{1,})/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]&paged=$matches[2]', 'top' );
+		add_rewrite_rule( '^' . self::REWRITE_SLUG . '/(game|app)/?$', 'index.php?post_type=node_library&node_library_type=$matches[1]', 'top' );
 
-		$current_flush_version = get_option( 'node_library_flushed_version', '0' );
-		if ( version_compare( $current_flush_version, NODE_LIBRARY_VERSION, '<' ) ) {
+		$current_flush_version = (string) get_option( 'node_library_flushed_version', '0' );
+		$current_rewrite_slug  = (string) get_option( 'node_library_rewrite_slug', '' );
+		if ( version_compare( $current_flush_version, NODE_LIBRARY_VERSION, '<' ) || self::REWRITE_SLUG !== $current_rewrite_slug ) {
 			flush_rewrite_rules();
 			update_option( 'node_library_flushed_version', NODE_LIBRARY_VERSION );
+			update_option( 'node_library_rewrite_slug', self::REWRITE_SLUG );
 		}
+	}
+
+	/**
+	 * 旧 /node-library/ を /library/ へ 301 転送する。
+	 *
+	 * アーカイブ、タイプ別、ページ送り、個別項目は先頭セグメントの置換で揃える。
+	 * プラグイン内で完結させ、サーバー設定には依存しない。
+	 *
+	 * @param bool $exit 転送後に終了するか。テストからヘッダだけ確認するときに false。
+	 * @return string|null 転送先。対象外のリクエストでは null。
+	 */
+	public function redirect_legacy_library_urls( bool $exit = true ): ?string {
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+			return null;
+		}
+
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( (string) $_SERVER['REQUEST_URI'] ) : '';
+		$target      = $this->legacy_library_redirect_url( $request_uri );
+		if ( null === $target ) {
+			return null;
+		}
+
+		wp_safe_redirect( $target, 301 );
+		if ( $exit ) {
+			exit;
+		}
+
+		return $target;
+	}
+
+	/**
+	 * 旧ライブラリ URL に対応する新 URL。対象外なら null。
+	 *
+	 * @param string $request_uri リクエスト URI（パスとクエリ）。
+	 * @return string|null
+	 */
+	public function legacy_library_redirect_url( string $request_uri ): ?string {
+		$parts = wp_parse_url( $request_uri );
+		$path  = ( is_array( $parts ) && isset( $parts['path'] ) && is_string( $parts['path'] ) ) ? $parts['path'] : '';
+		if ( '' === $path ) {
+			return null;
+		}
+
+		$home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_path = is_string( $home_path ) ? untrailingslashit( $home_path ) : '';
+		$relative  = $path;
+		if ( '' !== $home_path && str_starts_with( $path, $home_path . '/' ) ) {
+			$relative = substr( $path, strlen( $home_path ) );
+		}
+
+		$legacy = preg_quote( self::LEGACY_REWRITE_SLUG, '#' );
+		if ( ! preg_match( '#^/' . $legacy . '(?:/|$)#', $relative ) ) {
+			return null;
+		}
+
+		$rewritten = preg_replace( '#^/' . $legacy . '#', '/' . self::REWRITE_SLUG, $relative, 1 );
+		if ( ! is_string( $rewritten ) || $rewritten === $relative ) {
+			return null;
+		}
+
+		$target = untrailingslashit( home_url( '/' ) ) . $rewritten;
+		$query  = ( is_array( $parts ) && isset( $parts['query'] ) && is_string( $parts['query'] ) ) ? $parts['query'] : '';
+		if ( '' !== $query ) {
+			$target .= '?' . $query;
+		}
+
+		return $target;
 	}
 
 	/**
