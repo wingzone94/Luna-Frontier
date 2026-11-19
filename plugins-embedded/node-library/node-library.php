@@ -189,6 +189,9 @@ final class Node_Library {
 		add_action( 'init', [ $this, 'register_cpt' ] );
 		add_action( 'template_redirect', [ $this, 'redirect_legacy_library_urls' ], 0 );
 		add_filter( 'query_vars', [ $this, 'register_library_archive_query_var' ] );
+		add_action( 'pre_get_posts', 'node_library_filter_archive_query', 20 );
+		add_filter( 'posts_where', 'node_library_archive_posts_where', 10, 2 );
+		add_filter( 'posts_clauses', 'node_library_archive_posts_clauses', 10, 2 );
 		add_action( 'add_meta_boxes', [ $this, 'add_meta_boxes' ] );
 		add_action( 'save_post', [ $this, 'save_meta_boxes' ] );
 		add_action( 'wp_after_insert_post', [ $this, 'synchronize_library_card_references_after_save' ], 20, 4 );
@@ -1032,6 +1035,10 @@ final class Node_Library {
 	 */
 	public function register_library_archive_query_var( array $query_vars ): array {
 		$query_vars[] = 'node_library_type';
+		$query_vars[] = 'q';
+		$query_vars[] = 'tab';
+		$query_vars[] = 'sort';
+		$query_vars[] = 'dir';
 		return array_values( array_unique( $query_vars ) );
 	}
 
@@ -1497,6 +1504,406 @@ final class Node_Library {
 		include NODE_LIBRARY_DIR . 'templates/card-library.php';
 	}
 
+}
+
+/**
+ * 一覧の分類フィルター初期値。既存タブ分類を起点にし、後続の条件はフィルターで足す。
+ *
+ * @return array<string,string>
+ */
+function node_library_archive_tab_filters(): array {
+	$tabs = node_library_tab_categories();
+	$filtered = apply_filters( 'node_library_archive_tab_filters', $tabs );
+	if ( ! is_array( $filtered ) ) {
+		return $tabs;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $label ) {
+		$key = sanitize_key( (string) $key );
+		if ( '' === $key || ! is_string( $label ) || '' === trim( $label ) ) {
+			continue;
+		}
+		$clean[ $key ] = $label;
+	}
+
+	return $clean ? $clean : $tabs;
+}
+
+/**
+ * 一覧の並び順。発売日の実値は node_library_archive_release_date_meta_key が指すメタ。
+ *
+ * @return array<string,string>
+ */
+function node_library_archive_sort_options(): array {
+	$options = [
+		''      => '標準',
+		'date'  => '発売日',
+		'title' => 'タイトル',
+	];
+	$filtered = apply_filters( 'node_library_archive_sort_options', $options );
+	if ( ! is_array( $filtered ) ) {
+		return $options;
+	}
+
+	$clean = [];
+	foreach ( $filtered as $key => $label ) {
+		$key = sanitize_key( (string) $key );
+		if ( ! is_string( $label ) || '' === trim( $label ) ) {
+			continue;
+		}
+		$clean[ $key ] = $label;
+	}
+
+	return isset( $clean[''] ) ? $clean : $options;
+}
+
+/**
+ * 発売日ソートが読むメタキー。未保存の項目は除外せず末尾に回す。
+ * Task L1 の `_node_library_release_date` を既定にし、キー自体はここでは保存しない。
+ */
+function node_library_archive_release_date_meta_key(): string {
+	$key = apply_filters( 'node_library_archive_release_date_meta_key', '_node_library_release_date' );
+	return is_string( $key ) ? sanitize_key( $key ) : '';
+}
+
+/**
+ * リクエストから一覧ツールバーの状態を読む。
+ *
+ * @param WP_Query|null $query Query whose vars should win over the global request.
+ * @return array{q:string,tab:string,sort:string,dir:string}
+ */
+function node_library_archive_toolbar_state( ?WP_Query $query = null ): array {
+	$tabs  = node_library_archive_tab_filters();
+	$sorts = node_library_archive_sort_options();
+	$q     = node_library_archive_request_text( 'q', $query );
+	$q     = trim( (string) preg_replace( '/\s+/u', ' ', $q ) );
+	if ( function_exists( 'mb_substr' ) ) {
+		$q = mb_substr( $q, 0, 80 );
+	} else {
+		$q = substr( $q, 0, 80 );
+	}
+
+	$tab  = sanitize_key( node_library_archive_request_text( 'tab', $query ) );
+	$sort = sanitize_key( node_library_archive_request_text( 'sort', $query ) );
+	$dir  = sanitize_key( node_library_archive_request_text( 'dir', $query ) );
+	if ( ! isset( $tabs[ $tab ] ) ) {
+		$tab = '';
+	}
+	if ( '' !== $sort && ! isset( $sorts[ $sort ] ) ) {
+		$sort = '';
+	}
+	if ( ! in_array( $dir, [ 'asc', 'desc' ], true ) ) {
+		$dir = '';
+	}
+
+	return [
+		'q'    => $q,
+		'tab'  => $tab,
+		'sort' => $sort,
+		'dir'  => $dir,
+	];
+}
+
+/**
+ * 公開クエリ変数、なければ GET から文字列を読む。
+ *
+ * @param WP_Query|null $query Query to read before the global request.
+ */
+function node_library_archive_request_text( string $key, ?WP_Query $query = null ): string {
+	$value = $query instanceof WP_Query ? $query->get( $key ) : get_query_var( $key );
+	if ( ! is_string( $value ) || '' === $value ) {
+		if ( isset( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$raw = wp_unslash( $_GET[ $key ] );
+			$value = is_string( $raw ) ? $raw : '';
+		}
+	}
+
+	$value = is_string( $value ) ? sanitize_text_field( $value ) : '';
+	return $value;
+}
+
+/**
+ * 並び方向。タイトルの初期値は昇順、発売日の初期値は降順。
+ */
+function node_library_archive_effective_dir( string $sort, string $dir ): string {
+	if ( in_array( $dir, [ 'asc', 'desc' ], true ) ) {
+		return $dir;
+	}
+
+	return 'title' === $sort ? 'asc' : 'desc';
+}
+
+/**
+ * ページ送りや種類タブに、今の検索条件だけを足す。
+ */
+function node_library_archive_toolbar_query_args(): array {
+	$state = node_library_archive_toolbar_state();
+	$args  = [];
+	if ( '' !== $state['q'] ) {
+		$args['q'] = $state['q'];
+	}
+	if ( '' !== $state['tab'] ) {
+		$args['tab'] = $state['tab'];
+	}
+	if ( '' !== $state['sort'] ) {
+		$args['sort'] = $state['sort'];
+		$args['dir']  = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	}
+
+	return $args;
+}
+
+/**
+ * @param string $url Archive or filter URL.
+ */
+function node_library_archive_with_toolbar_args( string $url ): string {
+	$args = node_library_archive_toolbar_query_args();
+	if ( ! $args ) {
+		return $url;
+	}
+
+	return add_query_arg( $args, $url );
+}
+
+/**
+ * ストアリンクの保存分類。auto のままなら自動判定結果を返す。
+ *
+ * @param array<string,mixed> $link Link row.
+ */
+function node_library_link_effective_tab( array $link ): string {
+	$stored = node_library_normalize_category( $link['category'] ?? '' );
+	if ( 'auto' !== $stored ) {
+		return $stored;
+	}
+
+	return node_library_auto_category( (string) ( $link['platform'] ?? '' ) );
+}
+
+/**
+ * 項目が分類タブに合うか。未知の分類は node_library_archive_item_matches_tab に委譲する。
+ *
+ * @param mixed $links Stored links.
+ */
+function node_library_item_matches_archive_tab( int $post_id, string $tab, $links ): bool {
+	if ( ! is_array( $links ) ) {
+		$links = [];
+	}
+
+	$matched = apply_filters( 'node_library_archive_item_matches_tab', null, $post_id, $tab, $links );
+	if ( null !== $matched ) {
+		return (bool) $matched;
+	}
+
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$stored = node_library_normalize_category( $link['category'] ?? '' );
+		if ( 'auto' === $tab ) {
+			if ( 'auto' === $stored ) {
+				return true;
+			}
+			continue;
+		}
+		if ( node_library_link_effective_tab( $link ) === $tab ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * ライブラリ一覧の検索・分類・ソート。条件が無いときはクエリを変えない。
+ *
+ * @param WP_Query $query Main query.
+ */
+function node_library_filter_archive_query( $query ): void {
+	if ( ! $query instanceof WP_Query || is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+
+	$is_library = $query->is_post_type_archive( 'node_library' ) || 'node_library' === $query->get( 'post_type' );
+	if ( ! $is_library ) {
+		return;
+	}
+
+	$state = node_library_archive_toolbar_state( $query );
+	if ( '' === $state['q'] && '' === $state['tab'] && '' === $state['sort'] ) {
+		return;
+	}
+
+	if ( '' !== $state['q'] ) {
+		$query->set( 'node_library_keyword', $state['q'] );
+	}
+
+	if ( '' !== $state['tab'] ) {
+		$ids = get_posts(
+			[
+				'post_type'              => 'node_library',
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'suppress_filters'       => true,
+			]
+		);
+		$ids = array_map( 'absint', $ids );
+		if ( $ids ) {
+			update_meta_cache( 'post', $ids );
+		}
+
+		$matched = [];
+		foreach ( $ids as $post_id ) {
+			$links = get_post_meta( $post_id, '_node_library_links', true );
+			if ( node_library_item_matches_archive_tab( $post_id, $state['tab'], $links ) ) {
+				$matched[] = $post_id;
+			}
+		}
+		$query->set( 'post__in', $matched ? $matched : [ 0 ] );
+	}
+
+	if ( '' === $state['sort'] ) {
+		return;
+	}
+
+	$dir = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	$handled = apply_filters( 'node_library_archive_apply_sort', false, $query, $state['sort'], $dir );
+	if ( $handled ) {
+		return;
+	}
+
+	if ( 'title' === $state['sort'] ) {
+		$query->set( 'orderby', 'title' );
+		$query->set( 'order', strtoupper( $dir ) );
+		return;
+	}
+
+	if ( 'date' === $state['sort'] ) {
+		$query->set( 'node_library_sort', 'date' );
+		$query->set( 'node_library_sort_dir', $dir );
+		if ( '' === node_library_archive_release_date_meta_key() ) {
+			$query->set( 'orderby', 'date' );
+			$query->set( 'order', strtoupper( $dir ) );
+		}
+	}
+}
+
+/**
+ * タイトルと既存の紹介文（_node_library_summary）だけをキーワード検索する。
+ *
+ * @param string   $where SQL WHERE.
+ * @param WP_Query $query Query.
+ */
+function node_library_archive_posts_where( $where, $query ): string {
+	if ( ! $query instanceof WP_Query ) {
+		return $where;
+	}
+
+	$keyword = (string) $query->get( 'node_library_keyword' );
+	if ( '' === $keyword ) {
+		return $where;
+	}
+
+	global $wpdb;
+	$like   = '%' . $wpdb->esc_like( $keyword ) . '%';
+	$where .= $wpdb->prepare(
+		" AND ( {$wpdb->posts}.post_title LIKE %s OR {$wpdb->posts}.ID IN ( SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_node_library_summary' AND meta_value LIKE %s ) )",
+		$like,
+		$like
+	);
+
+	return $where;
+}
+
+/**
+ * 発売日メタが無い項目も残し、空の日付は末尾へ寄せる。
+ *
+ * @param array<string,string> $clauses SQL clauses.
+ * @param WP_Query             $query   Query.
+ * @return array<string,string>
+ */
+function node_library_archive_posts_clauses( $clauses, $query ): array {
+	if ( ! $query instanceof WP_Query || 'date' !== $query->get( 'node_library_sort' ) ) {
+		return $clauses;
+	}
+
+	$meta_key = node_library_archive_release_date_meta_key();
+	if ( '' === $meta_key ) {
+		return $clauses;
+	}
+
+	global $wpdb;
+	$dir = 'ASC' === strtoupper( (string) $query->get( 'node_library_sort_dir' ) ) ? 'ASC' : 'DESC';
+	$clauses['distinct'] = 'DISTINCT';
+	$clauses['join'] .= $wpdb->prepare(
+		" LEFT JOIN {$wpdb->postmeta} AS node_library_release_sort ON ( {$wpdb->posts}.ID = node_library_release_sort.post_id AND node_library_release_sort.meta_key = %s ) ",
+		$meta_key
+	);
+	$clauses['orderby'] = "CASE WHEN node_library_release_sort.meta_value IS NULL OR node_library_release_sort.meta_value = '' THEN 1 ELSE 0 END ASC, node_library_release_sort.meta_value {$dir}, {$wpdb->posts}.post_date DESC";
+
+	return $clauses;
+}
+
+/**
+ * 一覧の検索・分類・ソート。カードの中身は変えない。
+ */
+function node_library_render_archive_toolbar(): void {
+	$state   = node_library_archive_toolbar_state();
+	$tabs    = node_library_archive_tab_filters();
+	$sorts   = node_library_archive_sort_options();
+	$archive = get_post_type_archive_link( 'node_library' );
+	if ( ! is_string( $archive ) || '' === $archive ) {
+		return;
+	}
+
+	$type = sanitize_key( (string) get_query_var( 'node_library_type' ) );
+	if ( '' === $type && isset( $_GET['type'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$type_raw = wp_unslash( $_GET['type'] );
+		$type     = sanitize_key( is_string( $type_raw ) ? $type_raw : '' );
+	}
+	$action = in_array( $type, [ 'game', 'app' ], true ) ? trailingslashit( $archive . $type ) : $archive;
+	$dir    = node_library_archive_effective_dir( $state['sort'], $state['dir'] );
+	?>
+	<form class="node-library-tools" method="get" action="<?php echo esc_url( $action ); ?>" role="search">
+		<label class="node-library-tools__field node-library-tools__field--keyword">
+			<span><?php esc_html_e( 'キーワード', 'node' ); ?></span>
+			<input class="node-library-tools__control" type="search" name="q" maxlength="80" value="<?php echo esc_attr( $state['q'] ); ?>" placeholder="<?php esc_attr_e( 'タイトル・紹介文', 'node' ); ?>">
+		</label>
+		<label class="node-library-tools__field">
+			<span><?php esc_html_e( '分類', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="tab">
+				<option value=""><?php esc_html_e( 'すべて', 'node' ); ?></option>
+				<?php foreach ( $tabs as $tab_value => $tab_label ) : ?>
+					<option value="<?php echo esc_attr( $tab_value ); ?>" <?php selected( $state['tab'], $tab_value ); ?>><?php echo esc_html( $tab_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label class="node-library-tools__field">
+			<span><span class="material-symbols-outlined" data-icon="sort" aria-hidden="true"></span><?php esc_html_e( '並び順', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="sort">
+				<?php foreach ( $sorts as $sort_value => $sort_label ) : ?>
+					<option value="<?php echo esc_attr( $sort_value ); ?>" <?php selected( $state['sort'], $sort_value ); ?>><?php echo esc_html( $sort_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</label>
+		<label class="node-library-tools__field">
+			<span><?php esc_html_e( '順序', 'node' ); ?></span>
+			<select class="node-library-tools__control" name="dir">
+				<option value="desc" <?php selected( $dir, 'desc' ); ?>><?php esc_html_e( '降順', 'node' ); ?></option>
+				<option value="asc" <?php selected( $dir, 'asc' ); ?>><?php esc_html_e( '昇順', 'node' ); ?></option>
+			</select>
+		</label>
+		<button class="node-library-tools__submit" type="submit">
+			<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
+			<?php esc_html_e( '検索', 'node' ); ?>
+		</button>
+	</form>
+	<?php
+	do_action( 'node_library_archive_toolbar_after', $state );
 }
 
 /**

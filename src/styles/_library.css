@@ -110,6 +110,7 @@
 
 .node-library-filter {
 	display: flex;
+	flex-wrap: wrap;
 	width: fit-content;
 	max-width: 100%;
 	gap: 2px;
@@ -118,6 +119,64 @@
 	border: 1px solid var(--md-sys-color-outline-variant);
 	border-radius: var(--m3-radius-full);
 	background: var(--md-sys-color-surface-container-low);
+}
+
+.node-library-tools {
+	display: grid;
+	grid-template-columns: minmax(12rem, 1.6fr) repeat(3, minmax(8rem, 1fr)) auto;
+	gap: 12px 16px;
+	align-items: end;
+	margin-top: 16px;
+}
+
+.node-library-tools__field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.node-library-tools__field > span {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.node-library-tools__control {
+	width: 100%;
+	min-height: 44px;
+	padding: 8px 12px;
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: 12px;
+	background: var(--md-sys-color-surface);
+	color: var(--md-sys-color-on-surface);
+	font: inherit;
+	font-size: 1rem;
+}
+
+.node-library-tools__submit {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 18px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--md-sys-color-primary);
+	color: var(--md-sys-color-on-primary);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.node-library-tools__control:focus-visible,
+.node-library-tools__submit:focus-visible {
+	outline: 2px solid var(--md-sys-color-primary);
+	outline-offset: 2px;
 }
 
 .node-library-filter__item {
@@ -722,6 +781,15 @@
 		flex-direction: column;
 	}
 
+	.node-library-tools {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.node-library-tools__field--keyword,
+	.node-library-tools__submit {
+		grid-column: 1 / -1;
+	}
+
 	.node-library-archive__grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
@@ -740,6 +808,16 @@
 @media (max-width: 560px) {
 	.node-library-archive__heading h1 {
 		font-size: 1.5rem;
+	}
+
+	.node-library-filter,
+	.node-library-tools,
+	.node-library-tools__submit {
+		width: 100%;
+	}
+
+	.node-library-tools {
+		grid-template-columns: 1fr;
 	}
 
 	.node-library-archive__grid {
