@@ -117,4 +117,4 @@ Microsoft/Xbox、Steam App、Amazon ASIN、NintendoのソフトID、PSの個別�
 
 価格・定価・通貨・セール終了日時に変化がある場合だけ専用の node_library_price_history テーブルへ記録します。金額0と購入可能な価格がない状態は区別します。過去最安値は同じ商品の同一通貨で計算し、セール回数は履歴で確認できた開始回数です。
 
-ConoHaなどアクセスに依存しない環境では、サーバーcronからサイトのPHPとWP-CLIで `wp cron event run --due-now --path=/path/to/wordpress` を実行してください。1分ごとの実行を想定しています。既存の外部cronがある場合は同じスケジュールに統合してください。
+ConoHaなどアクセスに依存しない環境では、サーバーcronからサイトのPHPとWP-CLIで `wp cron event run --due-now --path=/path/to/wordpress` を実行してください。15分ごとの実行を想定しています。既存の外部cronがある場合は同じスケジュールに統合してください。
