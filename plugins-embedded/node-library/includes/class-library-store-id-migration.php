@@ -58,7 +58,7 @@ final class Node_Library_Store_ID_Migration {
 				return array( 'reason' => 'concept_requires_edition_product_id' );
 			}
 		} elseif ( 'apps.apple.com' === $host || 'itunes.apple.com' === $host ) {
-			if ( preg_match( '~/(?:id)([0-9]+)(?:/|$)~D', $path, $match ) ) {
+			if ( preg_match( '~^/(?:[a-z]{2}/)?app/(?:[^/]+/)?id([0-9]+)(?:/|$)~iD', $path, $match ) ) {
 				return array( 'store' => 'apple', 'id' => $match[1] );
 			}
 		} elseif ( 'play.google.com' === $host && '/store/apps/details' === rtrim( $path, '/' ) ) {

@@ -54,6 +54,8 @@ class Node_Library_Store_ID_Migration_Test extends WP_UnitTestCase {
 			'https://store.playstation.com/ja-jp/concept/10001234',
 			'https://store.epicgames.com/ja/p/example',
 			'https://www.gog.com/en/game/example',
+			'https://apps.apple.com/jp/developer/nintendo-co-ltd/id1062496488',
+			'https://itunes.apple.com/jp/artist/example/id123456',
 			'https://play.google.com/store/apps/details?id[]=com.example.app',
 		) );
 	}
