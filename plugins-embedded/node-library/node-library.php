@@ -1443,4 +1443,14 @@ Node_Library_Prices::init();
 
 add_action( 'plugins_loaded', 'node_library_init' );
 
+/**
+ * 無効化時に自前の定期実行を掃除する（ハンドラのないイベントを残さない）。
+ */
+function node_library_clear_scheduled_events(): void {
+	if ( class_exists( 'Node_Library_Prices' ) ) {
+		Node_Library_Prices::unschedule();
+	}
+}
+register_deactivation_hook( __FILE__, 'node_library_clear_scheduled_events' );
+
 } // End Library bootstrap guard.
