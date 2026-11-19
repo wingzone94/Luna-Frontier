@@ -134,12 +134,11 @@ const TITLE_SELECTOR = [
   '.m3-game-card__title',
 ].join(', ');
 
-// [font-size 倍率, letter-spacing]
+// [font-size 倍率, letter-spacing]（大・中・小の段階式、字間は詰めない）
 const FIT_STEPS = [
   [1, null],
-  [0.96, '-0.015em'],
-  [0.92, '-0.025em'],
-  [0.88, '-0.035em'],
+  [0.92, null],
+  [0.84, null],
 ];
 
 function overflows(el) {
