@@ -8,7 +8,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-library-steam-store.php';
+
 final class Node_Library_Store {
+	private const ADAPTERS = array(
+		'microsoft' => Node_Library_Microsoft_Store::class,
+		'steam' => Node_Library_Steam_Store::class,
+	);
+
+	private const LABELS = array(
+		'microsoft' => 'Microsoft Store / Xbox',
+		'steam' => 'Steam',
+	);
+
 	public static function init(): void {
 		add_action( 'init', array( self::class, 'install' ), 5 );
 		add_action( 'rest_api_init', array( self::class, 'routes' ) );
@@ -63,7 +75,7 @@ final class Node_Library_Store {
 			},
 			'args' => array(
 				'post_id' => array( 'type' => 'integer', 'required' => true, 'minimum' => 1 ),
-				'store' => array( 'type' => 'string', 'default' => 'microsoft', 'enum' => array( 'microsoft' ) ),
+				'store' => array( 'type' => 'string', 'default' => 'microsoft', 'enum' => array_keys( self::ADAPTERS ) ),
 				'input' => array( 'type' => 'string', 'required' => true, 'minLength' => 1, 'maxLength' => 2048 ),
 			),
 		) );
@@ -71,20 +83,20 @@ final class Node_Library_Store {
 
 	/** @return array|WP_Error A complete normalized catalogue result, never partial success. */
 	public static function fetch( string $store, string $input ) {
-		if ( 'microsoft' !== $store ) {
+		if ( ! isset( self::ADAPTERS[ $store ] ) ) {
 			return new WP_Error( 'unsupported_store', 'このストアの取得にはまだ対応していません。', array( 'status' => 400 ) );
 		}
-		return Node_Library_Microsoft_Store::fetch( $input );
+		return self::ADAPTERS[ $store ]::fetch( $input );
 	}
 
 	public static function price_stores(): array {
-		return array( 'microsoft' );
+		return array_keys( self::ADAPTERS );
 	}
 
 	/** @return array|null|WP_Error Current public offer, no offer, or an acquisition error. */
 	public static function fetch_price( string $store, string $id ) {
-		if ( 'microsoft' === $store ) {
-			return Node_Library_Microsoft_Store::fetch_price( $id );
+		if ( isset( self::ADAPTERS[ $store ] ) ) {
+			return self::ADAPTERS[ $store ]::fetch_price( $id );
 		}
 		return new WP_Error( 'unsupported_store', '価格取得に対応していないストアです。', array( 'status' => 400 ) );
 	}
@@ -110,7 +122,11 @@ final class Node_Library_Store {
 		wp_nonce_field( 'node_library_save_catalog', 'node_library_catalog_nonce' );
 		?>
 		<p><label for="node-library-store"><strong><?php esc_html_e( 'ストア', 'node-library' ); ?></strong></label><br>
-		<select id="node-library-store"><option value="microsoft">Microsoft Store / Xbox</option></select></p>
+		<select id="node-library-store">
+			<?php foreach ( self::LABELS as $store => $label ) : ?>
+				<option value="<?php echo esc_attr( $store ); ?>"><?php echo esc_html( $label ); ?></option>
+			<?php endforeach; ?>
+		</select></p>
 		<p><label for="node-library-store-input"><?php esc_html_e( 'プロダクトIDまたはストアURL', 'node-library' ); ?></label><br>
 		<input class="large-text" id="node-library-store-input" type="text" placeholder="9NBLGGH537BL" maxlength="2048"></p>
 		<p><button type="button" class="button button-secondary" id="node-library-fetch-store" data-post-id="<?php echo esc_attr( (string) $post->ID ); ?>"><?php esc_html_e( 'カタログを取得', 'node-library' ); ?></button></p>
@@ -163,15 +179,19 @@ final class Node_Library_Store {
 	/** @return true|WP_Error Atomically replace one store's snapshot and relations. */
 	public static function persist( int $post_id, array $catalog ) {
 		global $wpdb;
-		if ( 'node_library' !== get_post_type( $post_id ) || ! in_array( $catalog['store'] ?? '', array( 'microsoft' ), true ) || ! is_array( $catalog['relations'] ?? null ) ) {
+		if ( 'node_library' !== get_post_type( $post_id ) || ! is_string( $catalog['store'] ?? null ) || ! isset( self::ADAPTERS[ $catalog['store'] ] ) || ! is_array( $catalog['relations'] ?? null ) ) {
 			return new WP_Error( 'invalid_catalog', '保存対象のカタログ情報が無効です。' );
 		}
 		self::install();
 		$table = $wpdb->prefix . 'node_library_relations';
 		$store = $catalog['store'];
+		$adapter = self::ADAPTERS[ $store ];
+		if ( ! is_string( $catalog['id'] ?? null ) || ! $adapter::valid_id( $catalog['id'] ) ) {
+			return new WP_Error( 'invalid_catalog', '保存対象のプロダクトIDが無効です。' );
+		}
 		$rows = array();
 		foreach ( $catalog['relations'] as $row ) {
-			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! preg_match( '/^[A-Z0-9]{12}$/D', $row['external_id'] ) ) {
+			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! $adapter::valid_id( $row['external_id'] ) ) {
 				return new WP_Error( 'invalid_relation', '関係情報が無効なため保存を中止しました。' );
 			}
 			$rows[ $row['relation'] . ':' . $row['external_id'] ] = array( 'item_id' => $post_id, 'external_id' => $row['external_id'], 'relation' => $row['relation'], 'store' => $store );
@@ -211,6 +231,10 @@ final class Node_Library_Store {
 
 /** Public Microsoft catalogue endpoints currently used by the official Xbox store. */
 final class Node_Library_Microsoft_Store {
+	public static function valid_id( string $id ): bool {
+		return 1 === preg_match( '/^[A-Z0-9]{12}$/D', $id );
+	}
+
 	/** @return array|WP_Error */
 	private static function request( string $url, ?array $body = null ) {
 		$args = array( 'timeout' => 20, 'redirection' => 0, 'limit_response_size' => 4 * MB_IN_BYTES, 'headers' => array( 'Accept' => 'application/json', 'MS-CV' => base64_encode( random_bytes( 12 ) ) . '.0', 'X-MS-API-Version' => null === $body ? '1.0' : '1.1' ) );
