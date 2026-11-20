@@ -9,16 +9,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/class-library-steam-store.php';
+require_once __DIR__ . '/class-library-nintendo-store.php';
 
 final class Node_Library_Store {
 	private const ADAPTERS = array(
 		'microsoft' => Node_Library_Microsoft_Store::class,
 		'steam' => Node_Library_Steam_Store::class,
+		'nintendo' => Node_Library_Nintendo_Store::class,
 	);
 
 	private const LABELS = array(
 		'microsoft' => 'Microsoft Store / Xbox',
 		'steam' => 'Steam',
+		'nintendo' => 'Nintendo',
 	);
 
 	public static function init(): void {
