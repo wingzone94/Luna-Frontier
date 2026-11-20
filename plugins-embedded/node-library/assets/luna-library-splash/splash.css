@@ -1,0 +1,66 @@
+/* Luna Library スプラッシュ画面
+   背景: ブランド紺 #1B2A4A / ロゴ: 白版
+   JS が止まっていても CSS アニメーションのフェイルセーフで必ず消える。 */
+
+.ll-splash {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #1b2a4a;
+	/* フェイルセーフ: 4.2s で自動的に消える（JS の通常終了は .is-done で先に消す） */
+	animation: ll-splash-failsafe 0.6s ease 4.2s forwards;
+}
+
+/* セッション内2回目以降（head のインラインスクリプトが印付け） */
+.ll-splash-seen .ll-splash {
+	display: none;
+}
+
+.ll-splash__inner {
+	text-align: center;
+	padding: 24px;
+	animation: ll-splash-in 0.7s ease both;
+}
+
+.ll-splash__logo {
+	width: min(420px, 72vw);
+	height: auto;
+}
+
+.ll-splash__tagline {
+	margin: 18px 0 0;
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 13px;
+	letter-spacing: 0.08em;
+}
+
+/* JS による通常終了 */
+.ll-splash.is-done {
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+}
+
+@keyframes ll-splash-in {
+	from { opacity: 0; transform: translateY(8px); }
+	to { opacity: 1; transform: none; }
+}
+
+@keyframes ll-splash-failsafe {
+	to { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ll-splash__inner {
+		animation: none;
+	}
+	.ll-splash {
+		animation-delay: 1.2s;
+	}
+	.ll-splash.is-done {
+		transition: none;
+	}
+}

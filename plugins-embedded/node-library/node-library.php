@@ -2228,6 +2228,7 @@ require_once NODE_LIBRARY_DIR . 'includes/class-library-single-extensions.php';
 Node_Library_Single_Extensions::init();
 require_once NODE_LIBRARY_DIR . 'includes/class-library-subscriptions.php';
 Node_Library_Subscriptions::init();
+require_once NODE_LIBRARY_DIR . 'includes/splash.php';
 
 add_action( 'plugins_loaded', 'node_library_init' );
 
