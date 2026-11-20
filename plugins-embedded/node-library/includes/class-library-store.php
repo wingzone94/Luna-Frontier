@@ -96,7 +96,7 @@ final class Node_Library_Store {
 	}
 
 	public static function price_stores(): array {
-		return array_keys( self::ADAPTERS );
+		return array_values( array_diff( array_keys( self::ADAPTERS ), array( 'ps' ) ) );
 	}
 
 	/** @return array|null|WP_Error Current public offer, no offer, or an acquisition error. */
@@ -197,7 +197,7 @@ final class Node_Library_Store {
 		}
 		$rows = array();
 		foreach ( $catalog['relations'] as $row ) {
-			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains', 'edition' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! $adapter::valid_id( $row['external_id'] ) ) {
+			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! $adapter::valid_id( $row['external_id'] ) ) {
 				return new WP_Error( 'invalid_relation', '関係情報が無効なため保存を中止しました。' );
 			}
 			$rows[ $row['relation'] . ':' . $row['external_id'] ] = array( 'item_id' => $post_id, 'external_id' => $row['external_id'], 'relation' => $row['relation'], 'store' => $store );
