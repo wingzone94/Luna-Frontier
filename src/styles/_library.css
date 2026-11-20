@@ -660,6 +660,7 @@
 
 .node-library-single__specs,
 .node-library-single__pricing,
+.node-library-single__subscriptions,
 .node-library-single__stores,
 .node-library-single__relations,
 .node-library-single__articles {
@@ -908,6 +909,36 @@
 .node-library-relations__chevron {
 	margin-left: auto;
 	color: var(--md-sys-color-on-surface-variant);
+}
+
+.node-library-subscriptions__list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.node-library-subscriptions__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 16px;
+	padding: 10px 14px;
+	border: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: 12px;
+	background: var(--md-sys-color-surface);
+}
+
+.node-library-subscriptions__service {
+	font-weight: 700;
+}
+
+.node-library-subscriptions__period {
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.875rem;
 }
 
 .node-library-single__article-list {
