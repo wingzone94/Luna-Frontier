@@ -53,7 +53,7 @@ if ( ! function_exists( 'node_ai_store_summary_result' ) ) {
         update_post_meta( $post_id, '_node_ai_summary_generated_at', current_time( 'mysql' ) );
 
         if ( function_exists( 'node_ai_core' ) ) {
-            $provider = node_ai_core()->get_provider( $user_id );
+            $provider = node_ai_core()->get_provider( $user_id, 'gemini' );
             if ( ! is_wp_error( $provider ) ) {
                 update_post_meta( $post_id, '_node_ai_summary_provider', sanitize_text_field( $provider->get_label() ) );
                 update_post_meta( $post_id, '_node_ai_summary_model', sanitize_text_field( $provider->get_model() ) );
@@ -309,14 +309,6 @@ if ( ! function_exists( 'node_ai_ajax_fact_check' ) ) {
             wp_send_json_error( array( 'message' => '記事本文が空です。' ) );
         }
 
-        // もし使用モデルが指定されていれば、ユーザーのデフォルト設定として保存する
-        if ( isset( $_POST['gemini_model'] ) && ! empty( $_POST['gemini_model'] ) ) {
-            $gemini_model = sanitize_text_field( $_POST['gemini_model'] );
-            if ( function_exists('node_is_valid_gemini_model_id') && node_is_valid_gemini_model_id( $gemini_model ) ) {
-                update_user_meta( get_current_user_id(), 'node_gemini_model', $gemini_model );
-            }
-        }
-
         if ( ! function_exists( 'node_ai_core' ) ) {
             wp_send_json_error( array( 'message' => 'AI Core が読み込まれていません。' ) );
             return;
@@ -328,7 +320,11 @@ if ( ! function_exists( 'node_ai_ajax_fact_check' ) ) {
             return;
         }
 
-        $result = $core->fact_check( $content, $post->post_title, get_current_user_id(), $post_id );
+        if ( isset( $_POST['fact_check_provider'] ) && ! is_string( $_POST['fact_check_provider'] ) ) {
+            wp_send_json_error( array( 'message' => 'ファクトチェックの接続先が不正です。' ) );
+        }
+        $provider = isset( $_POST['fact_check_provider'] ) && is_string( $_POST['fact_check_provider'] ) ? sanitize_key( wp_unslash( $_POST['fact_check_provider'] ) ) : '';
+        $result = $core->fact_check( $content, $post->post_title, get_current_user_id(), $post_id, $provider );
 
         if ( is_wp_error( $result ) ) {
             // 応答が届かなかった場合でも後から原因を追えるよう、失敗理由を記事に残す

@@ -21,6 +21,8 @@ class Node_AI_Tools_Package_Test extends WP_UnitTestCase {
 	private const REQUIRED_FILES = array(
 		'node-ai-tools.php',
 		'includes/class-ai-core.php',
+		'includes/providers/class-provider-openai.php',
+		'includes/providers/class-provider-qwen.php',
 		'includes/class-gemini-api.php',
 		'includes/class-fact-check-models.php',
 		'includes/class-fact-check-runner.php',
@@ -132,4 +134,17 @@ class Node_AI_Tools_Package_Test extends WP_UnitTestCase {
 			'ZIP 内の node-ai-tools.php がリポジトリと一致しません。ZIP を作り直してください。'
 		);
 	}
+	public function test_all_packaged_source_files_match_the_single_source(): void {
+		$root = dirname( __DIR__ ) . '/plugins-embedded/node-ai-tools';
+		$zip = new ZipArchive();
+		$this->assertTrue( true === $zip->open( $this->zip_path() ) );
+		foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ) ) as $file ) {
+			if ( $file->isFile() && '.DS_Store' !== $file->getFilename() ) {
+				$relative = substr( $file->getPathname(), strlen( $root ) + 1 );
+				$this->assertSame( file_get_contents( $file->getPathname() ), $zip->getFromName( self::ZIP_ROOT . $relative ), $relative );
+			}
+		}
+		$zip->close();
+	}
+
 }

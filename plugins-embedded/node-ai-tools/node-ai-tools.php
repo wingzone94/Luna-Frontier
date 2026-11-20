@@ -2,8 +2,8 @@
 /**
  * Plugin Name:  Luna AI Tools
  * Plugin URI:   https://github.com/wingzone94/Node
- * Description:  複数AIプロバイダーによる要約生成・ファクトチェック補助・校正・読了時間自動計算。Luna Frontier テーマと連携。
- * Version:      1.4.0
+ * Description:  Ollama／OpenAI互換の編集補助・画像alt生成、Gemini専用の要約、接続先を選べるファクトチェック。Luna Frontier テーマと連携。
+ * Version:      1.6.0
  * Author:       Luminous Core Teams
  * Author URI:   https://github.com/wingzone94
  * License:      MIT
@@ -17,15 +17,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NODE_AI_VERSION', '1.4.0' );
+// A standalone activation can follow an embedded copy in the same request.
+if ( ! class_exists( 'Node_AI_Tools', false ) && ! function_exists( 'node_ai_core_init' ) ) {
+
+define( 'NODE_AI_VERSION', '1.6.0' );
 define( 'NODE_AI_DIR', plugin_dir_path( __FILE__ ) );
 
 $node_ai_embedded_dir = get_template_directory() . '/plugins-embedded/node-ai-tools/';
 define(
 	'NODE_AI_URL',
-	is_dir( $node_ai_embedded_dir )
+	wp_normalize_path( NODE_AI_DIR ) === wp_normalize_path( $node_ai_embedded_dir )
 		? get_template_directory_uri() . '/plugins-embedded/node-ai-tools/'
-		: content_url( '/plugins/node-ai-tools/' )
+		: plugin_dir_url( __FILE__ )
 );
 
 /**
@@ -45,6 +48,7 @@ final class Node_AI_Tools {
 	private function __construct() {
 		$this->load_dependencies();
 		$this->register_hooks();
+		add_action( 'init', array( 'Node_AI_Core', 'migrate_provider_settings' ), 5 );
 	}
 
 	private function load_dependencies(): void {
@@ -206,13 +210,7 @@ final class Node_AI_Tools {
         $post    = get_post();
         $post_id = $post instanceof \WP_Post ? (int) $post->ID : 0;
         $user_id = get_current_user_id();
-        $provider_id = function_exists( 'node_ai_core' ) ? node_ai_core()->get_provider_id() : 'gemini';
-
-        // 保存値は `<モデルID>@<思考量>` 形式（1.2 系と互換）。UI では2つに分けて出す
-        $stored_model = function_exists( 'node_get_user_gemini_model' ) ? node_get_user_gemini_model( $user_id ) : '';
-        $selection    = function_exists( 'node_split_gemini_model' )
-            ? node_split_gemini_model( $stored_model )
-            : array( 'model' => $stored_model, 'thinking' => '' );
+        $provider_id = node_ai_core()->get_fact_check_provider_id();
 
         wp_localize_script(
             'node-ai-editor-article-check',
@@ -223,12 +221,8 @@ final class Node_AI_Tools {
                 'statusLabels'    => function_exists( 'node_ai_fact_check_status_labels' ) ? node_ai_fact_check_status_labels() : array(),
                 'riskLabels'      => function_exists( 'node_ai_fact_check_risk_labels' ) ? node_ai_fact_check_risk_labels() : array(),
                 'providerId'      => $provider_id,
-                // Pro など無料枠で使えないモデルは出さない（選んでも必ず 429 になるため）
-                'models'          => 'gemini' === $provider_id ? Node_AI_Fact_Check_Models::usable_options( $user_id ) : array(),
-                'currentModel'    => $selection['model'],
-                'thinkingLevels'  => 'gemini' === $provider_id && function_exists( 'node_gemini_thinking_levels' ) ? node_gemini_thinking_levels() : array(),
-                'currentThinking' => $selection['thinking'],
-                'thinkingModels'  => 'gemini' === $provider_id && function_exists( 'node_get_gemini_thinking_models' ) ? node_get_gemini_thinking_models( $user_id ) : array(),
+                'providers'       => Node_AI_Core::FACT_CHECK_PROVIDERS,
+                'providerDescriptions' => array_map( array( 'Node_AI_Core', 'fact_check_provider_description' ), array_combine( array_keys( Node_AI_Core::FACT_CHECK_PROVIDERS ), array_keys( Node_AI_Core::FACT_CHECK_PROVIDERS ) ) ),
                 'data'            => ( $post_id && function_exists( 'node_ai_get_fact_check_data' ) ) ? node_ai_get_fact_check_data( $post_id ) : null,
                 'hasKey'          => ( $post_id && function_exists( 'node_ai_author_has_api_key' ) ) ? node_ai_author_has_api_key( (int) $post->post_author ) : false,
                 'autoError'       => $post_id ? (string) get_post_meta( $post_id, '_node_ai_fact_check_error', true ) : '',
@@ -395,3 +389,5 @@ function node_ai_clear_scheduled_events(): void {
 	}
 }
 register_deactivation_hook( __FILE__, 'node_ai_clear_scheduled_events' );
+
+} // End shared plugin bootstrap guard.

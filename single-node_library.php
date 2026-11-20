@@ -63,6 +63,11 @@ get_header();
 		?>
 
 		<article <?php post_class( 'node-library-single__article' ); ?>>
+			<?php
+			if ( function_exists( 'node_library_render_product_jsonld' ) ) {
+				node_library_render_product_jsonld( (int) $library_id );
+			}
+			?>
 			<header class="node-library-single__hero">
 				<div class="node-library-single__type node-library-single__type--<?php echo esc_attr( $library_type ); ?>">
 					<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
@@ -71,6 +76,12 @@ get_header();
 				<h1><?php the_title(); ?></h1>
 				<?php if ( $library_summary ) : ?><p><?php echo esc_html( $library_summary ); ?></p><?php endif; ?>
 			</header>
+
+			<?php
+			if ( function_exists( 'node_library_render_spec_table' ) ) {
+				node_library_render_spec_table( (int) $library_id );
+			}
+			?>
 
 			<section class="node-library-single__stores" aria-labelledby="node-library-stores-title">
 				<div class="node-library-single__section-heading">
@@ -83,6 +94,7 @@ get_header();
 					<p><?php esc_html_e( 'ストア情報を表示できません。', 'node' ); ?></p>
 				<?php endif; ?>
 			</section>
+			<?php do_action( 'node_library_single_after_stores', (int) $library_id ); ?>
 
 			<?php if ( ! empty( $linked_article_posts ) ) : ?>
 				<section class="node-library-single__articles" aria-labelledby="node-library-articles-title">
@@ -122,6 +134,7 @@ get_header();
 						</div>
 					</section>
 			<?php endif; ?>
+			<?php do_action( 'node_library_single_after_articles', (int) $library_id ); ?>
 
 			<footer class="node-library-single__footer">
 				<a href="<?php echo esc_url( $library_url ); ?>"><span class="material-symbols-outlined" data-icon="arrow_back" aria-hidden="true"></span><?php esc_html_e( 'Luna Library一覧へ戻る', 'node' ); ?></a>

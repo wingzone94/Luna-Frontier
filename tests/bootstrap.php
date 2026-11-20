@@ -6,6 +6,13 @@
  * DB接続先だけ専用のテストDB（wordpress_test）に向ける（tests/wp-tests-config.php参照）。
  */
 
+// Allow dedicated tests to exclude unrelated LocalWP MU plugins without changing that site.
+$node_test_mu_dir = getenv( 'NODE_TEST_MU_PLUGIN_DIR' );
+if ( $node_test_mu_dir ) {
+	define( 'WPMU_PLUGIN_DIR', $node_test_mu_dir );
+	define( 'WPMU_PLUGIN_URL', 'http://cybernode.test/test-only-mu' );
+}
+
 define( 'WP_TESTS_CONFIG_FILE_PATH', __DIR__ . '/wp-tests-config.php' );
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';

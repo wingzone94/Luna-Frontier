@@ -30,6 +30,10 @@ class Node_AI_Provider_Gemini implements Node_AI_Provider {
 	}
 
 	public function generate( string $prompt, array $options = array() ) {
+		if ( ! in_array( $options['feature'] ?? '', Node_AI_Core::GEMINI_FEATURES, true ) ) {
+			return new WP_Error( 'ai_feature_restricted', 'Geminiの利用対象外の機能です。' );
+		}
+
 		$api = new Node_Gemini_API( $this->user_id );
 
 		// 共通オプション → Gemini オプションへ変換

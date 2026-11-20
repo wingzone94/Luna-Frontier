@@ -2,7 +2,7 @@
 /**
  * Luna AI 設定画面（NODE-1.3.md §4.3 / §4.4）
  *
- * プロバイダー選択（Gemini推奨 / Qwen / Ollama / 使用しない）→ 選択したプロバイダーの
+ * 通常プロバイダー選択（Ollama既定 / OpenAI互換 / 使用しない）→ 選択したプロバイダーの
  * 項目だけ表示。各プロバイダーに接続テスト。詳細なモデルIDは「詳細設定」に分離。
  * APIキーはマスク表示・input への再出力なし・空欄保存で既存値維持。
  *
@@ -52,7 +52,7 @@ add_action(
 			array(
 				'sanitize_callback' => static function ( $value ): string {
 					$value = (string) $value;
-					return in_array( $value, Node_AI_Core::PROVIDERS, true ) ? $value : 'gemini';
+					return in_array( $value, Node_AI_Core::GENERAL_PROVIDERS, true ) ? $value : 'ollama';
 				},
 			)
 		);
@@ -169,10 +169,27 @@ add_action(
 			)
 		);
 
-		// --- Qwen (OpenAI Compatible) ---
+		register_setting( 'node_ai_group', 'node_ai_fc_provider', array( 'sanitize_callback' => static function ( $value ) {
+			return is_string( $value ) && isset( Node_AI_Core::FACT_CHECK_PROVIDERS[ $value ] ) ? $value : 'gemini';
+		} ) );
+
+		register_setting( 'node_ai_group', 'node_ai_openai_preset', array( 'sanitize_callback' => static function ( $value ) {
+			return is_string( $value ) && isset( Node_AI_Provider_OpenAI::presets()[ $value ] ) ? $value : 'local';
+		} ) );
+		// Legacy option names stay writable and are not erased by a form without those fields.
+		foreach ( array( 'endpoint', 'model', 'api_key' ) as $field ) {
+			$name = 'node_ai_qwen_' . $field;
+			register_setting( 'node_ai_group', $name, array( 'sanitize_callback' => static function ( $value ) use ( $name, $field ) {
+				if ( null === $value ) {
+					return get_option( $name, '' );
+				}
+				return 'api_key' === $field ? node_ai_sanitize_secret( $value, $name ) : ( 'endpoint' === $field ? esc_url_raw( (string) $value, array( 'http', 'https' ) ) : sanitize_text_field( (string) $value ) );
+			} ) );
+		}
+		// --- OpenAI Compatible ---
 		register_setting(
 			'node_ai_group',
-			'node_ai_qwen_endpoint',
+			'node_ai_openai_endpoint',
 			array(
 				'sanitize_callback' => static function ( $value ): string {
 					$value = trim( (string) $value );
@@ -186,12 +203,12 @@ add_action(
 		);
 		register_setting(
 			'node_ai_group',
-			'node_ai_qwen_api_key',
-			array( 'sanitize_callback' => static fn( $value ) => node_ai_sanitize_secret( $value, 'node_ai_qwen_api_key' ) )
+			'node_ai_openai_api_key',
+			array( 'sanitize_callback' => static fn( $value ) => node_ai_sanitize_secret( $value, 'node_ai_openai_api_key' ) )
 		);
 		register_setting(
 			'node_ai_group',
-			'node_ai_qwen_model',
+			'node_ai_openai_model',
 			array( 'sanitize_callback' => static fn( $value ) => sanitize_text_field( (string) $value ) )
 		);
 
@@ -235,10 +252,10 @@ add_action(
  * @param mixed $value
  */
 function node_ai_sanitize_secret( $value, string $option_name ): string {
-	if ( ! empty( $_POST[ $option_name . '_clear' ] ) ) {
+	if ( '1' === ( $_POST[ $option_name . '_clear' ] ?? '' ) ) {
 		return '';
 	}
-	$value = trim( (string) $value );
+	$value = is_string( $value ) ? trim( $value ) : '';
 	if ( '' === $value ) {
 		return (string) get_option( $option_name, '' );
 	}
@@ -290,7 +307,7 @@ add_action(
 		}
 
 		set_transient( 'node_ai_test_result_' . get_current_user_id(), $result, 60 );
-		wp_safe_redirect( admin_url( 'options-general.php?page=node-ai' ) );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=node-ai' ) );
 		exit;
 	}
 );
@@ -319,7 +336,7 @@ add_action(
 		}
 		check_admin_referer( 'node_ai_clear_usage' );
 		delete_option( Node_AI_Core::USAGE_LOG_OPTION );
-		wp_safe_redirect( admin_url( 'options-general.php?page=node-ai' ) );
+		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=node-ai' ) );
 		exit;
 	}
 );
@@ -342,7 +359,7 @@ function node_ai_render_settings_page(): void {
 	}
 
 	$gemini_key  = (string) get_option( 'node_ai_gemini_api_key', '' );
-	$qwen_key    = (string) get_option( 'node_ai_qwen_api_key', '' );
+	$openai_key    = (string) get_option( 'node_ai_openai_api_key', '' );
 	$ollama_model = trim( (string) get_option( 'node_ai_ollama_model', '' ) );
 	$ollama_presets = Node_AI_Provider_Ollama::preset_models();
 	$ollama_is_custom = '' !== $ollama_model && ! isset( $ollama_presets[ $ollama_model ] );
@@ -368,11 +385,13 @@ function node_ai_render_settings_page(): void {
 			<fieldset id="node-ai-provider-select">
 				<?php
 				$provider_labels = array(
-					'gemini' => 'Gemini（標準・推奨） — Google のクラウドAI。検索を参照したファクトチェックに対応',
-					'qwen'   => 'Qwen — OpenAI互換APIで接続（DashScope など）',
-					'ollama' => 'Ollama — 手元のPCで動くローカルAI。APIキー不要',
+					'ollama' => 'Ollama（既定） — ローカルAI。APIキー不要',
+					'openai' => 'OpenAI互換 — OpenAI・DashScope・ローカルの互換サーバー',
 					'off'    => '使用しない — AI機能をすべて無効化',
 				);
+				if ( 'qwen' === $provider_id ) {
+					$provider_labels['qwen'] = 'Qwen（旧設定互換）';
+				}
 				foreach ( $provider_labels as $id => $label ) :
 					?>
 					<p>
@@ -384,75 +403,34 @@ function node_ai_render_settings_page(): void {
 				<?php endforeach; ?>
 			</fieldset>
 
-			<!-- Gemini -->
-			<div class="node-ai-provider-section" data-provider="gemini" style="<?php echo 'gemini' === $provider_id ? '' : 'display:none;'; ?>">
+			<!-- OpenAI compatible -->
+			<div class="node-ai-provider-section" data-provider="openai" style="<?php echo 'openai' === $provider_id ? '' : 'display:none;'; ?>">
 				<hr />
-				<h2>Gemini 設定</h2>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row">サイト共通 API キー</th>
-						<td>
-							<?php if ( '' !== $gemini_key ) : ?>
-								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $gemini_key ) ); ?></code>（設定済み）</p>
-							<?php endif; ?>
-							<input type="password" name="node_ai_gemini_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $gemini_key ? '空欄のままで現在のキーを維持' : 'AIza… または AQ.…'; ?>" />
-							<?php if ( '' !== $gemini_key ) : ?>
-								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_gemini_api_key_clear" value="1" /> キーを削除</label>
-							<?php endif; ?>
-							<p class="description">ライター個人のキー（プロフィール設定）が優先され、未登録のライターにはこのサイト共通キーが使われます。</p>
-						</td>
-					</tr>
-				</table>
-				<details>
-					<summary>詳細設定（通常は変更不要）</summary>
-					<table class="form-table" role="presentation">
-						<tr>
-							<th scope="row">サイト既定モデルID</th>
-							<td>
-								<input type="text" name="node_ai_gemini_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_gemini_model', '' ) ); ?>" class="regular-text" placeholder="空欄で自動選択（Flash系優先）" />
-								<p class="description" style="margin-top:12px;">
-									<input type="hidden" name="node_ai_auto_alt" value="0" />
-									<label>
-										<input type="checkbox" name="node_ai_auto_alt" value="1" <?php checked( function_exists( 'node_ai_auto_alt_enabled' ) && node_ai_auto_alt_enabled() ); ?> />
-										アイキャッチの代替テキスト（alt）が未設定のとき、保存後に自動生成する
-									</label><br>
-									<span>既に alt がある画像は書き換えません。生成は保存の約30秒後にバックグラウンドで実行され、失敗しても公開は妨げません。</span>
-								</p>
-								<p class="description">個人設定でモデル未選択のライターに適用される既定モデルです。</p>
-							</td>
-						</tr>
-					</table>
-				</details>
-
-				<h3>ファクトチェックのモデル（無料枠優先）</h3>
-				<p class="description">
-					ファクトチェックは Gemini API の無料枠だけで完結するように動きます。
-					有料モデルや有料機能へ自動で切り替えることはありません。
-				</p>
-				<?php node_ai_render_fact_check_model_fields(); ?>
-			</div>
-
-			<!-- Qwen -->
-			<div class="node-ai-provider-section" data-provider="qwen" style="<?php echo 'qwen' === $provider_id ? '' : 'display:none;'; ?>">
-				<hr />
-				<h2>Qwen 設定（OpenAI互換API）</h2>
+				<h2>OpenAI互換API 設定</h2>
+				<p><label for="node-ai-openai-preset">接続先プリセット</label><br>
+				<select id="node-ai-openai-preset" name="node_ai_openai_preset">
+				<?php foreach ( Node_AI_Provider_OpenAI::presets() as $preset_id => $preset ) : ?>
+					<option value="<?php echo esc_attr( $preset_id ); ?>" <?php selected( get_option( 'node_ai_openai_preset', 'local' ), $preset_id ); ?>><?php echo esc_html( $preset['label'] ); ?></option>
+				<?php endforeach; ?>
+				</select></p>
+				<p class="description">プリセットを変更しても入力済みURL・モデル・キーは保持します。空欄のURL・モデルにプリセットの既定値を適用します。ローカル接続ではキーは任意です。</p>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">エンドポイント URL</th>
 						<td>
-							<input type="url" name="node_ai_qwen_endpoint" value="<?php echo esc_attr( (string) get_option( 'node_ai_qwen_endpoint', '' ) ); ?>" class="regular-text" placeholder="<?php echo esc_attr( Node_AI_Provider_Qwen::DEFAULT_ENDPOINT ); ?>" />
-							<p class="description">空欄で既定（DashScope 国際版の互換モード）。他の OpenAI 互換サービスの URL も指定できます。</p>
+							<input type="url" name="node_ai_openai_endpoint" value="<?php echo esc_attr( (string) get_option( 'node_ai_openai_endpoint', '' ) ); ?>" class="regular-text" placeholder="<?php echo esc_attr( Node_AI_Provider_OpenAI::DEFAULT_ENDPOINT ); ?>" />
+							<p class="description">空欄は選択したプリセットの接続先を使用します。/v1 などのAPIベースURLを指定してください。</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">API キー</th>
 						<td>
-							<?php if ( '' !== $qwen_key ) : ?>
-								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $qwen_key ) ); ?></code>（設定済み）</p>
+							<?php if ( '' !== $openai_key ) : ?>
+								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $openai_key ) ); ?></code>（設定済み）</p>
 							<?php endif; ?>
-							<input type="password" name="node_ai_qwen_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $qwen_key ? '空欄のままで現在のキーを維持' : 'sk-…'; ?>" />
-							<?php if ( '' !== $qwen_key ) : ?>
-								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_qwen_api_key_clear" value="1" /> キーを削除</label>
+							<input type="password" name="node_ai_openai_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $openai_key ? '空欄のままで現在のキーを維持' : 'sk-…'; ?>" />
+							<?php if ( '' !== $openai_key ) : ?>
+								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_openai_api_key_clear" value="1" /> キーを削除</label>
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -463,8 +441,8 @@ function node_ai_render_settings_page(): void {
 						<tr>
 							<th scope="row">モデルID</th>
 							<td>
-								<input type="text" name="node_ai_qwen_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_qwen_model', '' ) ); ?>" class="regular-text" placeholder="<?php echo esc_attr( Node_AI_Provider_Qwen::DEFAULT_MODEL ); ?>" />
-								<p class="description">空欄で推奨モデル（<?php echo esc_html( Node_AI_Provider_Qwen::DEFAULT_MODEL ); ?>）を使用します。</p>
+								<input type="text" name="node_ai_openai_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_openai_model', '' ) ); ?>" class="regular-text" placeholder="<?php echo esc_attr( Node_AI_Provider_OpenAI::DEFAULT_MODEL ); ?>" />
+								<p class="description">空欄はプリセットのモデルを使用します。OpenAI・任意サーバーでは利用するモデルIDを入力してください。</p>
 							</td>
 						</tr>
 					</table>
@@ -511,6 +489,73 @@ function node_ai_render_settings_page(): void {
 				</details>
 			</div>
 
+			<hr />
+			<h2>画像の代替テキスト（alt）</h2>
+								<p class="description" style="margin-top:12px;">
+									<input type="hidden" name="node_ai_auto_alt" value="0" />
+									<label>
+										<input type="checkbox" name="node_ai_auto_alt" value="1" <?php checked( function_exists( 'node_ai_auto_alt_enabled' ) && node_ai_auto_alt_enabled() ); ?> />
+										アイキャッチの代替テキスト（alt）が未設定のとき、保存後に自動生成する
+									</label><br>
+									<span>既に alt がある画像は書き換えません。生成は保存の約30秒後にバックグラウンドで実行され、失敗しても公開は妨げません。</span>
+								</p>
+			<p class="description">全体の接続先の画像対応モデルを使用します。OllamaのGemma 3 4Bなどを選択してください。元画像は変更せず、送信時だけ最大768pxに縮小します。</p>
+			<hr />
+			<!-- Gemini: dedicated features only -->
+			<div class="node-ai-gemini-section">
+				<hr />
+				<h2>Gemini専用設定（AI要約・TTS・ファクトチェック）</h2>
+				<p>Intelligence SummaryはGeminiを使用します。校正・タイトル提案・SNS文案・alt生成は上の全体設定を使い、Geminiには送信しません。</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">サイト共通 API キー</th>
+						<td>
+							<?php if ( '' !== $gemini_key ) : ?>
+								<p style="margin-top:0;"><code><?php echo esc_html( node_ai_mask_secret( $gemini_key ) ); ?></code>（設定済み）</p>
+							<?php endif; ?>
+							<input type="password" name="node_ai_gemini_api_key" value="" autocomplete="new-password" class="regular-text" placeholder="<?php echo '' !== $gemini_key ? '空欄のままで現在のキーを維持' : 'AIza… または AQ.…'; ?>" />
+							<?php if ( '' !== $gemini_key ) : ?>
+								<label style="margin-left:8px;"><input type="checkbox" name="node_ai_gemini_api_key_clear" value="1" /> キーを削除</label>
+							<?php endif; ?>
+							<p class="description">ライター個人のキー（プロフィール設定）が優先され、未登録のライターにはこのサイト共通キーが使われます。</p>
+						</td>
+					</tr>
+				</table>
+				<details>
+					<summary>詳細設定（通常は変更不要）</summary>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">Gemini専用のサイト既定モデルID</th>
+							<td>
+								<input type="text" name="node_ai_gemini_model" value="<?php echo esc_attr( (string) get_option( 'node_ai_gemini_model', '' ) ); ?>" class="regular-text" placeholder="空欄で自動選択（Flash系優先）" />
+
+								<p class="description">個人設定でモデル未選択のライターに適用される既定モデルです。</p>
+							</td>
+						</tr>
+					</table>
+				</details>
+
+			</div>
+
+			<h2>ファクトチェック専用の接続先</h2>
+			<p>全体の接続先とは独立しています。自動実行はこの設定を使用し、手動実行時は記事の編集画面で変更できます。「使用しない」は全AI機能に優先します。</p>
+			<p><label for="node-ai-fc-provider">既定の接続先</label><br>
+			<select id="node-ai-fc-provider" name="node_ai_fc_provider">
+			<?php foreach ( Node_AI_Core::FACT_CHECK_PROVIDERS as $id => $label ) : ?>
+				<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $core->get_fact_check_provider_id(), $id ); ?>><?php echo esc_html( $label ); ?></option>
+			<?php endforeach; ?>
+			</select></p>
+			<p class="description">Gemini: <?php echo esc_html( Node_AI_Core::fact_check_provider_description( 'gemini' ) ); ?><br>
+			Ollama / OpenAI互換: <?php echo esc_html( Node_AI_Core::fact_check_provider_description( 'ollama' ) ); ?></p>
+			<p class="description">接続先URL・モデル・キーは各プロバイダと共通です。Gemini無料枠の設定はGemini選択時だけ適用します。</p>
+
+				<h3>ファクトチェックのモデル（無料枠優先）</h3>
+				<p class="description">
+					ファクトチェックは Gemini API の無料枠だけで完結するように動きます。
+					有料モデルや有料機能へ自動で切り替えることはありません。
+				</p>
+				<?php node_ai_render_fact_check_model_fields(); ?>
+
 			<?php submit_button( '設定を保存' ); ?>
 		</form>
 
@@ -523,6 +568,16 @@ function node_ai_render_settings_page(): void {
 			</form>
 		<?php endif; ?>
 
+
+		<?php if ( 'off' !== $provider_id ) : ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'node_ai_test_connection' ); ?>
+				<input type="hidden" name="action" value="node_ai_test_connection" />
+				<input type="hidden" name="provider" value="gemini" />
+				<?php submit_button( 'Gemini専用接続テスト（要約・TTS・ファクトチェック）', 'secondary', 'submit', false ); ?>
+			</form>
+		<?php endif; ?>
+
 		<hr style="margin-top:24px;" />
 		<h2>利用履歴</h2>
 		<p>今月の実行回数: <strong><?php echo esc_html( (string) $monthly_count ); ?></strong> 回（直近<?php echo esc_html( (string) Node_AI_Core::USAGE_LOG_LIMIT ); ?>件の履歴から集計。料金の正確な計算は行いません）</p>
@@ -530,6 +585,7 @@ function node_ai_render_settings_page(): void {
 		<?php if ( empty( $usage_log ) ) : ?>
 			<p class="description">まだAI機能は実行されていません。</p>
 		<?php else : ?>
+			<div role="region" tabindex="0" aria-label="<?php esc_attr_e( 'AI利用履歴（横にスクロールできます）', 'node-ai-tools' ); ?>" style="max-width:100%;overflow-x:auto;">
 			<table class="widefat striped" style="max-width:900px;">
 				<thead>
 					<tr>
@@ -565,6 +621,7 @@ function node_ai_render_settings_page(): void {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+			</div>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:8px;">
 				<?php wp_nonce_field( 'node_ai_clear_usage' ); ?>
 				<input type="hidden" name="action" value="node_ai_clear_usage" />
@@ -579,7 +636,7 @@ function node_ai_render_settings_page(): void {
 		var sections = document.querySelectorAll( '.node-ai-provider-section' );
 		function sync() {
 			var selected = document.querySelector( '#node-ai-provider-select input[name="node_ai_provider"]:checked' );
-			var value = selected ? selected.value : 'gemini';
+			var value = selected ? selected.value : 'ollama';
 			sections.forEach( function ( section ) {
 				section.style.display = section.getAttribute( 'data-provider' ) === value ? '' : 'none';
 			} );

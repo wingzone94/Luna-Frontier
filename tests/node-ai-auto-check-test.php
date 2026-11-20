@@ -22,6 +22,7 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 		$this->author_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 		update_user_meta( $this->author_id, 'node_gemini_api_key', 'dummy_key' );
 		update_option( 'node_ai_provider', 'gemini' );
+		delete_option( 'node_ai_fc_provider' );
 		wp_set_current_user( $this->author_id );
 	}
 
@@ -69,7 +70,7 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 	}
 
 	public function test_ollama_schedules_without_api_key() {
-		update_option( 'node_ai_provider', 'ollama' );
+		update_option( 'node_ai_fc_provider', 'ollama' );
 		delete_user_meta( $this->author_id, 'node_gemini_api_key' );
 		$post_id = $this->make_draft();
 
@@ -78,15 +79,16 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 		$this->assertNotFalse( $this->scheduled( $post_id ) );
 	}
 
-	public function test_qwen_requires_its_site_key() {
-		update_option( 'node_ai_provider', 'qwen' );
+	public function test_dashscope_fact_check_requires_its_site_key() {
+		update_option( 'node_ai_fc_provider', 'openai' );
+		update_option( 'node_ai_openai_preset', 'dashscope' );
 		delete_user_meta( $this->author_id, 'node_gemini_api_key' );
 		$post_id = $this->make_draft();
 
 		node_ai_maybe_schedule_fact_check( $post_id, get_post( $post_id ) );
 		$this->assertFalse( $this->scheduled( $post_id ) );
 
-		update_option( 'node_ai_qwen_api_key', 'qwen-test-key' );
+		update_option( 'node_ai_openai_api_key', 'qwen-test-key' );
 		node_ai_maybe_schedule_fact_check( $post_id, get_post( $post_id ) );
 		$this->assertNotFalse( $this->scheduled( $post_id ) );
 	}
@@ -150,7 +152,7 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 
 	public function test_summary_store_records_provider_time_and_connect_event() {
 		update_option( 'node_ai_provider', 'qwen' );
-		update_option( 'node_ai_qwen_model', 'qwen-max' );
+		update_user_meta( $this->author_id, 'node_gemini_model', 'gemini-2.5-flash' );
 		$post_id = $this->make_draft();
 		$events  = array();
 
@@ -167,8 +169,8 @@ class Node_AI_Auto_Check_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( '保存テスト', get_post_meta( $post_id, '_node_ai_summary', true ) );
-		$this->assertSame( 'Qwen', get_post_meta( $post_id, '_node_ai_summary_provider', true ) );
-		$this->assertSame( 'qwen-max', get_post_meta( $post_id, '_node_ai_summary_model', true ) );
+		$this->assertSame( 'Gemini', get_post_meta( $post_id, '_node_ai_summary_provider', true ) );
+		$this->assertSame( 'gemini-2.5-flash', get_post_meta( $post_id, '_node_ai_summary_model', true ) );
 		$this->assertNotSame( '', get_post_meta( $post_id, '_node_ai_summary_generated_at', true ) );
 		$this->assertSame( 'ai_summary_completed', $events[0][0] );
 		$this->assertSame( $post_id, $events[0][1]['post_id'] );

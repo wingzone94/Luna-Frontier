@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Node_AI_Provider_Ollama implements Node_AI_Provider {
 
 	public const DEFAULT_URL   = 'http://localhost:11434';
-	public const DEFAULT_MODEL = 'gemma3';
+	public const DEFAULT_MODEL = 'gemma3:4b';
 
 	/**
 	 * 標準の選択肢（詳細設定で任意IDに変更可能）
@@ -21,7 +21,11 @@ class Node_AI_Provider_Ollama implements Node_AI_Provider {
 	 */
 	public static function preset_models(): array {
 		return array(
-			'gemma3' => 'Gemma 3',
+			'gemma3:4b' => 'Gemma 3 4B（既定・画像対応）',
+			'qwen3:4b' => 'Qwen 3 4B',
+			'qwen3:8b' => 'Qwen 3 8B',
+			'tinyswallow-1.5b:latest' => 'TinySwallow 1.5B',
+			'gemma3' => 'Gemma 3（既存設定用）',
 			'qwen3'  => 'Qwen 3',
 		);
 	}
@@ -34,7 +38,7 @@ class Node_AI_Provider_Ollama implements Node_AI_Provider {
 				'max_tokens'         => 1024,
 				'temperature'        => 0.7,
 				'json'               => false,
-				'timeout'            => 120, // ローカル推論はクラウドより遅い
+				'timeout'            => 600, // CPU上のローカル推論・初回ロードを待つ（呼び出し側で変更可）
 			)
 		);
 
@@ -49,6 +53,13 @@ class Node_AI_Provider_Ollama implements Node_AI_Provider {
 			'role'    => 'user',
 			'content' => $prompt,
 		);
+
+		if ( ! empty( $options['image'] ) ) {
+			if ( ! is_array( $options['image'] ) || ! is_string( $options['image']['data'] ?? null ) || '' === $options['image']['data'] ) {
+				return new WP_Error( 'ai_bad_image', '画像入力が不正です。' );
+			}
+			$messages[ count( $messages ) - 1 ]['images'] = array( $options['image']['data'] );
+		}
 
 		$body = array(
 			'model'    => $this->get_model(),
