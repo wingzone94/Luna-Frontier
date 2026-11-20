@@ -166,7 +166,8 @@ class Node_All_Articles_Pagination_Test extends WP_UnitTestCase {
 
 		$next = new WP_Query( node_get_all_articles_page_query_args( $total_pages + 1 ) );
 		$this->assertSame( array(), wp_list_pluck( $next->posts, 'ID' ) );
-		$this->assertSame( $total, (int) $next->found_posts );
+		// WordPress skips FOUND_ROWS() when the requested page has no posts.
+		$this->assertSame( 0, (int) $next->found_posts );
 	}
 
 	public function test_posts_past_the_former_240_cap_remain_on_the_last_page(): void {
