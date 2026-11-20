@@ -50,14 +50,16 @@
     if (!button || !input || !store || !window.wp || !window.wp.apiFetch) return;
     var pending = null;
     var busy = false;
+    var inputVersion = 0;
     function update() { button.disabled = busy || !input.value.trim(); }
-    function invalidate() { pending = null; preview.hidden = true; update(); }
+    function invalidate() { inputVersion++; pending = null; preview.hidden = true; status.textContent = ''; update(); }
     input.addEventListener('input', invalidate);
     store.addEventListener('change', invalidate);
     update();
     button.addEventListener('click', function () {
         if (busy || !input.value.trim()) return;
         busy = true;
+        var requestVersion = inputVersion;
         pending = null;
         preview.hidden = true;
         status.textContent = 'カタログと関連商品を取得中…';
@@ -67,6 +69,7 @@
             method: 'POST',
             data: { store: store.value, input: input.value.trim(), post_id: Number(button.dataset.postId) }
         }).then(function (data) {
+            if (requestVersion !== inputVersion) return;
             if (!data || !data.ticket || !data.meta || !Array.isArray(data.relations)) throw new Error('カタログの応答が不完全です。');
             pending = data;
             text.textContent = JSON.stringify({
@@ -80,6 +83,7 @@
             preview.hidden = false;
             status.textContent = '取得しました。内容を確認してから編集欄へ反映してください。まだ保存していません。';
         }).catch(function (error) {
+            if (requestVersion !== inputVersion) return;
             pending = null;
             preview.hidden = true;
             status.textContent = error.message || 'カタログを取得できませんでした。入力済み情報は変更していません。';
