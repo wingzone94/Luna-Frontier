@@ -231,6 +231,9 @@ final class Node_Library_Store {
 			wp_cache_delete( $post_id, 'post_meta' );
 			return new WP_Error( 'catalog_save_failed', 'カタログ・関係情報の保存に失敗しました。再取得して保存してください。' );
 		}
+		if ( class_exists( 'Node_Library_Subscriptions' ) ) {
+			Node_Library_Subscriptions::observe_from_catalog( $post_id, $catalog );
+		}
 		return true;
 	}
 }
