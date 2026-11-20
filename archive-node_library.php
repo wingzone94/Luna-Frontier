@@ -290,7 +290,7 @@ if ( ! empty( $archive_library_ids ) ) {
 		$pagination_total    = (int) $wp_query->max_num_pages;
 			$pagination_base     = $selected_type
 				? trailingslashit( $archive_url . $selected_type ) . 'page/%#%/'
-				: str_replace( 999999999, '%#%', esc_url_raw( get_pagenum_link( 999999999 ) ) );
+				: str_replace( '999999999', '%#%', esc_url_raw( get_pagenum_link( 999999999 ) ) );
 			$pagination_add_args = function_exists( 'node_library_archive_toolbar_query_args' )
 				? node_library_archive_toolbar_query_args()
 				: array();
