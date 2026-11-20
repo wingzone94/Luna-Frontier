@@ -10,18 +10,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/class-library-steam-store.php';
 require_once __DIR__ . '/class-library-nintendo-store.php';
+require_once __DIR__ . '/class-library-ps-store.php';
 
 final class Node_Library_Store {
 	private const ADAPTERS = array(
 		'microsoft' => Node_Library_Microsoft_Store::class,
 		'steam' => Node_Library_Steam_Store::class,
 		'nintendo' => Node_Library_Nintendo_Store::class,
+		'ps' => Node_Library_PS_Store::class,
 	);
 
 	private const LABELS = array(
 		'microsoft' => 'Microsoft Store / Xbox',
 		'steam' => 'Steam',
 		'nintendo' => 'Nintendo',
+		'ps' => 'PlayStation Store',
 	);
 
 	public static function init(): void {
@@ -194,7 +197,7 @@ final class Node_Library_Store {
 		}
 		$rows = array();
 		foreach ( $catalog['relations'] as $row ) {
-			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! $adapter::valid_id( $row['external_id'] ) ) {
+			if ( ! is_array( $row ) || ! in_array( $row['relation'] ?? '', array( 'dlc', 'included_in', 'bundle_contains', 'edition' ), true ) || ! is_string( $row['external_id'] ?? null ) || ! $adapter::valid_id( $row['external_id'] ) ) {
 				return new WP_Error( 'invalid_relation', '関係情報が無効なため保存を中止しました。' );
 			}
 			$rows[ $row['relation'] . ':' . $row['external_id'] ] = array( 'item_id' => $post_id, 'external_id' => $row['external_id'], 'relation' => $row['relation'], 'store' => $store );
