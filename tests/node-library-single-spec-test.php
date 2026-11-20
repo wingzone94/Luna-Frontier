@@ -48,17 +48,29 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 	}
 
 	public function test_spec_rows_use_only_stored_summary_hardware_and_links(): void {
-		$rows   = node_library_get_spec_rows( $this->item_id );
-		$labels = array_column( $rows, 'label' );
+		$ext_callback = array( Node_Library_Single_Extensions::class, 'filter_spec_rows' );
+		$had_ext      = has_filter( 'node_library_spec_rows', $ext_callback );
+		if ( false !== $had_ext ) {
+			remove_filter( 'node_library_spec_rows', $ext_callback, (int) $had_ext );
+		}
 
-		$this->assertSame( array( '種別', '紹介文', '対応機種', '入手先' ), $labels );
-		$this->assertSame( 'ゲーム', $rows[0]['value'] );
-		$this->assertSame( "一行目\n二行目", $rows[1]['value'] );
-		$this->assertSame( 'Windows PC、Nintendo Switch', $rows[2]['value'] );
-		$this->assertSame( 'Steam', $rows[3]['links'][0]['platform'] );
-		$this->assertSame( 'https://example.com/steam', $rows[3]['links'][0]['url'] );
-		$this->assertNotContains( '発売日', $labels );
-		$this->assertNotContains( '価格', $labels );
+		try {
+			$rows   = node_library_get_spec_rows( $this->item_id );
+			$labels = array_column( $rows, 'label' );
+
+			$this->assertSame( array( '種別', '紹介文', '対応機種', '入手先' ), $labels );
+			$this->assertSame( 'ゲーム', $rows[0]['value'] );
+			$this->assertSame( "一行目\n二行目", $rows[1]['value'] );
+			$this->assertSame( 'Windows PC、Nintendo Switch', $rows[2]['value'] );
+			$this->assertSame( 'Steam', $rows[3]['links'][0]['platform'] );
+			$this->assertSame( 'https://example.com/steam', $rows[3]['links'][0]['url'] );
+			$this->assertNotContains( '発売日', $labels );
+			$this->assertNotContains( '価格', $labels );
+		} finally {
+			if ( false !== $had_ext ) {
+				add_filter( 'node_library_spec_rows', $ext_callback, (int) $had_ext, 2 );
+			}
+		}
 	}
 
 	public function test_spec_table_renders_and_leaves_the_extension_hook(): void {
