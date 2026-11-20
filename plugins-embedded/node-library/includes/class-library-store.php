@@ -10,18 +10,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/class-library-steam-store.php';
 require_once __DIR__ . '/class-library-nintendo-store.php';
+require_once __DIR__ . '/class-library-ps-store.php';
 
 final class Node_Library_Store {
 	private const ADAPTERS = array(
 		'microsoft' => Node_Library_Microsoft_Store::class,
 		'steam' => Node_Library_Steam_Store::class,
 		'nintendo' => Node_Library_Nintendo_Store::class,
+		'ps' => Node_Library_PS_Store::class,
 	);
 
 	private const LABELS = array(
 		'microsoft' => 'Microsoft Store / Xbox',
 		'steam' => 'Steam',
 		'nintendo' => 'Nintendo',
+		'ps' => 'PlayStation Store',
 	);
 
 	public static function init(): void {
@@ -93,7 +96,7 @@ final class Node_Library_Store {
 	}
 
 	public static function price_stores(): array {
-		return array_keys( self::ADAPTERS );
+		return array_values( array_diff( array_keys( self::ADAPTERS ), array( 'ps' ) ) );
 	}
 
 	/** @return array|null|WP_Error Current public offer, no offer, or an acquisition error. */

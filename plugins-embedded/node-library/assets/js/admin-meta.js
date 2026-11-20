@@ -98,7 +98,9 @@
     apply.addEventListener('click', function () {
         if (!pending || !window.confirm('タイトル・紹介文・構造化カタログ情報を取得内容で置き換えますか？ 他ストアのIDと既存リンクは保持します。')) return;
         setValue(document.getElementById('title'), pending.title);
-        setValue(document.querySelector('textarea[name="node_library_summary"]'), pending.summary);
+        if (pending.summary) {
+            setValue(document.querySelector('textarea[name="node_library_summary"]'), pending.summary);
+        }
         Object.keys(pending.meta).forEach(function (field) {
             var value = pending.meta[field];
             if (field === 'store_ids') {
