@@ -2222,6 +2222,8 @@ require_once NODE_LIBRARY_DIR . 'includes/class-library-store.php';
 Node_Library_Store::init();
 require_once NODE_LIBRARY_DIR . 'includes/class-library-prices.php';
 Node_Library_Prices::init();
+require_once NODE_LIBRARY_DIR . 'includes/class-library-archive-filters.php';
+Node_Library_Archive_Filters::init();
 
 add_action( 'plugins_loaded', 'node_library_init' );
 
