@@ -122,10 +122,20 @@
 	align-items: stretch;
 	min-height: inherit;
 	min-width: 0;
+	background: none;
+}
+
+.lf-hero-slide__overlay::before {
+	content: "";
+	position: absolute;
+	inset: 0;
 	background: var(--lf-hero-scrim);
+	mask-image: linear-gradient(to bottom, #000 45%, transparent 95%);
+	pointer-events: none;
 }
 
 .lf-hero-slide__copy {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -154,10 +164,7 @@
 }
 
 .lf-hero-slide__title {
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+	display: block;
 	overflow-wrap: anywhere;
 	margin: 0;
 	font-family: var(--font-heading, "Manrope", "Noto Sans JP", sans-serif);
@@ -511,8 +518,14 @@
 	.lf-hero-slide { flex-basis: 100%; }
 	.lf-hero-slide__card { min-height: 420px; }
 	.lf-hero-slide__image { object-position: center 30%; }
-	.lf-hero-slide__overlay { align-items: flex-end; background: var(--lf-hero-scrim-mobile); }
-	.lf-hero-slide__copy { width: 100%; gap: 10px; padding: 22px 58px 96px; }
+	.lf-hero-slide__overlay { align-items: flex-end; }
+	.lf-hero-slide__overlay::before { background: var(--lf-hero-scrim-mobile); mask-image: none; }
+	.lf-hero-slide__copy {
+		width: 100%;
+		gap: 10px;
+		padding: 22px 58px 96px;
+		background: linear-gradient(90deg, rgb(18 24 38 / 0.86), rgb(18 24 38 / 0.65) 76%, transparent);
+	}
 	.lf-hero-slide__title { font-size: 1.28rem; }
 	.lf-hero-slide__title[data-lf-hero-title-size="md"] { font-size: 1.02rem; }
 	.lf-hero-slide__title[data-lf-hero-title-size="sm"] { font-size: 0.72rem; }
