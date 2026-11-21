@@ -147,6 +147,13 @@ export const initCardAnimations = () => {
         if (visibleEntries.length > 0) {
             const elementsToAnimate = visibleEntries.map(entry => entry.target);
 
+            // 表示領域に入ったカードの遅延画像を即時読み込みへ昇格させる
+            elementsToAnimate.forEach((card) => {
+                card.querySelectorAll('img[loading="lazy"]').forEach((img) => {
+                    img.loading = 'eager';
+                });
+            });
+
             // アニメーション高速化 (duration: 0.4s)
             gsap.to(elementsToAnimate, {
                 opacity: 1,
