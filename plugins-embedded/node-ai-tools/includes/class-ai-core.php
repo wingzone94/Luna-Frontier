@@ -297,10 +297,19 @@ type は次のいずれかを厳密に使うこと:
 		if ( ! $this->is_enabled() ) {
 			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
 		}
-		if ( wp_is_stream( $path ) || ! is_file( $path ) || ! is_readable( $path ) ) {
+		if ( wp_is_stream( $path ) ) {
 			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
 		}
-		if ( filesize( $path ) > 10 * MB_IN_BYTES ) {
+		// Refresh PHP's stat cache so overwritten files on the same path report their current size.
+		clearstatcache( true, $path );
+		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		$file_size = filesize( $path );
+		if ( false === $file_size ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		if ( $file_size > 10 * MB_IN_BYTES ) {
 			return new WP_Error( 'image_too_large', '画像は10MB以下で用意してください。' );
 		}
 		$mime = wp_get_image_mime( $path );
