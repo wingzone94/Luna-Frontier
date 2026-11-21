@@ -510,7 +510,7 @@
 	.lf-hero-slider { padding-inline: 12px; }
 	.lf-hero-slide { flex-basis: 100%; }
 	.lf-hero-slide__card { min-height: 420px; }
-	.lf-hero-slide__image { object-position: center 30%; }
+	.lf-hero-slide__image { object-fit: contain; object-position: center top; }
 	.lf-hero-slide__overlay { align-items: flex-end; background: var(--lf-hero-scrim-mobile); }
 	.lf-hero-slide__copy { width: 100%; gap: 10px; padding: 22px 58px 96px; }
 	.lf-hero-slide__title { font-size: 1.28rem; }
