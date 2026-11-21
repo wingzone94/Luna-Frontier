@@ -81,12 +81,13 @@
     const offset = (slide) => slide.getBoundingClientRect().left - viewport.getBoundingClientRect().left + viewport.scrollLeft;
     const slideOffset = (i) => offset(slides[i]);
 
-    const goTo = (nextIndex, { instant = false } = {}) => {
+    const goTo = (nextIndex) => {
       index = clamp(nextIndex);
       pendingTarget = index;
-      const behavior = instant || reduceMotion ? 'instant' : 'smooth';
-      const target = !instant && total > 1 && nextIndex < 0 ? edgeCopies[0]
-        : !instant && total > 1 && nextIndex >= total ? edgeCopies[1] : slides[index];
+      // A smooth horizontal scroll exposes partially clipped slide text at the
+      // viewport edge. Keep each programmatic change on a complete slide.
+      const behavior = 'instant';
+      const target = slides[index];
       loadSlideImage(target);
       viewport.scrollTo({ left: offset(target), behavior });
       sync();
@@ -326,9 +327,9 @@
       else startTimer();
     });
 
-    window.addEventListener('resize', () => goTo(index, { instant: true }));
+    window.addEventListener('resize', () => goTo(index));
 
-    goTo(0, { instant: true });
+    goTo(0);
     startTimer();
     root.setAttribute('data-lf-ready', '');
   };
