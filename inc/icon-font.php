@@ -79,6 +79,8 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'info',
 			'inventory_2',
 			'key',
+			'keyboard_arrow_down',
+			'keyboard_arrow_up',
 			'laptop_mac',
 			'last_page',
 			'light_mode',
