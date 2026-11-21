@@ -278,9 +278,12 @@ export function initSearchBar() {
         modal.showModal();
         setModalExpanded(true);
         document.body.style.overflow = 'hidden';
+        // Set initial focus synchronously on open so a delayed rAF cannot steal focus from immediate input.
+        if (modalClose && document.activeElement !== modalClose) {
+            modalClose.focus({ preventScroll: true });
+        }
         requestAnimationFrame(() => {
-            modal.classList.add('is-active');
-            modalClose?.focus({ preventScroll: true });
+            if (modal.open) modal.classList.add('is-active');
         });
 
         // --- Restore saved search settings ---
