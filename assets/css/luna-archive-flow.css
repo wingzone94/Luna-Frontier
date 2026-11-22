@@ -1,0 +1,32 @@
+body.lf-theme .lf-results-sort {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--lf-space-2xs);
+	margin: 0 0 var(--lf-space-m);
+	font-size: var(--lf-text-s);
+}
+
+body.lf-theme .lf-search > .lf-results-sort {
+	box-sizing: border-box;
+	max-inline-size: var(--lf-content-max);
+	margin-inline: auto;
+	padding-inline: var(--lf-gutter);
+}
+
+body.lf-theme .lf-results-sort :is(select, button) {
+	min-height: 48px;
+	max-width: 100%;
+	padding: 0.5rem 0.75rem;
+	font: inherit;
+	color: var(--lc-on-surface);
+	background: var(--md-sys-color-surface);
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: var(--md-sys-shape-corner-medium);
+}
+
+body.lf-theme .lf-results-sort :is(select, button):focus-visible {
+	outline: 2px solid var(--lc-primary);
+	outline-offset: 2px;
+}
+

@@ -26,6 +26,7 @@ if ( false !== strpos( $list_class, 'm3-post-grid--2col-list' ) ) {
 	$grid_bem_classes[] = 'l-card-grid--two-column-list';
 }
 ?>
+<?php get_template_part( 'template-parts/archive/sort' ); ?>
 <section class="m3-archive-feed <?php echo esc_attr( $wrapper_class ); ?>" aria-label="<?php echo esc_attr( $feed_label ); ?>">
 	<?php if ( have_posts() ) : ?>
 		<div class="l-card-grid m3-post-grid m3-archive-post-grid">

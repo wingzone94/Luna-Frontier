@@ -286,60 +286,57 @@ function node_get_adjacent_archive_month( $year, $month, $dir ) {
 	return null;
 }
 
-/**
- * Apply sort parameter on date archive queries.
- *
- * Accepted values for ?sort: date-desc (default), date-asc, modified-desc, modified-asc.
- */
-function node_date_archive_sort( $query ) {
-	if ( is_admin() || ! $query->is_main_query() || ! $query->is_date() ) {
+/** Keep article archives and search in a stable date order across pages. */
+function luna_frontier_sort_article_results( $query ) {
+	if ( is_admin() || ! $query->is_main_query() || ( ! $query->is_archive() && ! $query->is_search() ) || $query->is_post_type_archive( 'node_library' ) ) {
 		return;
 	}
+	$key = $query->is_search() ? 'm3_sort' : 'sort';
+	$value = isset( $_GET[ $key ] ) && is_string( $_GET[ $key ] ) ? sanitize_key( wp_unslash( $_GET[ $key ] ) ) : '';
+	$descending = $query->is_search() ? 'newest' === $value : 'date-desc' === $value;
+	$order = $descending ? 'DESC' : 'ASC';
+	$query->set( 'orderby', array( 'date' => $order, 'ID' => $order ) );
+	$query->set( 'order', $order );
+	$query->set( 'ignore_sticky_posts', true );
+}
+add_action( 'pre_get_posts', 'luna_frontier_sort_article_results', 1000 );
 
-	$sort = isset( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
-
-	switch ( $sort ) {
-		case 'date-asc':
-			$query->set(
-				'orderby',
-				array(
-					'date' => 'ASC',
-					'ID'   => 'ASC',
-				)
-			);
-			break;
-		case 'modified-desc':
-			$query->set(
-				'orderby',
-				array(
-					'modified' => 'DESC',
-					'ID'       => 'DESC',
-				)
-			);
-			break;
-		case 'modified-asc':
-			$query->set(
-				'orderby',
-				array(
-					'modified' => 'ASC',
-					'ID'       => 'ASC',
-				)
-			);
-			break;
-		default:
-			if ( ! $query->get( 'orderby' ) ) {
-				$query->set(
-					'orderby',
-					array(
-						'date' => 'DESC',
-						'ID'   => 'DESC',
-					)
-				);
-			}
-			break;
+/** Use the current result pages for infinite scrolling on article listings. */
+function luna_frontier_enqueue_archive_flow() {
+	if ( ( ! is_archive() && ! is_search() ) || is_post_type_archive( 'node_library' ) ) {
+		return;
+	}
+	$path = get_theme_file_path( 'assets/js/luna-archive-flow.js' );
+	if ( ! is_file( $path ) ) {
+		return;
+	}
+	wp_dequeue_script( 'luna-flow-scroller' );
+	wp_dequeue_script( 'node-flow-scroller' );
+	wp_enqueue_script( 'luna-archive-flow', get_theme_file_uri( 'assets/js/luna-archive-flow.js' ), array(), (string) filemtime( $path ), true );
+	$css_path = get_theme_file_path( 'assets/css/luna-archive-flow.css' );
+	if ( is_file( $css_path ) ) {
+		wp_enqueue_style( 'luna-archive-flow', get_theme_file_uri( 'assets/css/luna-archive-flow.css' ), array(), (string) filemtime( $css_path ) );
 	}
 }
-add_action( 'pre_get_posts', 'node_date_archive_sort' );
+add_action( 'wp_enqueue_scripts', 'luna_frontier_enqueue_archive_flow', 1000 );
+
+/** Preserve other GET filters when submitting a result sort form. */
+function luna_frontier_sort_hidden_fields( $excluded ) {
+	$render = static function ( $name, $value ) use ( &$render ) {
+		if ( is_array( $value ) ) {
+			foreach ( $value as $key => $child ) {
+				$render( $name . '[' . $key . ']', $child );
+			}
+		} elseif ( is_scalar( $value ) ) {
+			printf( '<input type="hidden" name="%s" value="%s">', esc_attr( $name ), esc_attr( wp_unslash( (string) $value ) ) );
+		}
+	};
+	foreach ( $_GET as $key => $value ) {
+		if ( ! in_array( $key, $excluded, true ) ) {
+			$render( (string) $key, $value );
+		}
+	}
+}
 
 /**
  * Merge default archive context with template overrides.

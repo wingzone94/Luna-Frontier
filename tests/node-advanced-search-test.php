@@ -23,6 +23,74 @@ class Node_Advanced_Search_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	public function test_article_search_and_category_keep_date_order_across_pages(): void {
+		$category = self::factory()->category->create();
+		$ids = array();
+		foreach ( array( '2026-01-01 12:00:00', '2026-01-01 12:00:00', '2026-01-02 12:00:00', '2026-01-03 12:00:00' ) as $date ) {
+			$ids[] = self::factory()->post->create( array(
+				'post_status' => 'publish',
+				'post_title' => 'Unique Flow Chronology',
+				'post_date' => $date,
+				'post_category' => array( $category ),
+			) );
+		}
+		$per_page = static function ( $query ) {
+			if ( $query->is_main_query() && ( $query->is_archive() || $query->is_search() ) ) {
+				$query->set( 'posts_per_page', 2 );
+			}
+		};
+		add_action( 'pre_get_posts', $per_page, 1001 );
+		try {
+			$_GET = array( 'cat' => (string) $category, 'sort' => 'modified-desc' );
+			$this->go_to( add_query_arg( $_GET, home_url( '/' ) ) );
+			$this->assertSame( array( 'date' => 'ASC', 'ID' => 'ASC' ), $GLOBALS['wp_query']->get( 'orderby' ) );
+			$_GET = array( 'cat' => (string) $category );
+			$this->go_to( add_query_arg( $_GET, home_url( '/' ) ) );
+			$this->assertSame( array( 'date' => 'ASC', 'ID' => 'ASC' ), $GLOBALS['wp_query']->get( 'orderby' ) );
+			foreach ( array( 'archive', 'search' ) as $type ) {
+				foreach ( array( 'asc', 'desc' ) as $direction ) {
+					$params = 'search' === $type
+						? array( 's' => 'Unique Flow Chronology', 'm3_cat' => (string) $category, 'm3_sort' => 'asc' === $direction ? 'oldest' : 'newest' )
+						: array( 'cat' => (string) $category, 'sort' => 'date-' . $direction );
+					$actual = array();
+					foreach ( array( 1, 2 ) as $page ) {
+						$_GET = $params;
+						$this->go_to( add_query_arg( array_merge( $params, array( 'paged' => $page ) ), home_url( '/' ) ) );
+						$actual = array_merge( $actual, wp_list_pluck( $GLOBALS['wp_query']->posts, 'ID' ) );
+					}
+					$this->assertSame( 'asc' === $direction ? $ids : array_reverse( $ids ), $actual, "$type $direction" );
+				}
+			}
+		} finally {
+			remove_action( 'pre_get_posts', $per_page, 1001 );
+		}
+	}
+
+	public function test_sort_form_preserves_other_filters_and_excludes_page(): void {
+		$_GET = array( 'm3_platform' => array( 'pc', 'switch' ), 'paged' => '3', 'sort' => 'date-desc' );
+		ob_start();
+		luna_frontier_sort_hidden_fields( array( 'paged', 'sort' ) );
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'name="m3_platform[0]" value="pc"', $html );
+		$this->assertStringContainsString( 'name="m3_platform[1]" value="switch"', $html );
+		$this->assertStringNotContainsString( 'name="paged"', $html );
+		$this->assertStringNotContainsString( 'name="sort"', $html );
+	}
+
+	public function test_archive_flow_replaces_both_legacy_plugin_handles(): void {
+		$category = self::factory()->category->create();
+		$this->go_to( add_query_arg( 'cat', $category, home_url( '/' ) ) );
+		wp_enqueue_script( 'luna-flow-scroller', 'https://example.org/luna.js' );
+		wp_enqueue_script( 'node-flow-scroller', 'https://example.org/node.js' );
+		luna_frontier_enqueue_archive_flow();
+		$this->assertFalse( wp_script_is( 'luna-flow-scroller', 'enqueued' ) );
+		$this->assertFalse( wp_script_is( 'node-flow-scroller', 'enqueued' ) );
+		$this->assertTrue( wp_script_is( 'luna-archive-flow', 'enqueued' ) );
+		$this->assertTrue( wp_style_is( 'luna-archive-flow', 'enqueued' ) );
+		wp_dequeue_script( 'luna-archive-flow' );
+		wp_dequeue_style( 'luna-archive-flow' );
+	}
+
 	public function test_supported_filters_share_one_args_schema(): void {
 		$args = \LuminousCore\Engine\get_advanced_search_args(
 			array(
@@ -222,10 +290,10 @@ class Node_Advanced_Search_Test extends WP_UnitTestCase {
 			sort( $expected );
 			$this->assertSame( $expected, $merged );
 
-			// Non-empty keyword search without explicit sort keeps WP relevance ordering.
+			// Search now defaults to chronological order, including a stable ID tie-breaker.
 			$_GET = array( 's' => 'Timestamp' );
 			$this->go_to( home_url( '/?s=Timestamp' ) );
-			$this->assertSame( '', $GLOBALS['wp_query']->get( 'orderby' ) );
+			$this->assertSame( array( 'date' => 'ASC', 'ID' => 'ASC' ), $GLOBALS['wp_query']->get( 'orderby' ) );
 
 			// Date archive sort helper adds ID tiebreaker.
 			$this->go_to( add_query_arg( 'sort', 'date-asc', get_month_link( 2026, 11 ) ) );

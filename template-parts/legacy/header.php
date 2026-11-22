@@ -421,8 +421,8 @@ declare(strict_types=1);
                             <div class="m3-search-section m3-desktop-hidden">
                                 <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="sort"></span> 並び順</label>
                                 <div class="m3-radio-group">
-                                    <label class="m3-radio-item"><input type="radio" name="m3_sort" value="newest" checked><span class="m3-radio-label">新着</span></label>
-                                    <label class="m3-radio-item"><input type="radio" name="m3_sort" value="oldest"><span class="m3-radio-label">古い順</span></label>
+                                    <label class="m3-radio-item"><input type="radio" name="m3_sort" value="oldest" checked><span class="m3-radio-label">古い順</span></label>
+                                    <label class="m3-radio-item"><input type="radio" name="m3_sort" value="newest"><span class="m3-radio-label">新しい順</span></label>
                                     <?php // 「人気(views)」「コメント」ソートはバックエンド（inc/search.php）未実装のためUIから退避（STRUCTURAL-REVIEW-1.2 F-11。実装可否はv1.3のF-16で判断） ?>
                                 </div>
                             </div>
