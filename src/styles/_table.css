@@ -1,0 +1,217 @@
+/* ==========================================================================
+   Article Tables (Material 3 / Luna Frontier Paper)
+   Imported unlayered in style.css so these scoped rules cleanly override
+   WordPress core's unlayered block-library `.wp-block-table` defaults
+   (`border: 1px solid; padding: .5em;`) without using `!important`.
+   ========================================================================== */
+
+:root {
+    --node-table-surface: var(--md-sys-color-surface-container-lowest, #ffffff);
+    --node-table-header-bg: var(--md-sys-color-surface-container, #ffe8d1);
+    --node-table-stripe-bg: color-mix(in srgb, var(--md-sys-color-surface-container, #ffe8d1) 32%, transparent);
+    --node-table-hover-bg: color-mix(in srgb, var(--md-sys-color-surface-container, #ffe8d1) 52%, transparent);
+    --node-table-border: var(--md-sys-color-outline-variant, #d6c2b1);
+    --node-table-row-border: color-mix(in srgb, var(--md-sys-color-outline-variant, #d6c2b1) 58%, transparent);
+    --node-table-radius: var(--m3-radius-small, 12px);
+}
+
+[data-theme="dark"] {
+    --node-table-surface: var(--md-sys-color-surface-container-lowest, #25221b);
+    --node-table-header-bg: var(--md-sys-color-surface-container-high, #322f28);
+    --node-table-stripe-bg: color-mix(in srgb, var(--md-sys-color-surface-container-high, #322f28) 45%, transparent);
+    --node-table-hover-bg: color-mix(in srgb, var(--md-sys-color-surface-container-highest, #3d372e) 65%, transparent);
+    --node-table-border: var(--md-sys-color-outline-variant, #524437);
+    --node-table-row-border: color-mix(in srgb, var(--md-sys-color-outline-variant, #524437) 72%, transparent);
+}
+
+/* Luna Frontier Paper token alignment */
+body.lf-theme {
+    --node-table-surface: var(--lf-paper, var(--md-sys-color-surface-container-lowest, #ffffff));
+    --node-table-header-bg: var(--lf-meta-fill, var(--md-sys-color-surface-container, #ffe8d1));
+    --node-table-stripe-bg: color-mix(in srgb, var(--lf-meta-fill, var(--md-sys-color-surface-container, #ffe8d1)) 42%, transparent);
+    --node-table-hover-bg: color-mix(in srgb, var(--lf-meta-fill, var(--md-sys-color-surface-container, #ffe8d1)) 72%, transparent);
+    --node-table-border: var(--lf-rule, var(--md-sys-color-outline-variant, #d6c2b1));
+    --node-table-row-border: color-mix(in srgb, var(--lf-rule, var(--md-sys-color-outline-variant, #d6c2b1)) 65%, transparent);
+    --node-table-radius: var(--lf-shape-paper-inner, 8px);
+}
+
+/* Outer Gutenberg figure wrapper: comfortable vertical margin + horizontal scroll */
+.m3-article__body .wp-block-table {
+    margin: var(--m3-spacing-xl, 32px) 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Core table container: full-width table layout with separate borders for clean radius */
+.m3-article__body .wp-block-table table,
+.m3-article__body table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: auto;
+    background-color: var(--node-table-surface);
+    color: var(--md-sys-color-on-surface);
+    border: 1px solid var(--node-table-border);
+    border-radius: var(--node-table-radius);
+    overflow: hidden;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+}
+
+.m3-article__body .wp-block-table table {
+    display: table;
+    margin: 0;
+}
+
+.m3-article__body > table {
+    margin: var(--m3-spacing-xl, 32px) 0;
+}
+
+/* Cells: generous padding, horizontal hairlines only (eliminates cramped grid cage) */
+.m3-article__body .wp-block-table th,
+.m3-article__body .wp-block-table td,
+.m3-article__body table th,
+.m3-article__body table td {
+    padding: 14px 16px;
+    border: none;
+    border-bottom: 1px solid var(--node-table-row-border);
+    text-align: left;
+    vertical-align: middle;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+/* Remove bottom divider on the final row so it does not double up with outer border */
+.m3-article__body .wp-block-table tr:last-child > th,
+.m3-article__body .wp-block-table tr:last-child > td,
+.m3-article__body table tr:last-child > th,
+.m3-article__body table tr:last-child > td {
+    border-bottom: none;
+}
+
+/* Keep crisp separator beneath thead even when thead has only one row */
+.m3-article__body .wp-block-table thead tr:last-child > th,
+.m3-article__body table thead tr:last-child > th {
+    border-bottom: 1px solid var(--node-table-border);
+}
+
+/* Column header cells: both semantic <thead> and Gutenberg <tbody> first-row <th> */
+.m3-article__body .wp-block-table thead th,
+.m3-article__body .wp-block-table table:not(:has(thead)) tbody > tr:first-child > th,
+.m3-article__body table thead th,
+.m3-article__body table:not(:has(thead)) tbody > tr:first-child > th {
+    background-color: var(--node-table-header-bg);
+    color: var(--md-sys-color-on-surface);
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--node-table-border);
+}
+
+/* Row header cells inside tbody when thead is present */
+.m3-article__body .wp-block-table thead + tbody th,
+.m3-article__body table thead + tbody th {
+    font-weight: 600;
+    color: var(--md-sys-color-on-surface);
+    background-color: transparent;
+}
+
+/* Subtle first-column emphasis for comparison/spec tables */
+.m3-article__body .wp-block-table tbody td:first-child,
+.m3-article__body table tbody td:first-child {
+    font-weight: 600;
+}
+
+/* Subtle row hover for horizontal scanability */
+.m3-article__body .wp-block-table tbody tr,
+.m3-article__body table tbody tr {
+    transition: background-color 150ms ease;
+}
+
+.m3-article__body .wp-block-table tbody tr:hover > td,
+.m3-article__body table tbody tr:hover > td {
+    background-color: var(--node-table-hover-bg);
+}
+
+/* WordPress striped style variant */
+.m3-article__body .wp-block-table.is-style-stripes {
+    border-bottom: none;
+}
+
+.m3-article__body .wp-block-table.is-style-stripes tbody tr:nth-child(odd) > td {
+    background-color: var(--node-table-stripe-bg);
+}
+
+.m3-article__body .wp-block-table.is-style-stripes tbody tr:hover > td {
+    background-color: var(--node-table-hover-bg);
+}
+
+/* Respect WordPress block cell alignment classes */
+.m3-article__body .wp-block-table :is(th, td).has-text-align-center,
+.m3-article__body .wp-block-table :is(th, td)[data-align="center"] {
+    text-align: center;
+}
+
+.m3-article__body .wp-block-table :is(th, td).has-text-align-right,
+.m3-article__body .wp-block-table :is(th, td)[data-align="right"] {
+    text-align: right;
+}
+
+.m3-article__body .wp-block-table :is(th, td).has-text-align-left,
+.m3-article__body .wp-block-table :is(th, td)[data-align="left"] {
+    text-align: left;
+}
+
+/* Table footnote / caption: readable left-aligned note anchored during horizontal scroll */
+.m3-article__body .wp-block-table figcaption,
+.m3-article__body .wp-block-table .wp-element-caption {
+    position: sticky;
+    inset-inline-start: 0;
+    margin-top: 12px;
+    margin-bottom: 0;
+    padding: 0 4px;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Mobile adjustments: comfortable breathing room + smooth horizontal scroll */
+@media (max-width: 600px) {
+    .m3-article__body .wp-block-table {
+        margin: var(--m3-spacing-l, 24px) 0;
+    }
+
+    .m3-article__body .wp-block-table table,
+    .m3-article__body table {
+        font-size: 0.875rem;
+    }
+
+    .m3-article__body .wp-block-table th,
+    .m3-article__body .wp-block-table td,
+    .m3-article__body table th,
+    .m3-article__body table td {
+        padding: 12px 14px;
+    }
+
+    .m3-article__body .wp-block-table thead th,
+    .m3-article__body .wp-block-table table:not(:has(thead)) tbody > tr:first-child > th,
+    .m3-article__body table thead th,
+    .m3-article__body table:not(:has(thead)) tbody > tr:first-child > th {
+        font-size: 0.8125rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m3-article__body .wp-block-table tbody tr,
+    .m3-article__body table tbody tr {
+        transition: none;
+    }
+}
