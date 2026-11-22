@@ -31,6 +31,8 @@
 @import './_cards.css' layer(components);
 /* Scoped Nexus rules must also override the unlayered legacy blocks.css. */
 @import './_product-card.css';
+/* Scoped table rules must override WordPress core's unlayered block-library table CSS. */
+@import './_table.css';
 @import './_article.css' layer(components);
 @import './_article-layout.css' layer(components);
 @import './_series-nav.css' layer(components);

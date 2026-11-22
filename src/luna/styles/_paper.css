@@ -69,66 +69,34 @@ body.lf-theme .m3-article__body table {
 	border-radius: var(--lf-shape-paper-inner);
 }
 
-/* 通常の画像・表は従来の幅を保ち、文章だけを Paper の内側へ寄せる。 */
-body.lf-theme .m3-article__body > :is(figure.wp-block-image, figure.wp-block-table):not(.alignleft, .alignright, .aligncenter, .alignwide, .alignfull) {
+/* 通常の画像は従来の幅を保ち、文章と表は Paper の内側余白に揃える。 */
+body.lf-theme .m3-article__body > figure.wp-block-image:not(.alignleft, .alignright, .aligncenter, .alignwide, .alignfull) {
 	margin-inline: calc(-1 * var(--lf-article-inset));
 	inline-size: calc(100% + 2 * var(--lf-article-inset));
 	max-inline-size: none;
 	max-width: none;
 }
 
-/* 親の components レイヤーが表へ付ける max-width: 100% !important を解除する。 */
-@layer components {
-	body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignleft, .alignright, .aligncenter, .alignwide, .alignfull) {
-		max-width: none !important;
-	}
-}
-
 /*
- * 配置指定のない表は内容幅のまま中央に置く。
- * 左右の 1fr は余白を等分し、表が紙面より広いときは 0 まで縮む。
- * そのとき表は左端から溢れ、ラッパー内だけで横スクロールできる。
- * margin: auto による中央配置は、広い表の左端をスクロール範囲の外へ出すため使わない。
+ * 表ブロックは本文カラム幅に揃え、横にはみ出す場合のみラッパー内で横スクロールする。
+ * figcaption は sticky で左端に保ち、長い注釈が横スクロール領域へ引き伸ばされないようにする。
  */
-body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignleft, .alignright, .alignwide, .alignfull) {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
-	min-inline-size: 0;
-	overflow-x: auto;
-}
-
-body.lf-theme .m3-article__body > figure.wp-block-table.alignleft {
-	display: grid;
-	grid-template-columns: max-content minmax(0, 1fr);
-	min-inline-size: 0;
-	overflow-x: auto;
-}
-
-body.lf-theme .m3-article__body > figure.wp-block-table.alignright {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) max-content;
+body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignwide, .alignfull) {
+	display: block;
+	inline-size: 100%;
+	max-inline-size: 100%;
 	min-inline-size: 0;
 	overflow-x: auto;
 }
 
 body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignwide, .alignfull) > table {
 	display: table;
-	width: max-content;
-	max-width: none;
-	max-inline-size: none;
+	width: 100%;
 	margin-inline: 0;
 }
 
-body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignleft, .alignright, .alignwide, .alignfull) > :is(table, figcaption) {
-	grid-column: 2;
-}
-
-body.lf-theme .m3-article__body > figure.wp-block-table.alignleft > :is(table, figcaption) {
-	grid-column: 1;
-}
-
-body.lf-theme .m3-article__body > figure.wp-block-table.alignright > :is(table, figcaption) {
-	grid-column: 2;
+body.lf-theme .m3-article__body > figure.wp-block-table:not(.alignwide, .alignfull) > figcaption {
+	max-inline-size: 100%;
 }
 
 /* クラシックエディターが本文へ直接置いた table。スクロール容器は表自身。 */

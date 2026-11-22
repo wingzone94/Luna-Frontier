@@ -2164,7 +2164,7 @@
 
 /* ===== Mobile Layout Fixes ===== */
 .m3-article__body pre,
-.m3-article__body table,
+.m3-article__body > table,
 .m3-article__body .wp-block-table {
     max-width: 100% !important;
     overflow-x: auto !important;
