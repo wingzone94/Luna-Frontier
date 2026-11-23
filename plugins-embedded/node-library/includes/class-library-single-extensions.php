@@ -188,8 +188,10 @@ final class Node_Library_Single_Extensions {
 		$prices   = array();
 		foreach ( $offers as $link ) {
 			$store = $link['price_store'] ?? '';
-			$link['price_label'] = '';
-			$link['price_date']  = '';
+			$link['price_label']      = '';
+			$link['price_date']       = '';
+			$link['list_price_label'] = '';
+			$link['discount_percent'] = 0;
 			if ( in_array( $store, Node_Library_Store::price_stores(), true ) ) {
 				if ( ! array_key_exists( $store, $prices ) ) {
 					$prices[ $store ] = Node_Library_Prices::current( $post_id, $store );
@@ -197,7 +199,14 @@ final class Node_Library_Single_Extensions {
 				$current = $prices[ $store ];
 				if ( is_numeric( $current['price'] ?? null ) && ! empty( $current['currency'] ) ) {
 					$link['price_label'] = self::format_currency( $current['price'], $current['currency'] );
-					$link['price_date'] = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
+					$link['price_date']  = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
+					if ( is_numeric( $current['list_price'] ?? null ) && (float) $current['list_price'] > (float) $current['price'] && (float) $current['list_price'] > 0 ) {
+						$discount = (int) round( ( ( (float) $current['list_price'] - (float) $current['price'] ) / (float) $current['list_price'] ) * 100 );
+						if ( $discount > 0 ) {
+							$link['list_price_label'] = self::format_currency( $current['list_price'], $current['currency'] );
+							$link['discount_percent'] = $discount;
+						}
+					}
 				}
 			}
 			if ( self::is_japanese_store_url( $link['url'] ) ) {
