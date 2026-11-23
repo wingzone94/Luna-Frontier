@@ -19,6 +19,14 @@ $links        = array_values(
         }
     )
 );
+$detail_offers = isset( $game_info['subscription_badges'] );
+if ( ! $detail_offers ) {
+    $item_id = $lib_post->ID ?? $library_id ?? 0;
+    $store_ids = $item_id ? (array) get_post_meta( $item_id, '_node_library_store_ids', true ) : [];
+    foreach ( $links as $index => $link ) {
+        $links[ $index ]['platform'] = node_library_public_store_label( $link, $store_ids );
+    }
+}
 $header_text  = get_option( 'node_library_header_text', 'GAME / APP INFO' );
 $button_text  = get_option( 'node_library_button_text', 'で見る' );
 $library_permalink = isset( $lib_post ) && $lib_post instanceof WP_Post && 'node_library' === $lib_post->post_type
@@ -323,6 +331,9 @@ foreach ( $store_links as $link ) {
 
     $device_key = '' !== $variant ? ':' . $variant : '';
     $dedupe_key = ( 'auto' === $category ? 'auto' : $category ) . ':' . $platform_slug . $device_key;
+    if ( $detail_offers ) {
+        $dedupe_key .= ':' . $link['url'];
+    }
     if ( ! isset( $deduped_store_links[ $dedupe_key ] ) ) {
         $deduped_store_links[ $dedupe_key ] = $link;
     }
@@ -388,13 +399,13 @@ if ( count( $store_groups ) > 1 ) {
 }
 
 $steam_panel_id = ! empty( $steam_links ) ? wp_unique_id( 'node-library-steam-panel-' ) : '';
-$render_store_link  = static function ( $link ) use ( $button_text, $badge_base_url, $hardware_slug_from_link, $platform_warning_device_from_link, $platform_hardware_note_from_link, $nintendo_store_warning_message, $platform_warning_message ) {
+$render_store_link  = static function ( $link ) use ( $detail_offers, $button_text, $badge_base_url, $hardware_slug_from_link, $platform_warning_device_from_link, $platform_hardware_note_from_link, $nintendo_store_warning_message, $platform_warning_message ) {
     $platform = $link['platform'] ?? 'other';
     $platform_slug = $hardware_slug_from_link( $link );
     if ( 'nintendo' === $platform_slug ) $platform = 'Nintendo Store';
     if ( 'xbox' === $platform_slug ) $platform = 'Microsoft Store（Xbox）';
     if ( 'playstation' === $platform_slug ) $platform = 'PS Store';
-    if ( 'amazon' === $platform_slug ) $platform = 'Amazon App Store';
+    if ( 'amazon' === $platform_slug ) $platform = $detail_offers && 'amazon_asin' === ( $link['catalogue_store'] ?? '' ) ? 'Amazon' : 'Amazon App Store';
     $platform_warning_device = $platform_warning_device_from_link( $link, $platform_slug );
     $platform_warning = 'nintendo' === $platform_slug
         ? $nintendo_store_warning_message( $platform_warning_device )
@@ -407,7 +418,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
         'nintendo'    => 'Nintendo Storeで見る',
         'playstation' => 'PS Storeで見る',
         'mac'         => 'Mac App Storeで見る',
-        'amazon'      => 'Amazon App Storeで見る',
+        'amazon'      => $platform . 'で見る',
         'geforcenow'  => 'GeForce NOWで見る',
         default       => $platform . ' ' . $button_text,
     };
@@ -450,7 +461,7 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
                 <span class="m3-platform-qr-status" data-node-library-qr-status>QRコードを生成中…</span>
                 <canvas class="m3-platform-qr-canvas" aria-label="<?php echo esc_attr( $platform . 'ストアページのQRコード' ); ?>" data-node-library-qr-canvas hidden></canvas>
                 <div class="m3-platform-qr-link-row">
-                    <a class="m3-platform-qr-url" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $link['url'] ); ?></a>
+                    <a class="m3-platform-qr-url" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'ストアページを開く', 'node-library' ); ?></a>
                     <button class="m3-platform-qr-copy" type="button" data-copy-text="<?php echo esc_url( $link['url'] ); ?>" data-node-library-qr-copy>
                         <span class="material-symbols-outlined" data-icon="content_copy" aria-hidden="true"></span>
                         コピー
@@ -492,12 +503,15 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
 };
 ?>
 <section class="m3-game-card m3-reveal node-library-card<?php echo ! empty( $steam_links ) ? ' m3-game-card--has-steam-toggle' : ''; ?>">
+    <?php if ( ! $detail_offers ) : ?>
     <div class="m3-game-card__header">
         <span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $header_icon ); ?>" aria-hidden="true"></span>
         <h3><?php echo esc_html( $header_text ); ?></h3>
     </div>
     
+    <?php endif; ?>
     <div class="m3-game-card__body">
+        <?php if ( ! $detail_offers ) : ?>
         <h4 class="m3-game-card__title"><?php echo esc_html($title); ?></h4>
         <?php if ($summary) : ?>
             <p class="m3-game-card__summary"><?php echo esc_html($summary); ?></p>
@@ -510,7 +524,34 @@ $render_store_link  = static function ( $link ) use ( $button_text, $badge_base_
             </a>
         <?php endif; ?>
 
-        <?php if ( ! empty( $store_groups ) ) : ?>
+        <?php endif; ?>
+
+        <?php if ( $detail_offers ) : ?>
+            <?php if ( $game_info['subscription_badges'] ) : ?>
+                <ul class="node-library-pricing__badges" aria-label="<?php esc_attr_e( '対象サブスクリプション', 'node-library' ); ?>">
+                    <?php foreach ( $game_info['subscription_badges'] as $label ) : ?>
+                        <li class="node-library-pricing__badge node-library-pricing__badge--subscription"><?php echo esc_html( $label ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            <?php if ( $store_links ) : ?>
+                <ul class="node-library-offers">
+                    <?php foreach ( $store_links as $link ) : ?>
+                        <li>
+                            <?php $render_store_link( $link ); ?>
+                            <?php if ( '' !== $link['price_label'] ) : ?>
+                                <strong><?php echo esc_html( $link['price_label'] ); ?></strong>
+                                <?php if ( $link['price_date'] ) : ?>
+                                    <small><?php echo esc_html( sprintf( __( '価格記録日 %s', 'node-library' ), $link['price_date'] ) ); ?></small>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else : ?>
+                <p><?php esc_html_e( 'ストアリンクは未登録です。', 'node-library' ); ?></p>
+            <?php endif; ?>
+        <?php elseif ( ! empty( $store_groups ) ) : ?>
             <div class="m3-game-card__stores" data-node-library-tabs>
                 <?php if ( count( $store_groups ) > 1 ) : ?>
                     <div class="m3-game-card__tabs-shell">

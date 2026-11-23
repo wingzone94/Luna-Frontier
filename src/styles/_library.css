@@ -1118,6 +1118,30 @@
 	font-size: 1.25rem;
 }
 
+.node-library-offers {
+	display: grid;
+	gap: 12px;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+.node-library-offers > li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+	min-width: 0;
+	padding: 12px;
+	border-radius: 16px;
+	background: var(--md-sys-color-surface-container);
+	overflow-wrap: anywhere;
+}
+
+.node-library-offers small {
+	color: var(--md-sys-color-on-surface-variant);
+}
+
 .node-library-single__stores .m3-game-card {
 	margin: 0;
 }

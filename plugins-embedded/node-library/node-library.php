@@ -1968,7 +1968,7 @@ function node_library_render_archive_toolbar(): void {
 }
 
 /**
- * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種・入手先だけを返す。
+ * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種だけを返す。
  *
  * @return array<int, array{label:string,value:string,links?:array<int,array{platform:string,url:string}>}>
  */
@@ -1999,15 +1999,6 @@ function node_library_get_spec_rows( int $post_id ): array {
 		$rows[] = [
 			'label' => '対応機種',
 			'value' => implode( '、', $hardware ),
-		];
-	}
-
-	$links = node_library_spec_store_links( $post_id );
-	if ( $links ) {
-		$rows[] = [
-			'label' => '入手先',
-			'value' => '',
-			'links' => $links,
 		];
 	}
 
@@ -2048,8 +2039,32 @@ function node_library_spec_hardware_labels( int $post_id ): array {
 	return $labels;
 }
 
+/** Keep catalogue identifiers in link destinations, outside reader-facing labels. */
+function node_library_public_store_label( array $link, array $store_ids ): string {
+	$label = trim( (string) ( $link['platform'] ?? '' ) );
+	$url   = (string) ( $link['url'] ?? '' );
+	$product = Node_Library_Store_ID_Migration::extract( $url );
+	$ids = $store_ids;
+	if ( isset( $product['id'] ) ) {
+		$ids[] = $product['id'];
+	}
+	$has_id = false;
+	foreach ( $ids as $id ) {
+		if ( is_string( $id ) && '' !== $id && preg_match( '/(?<![a-z0-9])' . preg_quote( $id, '/' ) . '(?![a-z0-9])/i', $label ) ) {
+			$has_id = true;
+			break;
+		}
+	}
+	if ( '' !== $label && ! $has_id && ! preg_match( '~https?://~i', $label ) ) {
+		return $label;
+	}
+	$labels = Node_Library_Structured_Meta::stores();
+	$labels['amazon_asin'] = 'Amazon';
+	return $labels[ $product['store'] ?? '' ] ?? ( wp_parse_url( $url, PHP_URL_HOST ) ?: __( 'ストア', 'node-library' ) );
+}
+
 /**
- * スペック表と JSON-LD が共有する入手先。
+ * JSON-LD 用の入手先。
  *
  * @return array<int, array{platform:string,url:string}>
  */
@@ -2169,7 +2184,7 @@ function node_library_render_spec_table( int $post_id ): void {
 										continue;
 									}
 									?>
-									<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( (string) ( $link['platform'] ?? $url ) ); ?></a></li>
+									<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( node_library_public_store_label( $link, (array) get_post_meta( $post_id, '_node_library_store_ids', true ) ) ); ?></a></li>
 								<?php endforeach; ?>
 							</ul>
 						<?php else : ?>

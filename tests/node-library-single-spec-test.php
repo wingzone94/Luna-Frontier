@@ -58,12 +58,10 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 			$rows   = node_library_get_spec_rows( $this->item_id );
 			$labels = array_column( $rows, 'label' );
 
-			$this->assertSame( array( '種別', '紹介文', '対応機種', '入手先' ), $labels );
+			$this->assertSame( array( '種別', '紹介文', '対応機種' ), $labels );
 			$this->assertSame( 'ゲーム', $rows[0]['value'] );
 			$this->assertSame( "一行目\n二行目", $rows[1]['value'] );
 			$this->assertSame( 'Windows PC、Nintendo Switch', $rows[2]['value'] );
-			$this->assertSame( 'Steam', $rows[3]['links'][0]['platform'] );
-			$this->assertSame( 'https://example.com/steam', $rows[3]['links'][0]['url'] );
 			$this->assertNotContains( '発売日', $labels );
 			$this->assertNotContains( '価格', $labels );
 		} finally {
@@ -90,7 +88,7 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'node-library-specs', $html );
 		$this->assertStringContainsString( '対応機種', $html );
 		$this->assertStringContainsString( 'Windows PC、Nintendo Switch', $html );
-		$this->assertStringContainsString( 'https://example.com/switch', $html );
+		$this->assertStringNotContainsString( 'https://example.com/switch', $html );
 	}
 
 	public function test_product_jsonld_parses_and_omits_offers_until_extended(): void {
