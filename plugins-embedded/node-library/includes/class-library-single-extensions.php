@@ -153,41 +153,6 @@ final class Node_Library_Single_Extensions {
 			}
 		}
 
-		$store_ids = get_post_meta( $post_id, '_node_library_store_ids', true );
-		if ( is_array( $store_ids ) && class_exists( 'Node_Library_Structured_Meta' ) ) {
-			$store_labels = Node_Library_Structured_Meta::stores();
-			$link_items   = array();
-			$text_items   = array();
-			foreach ( $store_labels as $store => $label ) {
-				$id = isset( $store_ids[ $store ] ) && is_string( $store_ids[ $store ] ) ? trim( $store_ids[ $store ] ) : '';
-				if ( '' === $id ) {
-					continue;
-				}
-				$url = self::store_url( $store, $id );
-				if ( '' !== $url ) {
-					$link_items[] = array(
-						'platform' => $label . ' (' . $id . ')',
-						'url'      => $url,
-					);
-				} else {
-					$text_items[] = $label . ': ' . $id;
-				}
-			}
-			if ( $link_items ) {
-				$rows[] = array(
-					'label' => 'ストアID',
-					'value' => '',
-					'links' => $link_items,
-				);
-			}
-			if ( $text_items ) {
-				$rows[] = array(
-					'label' => $link_items ? 'ストアID（その他）' : 'ストアID',
-					'value' => implode( ' / ', $text_items ),
-				);
-			}
-		}
-
 		return $rows;
 	}
 

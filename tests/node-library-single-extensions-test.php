@@ -98,13 +98,8 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '解像度: 3840×2160', $by_label['能力・映像仕様']['value'] ?? '' );
 		$this->assertSame( 'Xbox / PC Game Pass、EA Play', $by_label['サブスク在籍']['value'] ?? '' );
 
-		// Deterministic store URLs rendered via links row; non-deterministic Nintendo ID rendered as text.
-		$store_links = $by_label['ストアID']['links'] ?? array();
-		$urls        = array_column( $store_links, 'url' );
-		$this->assertContains( 'https://www.xbox.com/ja-JP/games/store/-/9NBLGGH537BL', $urls );
-		$this->assertContains( 'https://store.steampowered.com/app/1245620/', $urls );
-		$this->assertContains( 'https://www.amazon.co.jp/dp/B0TEST1234', $urls );
-		$this->assertSame( 'Nintendo: 70010000000025', $by_label['ストアID（その他）']['value'] ?? '' );
+		$this->assertArrayNotHasKey( 'ストアID', $by_label );
+		$this->assertArrayNotHasKey( 'ストアID（その他）', $by_label );
 	}
 
 	public function test_price_history_section_and_badges_render_and_omit_when_empty(): void {
