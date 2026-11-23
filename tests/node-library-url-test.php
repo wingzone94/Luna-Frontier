@@ -84,6 +84,16 @@ class Node_Library_Url_Test extends WP_UnitTestCase {
 		$this->assertSame( $item_id, get_queried_object_id() );
 	}
 
+	public function test_template_redirect_uses_default_exit_before_canonical_redirect(): void {
+		$callback = array( $this->library, 'redirect_legacy_library_urls' );
+		$hook     = $GLOBALS['wp_filter']['template_redirect'];
+		$key      = _wp_filter_build_unique_id( 'template_redirect', $callback, 0 );
+
+		$this->assertSame( 0, has_action( 'template_redirect', $callback ) );
+		// An argument-less WP action supplies an empty string when the callback accepts one.
+		$this->assertSame( 0, $hook->callbacks[0][ $key ]['accepted_args'] );
+	}
+
 	public function test_legacy_patterns_redirect_with_301(): void {
 		$cases = array(
 			'/node-library/'                    => '/library/',

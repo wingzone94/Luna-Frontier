@@ -187,7 +187,7 @@ final class Node_Library {
 
 	private function __construct() {
 		add_action( 'init', [ $this, 'register_cpt' ] );
-		add_action( 'template_redirect', [ $this, 'redirect_legacy_library_urls' ], 0 );
+		add_action( 'template_redirect', [ $this, 'redirect_legacy_library_urls' ], 0, 0 );
 		add_filter( 'query_vars', [ $this, 'register_library_archive_query_var' ] );
 		add_action( 'pre_get_posts', 'node_library_filter_archive_query', 20 );
 		add_filter( 'posts_where', 'node_library_archive_posts_where', 10, 2 );
