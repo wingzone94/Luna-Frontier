@@ -6,7 +6,7 @@ declare( strict_types=1 );
  *
  * 指示書 §43。
  * - 2 段階 UI。Basic（キーワード / 大分類 / 検索）は常時表示、
- *   Advanced（文字数・期間・メディア・タグ・並び）は任意展開。
+ *   Advanced（文字数・期間・メディア・タグ）は任意展開。
  * - 展開は <details> なので JS 無しで開閉でき、Esc / Tab / aria-expanded の
  *   面倒を自前実装せずにブラウザ標準へ委ねられる。
  * - フォームは素の GET。JS が動かなくても検索できる。
@@ -28,12 +28,12 @@ $lf_max        = isset( $_GET['m3_max'] ) ? (int) $_GET['m3_max'] : 0;
 $lf_start      = isset( $_GET['m3_start_date'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['m3_start_date'] ) ) : '';
 $lf_end        = isset( $_GET['m3_end_date'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['m3_end_date'] ) ) : '';
 $lf_tag        = isset( $_GET['m3_tag'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['m3_tag'] ) ) : '';
-$lf_sort       = isset( $_GET['m3_sort'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['m3_sort'] ) ) : 'newest';
+$lf_sort       = isset( $_GET['m3_sort'] ) && is_string( $_GET['m3_sort'] ) && 'newest' === sanitize_key( wp_unslash( $_GET['m3_sort'] ) ) ? 'newest' : 'oldest';
 $lf_media      = isset( $_GET['m3_media_type'] ) ? (array) wp_unslash( $_GET['m3_media_type'] ) : array();
 $lf_media      = array_map( 'sanitize_text_field', $lf_media );
 
 // Advanced 側に何か入っていれば最初から開いておく（現在の条件を隠さない）。
-$lf_advanced_open = ( $lf_min || $lf_max || '' !== $lf_start || '' !== $lf_end || '' !== $lf_tag || ! empty( $lf_media ) || ( '' !== $lf_sort && 'newest' !== $lf_sort ) );
+$lf_advanced_open = ( $lf_min || $lf_max || '' !== $lf_start || '' !== $lf_end || '' !== $lf_tag || ! empty( $lf_media ) );
 
 global $wp_query;
 ?>
@@ -55,7 +55,8 @@ global $wp_query;
 		</p>
 	</header>
 
-	<form class="lf-search-form" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+	<form id="lf-search-form" class="lf-search-form" role="search" method="get" action="<?php echo esc_url( home_url( '/' ) ); ?>">
+		<?php luna_frontier_sort_hidden_fields( array( 's', 'm3_cat', 'm3_min', 'm3_max', 'm3_start_date', 'm3_end_date', 'm3_tag', 'm3_media_type', 'm3_sort', 'paged', 'page' ) ); ?>
 
 		<?php // ---- Basic: キーワード / 大分類 / 検索 ---- ?>
 		<div class="lf-search-form__basic">
@@ -146,28 +147,18 @@ global $wp_query;
 						<label class="lf-field__label" for="lf-tag"><?php esc_html_e( 'タグ', 'node' ); ?></label>
 						<input class="lf-field__control" type="text" id="lf-tag" name="m3_tag" value="<?php echo esc_attr( $lf_tag ); ?>">
 					</div>
-					<div class="lf-field">
-						<label class="lf-field__label" for="lf-sort"><?php esc_html_e( '並び順', 'node' ); ?></label>
-						<select class="lf-field__control" id="lf-sort" name="m3_sort">
-							<?php
-							foreach ( array(
-								'newest' => __( '新しい順', 'node' ),
-								'oldest' => __( '古い順', 'node' ),
-							) as $lf_value => $lf_label ) {
-								printf(
-									'<option value="%1$s"%2$s>%3$s</option>',
-									esc_attr( $lf_value ),
-									selected( $lf_sort, $lf_value, false ),
-									esc_html( $lf_label )
-								);
-							}
-							?>
-						</select>
-					</div>
 				</div>
 			</div>
 		</details>
 	</form>
+	<div class="lf-results-sort">
+		<label for="lf-sort"><?php esc_html_e( '並び順', 'node' ); ?></label>
+		<select id="lf-sort" name="m3_sort" form="lf-search-form">
+			<option value="oldest" <?php selected( $lf_sort, 'oldest' ); ?>><?php esc_html_e( '日付の昇順（古い順）', 'node' ); ?></option>
+			<option value="newest" <?php selected( $lf_sort, 'newest' ); ?>><?php esc_html_e( '日付の降順（新しい順）', 'node' ); ?></option>
+		</select>
+		<button type="submit" form="lf-search-form"><?php esc_html_e( '適用', 'node' ); ?></button>
+	</div>
 
 	<div class="l-card-grid m3-post-grid m3-search-results-grid">
 		<?php if ( have_posts() ) : ?>
