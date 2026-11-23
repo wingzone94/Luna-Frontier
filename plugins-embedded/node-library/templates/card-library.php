@@ -261,7 +261,7 @@ $steam_links = [];
 $store_links = [];
 foreach ( $links as $link ) {
     $platform = (string) ( $link['platform'] ?? '' );
-    $app_id   = 'steam' === $platform_slug_from_name( $platform )
+    $app_id   = ! $detail_offers && 'steam' === $platform_slug_from_name( $platform )
         ? $steam_app_id_from_url( (string) $link['url'] )
         : '';
 
@@ -527,23 +527,222 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
         <?php endif; ?>
 
         <?php if ( $detail_offers ) : ?>
-            <?php if ( $game_info['subscription_badges'] ) : ?>
+            <?php
+            $release_date   = trim( (string) ( $game_info['release_date'] ?? '' ) );
+            $is_pre_release = '' !== $release_date
+                && 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $release_date )
+                && $release_date > wp_date( 'Y-m-d' );
+            $subscription_badges = is_array( $game_info['subscription_badges'] ?? null ) ? $game_info['subscription_badges'] : [];
+            $assigned_sub_keys   = [];
+
+            $store_brand_from_link = static function ( array $link, string $platform_slug, string $platform ): array {
+                $catalogue_store = (string) ( $link['catalogue_store'] ?? '' );
+                $host            = strtolower( (string) wp_parse_url( (string) ( $link['url'] ?? '' ), PHP_URL_HOST ) );
+
+                if ( 'microsoft' === $catalogue_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
+                    return [ 'slug' => 'microsoft', 'chip' => 'xbox' === $platform_slug ? 'X' : 'M' ];
+                }
+                if ( 'ps' === $catalogue_store || 'playstation' === $platform_slug ) {
+                    return [ 'slug' => 'playstation', 'chip' => 'PS' ];
+                }
+                if ( 'steam' === $catalogue_store || 'steam' === $platform_slug ) {
+                    return [ 'slug' => 'steam', 'chip' => 'S' ];
+                }
+                if ( 'nintendo' === $catalogue_store || 'nintendo' === $platform_slug ) {
+                    return [ 'slug' => 'nintendo', 'chip' => 'N' ];
+                }
+                if ( 'epic' === $catalogue_store || false !== stripos( $platform, 'epic' ) || false !== strpos( $host, 'epicgames.com' ) ) {
+                    return [ 'slug' => 'epic', 'chip' => 'E' ];
+                }
+                if ( 'gog' === $catalogue_store || false !== stripos( $platform, 'gog' ) || false !== strpos( $host, 'gog.com' ) ) {
+                    return [ 'slug' => 'gog', 'chip' => 'GOG' ];
+                }
+
+                $initial = mb_strtoupper( mb_substr( trim( $platform ), 0, 1 ) );
+                return [ 'slug' => 'default', 'chip' => '' !== $initial ? $initial : '' ];
+            };
+
+            $offer_cards = [];
+            foreach ( $store_links as $link ) {
+                $platform      = (string) ( $link['platform'] ?? 'other' );
+                $platform_slug = $hardware_slug_from_link( $link );
+                if ( 'nintendo' === $platform_slug ) $platform = 'Nintendo Store';
+                if ( 'xbox' === $platform_slug ) $platform = 'Microsoft Store（Xbox）';
+                if ( 'playstation' === $platform_slug ) $platform = 'PS Store';
+                if ( 'amazon' === $platform_slug ) $platform = 'amazon_asin' === ( $link['catalogue_store'] ?? '' ) ? 'Amazon' : 'Amazon App Store';
+
+                $brand                  = $store_brand_from_link( $link, $platform_slug, $platform );
+                $platform_warning_device = $platform_warning_device_from_link( $link, $platform_slug );
+                $platform_warning       = 'nintendo' === $platform_slug
+                    ? $nintendo_store_warning_message( $platform_warning_device )
+                    : $platform_warning_message( $platform_warning_device );
+                $hardware_note          = $platform_hardware_note_from_link( $link, $platform_slug );
+                if ( '' === $hardware_note && 'nintendo' === $platform_slug ) {
+                    $nintendo_device = $nintendo_store_device_from_link( $link, $platform_slug );
+                    if ( 'switch2' === $nintendo_device ) {
+                        $hardware_note = 'Nintendo Switch 2';
+                    } elseif ( 'switch' === $nintendo_device ) {
+                        $hardware_note = 'Nintendo Switch';
+                    }
+                }
+
+                $card_subs = [];
+                foreach ( $subscription_badges as $sub_key => $sub_label ) {
+                    $matches_store = match ( (string) $sub_key ) {
+                        'gamepass'     => 'microsoft' === $brand['slug'],
+                        'psplus'       => 'playstation' === $brand['slug'],
+                        'nso'          => 'nintendo' === $brand['slug'],
+                        'apple_arcade' => in_array( $platform_slug, [ 'ios', 'mac' ], true ) || 'apple' === ( $link['catalogue_store'] ?? '' ),
+                        default        => false,
+                    };
+                    if ( $matches_store ) {
+                        $card_subs[ $sub_key ]         = $sub_label;
+                        $assigned_sub_keys[ $sub_key ] = true;
+                    }
+                }
+
+                $supports_qr = in_array( $platform_slug, [ 'ios', 'android' ], true );
+                $qr_panel_id = $supports_qr ? wp_unique_id( 'node-library-qr-' ) : '';
+                $qr_title_id = $supports_qr ? $qr_panel_id . '-title' : '';
+                $warning_id  = $platform_warning ? wp_unique_id( 'node-library-warning-' ) : '';
+
+                $price_label      = (string) ( $link['price_label'] ?? '' );
+                $price_date       = (string) ( $link['price_date'] ?? '' );
+                $list_price_label = (string) ( $link['list_price_label'] ?? '' );
+                $discount_percent = (int) ( $link['discount_percent'] ?? 0 );
+                $status_label     = $is_pre_release ? __( '発売前', 'node-library' ) : __( '価格未登録', 'node-library' );
+
+                $offer_cards[] = [
+                    'url'                     => (string) $link['url'],
+                    'platform'                => $platform,
+                    'platform_slug'           => $platform_slug,
+                    'brand_slug'              => $brand['slug'],
+                    'chip_text'               => $brand['chip'],
+                    'hardware_note'           => $hardware_note,
+                    'subscriptions'           => $card_subs,
+                    'price_label'             => $price_label,
+                    'price_date'              => $price_date,
+                    'list_price_label'        => $list_price_label,
+                    'discount_percent'        => $discount_percent,
+                    'status_label'            => $status_label,
+                    'status_kind'             => $is_pre_release ? 'upcoming' : 'unpriced',
+                    'platform_warning'        => $platform_warning,
+                    'platform_warning_device' => $platform_warning_device,
+                    'warning_id'              => $warning_id,
+                    'supports_qr'             => $supports_qr,
+                    'qr_panel_id'             => $qr_panel_id,
+                    'qr_title_id'             => $qr_title_id,
+                ];
+            }
+
+            $unassigned_subs = array_diff_key( $subscription_badges, $assigned_sub_keys );
+            ?>
+            <?php if ( $unassigned_subs ) : ?>
                 <ul class="node-library-pricing__badges" aria-label="<?php esc_attr_e( '対象サブスクリプション', 'node-library' ); ?>">
-                    <?php foreach ( $game_info['subscription_badges'] as $label ) : ?>
+                    <?php foreach ( $unassigned_subs as $label ) : ?>
                         <li class="node-library-pricing__badge node-library-pricing__badge--subscription"><?php echo esc_html( $label ); ?></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
-            <?php if ( $store_links ) : ?>
+            <?php if ( $offer_cards ) : ?>
                 <ul class="node-library-offers">
-                    <?php foreach ( $store_links as $link ) : ?>
-                        <li>
-                            <?php $render_store_link( $link ); ?>
-                            <?php if ( '' !== $link['price_label'] ) : ?>
-                                <strong><?php echo esc_html( $link['price_label'] ); ?></strong>
-                                <?php if ( $link['price_date'] ) : ?>
-                                    <small><?php echo esc_html( sprintf( __( '価格記録日 %s', 'node-library' ), $link['price_date'] ) ); ?></small>
+                    <?php foreach ( $offer_cards as $card ) : ?>
+                        <?php
+                        $item_classes = [
+                            'node-library-store-card',
+                            'node-library-store-card--' . $card['brand_slug'],
+                        ];
+                        if ( $card['platform_warning'] ) {
+                            $item_classes[] = 'node-library-platform-link';
+                            $item_classes[] = 'node-library-nintendo-link';
+                        }
+                        if ( $card['supports_qr'] ) {
+                            $item_classes[] = 'node-library-store-card--has-more';
+                        }
+                        ?>
+                        <li class="<?php echo esc_attr( implode( ' ', $item_classes ) ); ?>">
+                            <div class="node-library-store-card__row">
+                                <a href="<?php echo esc_url( $card['url'] ); ?>"
+                                   class="node-library-store-card__link"
+                                   target="_blank"
+                                   rel="noopener"<?php
+                                   if ( $card['platform_warning'] ) {
+                                       echo ' aria-describedby="' . esc_attr( $card['warning_id'] ) . '"'
+                                           . ' data-node-library-platform-device="' . esc_attr( $card['platform_warning_device'] ) . '"'
+                                           . ' data-node-library-platform-warning="' . esc_attr( $card['platform_warning'] ) . '"'
+                                           . ' data-node-library-nintendo-device="' . esc_attr( $card['platform_warning_device'] ) . '"'
+                                           . ' data-node-library-nintendo-warning="' . esc_attr( $card['platform_warning'] ) . '"';
+                                   }
+                                   ?>>
+                                    <span class="node-library-store-card__identity">
+                                        <span class="node-library-store-card__chip node-library-store-card__chip--<?php echo esc_attr( $card['brand_slug'] ); ?>" aria-hidden="true">
+                                            <?php if ( '' !== $card['chip_text'] ) : ?>
+                                                <span class="node-library-store-card__chip-text<?php echo strlen( $card['chip_text'] ) >= 3 ? ' node-library-store-card__chip-text--compact' : ''; ?>"><?php echo esc_html( $card['chip_text'] ); ?></span>
+                                            <?php else : ?>
+                                                <span class="material-symbols-outlined" data-icon="shopping_bag"></span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <span class="node-library-store-card__info">
+                                            <span class="node-library-store-card__head">
+                                                <strong class="node-library-store-card__name"><?php echo esc_html( $card['platform'] ); ?></strong>
+                                                <?php foreach ( $card['subscriptions'] as $sub_label ) : ?>
+                                                    <span class="node-library-store-card__sub-badge"><?php echo esc_html( $sub_label ); ?></span>
+                                                <?php endforeach; ?>
+                                            </span>
+                                            <?php if ( '' !== $card['hardware_note'] ) : ?>
+                                                <span class="node-library-store-card__hardware"><?php echo esc_html( $card['hardware_note'] ); ?></span>
+                                            <?php endif; ?>
+                                        </span>
+                                    </span>
+                                    <span class="node-library-store-card__offer">
+                                        <span class="node-library-store-card__offer-body">
+                                            <?php if ( '' !== $card['price_label'] ) : ?>
+                                                <span class="node-library-store-card__price-row">
+                                                    <?php if ( '' !== $card['list_price_label'] && $card['discount_percent'] > 0 ) : ?>
+                                                        <span class="node-library-store-card__discount"><?php echo esc_html( sprintf( '-%d%%', $card['discount_percent'] ) ); ?></span>
+                                                        <del class="node-library-store-card__list-price"><?php echo esc_html( $card['list_price_label'] ); ?></del>
+                                                    <?php endif; ?>
+                                                    <strong class="node-library-store-card__price"><?php echo esc_html( $card['price_label'] ); ?></strong>
+                                                </span>
+                                                <?php if ( '' !== $card['price_date'] ) : ?>
+                                                    <small class="node-library-store-card__date"><?php echo esc_html( sprintf( __( '価格記録日 %s', 'node-library' ), $card['price_date'] ) ); ?></small>
+                                                <?php endif; ?>
+                                            <?php else : ?>
+                                                <span class="node-library-store-card__status-row">
+                                                    <span class="node-library-store-card__status node-library-store-card__status--<?php echo esc_attr( $card['status_kind'] ); ?>"><?php echo esc_html( $card['status_label'] ); ?></span>
+                                                    <span class="node-library-store-card__cta"><?php esc_html_e( 'ストアで見る', 'node-library' ); ?></span>
+                                                </span>
+                                            <?php endif; ?>
+                                        </span>
+                                        <span class="material-symbols-outlined node-library-store-card__arrow" data-icon="open_in_new" aria-hidden="true"></span>
+                                    </span>
+                                </a>
+                                <?php if ( $card['supports_qr'] ) : ?>
+                                    <button class="node-library-store-card__more" type="button" aria-label="<?php echo esc_attr( $card['platform'] . 'のメニュー・QRコードを表示' ); ?>" aria-controls="<?php echo esc_attr( $card['qr_panel_id'] ); ?>" aria-expanded="false" title="QRコード・URLコピー" data-node-library-qr-toggle>
+                                        <span class="material-symbols-outlined" data-icon="qr_code_2" aria-hidden="true"></span>
+                                    </button>
                                 <?php endif; ?>
+                            </div>
+                            <?php if ( $card['supports_qr'] ) : ?>
+                                <dialog class="m3-platform-qr-dialog" id="<?php echo esc_attr( $card['qr_panel_id'] ); ?>" aria-labelledby="<?php echo esc_attr( $card['qr_title_id'] ); ?>" data-qr-url="<?php echo esc_url( $card['url'] ); ?>" data-node-library-qr-dialog>
+                                    <button class="m3-platform-qr-close" type="button" aria-label="QRコードを閉じる" title="閉じる" data-node-library-qr-close>
+                                        <span class="material-symbols-outlined" data-icon="close" aria-hidden="true"></span>
+                                    </button>
+                                    <h5 id="<?php echo esc_attr( $card['qr_title_id'] ); ?>"><?php echo esc_html( $card['platform'] ); ?></h5>
+                                    <span class="m3-platform-qr-status" data-node-library-qr-status>QRコードを生成中…</span>
+                                    <canvas class="m3-platform-qr-canvas" aria-label="<?php echo esc_attr( $card['platform'] . 'ストアページのQRコード' ); ?>" data-node-library-qr-canvas hidden></canvas>
+                                    <div class="m3-platform-qr-link-row">
+                                        <a class="m3-platform-qr-url" href="<?php echo esc_url( $card['url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'ストアページを開く', 'node-library' ); ?></a>
+                                        <button class="m3-platform-qr-copy" type="button" data-copy-text="<?php echo esc_url( $card['url'] ); ?>" data-node-library-qr-copy>
+                                            <span class="material-symbols-outlined" data-icon="content_copy" aria-hidden="true"></span>
+                                            コピー
+                                        </button>
+                                    </div>
+                                    <span class="m3-platform-qr-copy-status" aria-live="polite" data-node-library-qr-copy-status></span>
+                                </dialog>
+                            <?php endif; ?>
+                            <?php if ( $card['platform_warning'] ) : ?>
+                                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $card['warning_id'] ); ?>" role="note" hidden><?php echo esc_html( $card['platform_warning'] ); ?></span>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
