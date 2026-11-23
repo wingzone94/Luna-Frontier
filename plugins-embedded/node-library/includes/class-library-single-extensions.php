@@ -272,7 +272,8 @@ final class Node_Library_Single_Extensions {
 				);
 			}
 			if (
-				null !== ( $current['price'] ?? null )
+				null !== $stats['discount_percent']
+				&& null !== ( $current['price'] ?? null )
 				&& '' !== (string) $current['price']
 				&& null !== $stats['lowest']
 				&& '' !== (string) $stats['lowest']
