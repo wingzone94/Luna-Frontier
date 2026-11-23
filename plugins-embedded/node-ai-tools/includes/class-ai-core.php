@@ -17,7 +17,9 @@ final class Node_AI_Core {
 	public const USAGE_LOG_OPTION = 'node_ai_usage_log';
 	public const USAGE_LOG_LIMIT  = 200;
 
-	public const PROVIDERS = array( 'gemini', 'qwen', 'ollama', 'off' );
+	public const PROVIDERS = array( 'ollama', 'openai', 'gemini', 'qwen', 'off' );
+	public const GENERAL_PROVIDERS = array( 'ollama', 'openai', 'qwen', 'off' );
+	public const GEMINI_FEATURES = array( 'summarize', 'tts', 'fact_check', 'fact_check_premise' );
 
 	private static ?self $instance = null;
 
@@ -29,11 +31,57 @@ final class Node_AI_Core {
 	}
 
 	/**
-	 * 選択中のプロバイダーID（gemini / qwen / ollama / off）
+	 * 通常機能のプロバイダーID（ollama / openai / qwen / off）
 	 */
 	public function get_provider_id(): string {
-		$provider = (string) get_option( 'node_ai_provider', 'gemini' );
-		return in_array( $provider, self::PROVIDERS, true ) ? $provider : 'gemini';
+		$provider = (string) get_option( 'node_ai_provider', 'ollama' );
+		return in_array( $provider, self::GENERAL_PROVIDERS, true ) ? $provider : 'ollama';
+	}
+
+	/** Fact-check selection is independent of the general provider. */
+	public const FACT_CHECK_PROVIDERS = array( 'gemini' => 'Gemini', 'ollama' => 'Ollama', 'openai' => 'OpenAI互換' );
+
+	public function get_fact_check_provider_id(): string {
+		$id = (string) get_option( 'node_ai_fc_provider', 'gemini' );
+		return isset( self::FACT_CHECK_PROVIDERS[ $id ] ) ? $id : 'gemini';
+	}
+
+	public static function fact_check_provider_description( string $id ): string {
+		return 'gemini' === $id
+			? 'Google検索による裏取り（Grounding）あり。無料枠・検索設定・利用上限により検索できない場合は結果に明記します。'
+			: '検索なし・モデル知識とガイドライン照合のみ（本文先頭1500字・ガイドライン先頭750字、主張最大3件）';
+	}
+
+	/** Copy the complete legacy tuple once, never mixing keys with another configured endpoint. */
+	public static function migrate_provider_settings(): void {
+		if ( '1' !== get_option( 'node_ai_gemini_scope_migration' ) ) {
+			if ( 'gemini' === get_option( 'node_ai_provider' ) ) {
+				update_option( 'node_ai_provider', 'ollama' );
+			}
+			update_option( 'node_ai_gemini_scope_migration', '1', false );
+		}
+
+		$provider = get_option( 'node_ai_provider', '' );
+		if ( '1' === get_option( 'node_ai_openai_migration' ) ) {
+			return;
+		}
+		$legacy = 'qwen' === $provider;
+		$configured = false;
+		foreach ( array( 'endpoint', 'model', 'api_key' ) as $field ) {
+			$legacy = $legacy || '' !== (string) get_option( 'node_ai_qwen_' . $field, '' );
+			$configured = $configured || false !== get_option( 'node_ai_openai_' . $field, false );
+		}
+		$configured = $configured || false !== get_option( 'node_ai_openai_preset', false );
+		if ( $legacy && ! $configured ) {
+			add_option( 'node_ai_openai_endpoint', get_option( 'node_ai_qwen_endpoint', '' ), '', false );
+			add_option( 'node_ai_openai_model', get_option( 'node_ai_qwen_model', '' ), '', false );
+			add_option( 'node_ai_openai_api_key', get_option( 'node_ai_qwen_api_key', '' ), '', false );
+			add_option( 'node_ai_openai_preset', 'dashscope', '', false );
+		}
+		if ( 'qwen' === $provider ) {
+			update_option( 'node_ai_provider', 'openai' );
+		}
+		update_option( 'node_ai_openai_migration', '1', false );
 	}
 
 	public function is_enabled(): bool {
@@ -53,6 +101,8 @@ final class Node_AI_Core {
 		switch ( $id ) {
 			case 'gemini':
 				return new Node_AI_Provider_Gemini( $user_id > 0 ? $user_id : null );
+			case 'openai':
+				return new Node_AI_Provider_OpenAI();
 			case 'qwen':
 				return new Node_AI_Provider_Qwen();
 			case 'ollama':
@@ -122,12 +172,12 @@ final class Node_AI_Core {
 	 *
 	 * @return array{text: string, grounding: array, guidelines_used: bool, context: array}|WP_Error
 	 */
-	public function fact_check( string $content, string $title = '', int $user_id = 0, int $post_id = 0 ) {
+	public function fact_check( string $content, string $title = '', int $user_id = 0, int $post_id = 0, string $provider = '' ) {
 		if ( ! class_exists( 'Node_AI_Fact_Check_Runner' ) ) {
 			return new WP_Error( 'fact_check_unavailable', 'ファクトチェック処理を読み込めませんでした。' );
 		}
 
-		return Node_AI_Fact_Check_Runner::run( $content, $title, $user_id, $post_id );
+		return Node_AI_Fact_Check_Runner::run( $content, $title, $user_id, $post_id, $provider );
 	}
 
 	/**
@@ -136,6 +186,8 @@ final class Node_AI_Core {
 	 * @return string|WP_Error 生テキスト（JSON文字列想定）。
 	 */
 	public function proofread( string $content, int $user_id = 0, int $post_id = 0 ) {
+		$local = 'ollama' === $this->get_provider_id() || ( 'openai' === $this->get_provider_id() && 'local' === get_option( 'node_ai_openai_preset', 'local' ) );
+		$issue_limit = $local ? 3 : 15;
 		$system = 'あなたは商業メディア水準の日本語校閲者です。読者に配信して恥ずかしくない日本語かを厳しく見てください。
 以下の JSON 形式のみで回答してください（コードブロック禁止）。指摘は最大15件。
 
@@ -166,6 +218,8 @@ type は次のいずれかを厳密に使うこと:
   ]
 }';
 
+		$system = str_replace( '指摘は最大15件。', '指摘は最大' . $issue_limit . '件。誤りがなければ issues は空配列にすること。修正不要な箇所や原文と同じ修正案は出力しないこと。', $system );
+
 		return $this->generate(
 			'proofread',
 			"以下の記事本文を校正してください：\n\n" . mb_substr( $content, 0, 8000 ),
@@ -173,9 +227,8 @@ type は次のいずれかを厳密に使うこと:
 				'system_instruction' => $system,
 				'json'               => true,
 				'temperature'        => 0.2,
-				// 思考モデルは maxOutputTokens を思考にも消費するため、
-				// JSON が途中で切れないよう長めに確保する
-				'max_tokens'         => 8192,
+				// クラウドの思考モデル用の上限を保ち、ローカルは指摘件数に合わせる。
+				'max_tokens'         => $local ? 2048 : 8192,
 			),
 			$user_id,
 			$post_id
@@ -239,6 +292,100 @@ type は次のいずれかを厳密に使うこと:
 		);
 	}
 
+	/** Generate alt through the configured provider; only real local raster files are accepted. */
+	public function analyze_image( string $path, int $user_id = 0, int $attachment_id = 0 ) {
+		if ( ! $this->is_enabled() ) {
+			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
+		}
+		if ( wp_is_stream( $path ) ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		// Refresh PHP's stat cache so overwritten files on the same path report their current size.
+		clearstatcache( true, $path );
+		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		$file_size = filesize( $path );
+		if ( false === $file_size ) {
+			return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+		}
+		if ( $file_size > 10 * MB_IN_BYTES ) {
+			return new WP_Error( 'image_too_large', '画像は10MB以下で用意してください。' );
+		}
+		$mime = wp_get_image_mime( $path );
+		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp' ), true ) ) {
+			return new WP_Error( 'image_unsupported', '代替テキスト生成はJPEG・PNG・WebP画像に対応します。' );
+		}
+
+		// Bound vision inference cost without changing the attachment's original file.
+		$input_path = $path;
+		$temp_path = '';
+		$size = wp_getimagesize( $path );
+		if ( $size && max( $size[0], $size[1] ) > 768 ) {
+			$editor = wp_get_image_editor( $path );
+			if ( is_wp_error( $editor ) ) {
+				return new WP_Error( 'image_resize_failed', '画像の読み込みサイズを調整できませんでした。' );
+			}
+			$resized = $editor->resize( 768, 768, false );
+			if ( is_wp_error( $resized ) ) {
+				return $resized;
+			}
+			$temp_path = wp_tempnam( 'node-ai-alt' );
+			if ( ! $temp_path ) {
+				return new WP_Error( 'image_resize_failed', '画像処理用ファイルを作成できませんでした。' );
+			}
+			$saved = $editor->save( $temp_path, 'image/jpeg' );
+			if ( is_wp_error( $saved ) ) {
+				wp_delete_file( $temp_path );
+				return $saved;
+			}
+			$input_path = $saved['path'];
+			$mime = 'image/jpeg';
+		}
+		try {
+			$bytes = file_get_contents( $input_path );
+			if ( false === $bytes || '' === $bytes ) {
+				return new WP_Error( 'image_unreadable', '画像ファイルを読み込めませんでした。' );
+			}
+			$result = $this->generate(
+				'alt_text',
+				'この画像の代替テキストを日本語で作成してください。',
+				array(
+					'system_instruction' => '画像に写っているものや読める文字を簡潔に説明してください。出典・配信元・写っていない情報を推測しないでください。「画像」「写真」から書き始めず、80文字以内、句点で終えてください。JSONのみで回答: {"alt_suggestion":"説明。"}',
+					'json' => true,
+					'temperature' => 0.1,
+					'max_tokens' => 512,
+					'image' => array( 'mime' => $mime, 'data' => base64_encode( $bytes ) ),
+				),
+				$user_id,
+				$attachment_id
+			);
+		} finally {
+			if ( '' !== $temp_path ) {
+				wp_delete_file( $input_path );
+				if ( $temp_path !== $input_path ) {
+					wp_delete_file( $temp_path );
+				}
+			}
+		}
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		$data = node_ai_parse_json_response( is_array( $result ) ? (string) ( $result['text'] ?? '' ) : $result );
+		if ( ! is_array( $data ) || ! is_string( $data['alt_suggestion'] ?? null ) || '' === trim( $data['alt_suggestion'] ) ) {
+			return new WP_Error( 'image_parse_failed', '代替テキストの生成結果を解析できませんでした。画像対応モデルを確認してください。' );
+		}
+		$alt = trim( sanitize_text_field( $data['alt_suggestion'] ) );
+		if ( '' === $alt ) {
+			return new WP_Error( 'image_parse_failed', '代替テキストの生成結果が空です。' );
+		}
+		$alt = mb_substr( $alt, 0, 80 );
+		if ( ! preg_match( '/[。！？]$/u', $alt ) ) {
+			$alt = mb_substr( $alt, 0, 79 ) . '。';
+		}
+		return array( 'alt_suggestion' => $alt );
+	}
+
 	// ------------------------------------------------------------------
 	// 共通処理
 	// ------------------------------------------------------------------
@@ -254,7 +401,21 @@ type は次のいずれかを厳密に使うこと:
 	 * @return string|array<string, mixed>|WP_Error
 	 */
 	public function generate( string $feature, string $prompt, array $options = array(), int $user_id = 0, int $post_id = 0 ) {
-		$provider = $this->get_provider( $user_id );
+		if ( ! $this->is_enabled() ) {
+			return new WP_Error( 'ai_disabled', 'AI機能が無効です。' );
+		}
+		$id = (string) ( $options['provider'] ?? $this->get_provider_id() );
+		if ( in_array( $feature, array( 'summarize', 'tts' ), true ) ) {
+			$id = 'gemini';
+		} elseif ( in_array( $feature, array( 'fact_check', 'fact_check_premise' ), true ) && empty( $options['provider'] ) ) {
+			$id = $this->get_fact_check_provider_id();
+		}
+		if ( 'gemini' === $id && ! in_array( $feature, self::GEMINI_FEATURES, true ) ) {
+			return new WP_Error( 'ai_feature_restricted', 'GeminiはAI要約・TTS・ファクトチェック専用です。この機能はOllamaまたはOpenAI互換を使用してください。' );
+		}
+		$provider = $this->get_provider( $user_id, $id );
+		unset( $options['provider'] );
+		$options['feature'] = $feature;
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
 		}

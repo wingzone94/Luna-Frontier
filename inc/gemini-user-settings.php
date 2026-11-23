@@ -92,12 +92,14 @@ function node_render_gemini_user_fields( WP_User $user, bool $is_settings_page =
 	$models_meta    = node_get_gemini_models_meta( $user->ID );
 	$is_own         = get_current_user_id() === (int) $user->ID;
 	?>
-	<h2><?php esc_html_e( 'Gemini API（個人設定）', 'node' ); ?></h2>
+	<h2><?php esc_html_e( 'Gemini API（要約・TTS・ファクトチェック専用）', 'node' ); ?></h2>
 	<p class="description">
+		<?php esc_html_e( '校正・タイトル提案・SNS文案・画像alt生成には、このキーを使用しません。ファクトチェックのモデルは専用の無料枠ポリシーで選びます。', 'node' ); ?>
+		<br>
 		<?php if ( $is_settings_page && $is_own ) : ?>
 			<?php esc_html_e( 'この API キーはあなた専用です。他のライターとは共有されません。', 'node' ); ?>
 		<?php elseif ( $is_own ) : ?>
-			<?php esc_html_e( 'AI 要約・ファクトチェックで使用する、あなた専用の Gemini API キーです。', 'node' ); ?>
+			<?php esc_html_e( 'AI要約・TTS・ファクトチェック専用の、あなたのGemini APIキーです。', 'node' ); ?>
 		<?php else : ?>
 			<?php esc_html_e( 'このライター個人の Gemini API 設定です。', 'node' ); ?>
 		<?php endif; ?>

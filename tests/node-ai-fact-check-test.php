@@ -13,6 +13,8 @@ class Node_AI_Fact_Check_Test extends WP_UnitTestCase {
 
 	public function set_up() {
 		parent::set_up();
+		// This fixture mocks Gemini; select it explicitly now that the global default is Ollama.
+		update_option( 'node_ai_provider', 'gemini' );
 
 		// 必要なファイルをロード
 		if ( ! class_exists( 'Node_Gemini_API' ) ) {

@@ -52,6 +52,8 @@ class Node_AI_Ajax_Permissions_Test extends WP_Ajax_UnitTestCase {
 			array( 'post_author' => $author_id, 'post_content' => '権限確認用の記事本文。' )
 		);
 		wp_set_current_user( $author_id );
+		// Permission fixture: fail locally for absent credentials rather than invoking a real server.
+		update_option( 'node_ai_provider', 'gemini' );
 		add_action( 'wp_ajax_node_generate_ai_summary', 'node_ai_ajax_generate_summary' );
 		$_POST = array( 'post_id' => $post_id, 'nonce' => wp_create_nonce( 'node_ai_generate_action' ) );
 

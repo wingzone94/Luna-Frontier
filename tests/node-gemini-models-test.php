@@ -378,7 +378,7 @@ class Node_Gemini_Models_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', array( $this, 'mock_generate_capture' ), 10, 3 );
 		$api    = new Node_Gemini_API();
-		$result = $api->generate_content( 'テスト' );
+		$result = $api->generate_content( 'テスト', array( 'feature' => 'summarize' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_generate_capture' ), 10 );
 
 		$this->assertSame( 'ok', $result );
@@ -398,7 +398,7 @@ class Node_Gemini_Models_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', array( $this, 'mock_generate_capture' ), 10, 3 );
 		$api = new Node_Gemini_API();
-		$api->generate_content( 'テスト' );
+		$api->generate_content( 'テスト', array( 'feature' => 'summarize' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_generate_capture' ), 10 );
 
 		$body = json_decode( $this->captured_request['body'], true );

@@ -377,6 +377,7 @@
 
 		var notices = fact.notices || [];
 		var parts = [];
+		if ( fact.provider ) { parts.push( '接続先: ' + ( ( factSettings.providers || {} )[ fact.provider ] || fact.provider ) ); }
 
 		if ( fact.model ) {
 			parts.push( 'モデル: ' + fact.model );
@@ -605,13 +606,9 @@
 		var proofResults = proofState[ 0 ];
 		var setProofResults = proofState[ 1 ];
 
-		var modelState = useState( factSettings.currentModel || '' );
-		var model = modelState[ 0 ];
-		var setModel = modelState[ 1 ];
-
-		var thinkingState = useState( factSettings.currentThinking || '' );
-		var thinking = thinkingState[ 0 ];
-		var setThinking = thinkingState[ 1 ];
+		var providerState = useState( factSettings.providerId || 'gemini' );
+		var provider = providerState[ 0 ];
+		var setProvider = providerState[ 1 ];
 
 		var statusState = useState( null );
 		var status = statusState[ 0 ];
@@ -625,16 +622,6 @@
 
 		var statusLabels = factSettings.statusLabels || {};
 		var riskLabels = factSettings.riskLabels || {};
-
-		var modelOptions = Object.keys( factSettings.models || {} ).map( function ( id ) {
-			return { value: id, label: factSettings.models[ id ] };
-		} );
-
-		var thinkingOptions = Object.keys( factSettings.thinkingLevels || {} ).map( function ( level ) {
-			return { value: level, label: factSettings.thinkingLevels[ level ] };
-		} );
-
-		var supportsThinking = ( factSettings.thinkingModels || [] ).indexOf( model ) !== -1;
 
 
 		function setApproved( next ) {
@@ -696,11 +683,7 @@
 				'node_ai_fact_check',
 				factSettings.nonce,
 				{
-					// 保存形式は `<モデルID>@<思考量>`（1.2 系と互換）
-					gemini_model:
-						factSettings.providerId === 'gemini'
-							? ( model && supportsThinking && thinking ? model + '@' + thinking : model )
-							: '',
+					fact_check_provider: provider,
 				},
 				function ( data ) {
 					setFactResults( data );
@@ -755,9 +738,7 @@
 			el(
 				'p',
 				{ style: { fontSize: '12px', color: '#646970', marginTop: 0 } },
-				factSettings.providerId === 'gemini'
-					? '事実関係（公式サイト・検索結果を参照）と日本語表現をまとめて点検します。確認箇所の抽出支援であり、最終判断は編集者が行います。'
-					: '事実関係と日本語表現をまとめて点検します。確認箇所の抽出支援であり、最終判断は編集者が行います。'
+				( factSettings.providerDescriptions || {} )[ provider ] + '。最終判断は編集者が行います。'
 			),
 			factSettings.hasKey
 				? el(
@@ -775,6 +756,8 @@
 				  )
 				: null,
 
+			el( SelectControl, { label: '今回のファクトチェック接続先', value: provider, options: Object.keys( factSettings.providers || {} ).map( function ( id ) { return { value: id, label: factSettings.providers[ id ] }; } ), onChange: setProvider, disabled: '' !== busy } ),
+			el( 'p', { style: { fontSize: '12px' } }, 'GeminiモデルはLuna AIの無料枠ポリシーで選択します。自動実行の接続先はLuna AI設定で変更できます。' ),
 			// ---- 実行 ----
 			el(
 				'div',
@@ -800,24 +783,6 @@
 					'校正チェック'
 				)
 			),
-
-			modelOptions.length
-				? el( SelectControl, {
-						label: '使用モデル',
-						value: model,
-						options: modelOptions,
-						onChange: setModel,
-				  } )
-				: null,
-			supportsThinking && thinkingOptions.length
-				? el( SelectControl, {
-						label: '思考量',
-						value: thinking,
-						options: thinkingOptions,
-						onChange: setThinking,
-						help: '長い記事で応答が途中で切れる場合は Low が有効です。',
-				  } )
-				: null,
 
 			status
 				? el(

@@ -183,6 +183,9 @@ if ( ! function_exists( 'node_ai_render_fact_check_results' ) ) {
 
 		// 実行時刻と使用モデルは、どちらか片方しか無い保存データでも表示できるようにする
 		$meta_parts = array();
+		if ( isset( Node_AI_Core::FACT_CHECK_PROVIDERS[ $data['provider'] ?? '' ] ) ) {
+			$meta_parts[] = '接続先: ' . Node_AI_Core::FACT_CHECK_PROVIDERS[ $data['provider'] ];
+		}
 		if ( ! empty( $data['checked_at'] ) ) {
 			$meta_parts[] = '最終チェック: ' . (string) $data['checked_at'];
 		}
@@ -261,8 +264,11 @@ if ( ! function_exists( 'node_ai_render_fact_check_front' ) ) {
 			</summary>
 			<div class="m3-fact-check__body">
 				<p class="m3-fact-check__disclaimer">
-					<?php esc_html_e( 'AI と公開情報（公式サイト・検索結果）による参考情報です。これは確認箇所の抽出支援であり、編集者が確認済みの内容を含みますが、最終的な正確性は原文・公式情報をご確認ください。', 'node-ai-tools' ); ?>
+					<?php esc_html_e( 'AIによる確認箇所の抽出支援です。編集者が確認済みの参考情報ですが、最終的な正確性は原文・公式情報をご確認ください。', 'node-ai-tools' ); ?>
 				</p>
+				<?php foreach ( (array) ( $data['notices'] ?? array() ) as $notice ) : ?>
+					<p class="m3-fact-check__disclaimer"><?php echo esc_html( (string) $notice ); ?></p>
+				<?php endforeach; ?>
 				<?php if ( ! empty( $data['summary'] ) ) : ?>
 					<p class="m3-fact-check__overview"><?php echo esc_html( (string) $data['summary'] ); ?></p>
 				<?php endif; ?>
@@ -301,7 +307,7 @@ if ( ! function_exists( 'node_ai_render_fact_check_front' ) ) {
 							<?php esc_html_e( 'ガイドライン参照', 'node-ai-tools' ); ?>
 						</span>
 					<?php endif; ?>
-					<span class="m3-fact-check__credit">by Gemini</span>
+					<span class="m3-fact-check__credit">by <?php echo esc_html( Node_AI_Core::FACT_CHECK_PROVIDERS[ $data['provider'] ?? 'gemini' ] ?? 'AI' ); ?></span>
 					<?php if ( ! empty( $data['checked_at'] ) ) : ?>
 						<time class="m3-fact-check__date" datetime="<?php echo esc_attr( (string) $data['checked_at'] ); ?>">
 							<?php echo esc_html( (string) $data['checked_at'] ); ?>
