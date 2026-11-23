@@ -23,6 +23,21 @@ class Node_Advanced_Search_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	public function test_empty_maximum_does_not_exclude_matching_search_posts(): void {
+		$id = self::factory()->post->create( array(
+			'post_status' => 'publish',
+			'post_title'  => 'Unique Empty Maximum Search',
+		) );
+		update_post_meta( $id, '_node_char_count', 500 );
+		$_GET = array( 's' => 'Unique Empty Maximum Search', 'm3_max' => '', 'm3_sort' => 'newest' );
+		$this->go_to( add_query_arg( $_GET, home_url( '/' ) ) );
+		$this->assertContains( $id, wp_list_pluck( $GLOBALS['wp_query']->posts, 'ID' ) );
+
+		$_GET = array( 's' => 'Unique Empty Maximum Search', 'm3_max' => '100', 'm3_sort' => 'newest' );
+		$this->go_to( add_query_arg( $_GET, home_url( '/' ) ) );
+		$this->assertNotContains( $id, wp_list_pluck( $GLOBALS['wp_query']->posts, 'ID' ) );
+	}
+
 	public function test_article_search_and_category_keep_date_order_across_pages(): void {
 		$category = self::factory()->category->create();
 		$ids = array();

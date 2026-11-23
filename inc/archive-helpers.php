@@ -286,6 +286,16 @@ function node_get_adjacent_archive_month( $year, $month, $dir ) {
 	return null;
 }
 
+/** Treat an unfilled search limit as absent before the search plugin reads it. */
+function luna_frontier_normalize_empty_search_max( $query ) {
+	if ( ! is_admin() && $query->is_main_query() && $query->is_search()
+		&& isset( $_GET['m3_max'] ) && is_string( $_GET['m3_max'] )
+		&& '' === trim( wp_unslash( $_GET['m3_max'] ) ) ) {
+		unset( $_GET['m3_max'] );
+	}
+}
+add_action( 'pre_get_posts', 'luna_frontier_normalize_empty_search_max', 0 );
+
 /** Keep article archives and search in a stable date order across pages. */
 function luna_frontier_sort_article_results( $query ) {
 	if ( is_admin() || ! $query->is_main_query() || ( ! $query->is_archive() && ! $query->is_search() ) || $query->is_post_type_archive( 'node_library' ) ) {
