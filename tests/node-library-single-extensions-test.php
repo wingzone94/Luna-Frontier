@@ -96,10 +96,34 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'HDR: 対応', $by_label['能力・映像仕様']['value'] ?? '' );
 		$this->assertStringContainsString( '最大FPS: 120fps', $by_label['能力・映像仕様']['value'] ?? '' );
 		$this->assertStringContainsString( '解像度: 3840×2160', $by_label['能力・映像仕様']['value'] ?? '' );
-		$this->assertSame( 'Xbox / PC Game Pass、EA Play', $by_label['サブスク在籍']['value'] ?? '' );
+		$this->assertArrayNotHasKey( 'サブスク在籍', $by_label );
 
 		$this->assertArrayNotHasKey( 'ストアID', $by_label );
 		$this->assertArrayNotHasKey( 'ストアID（その他）', $by_label );
+	}
+
+	public function test_store_offers_prioritize_japan_and_price_only_the_registered_product(): void {
+		$item = $this->create_library_item( 'Store Offers' );
+		update_post_meta( $item, '_node_library_store_ids', array( 'steam' => '42', 'nintendo' => '70010000000025' ) );
+		Node_Library_Prices::record( $item, 'steam', '42', array( 'currency' => 'JPY', 'price' => 0, 'list_price' => 500 ), strtotime( '2026-11-22 16:00 UTC' ) );
+		$offers = Node_Library_Single_Extensions::store_offers( $item, array(
+			array( 'platform' => 'Steam', 'url' => 'https://store.steampowered.com/app/99/' ),
+			array( 'platform' => 'Steam', 'url' => 'https://store.steampowered.com/app/42/' ),
+		) );
+
+		$this->assertSame( 'Nintendo', $offers[0]['platform'] );
+		$this->assertSame( '', $offers[0]['price_label'] );
+		$this->assertSame( '', $offers[1]['price_label'] );
+		$this->assertSame( '¥0', $offers[2]['price_label'] );
+		$this->assertSame( '2026/11/23', $offers[2]['price_date'] );
+
+		$game_info = array( 'title' => 'Store Offers', 'links' => $offers, 'subscription_badges' => array( 'Xbox / PC Game Pass' ) );
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'Xbox / PC Game Pass</li>', $html );
+		$this->assertSame( 1, substr_count( $html, '¥0' ) );
+		$this->assertStringContainsString( '価格記録日 2026/11/23', $html );
 	}
 
 	public function test_price_history_section_and_badges_render_and_omit_when_empty(): void {
@@ -150,7 +174,6 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'node-library-single__pricing', $html );
 		$this->assertStringContainsString( 'セール中（-50%）', $html );
 		$this->assertStringContainsString( '過去最安値', $html );
-		$this->assertStringContainsString( 'Xbox / PC Game Pass', $html );
 		$this->assertStringContainsString( '¥3,000', $html );
 		$this->assertStringContainsString( '¥6,000', $html );
 		$this->assertStringContainsString( '1回', $html );
@@ -162,7 +185,6 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-icon="sell"', $html );
 		$this->assertStringContainsString( 'data-icon="verified"', $html );
 		$this->assertStringContainsString( 'data-icon="schedule"', $html );
-		$this->assertStringContainsString( 'data-icon="sports_esports"', $html );
 	}
 
 	public function test_bidirectional_relations_resolve_published_items_only_and_hide_unregistered(): void {

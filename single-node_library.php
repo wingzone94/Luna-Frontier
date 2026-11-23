@@ -50,6 +50,11 @@ get_header();
 			'summary' => $library_summary,
 			'links'   => $library_links,
 		);
+		if ( is_callable( array( 'Node_Library_Single_Extensions', 'store_offers' ) ) ) {
+			$game_info['links'] = Node_Library_Single_Extensions::store_offers( $library_id, $library_links );
+			$flags = (array) get_post_meta( $library_id, '_node_library_subscriptions', true );
+			$game_info['subscription_badges'] = array_intersect_key( Node_Library_Structured_Meta::subscriptions(), array_filter( $flags ) );
+		}
 		$linked_article_posts = array_values(
 			array_filter(
 				$linked_articles->posts,
@@ -77,12 +82,6 @@ get_header();
 				<?php if ( $library_summary ) : ?><p><?php echo esc_html( $library_summary ); ?></p><?php endif; ?>
 			</header>
 
-			<?php
-			if ( function_exists( 'node_library_render_spec_table' ) ) {
-				node_library_render_spec_table( (int) $library_id );
-			}
-			?>
-
 			<section class="node-library-single__stores" aria-labelledby="node-library-stores-title">
 				<div class="node-library-single__section-heading">
 					<span class="material-symbols-outlined" data-icon="shopping_bag" aria-hidden="true"></span>
@@ -94,6 +93,12 @@ get_header();
 					<p><?php esc_html_e( 'ストア情報を表示できません。', 'node' ); ?></p>
 				<?php endif; ?>
 			</section>
+			<?php
+			if ( function_exists( 'node_library_render_spec_table' ) ) {
+				node_library_render_spec_table( (int) $library_id );
+			}
+			?>
+
 			<?php do_action( 'node_library_single_after_stores', (int) $library_id ); ?>
 
 			<?php if ( ! empty( $linked_article_posts ) ) : ?>

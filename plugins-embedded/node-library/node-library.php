@@ -1968,7 +1968,7 @@ function node_library_render_archive_toolbar(): void {
 }
 
 /**
- * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種・入手先だけを返す。
+ * 詳細ページのスペック表。保存済みの種別・紹介文・対応機種だけを返す。
  *
  * @return array<int, array{label:string,value:string,links?:array<int,array{platform:string,url:string}>}>
  */
@@ -1999,15 +1999,6 @@ function node_library_get_spec_rows( int $post_id ): array {
 		$rows[] = [
 			'label' => '対応機種',
 			'value' => implode( '、', $hardware ),
-		];
-	}
-
-	$links = node_library_spec_store_links( $post_id );
-	if ( $links ) {
-		$rows[] = [
-			'label' => '入手先',
-			'value' => '',
-			'links' => $links,
 		];
 	}
 
@@ -2049,7 +2040,7 @@ function node_library_spec_hardware_labels( int $post_id ): array {
 }
 
 /**
- * スペック表と JSON-LD が共有する入手先。
+ * JSON-LD 用の入手先。
  *
  * @return array<int, array{platform:string,url:string}>
  */

@@ -137,23 +137,87 @@ final class Node_Library_Single_Extensions {
 			}
 		}
 
-		$subscriptions = get_post_meta( $post_id, '_node_library_subscriptions', true );
-		if ( is_array( $subscriptions ) && class_exists( 'Node_Library_Structured_Meta' ) ) {
-			$sub_labels = array();
-			foreach ( Node_Library_Structured_Meta::subscriptions() as $service => $label ) {
-				if ( ! empty( $subscriptions[ $service ] ) ) {
-					$sub_labels[] = $label;
-				}
+		return $rows;
+	}
+
+	/** Build detail-page offers from stored links and the currently registered products. */
+	public static function store_offers( int $post_id, array $links ): array {
+		$ids      = (array) get_post_meta( $post_id, '_node_library_store_ids', true );
+		$offers   = array();
+		$matched  = array();
+		$labels   = Node_Library_Structured_Meta::stores();
+		$labels['amazon_asin'] = 'Amazon';
+
+		foreach ( $links as $link ) {
+			if ( ! is_array( $link ) || ! is_string( $link['url'] ?? null ) ) {
+				continue;
 			}
-			if ( $sub_labels ) {
-				$rows[] = array(
-					'label' => 'サブスク在籍',
-					'value' => implode( '、', $sub_labels ),
-				);
+			$url = esc_url_raw( $link['url'], array( 'http', 'https' ) );
+			if ( ! wp_parse_url( $url, PHP_URL_HOST ) ) {
+				continue;
+			}
+			$product = Node_Library_Store_ID_Migration::extract( $url );
+			$store   = $product['store'] ?? '';
+			$link['url'] = $url;
+			$link['catalogue_store'] = $store;
+			if ( empty( $link['platform'] ) || in_array( $link['platform'], $ids, true ) || $link['platform'] === $url ) {
+				$link['platform'] = $labels[ $store ] ?? wp_parse_url( $url, PHP_URL_HOST );
+			}
+			unset( $link['price_store'] );
+			if ( isset( $product['id'], $ids[ $store ] ) && $ids[ $store ] === $product['id'] ) {
+				$link['price_store'] = $store;
+				$matched[ $store ] = true;
+			}
+			$offers[] = $link;
+		}
+		foreach ( $labels as $store => $label ) {
+			if ( isset( $matched[ $store ] ) || ! is_string( $ids[ $store ] ?? null ) ) {
+				continue;
+			}
+			$url = self::store_url( $store, $ids[ $store ] );
+			if ( 'nintendo' === $store && Node_Library_Nintendo_Store::valid_id( $ids[ $store ] ) ) {
+				$url = 'https://store-jp.nintendo.com/item/software/D' . $ids[ $store ];
+			} elseif ( 'ps' === $store && Node_Library_PS_Store::valid_id( $ids[ $store ] ) ) {
+				$url = 'https://store.playstation.com/ja-jp/product/' . $ids[ $store ];
+			}
+			if ( '' !== $url ) {
+				$offers[] = array( 'platform' => $label, 'url' => $url, 'catalogue_store' => $store, 'price_store' => $store );
 			}
 		}
 
-		return $rows;
+		$japanese = array();
+		$other    = array();
+		$prices   = array();
+		foreach ( $offers as $link ) {
+			$store = $link['price_store'] ?? '';
+			$link['price_label'] = '';
+			$link['price_date']  = '';
+			if ( in_array( $store, Node_Library_Store::price_stores(), true ) ) {
+				if ( ! array_key_exists( $store, $prices ) ) {
+					$prices[ $store ] = Node_Library_Prices::current( $post_id, $store );
+				}
+				$current = $prices[ $store ];
+				if ( is_numeric( $current['price'] ?? null ) && ! empty( $current['currency'] ) ) {
+					$link['price_label'] = self::format_currency( $current['price'], $current['currency'] );
+					$link['price_date'] = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
+				}
+			}
+			if ( self::is_japanese_store_url( $link['url'] ) ) {
+				$japanese[] = $link;
+			} else {
+				$other[] = $link;
+			}
+		}
+		return array_merge( $japanese, $other );
+	}
+
+	/** Region-specific destinations precede unmarked and overseas links. */
+	private static function is_japanese_store_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+		parse_str( $parts['query'] ?? '', $query );
+		return preg_match( '~(?:\.jp$|^store-jp\.)~i', $parts['host'] )
+			|| preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
+			|| ( is_string( $query['gl'] ?? null ) && 0 === strcasecmp( $query['gl'], 'JP' ) );
 	}
 
 	/**
@@ -185,17 +249,7 @@ final class Node_Library_Single_Extensions {
 			);
 		}
 
-		$sub_badges    = array();
-		$subscriptions = get_post_meta( $post_id, '_node_library_subscriptions', true );
-		if ( is_array( $subscriptions ) && class_exists( 'Node_Library_Structured_Meta' ) ) {
-			foreach ( Node_Library_Structured_Meta::subscriptions() as $service => $label ) {
-				if ( ! empty( $subscriptions[ $service ] ) ) {
-					$sub_badges[] = $label;
-				}
-			}
-		}
-
-		if ( ! $entries && ! $sub_badges ) {
+		if ( ! $entries ) {
 			return;
 		}
 
@@ -223,13 +277,6 @@ final class Node_Library_Single_Extensions {
 					'label' => '過去最安値',
 				);
 			}
-		}
-		foreach ( $sub_badges as $sub_label ) {
-			$badges[] = array(
-				'kind'  => 'subscription',
-				'icon'  => 'sports_esports',
-				'label' => $sub_label,
-			);
 		}
 		?>
 		<section class="node-library-single__pricing" aria-labelledby="node-library-pricing-title">
