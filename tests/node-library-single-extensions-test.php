@@ -366,6 +366,90 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '"price":"2980"', $html );
 	}
 
+	public function test_store_card_states_sale_subscription_upcoming_and_warning_gate(): void {
+		$item_id = $this->create_library_item( 'Store Card States' );
+		update_post_meta(
+			$item_id,
+			'_node_library_store_ids',
+			array(
+				'microsoft' => '9STORECARD01',
+				'steam'     => '555001',
+				'nintendo'  => '70010000000025',
+			)
+		);
+		update_post_meta( $item_id, '_node_library_subscriptions', array( 'gamepass' => true ) );
+
+		$recorded_at = strtotime( '2026-11-22 16:00 UTC' );
+		Node_Library_Prices::record(
+			$item_id,
+			'microsoft',
+			'9STORECARD01',
+			array(
+				'currency'   => 'JPY',
+				'price'      => 2400,
+				'list_price' => 4800,
+			),
+			$recorded_at
+		);
+
+		$offers = Node_Library_Single_Extensions::store_offers(
+			$item_id,
+			array(
+				array(
+					'platform' => 'Nintendo Switch',
+					'url'      => 'https://store-jp.nintendo.com/item/software/D70010000000025',
+					'hardware' => 'nintendo-switch',
+				),
+				array(
+					'platform' => 'Steam',
+					'url'      => 'https://store.steampowered.com/app/555001/',
+				),
+			)
+		);
+
+		$game_info = array(
+			'title'               => 'Store Card States',
+			'links'               => $offers,
+			'subscription_badges' => array( 'gamepass' => 'Xbox / PC Game Pass' ),
+			'release_date'        => '2024-01-01',
+		);
+
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$html = (string) ob_get_clean();
+
+		// Microsoft card: sale price, list price, discount badge, inline subscription badge, no official badge img.
+		$this->assertStringContainsString( 'node-library-store-card--microsoft', $html );
+		$this->assertStringContainsString( '¥2,400', $html );
+		$this->assertStringContainsString( '¥4,800', $html );
+		$this->assertStringContainsString( '-50%', $html );
+		$this->assertStringContainsString( 'node-library-store-card__sub-badge', $html );
+		$this->assertStringContainsString( 'Xbox / PC Game Pass', $html );
+		$this->assertStringNotContainsString( 'microsoft-store-badge-ja.svg', $html );
+
+		// Steam card (unpriced): unpriced status pill + CTA, no raw store ID, no Steam embed toggle on detail view.
+		$this->assertStringContainsString( 'node-library-store-card--steam', $html );
+		$this->assertStringContainsString( '価格未登録', $html );
+		$this->assertStringContainsString( 'ストアで見る', $html );
+		$this->assertStringNotContainsString( 'node-library-steam-control', $html );
+		$this->assertStringNotContainsString( 'node-library-steam-panel', $html );
+		$this->assertStringNotContainsString( '9STORECARD01', wp_strip_all_tags( $html ) );
+
+		// Nintendo card: warning gate + aria-describedby.
+		$this->assertStringContainsString( 'node-library-store-card--nintendo', $html );
+		$this->assertStringContainsString( 'data-node-library-platform-warning', $html );
+		$this->assertStringContainsString( 'aria-describedby="node-library-warning-', $html );
+		$this->assertStringContainsString( 'このソフトはSwitch専用ソフトです。', $html );
+
+		// Upcoming release state when release_date is in the future and unpriced.
+		$game_info['release_date'] = '2099-12-31';
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$upcoming_html = (string) ob_get_clean();
+		$this->assertStringContainsString( '発売前', $upcoming_html );
+		$this->assertStringContainsString( 'node-library-store-card__status--upcoming', $upcoming_html );
+	}
+
 	private function create_library_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(
