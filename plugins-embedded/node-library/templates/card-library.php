@@ -20,6 +20,13 @@ $links        = array_values(
     )
 );
 $detail_offers = isset( $game_info['subscription_badges'] );
+if ( ! $detail_offers ) {
+    $item_id = $lib_post->ID ?? $library_id ?? 0;
+    $store_ids = $item_id ? (array) get_post_meta( $item_id, '_node_library_store_ids', true ) : [];
+    foreach ( $links as $index => $link ) {
+        $links[ $index ]['platform'] = node_library_public_store_label( $link, $store_ids );
+    }
+}
 $header_text  = get_option( 'node_library_header_text', 'GAME / APP INFO' );
 $button_text  = get_option( 'node_library_button_text', 'で見る' );
 $library_permalink = isset( $lib_post ) && $lib_post instanceof WP_Post && 'node_library' === $lib_post->post_type
@@ -454,7 +461,7 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 <span class="m3-platform-qr-status" data-node-library-qr-status>QRコードを生成中…</span>
                 <canvas class="m3-platform-qr-canvas" aria-label="<?php echo esc_attr( $platform . 'ストアページのQRコード' ); ?>" data-node-library-qr-canvas hidden></canvas>
                 <div class="m3-platform-qr-link-row">
-                    <a class="m3-platform-qr-url" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $link['url'] ); ?></a>
+                    <a class="m3-platform-qr-url" href="<?php echo esc_url( $link['url'] ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'ストアページを開く', 'node-library' ); ?></a>
                     <button class="m3-platform-qr-copy" type="button" data-copy-text="<?php echo esc_url( $link['url'] ); ?>" data-node-library-qr-copy>
                         <span class="material-symbols-outlined" data-icon="content_copy" aria-hidden="true"></span>
                         コピー

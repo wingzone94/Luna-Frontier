@@ -102,6 +102,20 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'ストアID（その他）', $by_label );
 	}
 
+	public function test_public_store_labels_hide_ids_in_article_cards_and_qr_dialogs(): void {
+		$item = $this->create_library_item( 'Mobile Example' );
+		$id   = 'com.example.game';
+		$url  = 'https://play.google.com/store/apps/details?id=' . $id;
+		$link = array( 'platform' => 'Google Play (' . $id . ')', 'url' => $url );
+		$this->assertSame( 'Google Play', node_library_public_store_label( $link, array() ) );
+		$this->assertSame( 'example.org', node_library_public_store_label( array( 'platform' => 'Epic (sample-id)', 'url' => 'https://example.org/product' ), array( 'epic' => 'sample-id' ) ) );
+		update_post_meta( $item, '_node_library_links', array( $link ) );
+		$html = Node_Library::instance()->render_block( array( 'libraryId' => $item ) );
+		$this->assertStringContainsString( esc_url( $url ), $html );
+		$this->assertStringContainsString( 'ストアページを開く', $html );
+		$this->assertStringNotContainsString( $id, wp_strip_all_tags( $html ) );
+	}
+
 	public function test_store_offers_prioritize_japan_and_price_only_the_registered_product(): void {
 		$item = $this->create_library_item( 'Store Offers' );
 		update_post_meta( $item, '_node_library_store_ids', array( 'steam' => '42', 'nintendo' => '70010000000025' ) );

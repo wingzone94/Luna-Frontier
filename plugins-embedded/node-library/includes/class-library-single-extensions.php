@@ -160,9 +160,7 @@ final class Node_Library_Single_Extensions {
 			$store   = $product['store'] ?? '';
 			$link['url'] = $url;
 			$link['catalogue_store'] = $store;
-			if ( empty( $link['platform'] ) || in_array( $link['platform'], $ids, true ) || $link['platform'] === $url ) {
-				$link['platform'] = $labels[ $store ] ?? wp_parse_url( $url, PHP_URL_HOST );
-			}
+			$link['platform'] = node_library_public_store_label( $link, $ids );
 			unset( $link['price_store'] );
 			if ( isset( $product['id'], $ids[ $store ] ) && $ids[ $store ] === $product['id'] ) {
 				$link['price_store'] = $store;

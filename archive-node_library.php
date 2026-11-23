@@ -130,6 +130,7 @@ if ( ! empty( $archive_library_ids ) ) {
 						$library_id    = get_the_ID();
 						$library_type  = get_post_meta( $library_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
 						$library_links = get_post_meta( $library_id, '_node_library_links', true );
+						$store_ids = (array) get_post_meta( $library_id, '_node_library_store_ids', true );
 						$platform_names      = array();
 						$hardware_name_map   = array(
 							'nintendo-switch'   => 'Nintendo Switch',
@@ -147,7 +148,9 @@ if ( ! empty( $archive_library_ids ) ) {
 									continue;
 								}
 
-								$platform_name = trim( (string) ( $library_link['platform'] ?? '' ) );
+								$platform_name = function_exists( 'node_library_public_store_label' )
+									? node_library_public_store_label( $library_link, $store_ids )
+									: trim( (string) ( $library_link['platform'] ?? '' ) );
 								$hardware      = sanitize_key( (string) ( $library_link['hardware'] ?? '' ) );
 								if ( isset( $hardware_name_map[ $hardware ] ) ) {
 									$platform_name = $hardware_name_map[ $hardware ];
