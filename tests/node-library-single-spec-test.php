@@ -71,7 +71,11 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_spec_table_renders_and_leaves_the_extension_hook(): void {
+	public function test_single_template_omits_spec_table_and_fires_after_specs_hook(): void {
+		$template = (string) file_get_contents( dirname( __DIR__ ) . '/single-node_library.php' );
+		$this->assertStringNotContainsString( 'node_library_render_spec_table', $template );
+		$this->assertStringContainsString( "do_action( 'node_library_single_after_specs'", $template );
+
 		$seen = false;
 		add_action(
 			'node_library_single_after_specs',
@@ -80,15 +84,8 @@ class Node_Library_Single_Spec_Test extends WP_UnitTestCase {
 			}
 		);
 
-		ob_start();
-		node_library_render_spec_table( $this->item_id );
-		$html = (string) ob_get_clean();
-
+		do_action( 'node_library_single_after_specs', $this->item_id );
 		$this->assertTrue( $seen );
-		$this->assertStringContainsString( 'node-library-specs', $html );
-		$this->assertStringContainsString( '対応機種', $html );
-		$this->assertStringContainsString( 'Windows PC、Nintendo Switch', $html );
-		$this->assertStringNotContainsString( 'https://example.com/switch', $html );
 	}
 
 	public function test_product_jsonld_parses_and_omits_offers_until_extended(): void {
