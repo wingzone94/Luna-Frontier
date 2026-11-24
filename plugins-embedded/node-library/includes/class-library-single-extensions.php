@@ -173,9 +173,7 @@ final class Node_Library_Single_Extensions {
 				continue;
 			}
 			$url = self::store_url( $store, $ids[ $store ] );
-			if ( 'nintendo' === $store && Node_Library_Nintendo_Store::valid_id( $ids[ $store ] ) ) {
-				$url = 'https://store-jp.nintendo.com/item/software/D' . $ids[ $store ];
-			} elseif ( 'ps' === $store && Node_Library_PS_Store::valid_id( $ids[ $store ] ) ) {
+			if ( 'ps' === $store && Node_Library_PS_Store::valid_id( $ids[ $store ] ) ) {
 				$url = 'https://store.playstation.com/ja-jp/product/' . $ids[ $store ];
 			}
 			if ( '' !== $url ) {
@@ -533,7 +531,7 @@ final class Node_Library_Single_Extensions {
 				if ( false === $end_ts || $end_ts <= time() ) {
 					continue;
 				}
-				$offer['priceValidUntil'] = gmdate( 'Y-m-d', $end_ts );
+				$offer['priceValidUntil'] = wp_date( 'Y-m-d', $end_ts, new DateTimeZone( 'Asia/Tokyo' ) );
 			}
 
 			$url = self::resolve_offer_url( $store, $external_id, $links );
@@ -816,6 +814,9 @@ final class Node_Library_Single_Extensions {
 		if ( '' === $id ) {
 			return '';
 		}
+		if ( 'nintendo' === $store && Node_Library_Nintendo_Store::valid_id( $id ) ) {
+			return 'https://store-jp.nintendo.com/item/software/D' . $id;
+		}
 		if ( 'microsoft' === $store ) {
 			return 'https://www.xbox.com/ja-JP/games/store/-/' . rawurlencode( $id );
 		}
@@ -850,7 +851,8 @@ final class Node_Library_Single_Extensions {
 				continue;
 			}
 			$url = esc_url_raw( (string) ( $link['url'] ?? '' ) );
-			if ( '' !== $url && false !== stripos( $url, $external_id ) ) {
+			$product = Node_Library_Store_ID_Migration::extract( $url );
+			if ( $store === ( $product['store'] ?? '' ) && $external_id === ( $product['id'] ?? '' ) ) {
 				return $url;
 			}
 		}

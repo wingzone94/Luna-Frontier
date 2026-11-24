@@ -356,7 +356,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertSame( '2980', $data['offers']['price'] ?? '' );
 		$this->assertSame( 'JPY', $data['offers']['priceCurrency'] ?? '' );
 		$this->assertArrayNotHasKey( 'availability', $data['offers'] );
-		$this->assertSame( gmdate( 'Y-m-d', strtotime( $end_utc . ' UTC' ) ), $data['offers']['priceValidUntil'] ?? '' );
+		$this->assertSame( wp_date( 'Y-m-d', strtotime( $end_utc . ' UTC' ), new DateTimeZone( 'Asia/Tokyo' ) ), $data['offers']['priceValidUntil'] ?? '' );
 		$this->assertSame( 'https://www.xbox.com/ja-JP/games/store/-/9JSONLD00001', $data['offers']['url'] ?? '' );
 
 		ob_start();
@@ -378,6 +378,17 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		);
 		$this->assertTrue( Node_Library_Prices::record( $item_id, 'microsoft', $product, $offer, time() - 2 * DAY_IN_SECONDS ) );
 		$this->assertArrayNotHasKey( 'offers', node_library_get_product_jsonld( $item_id ) );
+	}
+
+	public function test_nintendo_offer_links_to_registered_product(): void {
+		$id = $this->create_library_item( 'Nintendo offer' );
+		$product = '70010000000026';
+		update_post_meta( $id, '_node_library_store_ids', array( 'nintendo' => $product ) );
+		update_post_meta( $id, '_node_library_links', array( array( 'url' => 'https://example.org/?ref=' . $product ) ) );
+		$this->assertTrue( Node_Library_Prices::record( $id, 'nintendo', $product, array( 'price' => 0, 'list_price' => 0, 'currency' => 'JPY' ) ) );
+		$data = node_library_get_product_jsonld( $id );
+		$this->assertSame( '0', $data['offers']['price'] );
+		$this->assertSame( 'https://store-jp.nintendo.com/item/software/D' . $product, $data['offers']['url'] );
 	}
 
 	private function create_library_item( string $title ): int {
