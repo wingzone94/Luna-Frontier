@@ -139,7 +139,12 @@ final class Node_Library_Prices {
 			$price,
 			array( 'recorded_at' => gmdate( 'Y-m-d H:i:s', $now ?? time() ) )
 		) );
-		return false !== $result ? true : new WP_Error( 'price_write_failed', '価格履歴の保存に失敗しました。' );
+		if ( false === $result ) {
+			return new WP_Error( 'price_write_failed', '価格履歴の保存に失敗しました。' );
+		}
+
+		node_library_delete_detail_cache( $id );
+		return true;
 	}
 
 	/** Current observation, currency-specific minimum, and observed sale starts within one year. */
