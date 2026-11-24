@@ -115,18 +115,25 @@ final class Node_Library_Subscriptions {
 						'left_at'    => null,
 					)
 				);
-				return false !== $inserted ? 'joined' : 'invalid';
+				if ( false === $inserted ) {
+					return 'invalid';
+				}
+				node_library_delete_detail_cache( $item_id );
+				return 'joined';
 			}
 
 			$current_leaving = is_string( $open_row['leaving_at'] ?? null ) && '' !== $open_row['leaving_at'] ? $open_row['leaving_at'] : null;
 			if ( $clean_leaving !== $current_leaving ) {
-				$wpdb->update(
+				$updated = $wpdb->update(
 					$table,
 					array( 'leaving_at' => $clean_leaving ),
 					array( 'id' => (int) $open_row['id'] ),
 					array( null === $clean_leaving ? null : '%s' ),
 					array( '%d' )
 				);
+				if ( $updated ) {
+					node_library_delete_detail_cache( $item_id );
+				}
 				return 'updated_leaving';
 			}
 
@@ -137,7 +144,7 @@ final class Node_Library_Subscriptions {
 			return 'unchanged';
 		}
 
-		$wpdb->query(
+		$updated = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$table} SET left_at = %s WHERE item_id = %d AND service = %s AND left_at IS NULL",
 				$now_utc,
@@ -146,6 +153,9 @@ final class Node_Library_Subscriptions {
 			)
 		);
 
+		if ( $updated ) {
+			node_library_delete_detail_cache( $item_id );
+		}
 		return 'left';
 	}
 
@@ -184,9 +194,13 @@ final class Node_Library_Subscriptions {
 			$stored = Node_Library_Structured_Meta::sanitize( 'subscriptions', $stored );
 		}
 		if ( $stored ) {
-			update_post_meta( $item_id, '_node_library_subscriptions', wp_slash( $stored ) );
+			$changed = update_post_meta( $item_id, '_node_library_subscriptions', wp_slash( $stored ) );
 		} else {
-			delete_post_meta( $item_id, '_node_library_subscriptions' );
+			$changed = delete_post_meta( $item_id, '_node_library_subscriptions' );
+		}
+
+		if ( $changed ) {
+			node_library_delete_detail_cache( $item_id );
 		}
 
 		return $results;

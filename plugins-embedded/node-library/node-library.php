@@ -35,6 +35,22 @@ define(
 define( 'NODE_LIBRARY_BADGE_BASE_URL', NODE_LIBRARY_URL . 'assets/images/' );
 
 /**
+ * Expire the public Library detail URL after a history write.
+ *
+ * WP Super Cache's post-level API also expires the author's archive.
+ */
+function node_library_delete_detail_cache( int $item_id ): void {
+	if ( ! function_exists( 'wpsc_delete_url_cache' ) || $item_id <= 0 || 'node_library' !== get_post_type( $item_id ) || 'publish' !== get_post_status( $item_id ) ) {
+		return;
+	}
+
+	$url = get_permalink( $item_id );
+	if ( $url && untrailingslashit( $url ) !== untrailingslashit( home_url() ) ) {
+		wpsc_delete_url_cache( $url );
+	}
+}
+
+/**
  * 手動タブ分類で選べるカテゴリ（タブ）の一覧。
  *
  * @return array<string,string> value => 表示ラベル

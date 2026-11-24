@@ -16,6 +16,50 @@ class Node_Library_Prices_Test extends WP_UnitTestCase {
 		return array( 'price' => $price, 'list_price' => $list, 'currency' => 'JPY', 'sale_end' => null );
 	}
 
+	public function test_record_succeeds_without_wp_super_cache(): void {
+		$this->assertFalse( function_exists( 'wpsc_delete_url_cache' ) );
+		$id = $this->item();
+		$this->assertTrue( Node_Library_Prices::record( $id, 'microsoft', self::PRODUCT, $this->offer( 0, 500 ) ) );
+		$this->assertSame( '0.0000', Node_Library_Prices::current( $id, 'microsoft' )['price'] );
+	}
+
+	/**
+	 * Keep the test double for the optional plugin out of other WordPress tests.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_only_changed_library_details_expire(): void {
+		$this->set_permalink_structure( '/%postname%/' );
+		$id    = $this->item();
+		$other = $this->item();
+		$urls  = array();
+
+		function wpsc_delete_url_cache( $url ) {
+			do_action( 'node_test_wpsc_delete_url', $url );
+		}
+		add_action(
+			'node_test_wpsc_delete_url',
+			static function ( $url ) use ( &$urls ) {
+				$urls[] = $url;
+			}
+		);
+
+		$offer = $this->offer( 0, 500 );
+		$this->assertTrue( Node_Library_Prices::record( $id, 'microsoft', self::PRODUCT, $offer ) );
+		$this->assertFalse( Node_Library_Prices::record( $id, 'microsoft', self::PRODUCT, $offer ) );
+		$this->assertWPError( Node_Library_Prices::record( $id, 'microsoft', self::PRODUCT, array() ) );
+		$url = get_permalink( $id );
+		$this->assertNotSame( get_permalink( $other ), $url );
+		$this->assertSame( array( $url ), $urls );
+
+		$this->assertSame( 'joined', Node_Library_Subscriptions::observe( $id, 'gamepass', true ) );
+		$this->assertSame( 'unchanged', Node_Library_Subscriptions::observe( $id, 'gamepass', true ) );
+		$this->assertSame( 'updated_leaving', Node_Library_Subscriptions::observe( $id, 'gamepass', true, null, '2030-01-01' ) );
+		$this->assertSame( 'left', Node_Library_Subscriptions::observe( $id, 'gamepass', false ) );
+		$this->assertSame( array_fill( 0, 4, $url ), $urls );
+	}
+
 	public function test_history_only_appends_changes_and_counts_sale_starts(): void {
 		$id = $this->item();
 		$now = time();
