@@ -45,10 +45,11 @@ get_header();
 			)
 		);
 		$game_info = array(
-			'title'   => get_the_title(),
-			'type'    => $library_type,
-			'summary' => $library_summary,
-			'links'   => $library_links,
+			'title'        => get_the_title(),
+			'type'         => $library_type,
+			'summary'      => $library_summary,
+			'links'        => $library_links,
+			'release_date' => trim( (string) get_post_meta( $library_id, '_node_library_release_date', true ) ),
 		);
 		if ( is_callable( array( 'Node_Library_Single_Extensions', 'store_offers' ) ) ) {
 			$game_info['links'] = Node_Library_Single_Extensions::store_offers( $library_id, $library_links );
@@ -93,11 +94,7 @@ get_header();
 					<p><?php esc_html_e( 'ストア情報を表示できません。', 'node' ); ?></p>
 				<?php endif; ?>
 			</section>
-			<?php
-			if ( function_exists( 'node_library_render_spec_table' ) ) {
-				node_library_render_spec_table( (int) $library_id );
-			}
-			?>
+			<?php do_action( 'node_library_single_after_specs', (int) $library_id ); ?>
 
 			<?php do_action( 'node_library_single_after_stores', (int) $library_id ); ?>
 
