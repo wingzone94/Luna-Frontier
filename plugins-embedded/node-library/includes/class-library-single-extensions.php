@@ -511,8 +511,7 @@ final class Node_Library_Single_Extensions {
 			if ( '' === $external_id ) {
 				continue;
 			}
-			$stats   = Node_Library_Prices::stats( $post_id, $store );
-			$current = $stats['current'] ?? null;
+			$current = Node_Library_Prices::current( $post_id, $store );
 			if ( ! is_array( $current ) ) {
 				continue;
 			}
@@ -528,12 +527,13 @@ final class Node_Library_Single_Extensions {
 				'priceCurrency' => $currency,
 			);
 
-			$sale_end = $stats['sale_end'] ?? null;
+			$sale_end = $current['sale_end'] ?? null;
 			if ( is_string( $sale_end ) && '' !== $sale_end ) {
 				$end_ts = strtotime( $sale_end . ' UTC' );
-				if ( false !== $end_ts ) {
-					$offer['priceValidUntil'] = gmdate( 'c', $end_ts );
+				if ( false === $end_ts || $end_ts <= time() ) {
+					continue;
 				}
+				$offer['priceValidUntil'] = gmdate( 'Y-m-d', $end_ts );
 			}
 
 			$url = self::resolve_offer_url( $store, $external_id, $links );
