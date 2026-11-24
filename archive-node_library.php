@@ -84,21 +84,35 @@ if ( ! empty( $archive_library_ids ) ) {
 <main id="primary" class="site-main node-library-archive">
 	<?php node_the_breadcrumbs(); ?>
 
-	<section class="node-library-archive__showcase" aria-labelledby="node-library-title">
-		<div class="node-library-archive__eyebrow">
-			<span class="material-symbols-outlined" data-icon="grid_view" aria-hidden="true"></span>
-			<?php esc_html_e( 'Luna Library', 'node' ); ?>
-		</div>
-		<div class="node-library-archive__heading">
-			<div>
-				<h1 id="node-library-title"><?php echo esc_html( $archive_titles[ $selected_type ] ); ?></h1>
+	<header class="m3-archive-header m3-archive-header--expressive m3-archive-header--library node-library-archive__header" aria-labelledby="node-library-title">
+		<div class="m3-archive-header__glow" aria-hidden="true"></div>
+		<div class="m3-archive-header__inner">
+			<div class="m3-archive-header__hero">
+				<div class="m3-archive-header__icon" aria-hidden="true">
+					<span class="material-symbols-outlined" data-icon="grid_view"></span>
+				</div>
+				<div class="m3-archive-header__copy">
+					<p class="m3-archive-header__eyebrow">
+						<?php esc_html_e( 'Luna Library', 'node' ); ?>
+					</p>
+					<h1 id="node-library-title" class="m3-archive-header__title">
+						<?php echo esc_html( $archive_titles[ $selected_type ] ); ?>
+					</h1>
+					<div class="m3-archive-header__meta">
+						<p class="m3-archive-header__count" aria-label="<?php esc_attr_e( '表示件数', 'node' ); ?>">
+							<span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
+							<?php echo esc_html( sprintf( __( '%s 件の作品', 'node' ), number_format_i18n( (int) $wp_query->found_posts ) ) ); ?>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="m3-archive-header__desc">
 				<p><?php echo esc_html( $archive_descriptions[ $selected_type ] ); ?></p>
 			</div>
-			<div class="node-library-archive__count" aria-label="<?php esc_attr_e( '表示件数', 'node' ); ?>">
-				<span><?php echo esc_html( sprintf( __( '%s件', 'node' ), number_format_i18n( (int) $wp_query->found_posts ) ) ); ?></span>
-			</div>
 		</div>
+	</header>
 
+	<section class="node-library-archive__controls" aria-label="<?php esc_attr_e( '絞り込みと並び替え', 'node' ); ?>">
 		<nav class="node-library-filter" aria-label="<?php esc_attr_e( 'ライブラリの種類で絞り込む', 'node' ); ?>">
 			<?php foreach ( $filter_items as $filter_value => $filter_label ) : ?>
 				<?php
@@ -127,155 +141,16 @@ if ( ! empty( $archive_library_ids ) ) {
 				<?php while ( have_posts() ) : ?>
 					<?php
 					the_post();
-						$library_id    = get_the_ID();
-						$library_type  = get_post_meta( $library_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
-						$library_links = get_post_meta( $library_id, '_node_library_links', true );
-						$store_ids = (array) get_post_meta( $library_id, '_node_library_store_ids', true );
-						$platform_names      = array();
-						$hardware_name_map   = array(
-							'nintendo-switch'   => 'Nintendo Switch',
-							'nintendo-switch-2' => 'Nintendo Switch 2',
-							'playstation-4'     => 'PS4',
-							'playstation-5'     => 'PS5',
-							'playstation-crossgen' => 'PS4・PS5',
-							'xbox-one'          => 'Xbox One',
-							'xbox-series'       => 'Xbox Series X|S',
-							'xbox-crossgen'     => 'Xbox One・Xbox Series X|S',
+					$library_id = (int) get_the_ID();
+					if ( function_exists( 'node_library_render_shelf_card' ) ) {
+						node_library_render_shelf_card(
+							$library_id,
+							array(
+								'article_count' => $library_article_counts[ $library_id ] ?? 0,
+							)
 						);
-						if ( is_array( $library_links ) ) {
-							foreach ( $library_links as $library_link ) {
-								if ( ! is_array( $library_link ) ) {
-									continue;
-								}
-
-								$platform_name = function_exists( 'node_library_public_store_label' )
-									? node_library_public_store_label( $library_link, $store_ids )
-									: trim( (string) ( $library_link['platform'] ?? '' ) );
-								$hardware      = sanitize_key( (string) ( $library_link['hardware'] ?? '' ) );
-								if ( isset( $hardware_name_map[ $hardware ] ) ) {
-									$platform_name = $hardware_name_map[ $hardware ];
-								} else {
-									$platform_key = strtolower( preg_replace( '/[\\s\\/・|]/u', '', $platform_name ) );
-									if ( false !== strpos( $platform_key, 'ps45' ) || ( false !== strpos( $platform_key, 'ps4' ) && false !== strpos( $platform_key, 'ps5' ) ) || ( false !== strpos( $platform_key, 'playstation4' ) && false !== strpos( $platform_key, 'playstation5' ) ) ) {
-										$platform_name = 'PS4・PS5';
-									} elseif ( false !== strpos( $platform_key, 'nintendoswitchnintendoswitch2' ) || false !== strpos( $platform_key, 'switchswitch2' ) ) {
-										$platform_name = 'Nintendo Switch・Nintendo Switch 2';
-									} elseif ( false !== strpos( $platform_key, 'switch2' ) ) {
-										$platform_name = 'Nintendo Switch 2';
-									} elseif ( false !== strpos( $platform_key, 'switch' ) ) {
-										$platform_name = 'Nintendo Switch';
-									} elseif ( false !== strpos( $platform_key, 'xboxone' ) && ( false !== strpos( $platform_key, 'xboxseries' ) || false !== strpos( $platform_key, 'seriesxs' ) ) ) {
-										$platform_name = 'Xbox One・Xbox Series X|S';
-									} elseif ( false !== strpos( $platform_key, 'xboxseries' ) || false !== strpos( $platform_key, 'seriesxs' ) ) {
-										$platform_name = 'Xbox Series X|S';
-									} elseif ( false !== strpos( $platform_key, 'xboxone' ) ) {
-										$platform_name = 'Xbox One';
-									}
-								}
-
-								if ( '' !== $platform_name && ! in_array( $platform_name, $platform_names, true ) ) {
-									$platform_names[] = $platform_name;
-								}
-							}
-						}
-						$visible_platform_names = array_slice( $platform_names, 0, 3 );
-						$hidden_platform_count  = max( 0, count( $platform_names ) - count( $visible_platform_names ) );
-						$app_devices   = array();
-						if ( 'app' === $library_type && is_array( $library_links ) ) {
-							$device_map = array(
-								'windows-pc'  => array( 'key' => 'windows', 'icon' => 'desktop_windows', 'label' => __( 'Windows', 'node' ) ),
-								'mac'         => array( 'key' => 'mac', 'icon' => 'laptop_mac', 'label' => __( 'Mac', 'node' ) ),
-								'iphone-ipad' => array( 'key' => 'mobile', 'icon' => 'smartphone', 'label' => __( 'iPhone・iPad', 'node' ) ),
-								'android'     => array( 'key' => 'mobile', 'icon' => 'smartphone', 'label' => __( 'Android', 'node' ) ),
-								'amazon-fire' => array( 'key' => 'mobile', 'icon' => 'smartphone', 'label' => __( 'Fire タブレット', 'node' ) ),
-							);
-
-							foreach ( $library_links as $library_link ) {
-								if ( ! is_array( $library_link ) ) {
-									continue;
-								}
-
-								$hardware = sanitize_key( (string) ( $library_link['hardware'] ?? '' ) );
-								if ( ! isset( $device_map[ $hardware ] ) ) {
-									$platform = strtolower( (string) ( $library_link['platform'] ?? '' ) );
-									if ( false !== strpos( $platform, 'mac' ) ) {
-										$hardware = 'mac';
-									} elseif ( false !== strpos( $platform, 'windows' ) || ( false !== strpos( $platform, 'microsoft' ) && false === strpos( $platform, 'xbox' ) ) ) {
-										$hardware = 'windows-pc';
-									} elseif ( false !== strpos( $platform, 'android' ) || false !== strpos( $platform, 'google play' ) ) {
-										$hardware = 'android';
-									} elseif ( false !== strpos( $platform, 'amazon' ) ) {
-										$hardware = 'amazon-fire';
-									} elseif ( false !== strpos( $platform, 'ios' ) || false !== strpos( $platform, 'ipad' ) || false !== strpos( $platform, 'iphone' ) || false !== strpos( $platform, 'app store' ) || false !== strpos( $platform, 'apple' ) ) {
-										$hardware = 'iphone-ipad';
-									}
-								}
-
-								if ( isset( $device_map[ $hardware ] ) ) {
-									$device = $device_map[ $hardware ];
-									if ( isset( $app_devices[ $device['key'] ] ) ) {
-										$app_devices[ $device['key'] ]['label'] .= '、' . $device['label'];
-									} else {
-										$app_devices[ $device['key'] ] = $device;
-									}
-								}
-							}
-						}
-						?>
-						<article <?php post_class( 'node-library-shelf-card' ); ?>>
-							<a class="node-library-shelf-card__link node-library-shelf-card__link--main" href="<?php the_permalink(); ?>">
-								<span class="node-library-shelf-card__meta">
-									<span class="node-library-shelf-card__type node-library-shelf-card__type--<?php echo esc_attr( $library_type ); ?>">
-										<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
-										<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
-									</span>
-									<?php if ( ! empty( $app_devices ) ) : ?>
-										<span class="node-library-shelf-card__devices" role="img" aria-label="<?php echo esc_attr( implode( '、', wp_list_pluck( $app_devices, 'label' ) ) ); ?>">
-											<?php foreach ( $app_devices as $app_device ) : ?>
-												<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $app_device['icon'] ); ?>" aria-hidden="true"></span>
-											<?php endforeach; ?>
-										</span>
-									<?php endif; ?>
-								</span>
-								<h2><?php the_title(); ?></h2>
-								<?php if ( get_post_meta( $library_id, '_node_library_summary', true ) ) : ?>
-									<p><?php echo esc_html( wp_trim_words( (string) get_post_meta( $library_id, '_node_library_summary', true ), 42 ) ); ?></p>
-								<?php endif; ?>
-							</a>
-							<?php if ( ! empty( $visible_platform_names ) ) : ?>
-								<?php if ( $hidden_platform_count > 0 ) : ?>
-									<details class="node-library-shelf-card__platform-details">
-										<summary aria-label="<?php esc_attr_e( '対応プラットフォームをすべて表示', 'node' ); ?>">
-											<span class="node-library-shelf-card__platforms">
-												<?php foreach ( $visible_platform_names as $platform_name ) : ?>
-													<span class="node-library-shelf-card__platform-pill"><?php echo esc_html( $platform_name ); ?></span>
-												<?php endforeach; ?>
-												<span class="node-library-shelf-card__platform-pill node-library-shelf-card__platform-pill--more">+<?php echo esc_html( $hidden_platform_count ); ?></span>
-											</span>
-										</summary>
-										<span class="node-library-shelf-card__platforms node-library-shelf-card__platforms--expanded">
-											<?php foreach ( array_slice( $platform_names, count( $visible_platform_names ) ) as $platform_name ) : ?>
-												<span class="node-library-shelf-card__platform-pill"><?php echo esc_html( $platform_name ); ?></span>
-											<?php endforeach; ?>
-										</span>
-									</details>
-								<?php else : ?>
-									<span class="node-library-shelf-card__platforms" aria-label="<?php esc_attr_e( '対応プラットフォーム', 'node' ); ?>">
-										<?php foreach ( $visible_platform_names as $platform_name ) : ?>
-											<span class="node-library-shelf-card__platform-pill"><?php echo esc_html( $platform_name ); ?></span>
-										<?php endforeach; ?>
-									</span>
-								<?php endif; ?>
-							<?php endif; ?>
-							<a class="node-library-shelf-card__link node-library-shelf-card__link--footer" href="<?php the_permalink(); ?>">
-								<span class="node-library-shelf-card__footer">
-									<span class="node-library-shelf-card__stats">
-										<span><span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span><?php echo esc_html( sprintf( __( '記事 %s件', 'node' ), number_format_i18n( $library_article_counts[ $library_id ] ?? 0 ) ) ); ?></span>
-									</span>
-									<span class="node-library-shelf-card__action"><?php esc_html_e( '詳細を見る', 'node' ); ?><span class="material-symbols-outlined" data-icon="arrow_forward" aria-hidden="true"></span></span>
-							</span>
-						</a>
-					</article>
+					}
+					?>
 				<?php endwhile; ?>
 			</div>
 		<?php else : ?>
