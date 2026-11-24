@@ -168,7 +168,12 @@ final class Node_Library_Prices {
 		$where = $wpdb->prepare( 'item_id=%d AND store=%s AND external_id=%s', $id, $store, $ids[ $store ] );
 		$currency = $current['currency'] ?: $wpdb->get_var( "SELECT currency FROM $table WHERE $where AND price IS NOT NULL ORDER BY recorded_at DESC,id DESC LIMIT 1" );
 		if ( $currency ) {
-			$stats['lowest'] = $wpdb->get_var( $wpdb->prepare( "SELECT MIN(price) FROM $table WHERE $where AND currency=%s", $currency ) );
+			$stats['lowest'] = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT MIN(price) FROM $table WHERE $where AND currency=%s AND price IS NOT NULL AND list_price IS NOT NULL AND price < list_price",
+					$currency
+				)
+			);
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', $now - YEAR_IN_SECONDS );
 		$previous = $wpdb->get_row( $wpdb->prepare( "SELECT price,list_price,currency,sale_end FROM $table WHERE $where AND recorded_at<%s ORDER BY recorded_at DESC,id DESC LIMIT 1", $cutoff ), ARRAY_A );

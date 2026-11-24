@@ -166,6 +166,11 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 			$now - ( 30 * DAY_IN_SECONDS )
 		);
 
+		ob_start();
+		do_action( 'node_library_single_after_specs', $item_id );
+		$regular_only_html = (string) ob_get_clean();
+		$this->assertStringNotContainsString( '過去最安値', $regular_only_html );
+
 		// Current lowest sale price with future end date.
 		$sale_end_utc = gmdate( 'Y-m-d H:i:s', $now + ( 3 * DAY_IN_SECONDS ) );
 		Node_Library_Prices::record(
@@ -355,8 +360,8 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Offer', $data['offers']['@type'] ?? '' );
 		$this->assertSame( '2980', $data['offers']['price'] ?? '' );
 		$this->assertSame( 'JPY', $data['offers']['priceCurrency'] ?? '' );
-		$this->assertSame( 'https://schema.org/InStock', $data['offers']['availability'] ?? '' );
-		$this->assertSame( gmdate( 'c', strtotime( $end_utc . ' UTC' ) ), $data['offers']['priceValidUntil'] ?? '' );
+		$this->assertArrayNotHasKey( 'availability', $data['offers'] );
+		$this->assertSame( wp_date( 'Y-m-d', strtotime( $end_utc . ' UTC' ), new DateTimeZone( 'Asia/Tokyo' ) ), $data['offers']['priceValidUntil'] ?? '' );
 		$this->assertSame( 'https://www.xbox.com/ja-JP/games/store/-/9JSONLD00001', $data['offers']['url'] ?? '' );
 
 		ob_start();
@@ -364,6 +369,115 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$html = (string) ob_get_clean();
 		$this->assertSame( 1, substr_count( $html, '</script>' ) );
 		$this->assertStringContainsString( '"price":"2980"', $html );
+	}
+
+	public function test_expired_sale_does_not_publish_an_offer_without_a_new_observation(): void {
+		$item_id = $this->create_library_item( 'Expired sale' );
+		$product = '9JSONLD00001';
+		update_post_meta( $item_id, '_node_library_store_ids', array( 'microsoft' => $product ) );
+		$offer = array(
+			'price'      => 100,
+			'list_price' => 200,
+			'currency'   => 'JPY',
+			'sale_end'   => gmdate( 'c', time() - DAY_IN_SECONDS ),
+		);
+		$this->assertTrue( Node_Library_Prices::record( $item_id, 'microsoft', $product, $offer, time() - 2 * DAY_IN_SECONDS ) );
+		$this->assertArrayNotHasKey( 'offers', node_library_get_product_jsonld( $item_id ) );
+	}
+
+	public function test_nintendo_offer_links_to_registered_product(): void {
+		$id = $this->create_library_item( 'Nintendo offer' );
+		$product = '70010000000026';
+		update_post_meta( $id, '_node_library_store_ids', array( 'nintendo' => $product ) );
+		update_post_meta( $id, '_node_library_links', array( array( 'url' => 'https://example.org/?ref=' . $product ) ) );
+		$this->assertTrue( Node_Library_Prices::record( $id, 'nintendo', $product, array( 'price' => 0, 'list_price' => 0, 'currency' => 'JPY' ) ) );
+		$data = node_library_get_product_jsonld( $id );
+		$this->assertSame( '0', $data['offers']['price'] );
+		$this->assertSame( 'https://store-jp.nintendo.com/item/software/D' . $product, $data['offers']['url'] );
+	}
+
+	public function test_store_card_states_sale_subscription_upcoming_and_warning_gate(): void {
+		$item_id = $this->create_library_item( 'Store Card States' );
+		update_post_meta(
+			$item_id,
+			'_node_library_store_ids',
+			array(
+				'microsoft' => '9STORECARD01',
+				'steam'     => '555001',
+				'nintendo'  => '70010000000025',
+			)
+		);
+		update_post_meta( $item_id, '_node_library_subscriptions', array( 'gamepass' => true ) );
+
+		$recorded_at = strtotime( '2026-11-22 16:00 UTC' );
+		Node_Library_Prices::record(
+			$item_id,
+			'microsoft',
+			'9STORECARD01',
+			array(
+				'currency'   => 'JPY',
+				'price'      => 2400,
+				'list_price' => 4800,
+			),
+			$recorded_at
+		);
+
+		$offers = Node_Library_Single_Extensions::store_offers(
+			$item_id,
+			array(
+				array(
+					'platform' => 'Nintendo Switch',
+					'url'      => 'https://store-jp.nintendo.com/item/software/D70010000000025',
+					'hardware' => 'nintendo-switch',
+				),
+				array(
+					'platform' => 'Steam',
+					'url'      => 'https://store.steampowered.com/app/555001/',
+				),
+			)
+		);
+
+		$game_info = array(
+			'title'               => 'Store Card States',
+			'links'               => $offers,
+			'subscription_badges' => array( 'gamepass' => 'Xbox / PC Game Pass' ),
+			'release_date'        => '2024-01-01',
+		);
+
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$html = (string) ob_get_clean();
+
+		// Microsoft card: sale price, list price, discount badge, inline subscription badge, no official badge img.
+		$this->assertStringContainsString( 'node-library-store-card--microsoft', $html );
+		$this->assertStringContainsString( '¥2,400', $html );
+		$this->assertStringContainsString( '¥4,800', $html );
+		$this->assertStringContainsString( '-50%', $html );
+		$this->assertStringContainsString( 'node-library-store-card__sub-badge', $html );
+		$this->assertStringContainsString( 'Xbox / PC Game Pass', $html );
+		$this->assertStringNotContainsString( 'microsoft-store-badge-ja.svg', $html );
+
+		// Steam card (unpriced): unpriced status pill + CTA, no raw store ID, no Steam embed toggle on detail view.
+		$this->assertStringContainsString( 'node-library-store-card--steam', $html );
+		$this->assertStringContainsString( '価格未登録', $html );
+		$this->assertStringContainsString( 'ストアで見る', $html );
+		$this->assertStringNotContainsString( 'node-library-steam-control', $html );
+		$this->assertStringNotContainsString( 'node-library-steam-panel', $html );
+		$this->assertStringNotContainsString( '9STORECARD01', wp_strip_all_tags( $html ) );
+
+		// Nintendo card: warning gate + aria-describedby.
+		$this->assertStringContainsString( 'node-library-store-card--nintendo', $html );
+		$this->assertStringContainsString( 'data-node-library-platform-warning', $html );
+		$this->assertStringContainsString( 'aria-describedby="node-library-warning-', $html );
+		$this->assertStringContainsString( 'このソフトはSwitch専用ソフトです。', $html );
+
+		// Upcoming release state when release_date is in the future and unpriced.
+		$game_info['release_date'] = '2099-12-31';
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$upcoming_html = (string) ob_get_clean();
+		$this->assertStringContainsString( '発売前', $upcoming_html );
+		$this->assertStringContainsString( 'node-library-store-card__status--upcoming', $upcoming_html );
 	}
 
 	private function create_library_item( string $title ): int {
