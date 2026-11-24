@@ -526,7 +526,6 @@ final class Node_Library_Single_Extensions {
 				'@type'         => 'Offer',
 				'price'         => self::format_jsonld_price( (string) $raw_price, $currency ),
 				'priceCurrency' => $currency,
-				'availability'  => 'https://schema.org/InStock',
 			);
 
 			$sale_end = $stats['sale_end'] ?? null;

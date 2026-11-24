@@ -355,7 +355,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Offer', $data['offers']['@type'] ?? '' );
 		$this->assertSame( '2980', $data['offers']['price'] ?? '' );
 		$this->assertSame( 'JPY', $data['offers']['priceCurrency'] ?? '' );
-		$this->assertSame( 'https://schema.org/InStock', $data['offers']['availability'] ?? '' );
+		$this->assertArrayNotHasKey( 'availability', $data['offers'] );
 		$this->assertSame( gmdate( 'c', strtotime( $end_utc . ' UTC' ) ), $data['offers']['priceValidUntil'] ?? '' );
 		$this->assertSame( 'https://www.xbox.com/ja-JP/games/store/-/9JSONLD00001', $data['offers']['url'] ?? '' );
 
