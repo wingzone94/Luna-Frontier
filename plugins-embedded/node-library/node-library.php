@@ -2064,6 +2064,442 @@ function node_library_public_store_label( array $link, array $store_ids ): strin
 }
 
 /**
+ * Resolve unified store brand, chip label, display name, and subscription badges
+ * matching the #127 store card specification.
+ *
+ * @param array<string, mixed> $link                Stored link entry.
+ * @param array<string, mixed> $store_ids           Registered store IDs map.
+ * @param array<string, string> $subscription_badges Active subscription labels keyed by service.
+ * @return array{brand_slug:string,chip_text:string,store_name:string,platform_slug:string,subscriptions:array<string,string>,dedupe_key:string}
+ */
+function node_library_resolve_store_chip( array $link, array $store_ids = [], array $subscription_badges = [] ): array {
+	$platform = node_library_public_store_label( $link, $store_ids );
+	$url      = (string) ( $link['url'] ?? '' );
+	$hardware = (string) ( $link['hardware'] ?? 'auto' );
+	$host     = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+	$cat_store = (string) ( $link['catalogue_store'] ?? '' );
+
+	if ( '' === $cat_store && '' !== $url && class_exists( 'Node_Library_Store_ID_Migration' ) ) {
+		$extracted = Node_Library_Store_ID_Migration::extract( $url );
+		if ( ! empty( $extracted['store'] ) ) {
+			$cat_store = (string) $extracted['store'];
+		}
+	}
+
+	$platform_slug = '';
+	if ( in_array( $hardware, [ 'nintendo-switch', 'nintendo-switch-2' ], true ) ) {
+		$platform_slug = 'nintendo';
+	} elseif ( in_array( $hardware, [ 'playstation-4', 'playstation-5', 'playstation-crossgen' ], true ) ) {
+		$platform_slug = 'playstation';
+	} elseif ( in_array( $hardware, [ 'xbox-one', 'xbox-series', 'xbox-crossgen' ], true ) ) {
+		$platform_slug = 'xbox';
+	} elseif ( 'amazon-fire' === $hardware ) {
+		$platform_slug = 'amazon';
+	} elseif ( 'iphone-ipad' === $hardware ) {
+		$platform_slug = 'ios';
+	} elseif ( 'android' === $hardware ) {
+		$platform_slug = 'android';
+	} elseif ( 'windows-pc' === $hardware ) {
+		$platform_slug = 'windows';
+	} elseif ( 'mac' === $hardware ) {
+		$platform_slug = 'mac';
+	} else {
+		if ( stripos( $platform, 'switch' ) !== false || stripos( $platform, 'nintendo' ) !== false ) {
+			$platform_slug = 'nintendo';
+		} elseif ( stripos( $platform, 'amazon' ) !== false ) {
+			$platform_slug = 'amazon';
+		} elseif ( stripos( $platform, 'playstation' ) !== false || preg_match( '/(^|\s)ps(\s+store|[345](\s|$))/i', $platform ) ) {
+			$platform_slug = 'playstation';
+		} elseif ( stripos( $platform, 'xbox' ) !== false ) {
+			$platform_slug = 'xbox';
+		} elseif ( stripos( $platform, 'steam' ) !== false ) {
+			$platform_slug = 'steam';
+		} elseif ( stripos( $platform, 'mac' ) !== false ) {
+			$platform_slug = 'mac';
+		} elseif ( stripos( $platform, 'ios' ) !== false || stripos( $platform, 'apple' ) !== false || stripos( $platform, 'app store' ) !== false ) {
+			$platform_slug = 'ios';
+		} elseif ( stripos( $platform, 'android' ) !== false || stripos( $platform, 'google' ) !== false ) {
+			$platform_slug = 'android';
+		} elseif ( stripos( $platform, 'microsoft' ) !== false && stripos( $platform, 'xbox' ) === false ) {
+			$platform_slug = 'windows';
+		} elseif ( stripos( $platform, 'windows' ) !== false || stripos( $platform, 'pc' ) !== false ) {
+			$platform_slug = 'windows';
+		} elseif ( stripos( $platform, 'geforce' ) !== false ) {
+			$platform_slug = 'geforcenow';
+		} else {
+			$platform_slug = strtolower( str_replace( ' ', '', $platform ) );
+		}
+	}
+
+	if ( 'steam' === $cat_store || false !== stripos( $platform, 'steam' ) || false !== strpos( $host, 'steampowered.com' ) ) {
+		$platform_slug = 'steam';
+	} elseif ( 'nintendo' === $cat_store || false !== strpos( $host, 'nintendo.' ) ) {
+		$platform_slug = 'nintendo';
+	} elseif ( 'ps' === $cat_store || false !== strpos( $host, 'playstation.com' ) ) {
+		$platform_slug = 'playstation';
+	}
+
+	$store_name = $platform;
+	if ( 'nintendo' === $platform_slug ) {
+		$store_name = 'Nintendo Store';
+	} elseif ( 'xbox' === $platform_slug ) {
+		$store_name = 'Microsoft Store（Xbox）';
+	} elseif ( 'windows' === $platform_slug && ( 'microsoft' === $cat_store || false !== stripos( $platform, 'microsoft' ) || false !== strpos( $host, 'microsoft.com' ) || false !== strpos( $host, 'xbox.com' ) ) ) {
+		$store_name = 'Microsoft Store';
+	} elseif ( 'playstation' === $platform_slug ) {
+		$store_name = 'PS Store';
+	} elseif ( 'steam' === $platform_slug ) {
+		$store_name = 'Steam';
+	} elseif ( 'amazon' === $platform_slug ) {
+		$store_name = 'amazon_asin' === $cat_store ? 'Amazon' : 'Amazon App Store';
+	} elseif ( 'ios' === $platform_slug ) {
+		$store_name = 'App Store';
+	} elseif ( 'android' === $platform_slug ) {
+		$store_name = 'Google Play';
+	}
+
+	if ( 'microsoft' === $cat_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
+		$brand_slug = 'microsoft';
+		$chip_text  = 'xbox' === $platform_slug ? 'X' : 'M';
+	} elseif ( 'ps' === $cat_store || 'playstation' === $platform_slug ) {
+		$brand_slug = 'playstation';
+		$chip_text  = 'PS';
+	} elseif ( 'steam' === $cat_store || 'steam' === $platform_slug ) {
+		$brand_slug = 'steam';
+		$chip_text  = 'S';
+	} elseif ( 'nintendo' === $cat_store || 'nintendo' === $platform_slug ) {
+		$brand_slug = 'nintendo';
+		$chip_text  = 'N';
+	} elseif ( 'epic' === $cat_store || false !== stripos( $platform, 'epic' ) || false !== strpos( $host, 'epicgames.com' ) ) {
+		$brand_slug = 'epic';
+		$chip_text  = 'E';
+		$store_name = 'Epic Games';
+	} elseif ( 'gog' === $cat_store || false !== stripos( $platform, 'gog' ) || false !== strpos( $host, 'gog.com' ) ) {
+		$brand_slug = 'gog';
+		$chip_text  = 'GOG';
+		$store_name = 'GOG';
+	} else {
+		$brand_slug = 'default';
+		$initial    = mb_strtoupper( mb_substr( trim( $store_name ), 0, 1 ) );
+		$chip_text  = '' !== $initial ? $initial : 'S';
+	}
+
+	$card_subs = [];
+	foreach ( $subscription_badges as $sub_key => $sub_label ) {
+		$matches_store = match ( (string) $sub_key ) {
+			'gamepass'     => 'microsoft' === $brand_slug,
+			'psplus'       => 'playstation' === $brand_slug,
+			'nso'          => 'nintendo' === $brand_slug,
+			'apple_arcade' => in_array( $platform_slug, [ 'ios', 'mac' ], true ) || 'apple' === $cat_store,
+			default        => false,
+		};
+		if ( $matches_store ) {
+			$card_subs[ $sub_key ] = $sub_label;
+		}
+	}
+
+	return [
+		'brand_slug'    => $brand_slug,
+		'chip_text'     => $chip_text,
+		'store_name'    => $store_name,
+		'platform_slug' => $platform_slug,
+		'subscriptions' => $card_subs,
+		'dedupe_key'    => $brand_slug . ':' . $store_name,
+	];
+}
+
+/**
+ * Collect deduplicated store chips for a library item.
+ *
+ * @param int $post_id Library item ID.
+ * @return array<int, array{brand_slug:string,chip_text:string,store_name:string,platform_slug:string,subscriptions:array<string,string>,dedupe_key:string}>
+ */
+function node_library_get_store_chips( int $post_id ): array {
+	$links     = get_post_meta( $post_id, '_node_library_links', true );
+	$links     = is_array( $links ) ? $links : [];
+	$store_ids = (array) get_post_meta( $post_id, '_node_library_store_ids', true );
+
+	$sub_flags = (array) get_post_meta( $post_id, '_node_library_subscriptions', true );
+	$sub_defs  = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : [];
+	$sub_badges = array_intersect_key( $sub_defs, array_filter( $sub_flags ) );
+
+	if ( is_callable( [ 'Node_Library_Single_Extensions', 'store_offers' ] ) ) {
+		$links = Node_Library_Single_Extensions::store_offers( $post_id, $links );
+	}
+
+	$chips = [];
+	$seen  = [];
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) || empty( $link['url'] ) ) {
+			continue;
+		}
+		$chip = node_library_resolve_store_chip( $link, $store_ids, $sub_badges );
+		if ( isset( $seen[ $chip['dedupe_key'] ] ) ) {
+			continue;
+		}
+		$seen[ $chip['dedupe_key'] ] = true;
+		$chips[]                     = $chip;
+	}
+
+	return $chips;
+}
+
+/**
+ * Extract deduplicated hardware / platform labels for a library item's detail header.
+ *
+ * @param int $post_id Library item ID.
+ * @return string[]
+ */
+function node_library_get_hardware_chips( int $post_id ): array {
+	$links = get_post_meta( $post_id, '_node_library_links', true );
+	if ( ! is_array( $links ) ) {
+		return [];
+	}
+
+	$hardware_map = [
+		'nintendo-switch'      => 'Nintendo Switch',
+		'nintendo-switch-2'    => 'Nintendo Switch 2',
+		'playstation-4'        => 'PS4',
+		'playstation-5'        => 'PS5',
+		'playstation-crossgen' => 'PS4・PS5',
+		'xbox-one'             => 'Xbox One',
+		'xbox-series'          => 'Xbox Series X|S',
+		'xbox-crossgen'        => 'Xbox One・Xbox Series X|S',
+		'windows-pc'           => 'Windows PC',
+		'mac'                  => 'Mac',
+		'iphone-ipad'          => 'iPhone / iPad',
+		'android'              => 'Android',
+		'amazon-fire'          => 'Fire タブレット',
+	];
+
+	$labels = [];
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) ) {
+			continue;
+		}
+		$hardware = sanitize_key( (string) ( $link['hardware'] ?? '' ) );
+		if ( isset( $hardware_map[ $hardware ] ) ) {
+			$label = $hardware_map[ $hardware ];
+		} else {
+			$platform = strtolower( (string) ( $link['platform'] ?? '' ) );
+			$label    = '';
+			if ( false !== strpos( $platform, 'switch 2' ) ) {
+				$label = 'Nintendo Switch 2';
+			} elseif ( false !== strpos( $platform, 'switch' ) ) {
+				$label = 'Nintendo Switch';
+			} elseif ( false !== strpos( $platform, 'ps5' ) ) {
+				$label = 'PS5';
+			} elseif ( false !== strpos( $platform, 'ps4' ) ) {
+				$label = 'PS4';
+			} elseif ( false !== strpos( $platform, 'xbox series' ) ) {
+				$label = 'Xbox Series X|S';
+			} elseif ( false !== strpos( $platform, 'xbox one' ) ) {
+				$label = 'Xbox One';
+			} elseif ( false !== strpos( $platform, 'steam' ) || false !== strpos( $platform, 'windows' ) || false !== strpos( $platform, 'pc' ) ) {
+				$label = 'Windows PC';
+			} elseif ( false !== strpos( $platform, 'mac' ) ) {
+				$label = 'Mac';
+			} elseif ( false !== strpos( $platform, 'ios' ) || false !== strpos( $platform, 'iphone' ) || false !== strpos( $platform, 'ipad' ) || false !== strpos( $platform, 'app store' ) ) {
+				$label = 'iPhone / iPad';
+			} elseif ( false !== strpos( $platform, 'android' ) || false !== strpos( $platform, 'google play' ) ) {
+				$label = 'Android';
+			}
+		}
+
+		if ( '' !== $label && ! in_array( $label, $labels, true ) ) {
+			$labels[] = $label;
+		}
+	}
+
+	return $labels;
+}
+
+/**
+ * Render unified key-visual or navy (#1B2A4A) placeholder for a library item.
+ *
+ * @param int    $post_id     Library item ID.
+ * @param string $type        Item type ('game' or 'app').
+ * @param string $extra_class Optional extra CSS class on the frame.
+ */
+function node_library_render_visual( int $post_id, string $type = '', string $extra_class = '' ): void {
+	if ( '' === $type ) {
+		$type = get_post_meta( $post_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	}
+	$title     = get_the_title( $post_id );
+	$initial   = mb_strtoupper( mb_substr( trim( wp_strip_all_tags( $title ) ), 0, 1 ) );
+	$icon_name = 'app' === $type ? 'smartphone' : 'sports_esports';
+	$has_image = has_post_thumbnail( $post_id );
+	$frame_cls = trim( 'node-library-visual ' . $extra_class . ( $has_image ? ' node-library-visual--has-image' : ' node-library-visual--placeholder' ) );
+	?>
+	<div class="<?php echo esc_attr( $frame_cls ); ?>"<?php echo $has_image ? '' : ' aria-hidden="true"'; ?>>
+		<?php if ( $has_image ) : ?>
+			<?php
+			echo get_the_post_thumbnail(
+				$post_id,
+				'medium_large',
+				[
+					'class'    => 'node-library-visual__image',
+					'alt'      => '',
+					'loading'  => 'lazy',
+					'decoding' => 'async',
+				]
+			);
+			?>
+		<?php else : ?>
+			<div class="node-library-visual__placeholder">
+				<span class="material-symbols-outlined node-library-visual__icon" data-icon="<?php echo esc_attr( $icon_name ); ?>" aria-hidden="true"></span>
+				<?php if ( '' !== $initial ) : ?>
+					<span class="node-library-visual__initial"><?php echo esc_html( $initial ); ?></span>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
+ * Render unified library card used across the archive and single-page relations.
+ *
+ * @param int                  $library_id Library item ID.
+ * @param array<string, mixed> $args       Optional display args (article_count, relation_badge).
+ */
+function node_library_render_shelf_card( int $library_id, array $args = [] ): void {
+	$library_type   = get_post_meta( $library_id, '_node_library_type', true ) === 'app' ? 'app' : 'game';
+	$type_label     = 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' );
+	$type_icon      = 'app' === $library_type ? 'smartphone' : 'sports_esports';
+	$summary        = trim( (string) get_post_meta( $library_id, '_node_library_summary', true ) );
+	$has_summary    = '' !== $summary;
+	$excerpt_text   = $has_summary ? $summary : __( '作品の概要や対応ストアの詳細は詳細ページで確認できます。', 'node' );
+	$store_chips    = node_library_get_store_chips( $library_id );
+	$visible_stores = array_slice( $store_chips, 0, 3 );
+	$hidden_stores  = max( 0, count( $store_chips ) - count( $visible_stores ) );
+	$article_count  = isset( $args['article_count'] ) ? (int) $args['article_count'] : null;
+	$relation_badge = isset( $args['relation_badge'] ) ? trim( (string) $args['relation_badge'] ) : '';
+	$permalink      = get_permalink( $library_id );
+	$title          = get_the_title( $library_id );
+	$heading_tag    = ( isset( $args['heading_tag'] ) && 'h3' === $args['heading_tag'] ) ? 'h3' : 'h2';
+	?>
+	<article <?php post_class( 'node-library-shelf-card', $library_id ); ?>>
+		<?php node_library_render_visual( $library_id, $library_type, 'node-library-shelf-card__media' ); ?>
+		<div class="node-library-shelf-card__body">
+			<div class="node-library-shelf-card__meta">
+				<span class="node-library-shelf-card__type node-library-shelf-card__type--<?php echo esc_attr( $library_type ); ?>">
+					<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $type_icon ); ?>" aria-hidden="true"></span>
+					<?php echo esc_html( $type_label ); ?>
+				</span>
+				<?php if ( '' !== $relation_badge ) : ?>
+					<span class="node-library-shelf-card__relation-badge"><?php echo esc_html( $relation_badge ); ?></span>
+				<?php endif; ?>
+			</div>
+			<<?php echo $heading_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> class="node-library-shelf-card__title">
+				<a class="node-library-shelf-card__title-link" href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
+			</<?php echo $heading_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+			<p class="node-library-shelf-card__excerpt<?php echo $has_summary ? '' : ' is-fallback'; ?>"><?php echo esc_html( $excerpt_text ); ?></p>
+			<div class="node-library-shelf-card__stores" aria-label="<?php esc_attr_e( '対応ストア', 'node' ); ?>">
+				<?php if ( ! empty( $visible_stores ) ) : ?>
+					<?php foreach ( $visible_stores as $chip ) : ?>
+						<span class="node-library-store-pill">
+							<span class="node-library-store-pill__chip node-library-store-card__chip--<?php echo esc_attr( $chip['brand_slug'] ); ?>" aria-hidden="true"><?php echo esc_html( $chip['chip_text'] ); ?></span>
+							<span class="node-library-store-pill__name"><?php echo esc_html( $chip['store_name'] ); ?></span>
+							<?php if ( ! empty( $chip['subscriptions'] ) ) : ?>
+								<?php foreach ( $chip['subscriptions'] as $sub_label ) : ?>
+									<span class="node-library-store-pill__sub"><?php echo esc_html( $sub_label ); ?></span>
+								<?php endforeach; ?>
+							<?php endif; ?>
+						</span>
+					<?php endforeach; ?>
+					<?php if ( $hidden_stores > 0 ) : ?>
+						<span class="node-library-store-pill node-library-store-pill--more">+<?php echo esc_html( (string) $hidden_stores ); ?></span>
+					<?php endif; ?>
+				<?php else : ?>
+					<span class="node-library-store-pill node-library-store-pill--empty"><?php esc_html_e( 'ストア情報なし', 'node' ); ?></span>
+				<?php endif; ?>
+			</div>
+			<div class="node-library-shelf-card__footer">
+				<span class="node-library-shelf-card__stats">
+					<?php if ( null !== $article_count ) : ?>
+						<span><span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span><?php echo esc_html( sprintf( __( '記事 %s件', 'node' ), number_format_i18n( $article_count ) ) ); ?></span>
+					<?php else : ?>
+						<span><span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $type_icon ); ?>" aria-hidden="true"></span><?php echo esc_html( $type_label ); ?></span>
+					<?php endif; ?>
+				</span>
+				<span class="node-library-shelf-card__action" aria-hidden="true"><?php esc_html_e( '詳細を見る', 'node' ); ?><span class="material-symbols-outlined" data-icon="arrow_forward"></span></span>
+			</div>
+		</div>
+	</article>
+	<?php
+}
+
+/**
+ * Render an article card matching the unified Library shelf-card style.
+ *
+ * @param WP_Post $article     Article post object.
+ * @param string  $heading_tag Heading tag ('h2' or 'h3').
+ */
+function node_library_render_article_card( WP_Post $article, string $heading_tag = 'h3' ): void {
+	$article_id   = (int) $article->ID;
+	$heading_tag  = 'h2' === $heading_tag ? 'h2' : 'h3';
+	$permalink    = get_permalink( $article_id );
+	$title        = get_the_title( $article_id );
+	$categories   = get_the_category( $article_id );
+	$cat_label    = ! empty( $categories ) && isset( $categories[0]->name ) ? (string) $categories[0]->name : __( '記事', 'node' );
+	$raw_excerpt  = has_excerpt( $article_id ) ? (string) get_the_excerpt( $article_id ) : wp_strip_all_tags( (string) $article->post_content );
+	$raw_excerpt  = trim( preg_replace( '/\s+/u', ' ', $raw_excerpt ) );
+	$has_excerpt  = '' !== $raw_excerpt;
+	$excerpt_text = $has_excerpt ? $raw_excerpt : __( '記事の詳細は本文ページで確認できます。', 'node' );
+	$has_image    = has_post_thumbnail( $article_id );
+	$initial      = mb_strtoupper( mb_substr( trim( wp_strip_all_tags( $title ) ), 0, 1 ) );
+	?>
+	<article <?php post_class( 'node-library-shelf-card node-library-shelf-card--article', $article_id ); ?>>
+		<div class="node-library-visual node-library-shelf-card__media<?php echo $has_image ? ' node-library-visual--has-image' : ' node-library-visual--placeholder'; ?>"<?php echo $has_image ? '' : ' aria-hidden="true"'; ?>>
+			<?php if ( $has_image ) : ?>
+				<?php
+				echo get_the_post_thumbnail(
+					$article_id,
+					'medium_large',
+					[
+						'class'    => 'node-library-visual__image',
+						'alt'      => '',
+						'loading'  => 'lazy',
+						'decoding' => 'async',
+					]
+				);
+				?>
+			<?php else : ?>
+				<div class="node-library-visual__placeholder">
+					<span class="material-symbols-outlined node-library-visual__icon" data-icon="article" aria-hidden="true"></span>
+					<?php if ( '' !== $initial ) : ?>
+						<span class="node-library-visual__initial"><?php echo esc_html( $initial ); ?></span>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
+		</div>
+		<div class="node-library-shelf-card__body">
+			<div class="node-library-shelf-card__meta">
+				<span class="node-library-shelf-card__type">
+					<span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
+					<?php echo esc_html( $cat_label ); ?>
+				</span>
+			</div>
+			<<?php echo $heading_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> class="node-library-shelf-card__title">
+				<a class="node-library-shelf-card__title-link" href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
+			</<?php echo $heading_tag; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+			<p class="node-library-shelf-card__excerpt<?php echo $has_excerpt ? '' : ' is-fallback'; ?>"><?php echo esc_html( $excerpt_text ); ?></p>
+			<div class="node-library-shelf-card__footer">
+				<span class="node-library-shelf-card__stats">
+					<time datetime="<?php echo esc_attr( get_the_date( 'c', $article_id ) ); ?>">
+						<span class="material-symbols-outlined" data-icon="calendar_today" aria-hidden="true"></span>
+						<?php echo esc_html( get_the_date( '', $article_id ) ); ?>
+					</time>
+				</span>
+				<span class="node-library-shelf-card__action" aria-hidden="true"><?php esc_html_e( '記事を読む', 'node' ); ?><span class="material-symbols-outlined" data-icon="arrow_forward"></span></span>
+			</div>
+		</div>
+	</article>
+	<?php
+}
+
+/**
  * JSON-LD 用の入手先。
  *
  * @return array<int, array{platform:string,url:string}>

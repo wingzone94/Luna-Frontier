@@ -75,15 +75,52 @@ get_header();
 			}
 			?>
 			<header class="node-library-single__hero">
-				<div class="node-library-single__type node-library-single__type--<?php echo esc_attr( $library_type ); ?>">
-					<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
-					<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
+				<div class="node-library-single__hero-grid">
+					<?php
+					if ( function_exists( 'node_library_render_visual' ) ) {
+						node_library_render_visual( (int) $library_id, $library_type, 'node-library-single__media' );
+					}
+					$hardware_chips = function_exists( 'node_library_get_hardware_chips' )
+						? node_library_get_hardware_chips( (int) $library_id )
+						: array();
+					$published_iso = get_the_date( 'c', $library_id );
+					$modified_info = function_exists( 'node_get_post_modified_display' )
+						? node_get_post_modified_display( $library_id )
+						: null;
+					?>
+					<div class="node-library-single__hero-body">
+						<div class="node-library-single__type node-library-single__type--<?php echo esc_attr( $library_type ); ?>">
+							<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
+							<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
+						</div>
+						<h1><?php the_title(); ?></h1>
+						<?php if ( ! empty( $hardware_chips ) ) : ?>
+							<ul class="node-library-single__platforms" aria-label="<?php esc_attr_e( '対応機種', 'node' ); ?>">
+								<?php foreach ( $hardware_chips as $hardware_label ) : ?>
+									<li class="node-library-single__platform-chip"><?php echo esc_html( $hardware_label ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+						<?php if ( '' !== trim( $library_summary ) ) : ?>
+							<p class="node-library-single__summary"><?php echo esc_html( $library_summary ); ?></p>
+						<?php endif; ?>
+						<div class="lf-article-header__meta node-library-single__dates">
+							<time class="lf-meta__item" datetime="<?php echo esc_attr( $published_iso ); ?>">
+								<span class="material-symbols-outlined lf-meta__icon" data-icon="calendar_today" aria-hidden="true"></span>
+								<span><?php esc_html_e( '公開日', 'node' ); ?>: <?php echo esc_html( get_the_date( '', $library_id ) ); ?></span>
+							</time>
+							<?php if ( is_array( $modified_info ) && ! empty( $modified_info['display'] ) ) : ?>
+								<time class="lf-meta__item" datetime="<?php echo esc_attr( (string) $modified_info['datetime'] ); ?>">
+									<span class="material-symbols-outlined lf-meta__icon" data-icon="update" aria-hidden="true"></span>
+									<span><?php esc_html_e( '更新日', 'node' ); ?>: <?php echo esc_html( (string) $modified_info['display'] ); ?></span>
+								</time>
+							<?php endif; ?>
+						</div>
+					</div>
 				</div>
-				<h1><?php the_title(); ?></h1>
-				<?php if ( $library_summary ) : ?><p><?php echo esc_html( $library_summary ); ?></p><?php endif; ?>
 			</header>
 
-			<section class="node-library-single__stores" aria-labelledby="node-library-stores-title">
+			<section class="node-library-single__stores node-library-single__section" aria-labelledby="node-library-stores-title">
 				<div class="node-library-single__section-heading">
 					<span class="material-symbols-outlined" data-icon="shopping_bag" aria-hidden="true"></span>
 					<h2 id="node-library-stores-title"><?php esc_html_e( '入手先', 'node' ); ?></h2>
@@ -99,42 +136,42 @@ get_header();
 			<?php do_action( 'node_library_single_after_stores', (int) $library_id ); ?>
 
 			<?php if ( ! empty( $linked_article_posts ) ) : ?>
-				<section class="node-library-single__articles" aria-labelledby="node-library-articles-title">
-					<header class="m3-date-group__header">
-						<span class="m3-date-group__icon" aria-hidden="true"><span class="material-symbols-outlined" data-icon="article"></span></span>
-							<h2 class="m3-date-group__title" id="node-library-articles-title"><?php echo esc_html( $linked_articles_title ); ?></h2>
-						<span class="m3-date-group__count"><?php echo esc_html( number_format_i18n( count( $linked_article_posts ) ) ); ?><?php esc_html_e( '件', 'node' ); ?></span>
-					</header>
-					<div class="node-library-single__article-list">
-						<div class="m3-date-group__items">
+				<section class="node-library-single__articles node-library-single__section" aria-labelledby="node-library-articles-title">
+					<div class="node-library-single__section-heading">
+						<span class="material-symbols-outlined" data-icon="article" aria-hidden="true"></span>
+						<h2 id="node-library-articles-title"><?php echo esc_html( $linked_articles_title ); ?></h2>
+						<span class="node-library-single__section-count"><?php echo esc_html( sprintf( __( '%s件', 'node' ), number_format_i18n( count( $linked_article_posts ) ) ) ); ?></span>
+					</div>
+					<div class="node-library-archive__grid node-library-single__card-grid">
 						<?php foreach ( $visible_linked_article_posts as $linked_article ) : ?>
-							<a class="m3-date-item" href="<?php echo esc_url( get_permalink( $linked_article ) ); ?>">
-								<span class="m3-date-item__body"><span class="m3-date-item__title"><?php echo esc_html( get_the_title( $linked_article ) ); ?></span></span>
-								<span class="material-symbols-outlined m3-date-item__chevron" data-icon="chevron_right" aria-hidden="true"></span>
-							</a>
-							<?php endforeach; ?>
+							<?php
+							if ( function_exists( 'node_library_render_article_card' ) ) {
+								node_library_render_article_card( $linked_article, 'h3' );
+							}
+							?>
+						<?php endforeach; ?>
+					</div>
+					<?php if ( ! empty( $more_linked_article_posts ) ) : ?>
+						<details class="node-library-single__more">
+							<summary>
+								<span class="node-library-single__more-label node-library-single__more-label--closed"><?php echo esc_html( sprintf( __( 'さらに%1$s件の記事を表示', 'node' ), number_format_i18n( count( $more_linked_article_posts ) ) ) ); ?></span>
+								<span class="node-library-single__more-label node-library-single__more-label--open"><?php esc_html_e( '追加の記事を閉じる', 'node' ); ?></span>
+								<span class="material-symbols-outlined node-library-single__more-icon" data-icon="expand_more" aria-hidden="true"></span>
+							</summary>
+							<div class="node-library-single__more-panel">
+								<div class="node-library-archive__grid node-library-single__card-grid">
+									<?php foreach ( $more_linked_article_posts as $linked_article ) : ?>
+										<?php
+										if ( function_exists( 'node_library_render_article_card' ) ) {
+											node_library_render_article_card( $linked_article, 'h3' );
+										}
+										?>
+									<?php endforeach; ?>
+								</div>
 							</div>
-							<?php if ( ! empty( $more_linked_article_posts ) ) : ?>
-								<details class="node-library-single__more">
-									<summary>
-										<span class="node-library-single__more-label node-library-single__more-label--closed"><?php echo esc_html( sprintf( __( 'さらに%1$s件の記事を表示', 'node' ), number_format_i18n( count( $more_linked_article_posts ) ) ) ); ?></span>
-										<span class="node-library-single__more-label node-library-single__more-label--open"><?php esc_html_e( '追加の記事を閉じる', 'node' ); ?></span>
-										<span class="material-symbols-outlined node-library-single__more-icon" data-icon="expand_more" aria-hidden="true"></span>
-									</summary>
-									<div class="node-library-single__more-panel">
-										<div class="m3-date-group__items">
-										<?php foreach ( $more_linked_article_posts as $linked_article ) : ?>
-											<a class="m3-date-item" href="<?php echo esc_url( get_permalink( $linked_article ) ); ?>">
-											<span class="m3-date-item__body"><span class="m3-date-item__title"><?php echo esc_html( get_the_title( $linked_article ) ); ?></span></span>
-											<span class="material-symbols-outlined m3-date-item__chevron" data-icon="chevron_right" aria-hidden="true"></span>
-											</a>
-										<?php endforeach; ?>
-										</div>
-									</div>
-								</details>
-							<?php endif; ?>
-						</div>
-					</section>
+						</details>
+					<?php endif; ?>
+				</section>
 			<?php endif; ?>
 			<?php do_action( 'node_library_single_after_articles', (int) $library_id ); ?>
 
