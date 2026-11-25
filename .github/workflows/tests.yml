@@ -187,5 +187,5 @@ jobs:
         run: bun x playwright install --with-deps chromium
       - name: Build frontend
         run: bun run build
-      - name: Check search, view controls and enlarged text
-        run: node --test scripts/search-accessibility.test.mjs scripts/search-open-focus.test.mjs scripts/list-text-reflow.test.mjs scripts/view-mode-accessibility.test.mjs scripts/view-mode-suggest.test.mjs
+      - name: Check search, view controls, enlarged text and the CERO warning
+        run: node --test scripts/search-accessibility.test.mjs scripts/search-open-focus.test.mjs scripts/list-text-reflow.test.mjs scripts/view-mode-accessibility.test.mjs scripts/view-mode-suggest.test.mjs scripts/cero-warning-layout.test.mjs
