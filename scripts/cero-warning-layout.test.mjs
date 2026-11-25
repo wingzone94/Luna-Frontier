@@ -8,9 +8,9 @@ const fixture = `<!doctype html><html lang="ja"><body class="lf-theme single sin
 <main class="site-main article-view"><article class="m3-article">
 <aside class="m3-article__cero-warning" aria-labelledby="warning">
 <h2 class="m3-article__cero-warning-title" id="warning"><span class="material-symbols-outlined" data-icon="warning" aria-hidden="true"></span>年齢制限に関する注意事項</h2>
-<p>この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。</p>
+<p>この記事で扱うゲームには、CERO Z（18歳以上のみ対象）のタイトルが含まれます。</p>
 <p>対象タイトル：<strong>${'UnbrokenGameTitle'.repeat(16)}、二つ目のタイトル</strong></p>
-<p class="m3-article__cero-warning-note">（日本のCEROレーティングに基づく警告です）</p>
+<p class="m3-article__cero-warning-note">レーティングは日本版のCERO区分に基づきます</p>
 </aside></article></main></body></html>`;
 
 test('CERO warning keeps long titles readable in both themes and across viewport sizes', async () => {
@@ -65,7 +65,7 @@ test('CERO warning sits directly below article header and above body in 2-column
 <header class="lf-article-header"><h1 class="lf-article-header__title">Sample Article</h1></header>
 <aside class="m3-article__cero-warning" aria-labelledby="warning">
 <h2 class="m3-article__cero-warning-title" id="warning">年齢制限に関する注意事項</h2>
-<p>この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。</p>
+<p>この記事で扱うゲームには、CERO Z（18歳以上のみ対象）のタイトルが含まれます。</p>
 </aside>
 <aside class="lf-reading-aside" style="min-height: 420px;">Reading Aside / TOC</aside>
 <div class="m3-article__body"><p>Article body content.</p></div>

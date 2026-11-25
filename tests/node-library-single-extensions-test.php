@@ -369,7 +369,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		node_library_render_cero_warning( $article_id );
 		$warning = (string) ob_get_clean();
-		$this->assertStringContainsString( 'CERO Z（18歳以上対象）', $warning );
+		$this->assertStringContainsString( 'CERO Z（18歳以上のみ対象）', $warning );
 		$this->assertStringNotContainsString( '対象タイトル', $warning );
 	}
 
@@ -396,7 +396,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$warning = (string) ob_get_clean();
 
 		$this->assertStringContainsString( '対象タイトル：<strong>Linked Game、Card &amp; Game</strong>', $warning );
-		$this->assertStringContainsString( '（日本のCEROレーティングに基づく警告です）', $warning );
+		$this->assertStringContainsString( 'レーティングは日本版のCERO区分に基づきます', $warning );
 		$this->assertStringNotContainsString( 'Rated App', $warning );
 		$this->assertStringNotContainsString( 'Unrated Game', $warning );
 		$this->assertNotContains( 'レーティング', array_column( node_library_get_spec_rows( $app_id ), 'label' ) );
