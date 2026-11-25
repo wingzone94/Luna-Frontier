@@ -122,6 +122,7 @@ if ( ! function_exists( 'node_get_icon_font_names' ) ) {
 			'send',
 			'sentiment_dissatisfied',
 			'share',
+			'shelves',
 			'shopping_bag',
 			'shopping_cart',
 			'smartphone',
