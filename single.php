@@ -17,6 +17,11 @@ get_header();
         <article id="post-<?php the_ID(); ?>" <?php post_class('m3-article'); ?> data-m3-multipage="<?php echo esc_attr( (string) $current_multipage ); ?>">
             <?php node_print_the_header(); ?>
             <?php get_template_part( 'template-parts/single/hero' ); ?>
+            <?php
+            if ( function_exists( 'node_library_render_cero_warning' ) ) {
+                node_library_render_cero_warning( get_the_ID() );
+            }
+            ?>
 
             <?php
             $ai_summary = get_post_meta( get_the_ID(), '_node_ai_summary', true );

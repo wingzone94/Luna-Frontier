@@ -22,6 +22,7 @@ get_header();
 			$library_summary = (string) get_post_meta( $library_id, '_node_library_summary', true );
 		$library_links   = get_post_meta( $library_id, '_node_library_links', true );
 		$library_links   = is_array( $library_links ) ? $library_links : array();
+		$cero_rating     = function_exists( 'node_library_cero_rating' ) ? node_library_cero_rating( $library_id ) : '';
 		$library_url     = get_post_type_archive_link( 'node_library' );
 		$linked_articles = new WP_Query(
 			array(
@@ -33,6 +34,10 @@ get_header();
 					'relation' => 'OR',
 					array(
 						'key'   => '_node_linked_library_id',
+						'value' => (string) $library_id,
+					),
+					array(
+						'key'   => '_node_linked_library_second_id',
 						'value' => (string) $library_id,
 					),
 					array(
@@ -79,6 +84,14 @@ get_header();
 					<span class="material-symbols-outlined" data-icon="<?php echo 'app' === $library_type ? 'smartphone' : 'sports_esports'; ?>" aria-hidden="true"></span>
 					<?php echo esc_html( 'app' === $library_type ? __( 'アプリ', 'node' ) : __( 'ゲーム', 'node' ) ); ?>
 				</div>
+				<?php if ( '' !== $cero_rating ) : ?>
+					<span class="node-library-single__type node-library-single__rating">
+						<?php
+						/* translators: %s: CERO rating. */
+						echo esc_html( sprintf( __( 'CERO %s', 'node' ), $cero_rating ) );
+						?>
+					</span>
+				<?php endif; ?>
 				<h1><?php the_title(); ?></h1>
 				<?php if ( $library_summary ) : ?><p><?php echo esc_html( $library_summary ); ?></p><?php endif; ?>
 			</header>

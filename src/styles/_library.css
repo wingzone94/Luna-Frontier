@@ -652,6 +652,12 @@
 	margin-bottom: 20px;
 }
 
+.node-library-single__rating {
+	margin-inline-start: var(--m3-spacing-xs);
+	background: var(--md-sys-color-surface-container-high);
+	color: var(--md-sys-color-on-surface);
+}
+
 .node-library-single__meta {
 	margin-top: 24px;
 	color: var(--md-sys-color-on-surface-variant);

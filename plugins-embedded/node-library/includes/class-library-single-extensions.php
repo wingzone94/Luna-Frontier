@@ -444,6 +444,10 @@ final class Node_Library_Single_Extensions {
 				'value' => (string) $rid,
 			);
 			$meta_clauses[] = array(
+				'key'   => '_node_linked_library_second_id',
+				'value' => (string) $rid,
+			);
+			$meta_clauses[] = array(
 				'key'   => '_node_library_card_reference',
 				'value' => (string) $rid,
 			);
@@ -801,6 +805,10 @@ final class Node_Library_Single_Extensions {
 					'relation' => 'OR',
 					array(
 						'key'   => '_node_linked_library_id',
+						'value' => (string) $post_id,
+					),
+					array(
+						'key'   => '_node_linked_library_second_id',
 						'value' => (string) $post_id,
 					),
 					array(
