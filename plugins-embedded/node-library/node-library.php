@@ -51,6 +51,63 @@ function node_library_delete_detail_cache( int $item_id ): void {
 }
 
 /**
+ * Read the two explicit article links in display order.
+ *
+ * @return int[]
+ */
+function node_library_linked_item_ids( int $post_id ): array {
+	$ids = [
+		(int) get_post_meta( $post_id, '_node_linked_library_id', true ),
+		(int) get_post_meta( $post_id, '_node_linked_library_second_id', true ),
+	];
+
+	return array_values( array_unique( array_filter( $ids, static fn( $id ) => $id > 0 ) ) );
+}
+
+/** Read the existing catalogue CERO rating, if set. */
+function node_library_cero_rating( int $item_id ): string {
+	$rating = Node_Library_Structured_Meta::sanitize( 'rating', get_post_meta( $item_id, '_node_library_rating', true ) );
+
+	return $rating['cero'] ?? '';
+}
+
+/** Render the article warning independently of the existing age-confirmation dialog. */
+function node_library_render_cero_warning( int $post_id ): void {
+	$mode = get_post_meta( $post_id, '_node_library_cero_warning', true );
+	if ( 'hide' === $mode ) {
+		return;
+	}
+
+	$titles = [];
+	$has_cero_z = false;
+	foreach ( node_library_linked_item_ids( $post_id ) as $item_id ) {
+		$item = get_post( $item_id );
+		if ( ! $item || 'node_library' !== $item->post_type || 'publish' !== $item->post_status || '' !== $item->post_password || 'Z' !== node_library_cero_rating( $item_id ) ) {
+			continue;
+		}
+		$has_cero_z = true;
+		if ( '' !== trim( $item->post_title ) ) {
+			$titles[] = $item->post_title;
+		}
+	}
+
+	if ( ! $has_cero_z && 'show' !== $mode ) {
+		return;
+	}
+	?>
+	<p class="m3-article__cero-warning">
+		<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。', 'node-library' ); ?>
+		<?php if ( $titles ) : ?>
+			<?php
+			/* translators: %s: CERO Z game titles. */
+			echo esc_html( sprintf( __( '対象タイトル：%s', 'node-library' ), implode( '、', $titles ) ) );
+			?>
+		<?php endif; ?>
+	</p>
+	<?php
+}
+
+/**
  * 手動タブ分類で選べるカテゴリ（タブ）の一覧。
  *
  * @return array<string,string> value => 表示ラベル
@@ -1174,6 +1231,7 @@ final class Node_Library {
 			紐付けると、記事フッター（タグの下）にゲーム・アプリカードが<strong>自動表示</strong>されます。<br>
 			本文の任意位置に入れたい場合は、ブロック追加 → <strong>Luna</strong> カテゴリ →「ライブラリカード」を使ってください。
 		</p>
+		<label for="node-linked-library-select"><?php esc_html_e( '1件目', 'node-library' ); ?></label>
 		<select name="node_linked_library_id" id="node-linked-library-select" style="width:100%; margin-top:8px;">
 			<option value="">— 連携しない —</option>
 			<?php foreach ( $libraries as $lib ) :
@@ -1193,6 +1251,26 @@ final class Node_Library {
 			<strong>選択中の紹介文:</strong>
 			<span id="node-library-metabox-preview-text"><?php echo esc_html( $preview_summary ? wp_trim_words( $preview_summary, 40 ) : '（紹介文なし）' ); ?></span>
 		</div>
+		<p>
+			<label for="node-linked-library-second-select"><?php esc_html_e( '2件目（任意）', 'node-library' ); ?></label>
+			<select name="node_linked_library_second_id" id="node-linked-library-second-select" aria-describedby="node-linked-library-second-help" style="width:100%;">
+				<option value=""><?php esc_html_e( '— 連携しない —', 'node-library' ); ?></option>
+				<?php $second_id = (int) get_post_meta( $post->ID, '_node_linked_library_second_id', true ); ?>
+				<?php foreach ( $libraries as $lib ) : ?>
+					<option value="<?php echo esc_attr( (string) $lib->ID ); ?>" <?php selected( $second_id, $lib->ID ); ?>><?php echo esc_html( $lib->post_title ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<span class="description" id="node-linked-library-second-help"><?php esc_html_e( '項目を選ぶと追加されます。削除するには「連携しない」を選んで投稿を更新してください。', 'node-library' ); ?></span>
+		</p>
+		<p>
+			<label for="node-library-cero-warning"><?php esc_html_e( '記事のCERO Z警告バー', 'node-library' ); ?></label>
+			<select name="node_library_cero_warning" id="node-library-cero-warning" style="width:100%;">
+				<?php $warning = get_post_meta( $post->ID, '_node_library_cero_warning', true ); ?>
+				<option value="" <?php selected( $warning, '' ); ?>><?php esc_html_e( '自動（紐付けた項目のCEROで判定）', 'node-library' ); ?></option>
+				<option value="show" <?php selected( $warning, 'show' ); ?>><?php esc_html_e( '強制表示', 'node-library' ); ?></option>
+				<option value="hide" <?php selected( $warning, 'hide' ); ?>><?php esc_html_e( '強制非表示', 'node-library' ); ?></option>
+			</select>
+		</p>
 		<div class="node-library-metabox-links">
 			<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=node_library' ) ); ?>">ライブラリ一覧</a>
 			<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=node_library' ) ); ?>">新規項目を追加</a>
@@ -1228,10 +1306,33 @@ final class Node_Library {
 			}
 		}
 
-		if ( isset( $_POST['node_post_library_nonce'] ) && wp_verify_nonce( $_POST['node_post_library_nonce'], 'node_post_library_save' ) ) {
-			if ( isset( $_POST['node_linked_library_id'] ) ) {
-				update_post_meta( $post_id, '_node_linked_library_id', sanitize_text_field( $_POST['node_linked_library_id'] ) );
+		if ( 'post' !== get_post_type( $post_id ) || wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		$nonce = $_POST['node_post_library_nonce'] ?? '';
+		if ( ! is_string( $nonce ) || ! wp_verify_nonce( wp_unslash( $nonce ), 'node_post_library_save' ) ) {
+			return;
+		}
+
+		foreach ( [ 'node_linked_library_id', 'node_linked_library_second_id' ] as $field ) {
+			$value = $_POST[ $field ] ?? null;
+			if ( '' === $value ) {
+				delete_post_meta( $post_id, '_' . $field );
+			} elseif ( is_string( $value ) && ctype_digit( $value ) && (int) $value > 0 && 'node_library' === get_post_type( (int) $value ) ) {
+				update_post_meta( $post_id, '_' . $field, (int) $value );
 			}
+		}
+		$first_id  = (int) get_post_meta( $post_id, '_node_linked_library_id', true );
+		$second_id = (int) get_post_meta( $post_id, '_node_linked_library_second_id', true );
+		if ( $first_id > 0 && $first_id === $second_id ) {
+			delete_post_meta( $post_id, '_node_linked_library_second_id' );
+		}
+
+		$warning = $_POST['node_library_cero_warning'] ?? null;
+		if ( '' === $warning ) {
+			delete_post_meta( $post_id, '_node_library_cero_warning' );
+		} elseif ( in_array( $warning, [ 'show', 'hide' ], true ) ) {
+			update_post_meta( $post_id, '_node_library_cero_warning', $warning );
 		}
 	}
 
@@ -1500,8 +1601,8 @@ final class Node_Library {
 			return;
 		}
 
-		$lib_id = get_post_meta( $post_id, '_node_linked_library_id', true );
-		if ( empty( $lib_id ) ) {
+		$library_ids = node_library_linked_item_ids( $post_id );
+		if ( ! $library_ids ) {
 			$game_info = get_post_meta( $post_id, '_node_game_info', true );
 			if ( is_array( $game_info ) && ! empty( $game_info['title'] ) ) {
 				include NODE_LIBRARY_DIR . 'templates/card-library.php';
@@ -1509,17 +1610,21 @@ final class Node_Library {
 			return;
 		}
 
-		$lib_post = get_post( $lib_id );
-		if ( ! $lib_post || $lib_post->post_type !== 'node_library' ) return;
+		foreach ( $library_ids as $lib_id ) {
+			$lib_post = get_post( $lib_id );
+			if ( ! $lib_post || 'node_library' !== $lib_post->post_type || 'publish' !== $lib_post->post_status || '' !== $lib_post->post_password ) {
+				continue;
+			}
 
-		$game_info = [
-			'title'   => $lib_post->post_title,
-			'type'    => get_post_meta( $lib_id, '_node_library_type', true ) ?: 'game',
-			'summary' => get_post_meta( $lib_id, '_node_library_summary', true ),
-			'links'   => get_post_meta( $lib_id, '_node_library_links', true ),
-		];
+			$game_info = [
+				'title'   => $lib_post->post_title,
+				'type'    => get_post_meta( $lib_id, '_node_library_type', true ) ?: 'game',
+				'summary' => get_post_meta( $lib_id, '_node_library_summary', true ),
+				'links'   => get_post_meta( $lib_id, '_node_library_links', true ),
+			];
 
-		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+			include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		}
 	}
 
 }

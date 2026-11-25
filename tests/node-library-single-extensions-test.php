@@ -310,7 +310,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 				'post_title'  => 'Shared Base and DLC Review',
 			)
 		);
-		update_post_meta( $shared_article, '_node_linked_library_id', (string) $base_id );
+		update_post_meta( $shared_article, '_node_linked_library_second_id', (string) $base_id );
 		update_post_meta( $shared_article, '_node_library_card_reference', (string) $dlc_id );
 
 		// Article linked only to DLC -> must appear in related-edition articles section.
@@ -321,7 +321,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 				'post_title'  => 'DLC Exclusive Walkthrough',
 			)
 		);
-		update_post_meta( $dlc_article, '_node_linked_library_id', (string) $dlc_id );
+		update_post_meta( $dlc_article, '_node_linked_library_second_id', (string) $dlc_id );
 
 		ob_start();
 		do_action( 'node_library_single_after_articles', $base_id );
@@ -331,6 +331,46 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'DLC Exclusive Walkthrough', $html );
 		$this->assertStringNotContainsString( 'Shared Base and DLC Review', $html );
 		$this->assertStringContainsString( 'data-icon="article"', $html );
+	}
+
+	public function test_article_warning_and_footer_read_both_link_slots(): void {
+		$first_id   = $this->create_library_item( 'First Library Game' );
+		$second_id  = $this->create_library_item( 'Second & Rated Game' );
+		$article_id = self::factory()->post->create();
+		update_post_meta( $first_id, '_node_library_rating', array( 'cero' => 'A' ) );
+		update_post_meta( $second_id, '_node_library_rating', array( 'cero' => 'Z' ) );
+		update_post_meta( $article_id, '_node_linked_library_id', $first_id );
+
+		$this->assertSame( array( $first_id ), node_library_linked_item_ids( $article_id ) );
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$this->assertSame( '', ob_get_clean() );
+
+		update_post_meta( $article_id, '_node_linked_library_second_id', $second_id );
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$warning = (string) ob_get_clean();
+		$this->assertStringContainsString( 'Second &amp; Rated Game', $warning );
+		$this->assertStringNotContainsString( 'First Library Game', $warning );
+
+		ob_start();
+		Node_Library::instance()->render_library_card_on_post( $article_id );
+		$footer = (string) ob_get_clean();
+		$this->assertStringContainsString( 'First Library Game', $footer );
+		$this->assertStringContainsString( 'Second &amp; Rated Game', $footer );
+
+		update_post_meta( $article_id, '_node_library_cero_warning', 'hide' );
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$this->assertSame( '', ob_get_clean() );
+
+		delete_post_meta( $article_id, '_node_linked_library_second_id' );
+		update_post_meta( $article_id, '_node_library_cero_warning', 'show' );
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$warning = (string) ob_get_clean();
+		$this->assertStringContainsString( 'CERO Z（18歳以上対象）', $warning );
+		$this->assertStringNotContainsString( '対象タイトル', $warning );
 	}
 
 	public function test_jsonld_offers_generated_from_l3_prices_and_escaped_safely(): void {
