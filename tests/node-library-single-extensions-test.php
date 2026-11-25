@@ -373,6 +373,52 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '対象タイトル', $warning );
 	}
 
+	public function test_enabled_category_warns_without_library_links(): void {
+		$category_id = self::factory()->category->create( array( 'name' => 'Grand Theft Auto VI' ) );
+		$article_id  = self::factory()->post->create( array( 'post_category' => array( $category_id ) ) );
+		update_term_meta( $category_id, '_node_library_cero_warning', '1' );
+
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$warning = (string) ob_get_clean();
+		$this->assertStringContainsString( 'm3-article__cero-warning', $warning );
+		$this->assertStringContainsString( '対象タイトル：Grand Theft Auto VI', $warning );
+	}
+
+	public function test_force_hide_overrides_enabled_category(): void {
+		$category_id = self::factory()->category->create();
+		$article_id  = self::factory()->post->create( array( 'post_category' => array( $category_id ) ) );
+		update_term_meta( $category_id, '_node_library_cero_warning', '1' );
+		update_post_meta( $article_id, '_node_library_cero_warning', 'hide' );
+
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	public function test_category_off_preserves_linked_warning_and_library_titles_take_priority(): void {
+		$category_id = self::factory()->category->create( array( 'name' => 'Game Category' ) );
+		$article_id  = self::factory()->post->create( array( 'post_category' => array( $category_id ) ) );
+
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$this->assertSame( '', ob_get_clean() );
+
+		$item_id = $this->create_library_item( 'Rated Library Game' );
+		update_post_meta( $item_id, '_node_library_rating', array( 'cero' => 'Z' ) );
+		update_post_meta( $article_id, '_node_linked_library_id', $item_id );
+
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$warning = (string) ob_get_clean();
+		$this->assertStringContainsString( '対象タイトル：Rated Library Game', $warning );
+
+		update_term_meta( $category_id, '_node_library_cero_warning', '1' );
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$this->assertSame( $warning, ob_get_clean() );
+	}
+
 	public function test_jsonld_offers_generated_from_l3_prices_and_escaped_safely(): void {
 		$no_price_id = $this->create_library_item( 'Unpriced JSONLD' );
 		$no_price_ld = node_library_get_product_jsonld( $no_price_id );

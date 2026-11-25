@@ -71,6 +71,38 @@ function node_library_cero_rating( int $item_id ): string {
 	return $rating['cero'] ?? '';
 }
 
+/** Render the warning option on the category edit screen. */
+function node_library_category_cero_warning_field( WP_Term $category ): void {
+	?>
+	<tr class="form-field">
+		<th scope="row"><?php esc_html_e( 'CERO Z警告バー', 'node-library' ); ?></th>
+		<td>
+			<?php wp_nonce_field( 'node_library_category_cero_warning_' . $category->term_id, 'node_library_category_cero_warning_nonce', false ); ?>
+			<label>
+				<input type="checkbox" id="node-library-category-cero-warning" name="node_library_category_cero_warning" value="1" <?php checked( '1', get_term_meta( $category->term_id, '_node_library_cero_warning', true ) ); ?>>
+				<?php esc_html_e( 'このカテゴリの記事にCERO Z警告バーを表示する', 'node-library' ); ?>
+			</label>
+		</td>
+	</tr>
+	<?php
+}
+add_action( 'category_edit_form_fields', 'node_library_category_cero_warning_field' );
+
+/** Save the warning option when the category edit form is submitted. */
+function node_library_save_category_cero_warning( int $term_id ): void {
+	$nonce = $_POST['node_library_category_cero_warning_nonce'] ?? '';
+	if ( ! current_user_can( 'edit_term', $term_id ) || ! is_string( $nonce ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $nonce ) ), 'node_library_category_cero_warning_' . $term_id ) ) {
+		return;
+	}
+
+	if ( '1' === ( $_POST['node_library_category_cero_warning'] ?? '' ) ) {
+		update_term_meta( $term_id, '_node_library_cero_warning', '1' );
+	} else {
+		delete_term_meta( $term_id, '_node_library_cero_warning' );
+	}
+}
+add_action( 'edited_category', 'node_library_save_category_cero_warning' );
+
 /** Render the article warning independently of the existing age-confirmation dialog. */
 function node_library_render_cero_warning( int $post_id ): void {
 	$mode = get_post_meta( $post_id, '_node_library_cero_warning', true );
@@ -91,7 +123,15 @@ function node_library_render_cero_warning( int $post_id ): void {
 		}
 	}
 
-	if ( ! $has_cero_z && 'show' !== $mode ) {
+	if ( ! $has_cero_z ) {
+		foreach ( get_the_category( $post_id ) as $category ) {
+			if ( '1' === get_term_meta( $category->term_id, '_node_library_cero_warning', true ) ) {
+				$titles[] = $category->name;
+			}
+		}
+	}
+
+	if ( ! $has_cero_z && ! $titles && 'show' !== $mode ) {
 		return;
 	}
 	?>
@@ -99,7 +139,7 @@ function node_library_render_cero_warning( int $post_id ): void {
 		<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。', 'node-library' ); ?>
 		<?php if ( $titles ) : ?>
 			<?php
-			/* translators: %s: CERO Z game titles. */
+			/* translators: %s: CERO Z game titles or category names. */
 			echo esc_html( sprintf( __( '対象タイトル：%s', 'node-library' ), implode( '、', $titles ) ) );
 			?>
 		<?php endif; ?>
