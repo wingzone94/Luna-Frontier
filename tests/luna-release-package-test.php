@@ -24,6 +24,12 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 		return is_string( $value ) ? $value : '';
 	}
 
+	private function library_version(): string {
+		$headers = get_file_data( $this->repo_dir() . '/plugins-embedded/node-library/node-library.php', array( 'version' => 'Version' ) );
+		$this->assertMatchesRegularExpression( '/^\d+\.\d+\.\d+$/', $headers['version'] );
+		return $headers['version'];
+	}
+
 	public function test_preview_zip_has_expected_root_and_metadata(): void {
 		$this->assertFileExists(
 			$this->theme_zip(),
@@ -47,7 +53,8 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 
 		$style = $this->contents( $this->theme_zip(), self::THEME_ROOT . 'style.css' );
 		$this->assertSame( 1, preg_match( '/^Version:\s*(\S+)/m', $style, $version_match ) );
-		$this->assertSame( '2.0.4', $version_match[1] );
+		$headers = get_file_data( $this->repo_dir() . '/style.css', array( 'version' => 'Version' ) );
+		$this->assertSame( $headers['version'], $version_match[1] );
 		$build = json_decode( $this->contents( $this->theme_zip(), self::THEME_ROOT . 'build.json' ), true );
 		$this->assertIsArray( $build );
 		$this->assertSame( $version_match[1], (string) ( $build['version'] ?? '' ) );
@@ -85,7 +92,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 				continue;
 			}
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( $header, 0, 1200 ), $name );
-			$expected_version = str_contains( $name, '/luna-interactive/' ) ? '1.5.0' : ( str_contains( $name, '/node-library/' ) ? '1.7.0' : ( str_contains( $name, '/node-ai-tools/' ) ? '1.6.0' : '1.4.0' ) );
+			$expected_version = str_contains( $name, '/luna-interactive/' ) ? '1.5.0' : ( str_contains( $name, '/node-library/' ) ? $this->library_version() : ( str_contains( $name, '/node-ai-tools/' ) ? '1.6.0' : '1.4.0' ) );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( $header, 0, 1200 ), $name );
 			$found++;
 		}
@@ -112,7 +119,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 			$this->assertSame( [ pathinfo( $archive, PATHINFO_FILENAME ) => true ], $roots, basename( $archive ) . ' のZIPルート/slug' );
 			$this->assertNotNull( $main, basename( $archive ) . ' のメインファイル' );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
-			$expected_version = 'node-library.zip' === basename( $archive ) ? '1.7.0' : ( 'node-ai-tools.zip' === basename( $archive ) ? '1.6.0' : '1.4.0' );
+			$expected_version = 'node-library.zip' === basename( $archive ) ? $this->library_version() : ( 'node-ai-tools.zip' === basename( $archive ) ? '1.6.0' : '1.4.0' );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
 		}
 	}
@@ -123,6 +130,7 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 		$this->assertTrue( true === $zip->open( $this->theme_zip() ) );
 		$required = [
 			'inc/image-repair.php',
+			'plugins-embedded/node-library/includes/class-luna-release.php',
 			'inc/image-repair-admin.php',
 			'assets/js/image-repair.js',
 			'plugins-embedded/node-image-compressor/includes/class-webp-converter.php',

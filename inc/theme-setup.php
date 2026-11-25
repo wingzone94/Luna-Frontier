@@ -686,3 +686,31 @@ function node_swap_theme_update_directory( $filesystem, string $source_dir, stri
 	node_release_theme_update_lock( $filesystem, $theme_dir );
 	return true;
 }
+
+/** Provide the Luna release package to the WordPress theme upgrader. */
+function luna_frontier_wordpress_update( $update, array $theme_data, string $stylesheet ) {
+	if ( 'luna-frontier' !== $stylesheet ) {
+		return false;
+	}
+
+	require_once dirname( __DIR__ ) . '/plugins-embedded/node-library/includes/class-luna-release.php';
+
+	if ( Luna_GitHub_Release::REPOSITORY !== ( $theme_data['UpdateURI'] ?? null ) || empty( $theme_data['Version'] ) ) {
+		return false;
+	}
+
+	$release = Luna_GitHub_Release::latest();
+	$version = Luna_GitHub_Release::theme_version( $release['tag_name'] ?? null );
+	$package = Luna_GitHub_Release::asset_url( $release, 'luna.zip' );
+	if ( null === $version || null === $package || ! version_compare( $version, $theme_data['Version'], '>' ) ) {
+		return false;
+	}
+
+	return array(
+		'theme'   => $stylesheet,
+		'version' => $version,
+		'url'     => Luna_GitHub_Release::REPOSITORY . '/releases/tag/' . $release['tag_name'],
+		'package' => $package,
+	);
+}
+add_filter( 'update_themes_github.com', 'luna_frontier_wordpress_update', 10, 3 );

@@ -31,15 +31,16 @@ Theme URI: https://luminous-core.net/
 Author: Luminous Core Teams
 Author URI: https://luminous-core.net/
 Description: Luna Frontier for Luminous Core. Independent theme descended from Node 1.x. Not a child theme.
-Version: 2.0.4
+Version: 2.0.5
+Update URI: https://github.com/wingzone94/Luna-Frontier
 Text Domain: node
 */
 ```
 
 - `Theme Name` は **Luna Frontier** であること。
 - `Template:` ヘッダーが存在しないこと。
-- バージョン番号が、切ろうとしているリリースの `style.css` と一致していること。上の `2.0.4` は現行ヘッダー例であり、次の版を切るときはその版の値に読み替える。
-- ブランチにコミットされている `build.json` の `version` / `build_id` は、公開済み Release の値とは別に残りうる。更新判定は Release の `luna-release.json` と ZIP 内の `build.json` を見る。`build_id` を文書の都合で書き換えない。
+- リリース対象の PR で `style.css` と `plugins-embedded/node-library/node-library.php` の `Version` をそれぞれパッチ分だけ上げる。Library の `NODE_LIBRARY_VERSION` もヘッダーに合わせる。ワークフローはヘッダーを書き換えない。
+- ブランチにコミットされている `build.json` の `version` / `build_id` は、公開済み Release の値とは別に残りうる。`build_id` はワークフローのパッケージ生成時に刻印する。
 
 ## 2. アセットのビルド
 
@@ -83,7 +84,7 @@ bun run verify:visual
 
 ## 4. build.json の生成契約（CI 自動刻印 / ローカル検証用）
 
-同日リリースや同一バージョン内での修正配信に対応するため、配布 ZIP 生成時は **`style.css` の `Version` と一致する `build.json`** を生成して ZIP に同梱します。Luminous Settings の更新判定は不変タグ `luna-frontier-v{version}-{build_id}` 配下の `luna-release.json` と ZIP 内 `build.json` の `build_id` を照合します。
+配布 ZIP 生成時は **`style.css` の `Version` と一致する `build.json`** を生成し、リリースを識別できるよう ZIP に同梱します。
 
 - **本番 Release（GitHub Actions）**: `.github/workflows/release-luna-frontier.yml` がワークフロー内で `build.json` を自動生成して `luna.zip` に同梱し、結果を Git へはコミットしません。
 - **ローカル ZIP 検証**: ローカルで `luna.zip` と `Luna_Release_Package_Test` を検証する場合のみ、必要に応じて一時的に再生成できます（テスト後に不要な変更を残さないこと）。
@@ -115,23 +116,18 @@ bash scripts/build-luna-zip.sh
 
 ## 6. 配布ブランチへの反映と GitHub Release
 
-1. ソースの変更だけをコミットする。`luna.zip` は `.gitignore` 済みで、Git に戻さない。
+1. `bash scripts/build-library-zip.sh` で `production_plugins/node-library.zip` を再生成し、ソース変更と同じ PR にコミットする。`luna.zip` は Git にコミットしない。
 2. 作業ブランチから `luna-frontier-2.0-skyalow` へ PR を作り、Tests が成功してからマージする。
 3. `master` へ直接 push しない。`node.zip` も触らない。
 4. マージ後、配布ブランチ上で Actions の **Release Luna Frontier**（`workflow_dispatch`）を実行する。このワークフローが `dist` のビルド、`build.json` の刻印、`luna.zip`、PHPUnit のパッケージ検査、不変タグ、Release を行う。
-5. タグは `luna-frontier-v{version}-{build_id}`。既存タグは動かさない。Asset は `luna.zip` と `luna-release.json` の2つ。sha256 は `luna-release.json` だけが持つ。
+5. タグは `luna-frontier-v{version}-{build_id}`。既存タグは動かさない。Asset は `luna.zip`、`node-library.zip`、`luna-release.json` の3つ。JSON には `plugin_version` と両 ZIP の SHA-256（`sha256`、`plugin_sha256`）を収録する。
 6. 承認なしにこのワークフローを実行しない。
 
 ## 7. 更新判定の整合性確認
 
-Luna Settings の更新確認は、ブランチ HEAD の `style.css` / `build.json` / `luna.zip` を読まない。GitHub Releases の不変タグから `luna-release.json` と `luna.zip` を取り、sha256 と版を照合する（`inc/ajax.php`）。
+WordPress の「ダッシュボード → 更新」で確認します。Luna Frontier は GitHub の最新 Release のタグからバージョンを取得し、Luna Library 単体版は同じ Release の `luna-release.json` にある `plugin_version` を使います。インストール済みのバージョンより新しい場合に、WordPress が対応する ZIP を更新候補として表示します。
 
-2026-11-12 時点で公開済みの最新 Release は次のとおり。これは記録であり、新しい build_id の発行ではない。
-
-- タグ: `luna-frontier-v2.0.3-20261111T103054Z-0941737`
-- https://github.com/wingzone94/Luna-Frontier/releases/tag/luna-frontier-v2.0.3-20261111T103054Z-0941737
-
-ブランチ上の `build.json` にはリリース前の開発時点の値（例: `version: 2.0.2` や現行ブランチの `2.0.4`）が残りうる。Release ワークフローはジョブ内で `style.css` の Version に合わせて `build.json` と `luna-release.json` を刻み直すが、その結果は Git へコミットしない。
+初回だけは従来どおり手作業で本番に入れ、次回リリースから標準フローで更新できます。テーマのディレクトリ名は `luna-frontier`、Library 単体版のプラグインファイルは `node-library/node-library.php` です。
 
 ---
 

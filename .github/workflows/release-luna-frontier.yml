@@ -4,10 +4,10 @@ name: Release Luna Frontier
 # luna-frontier-v{version}-{build_id} に対する Release を作る。
 #
 # - push では動かない。ブランチ HEAD は ZIP の配信元にしない。
-# - Asset は luna.zip とその sha256 を持つ luna-release.json の2つ。
+# - Asset は luna.zip、node-library.zip、両 ZIP の sha256 を持つ luna-release.json。
 #   sha256 を ZIP 内 build.json に書くと自己言及になり一致しないため、必ず luna-release.json のみが保持する。
 # - タグの再作成・移動はしない（既存タグがあれば失敗終了）。
-# - node.zip はここに上げない。Node 安定版は別チャンネル（HOW_TO_RELEASE.md 第2部）。
+# - Luna Library 単体版は production_plugins/node-library.zip を同じ Release で配布する。
 
 on:
   workflow_dispatch:
@@ -149,8 +149,10 @@ jobs:
         id: meta
         run: |
           version="$(grep -m1 '^Version:' style.css | awk '{print $2}')"
+          plugin_version="$(grep -m1 '^ \* Version:' plugins-embedded/node-library/node-library.php | awk '{print $3}')"
           build_id="$(php -r 'echo json_decode(file_get_contents("build.json"), true)["build_id"];')"
           sha256="$(shasum -a 256 luna.zip | awk '{print $1}')"
+          plugin_sha256="$(shasum -a 256 production_plugins/node-library.zip | awk '{print $1}')"
           tag="luna-frontier-v${version}-${build_id}"
 
           if ! echo "$sha256" | grep -Eq '^[a-f0-9]{64}$'; then
@@ -158,12 +160,19 @@ jobs:
             exit 1
           fi
 
+          if [[ ! "$plugin_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ || ! "$plugin_sha256" =~ ^[a-f0-9]{64}$ ]]; then
+            echo "Invalid Luna Library version or SHA-256"
+            exit 1
+          fi
+
           jq -n \
             --arg tag "$tag" \
             --arg version "$version" \
+            --arg plugin_version "$plugin_version" \
+            --arg plugin_sha256 "$plugin_sha256" \
             --arg build_id "$build_id" \
             --arg sha256 "$sha256" \
-            '{tag: $tag, version: $version, build_id: $build_id, asset: "luna.zip", sha256: $sha256}' \
+            '{tag: $tag, version: $version, build_id: $build_id, asset: "luna.zip", sha256: $sha256, plugin_version: $plugin_version, plugin_sha256: $plugin_sha256}' \
             > luna-release.json
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
@@ -190,7 +199,8 @@ jobs:
           TAG: ${{ steps.meta.outputs.tag }}
         run: |
           gh release create "$TAG" \
-            luna.zip luna-release.json \
+            luna.zip production_plugins/node-library.zip luna-release.json \
             --repo wingzone94/Luna-Frontier \
+            --latest \
             --title "Luna Frontier $TAG" \
             --notes "Luna Frontier release asset. sha256 は luna-release.json を参照してください。"
