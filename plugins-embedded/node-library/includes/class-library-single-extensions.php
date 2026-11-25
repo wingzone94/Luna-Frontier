@@ -71,18 +71,16 @@ final class Node_Library_Single_Extensions {
 			}
 		}
 
-		$rating = get_post_meta( $post_id, '_node_library_rating', true );
-		if ( is_array( $rating ) ) {
-			$rating_parts = array();
-			if ( ! empty( $rating['cero'] ) && is_string( $rating['cero'] ) ) {
-				$rating_parts[] = 'CERO: ' . trim( $rating['cero'] );
-			}
-			if ( ! empty( $rating['esrb'] ) && is_string( $rating['esrb'] ) ) {
-				$rating_parts[] = 'ESRB: ' . trim( $rating['esrb'] );
+		if ( 'app' !== get_post_meta( $post_id, '_node_library_type', true ) ) {
+			$rating       = Node_Library_Structured_Meta::sanitize( 'rating', get_post_meta( $post_id, '_node_library_rating', true ) );
+			$cero         = Node_Library_Structured_Meta::cero_options()[ $rating['cero'] ?? '' ] ?? '';
+			$rating_parts = '' !== $cero ? array( $cero ) : array();
+			if ( isset( $rating['esrb'] ) ) {
+				$rating_parts[] = 'ESRB: ' . $rating['esrb'];
 			}
 			if ( $rating_parts ) {
 				$rows[] = array(
-					'label' => 'レーティング',
+					'label' => __( 'レーティング', 'node-library' ),
 					'value' => implode( ' / ', $rating_parts ),
 				);
 			}

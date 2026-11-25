@@ -59,6 +59,22 @@ final class Node_Library_Structured_Meta {
 		);
 	}
 
+	/** CERO codes shared by the editor, validation and public display. */
+	public static function cero_options(): array {
+		return array(
+			'A'                  => __( 'CERO A（全年齢対象）', 'node-library' ),
+			'B'                  => __( 'CERO B（12歳以上対象）', 'node-library' ),
+			'C'                  => __( 'CERO C（15歳以上対象）', 'node-library' ),
+			'D'                  => __( 'CERO D（17歳以上対象）', 'node-library' ),
+			'Z'                  => __( 'CERO Z（18歳以上のみ対象）', 'node-library' ),
+			'審査予定'           => __( 'CERO 審査予定', 'node-library' ),
+			'教育・データベース' => __( 'CERO 教育・データベース', 'node-library' ),
+		);
+	}
+
+	/** ESRB codes supported by the existing catalogue. */
+	private const ESRB_CODES = array( 'EC', 'E', 'E10+', 'T', 'M', 'AO', 'RP', 'RP 17+' );
+
 	/** Register protected metadata; no new public REST fields are exposed in L1. */
 	public static function register(): void {
 		foreach ( self::fields() as $field => $definition ) {
@@ -131,7 +147,7 @@ final class Node_Library_Structured_Meta {
 				}
 			}
 		} elseif ( 'rating' === $field ) {
-			$options = array( 'cero' => array( 'A', 'B', 'C', 'D', 'Z', '教育・データベース', '審査予定' ), 'esrb' => array( 'EC', 'E', 'E10+', 'T', 'M', 'AO', 'RP', 'RP 17+' ) );
+			$options = array( 'cero' => array_keys( self::cero_options() ), 'esrb' => self::ESRB_CODES );
 			foreach ( $options as $system => $allowed ) {
 				$rating = self::text( $value[ $system ] ?? '' );
 				if ( in_array( $rating, $allowed, true ) ) {
@@ -183,9 +199,14 @@ final class Node_Library_Structured_Meta {
 					self::input( $field, $store, $label, $value[ $store ] ?? '' );
 				}
 			} elseif ( 'rating' === $field ) {
-				foreach ( array( 'cero' => array( 'A', 'B', 'C', 'D', 'Z', '教育・データベース', '審査予定' ), 'esrb' => array( 'EC', 'E', 'E10+', 'T', 'M', 'AO', 'RP', 'RP 17+' ) ) as $system => $ratings ) {
-					self::select( $field, $system, strtoupper( $system ), $value[ $system ] ?? '', array_combine( $ratings, $ratings ) );
+				$cero         = $value['cero'] ?? '';
+				$cero_options = self::cero_options();
+				// Keep the legacy value selected when editing existing catalogue data.
+				if ( '教育・データベース' !== $cero ) {
+					unset( $cero_options['教育・データベース'] );
 				}
+				self::select( $field, 'cero', 'CERO', $cero, $cero_options );
+				self::select( $field, 'esrb', 'ESRB', $value['esrb'] ?? '', array_combine( self::ESRB_CODES, self::ESRB_CODES ) );
 			} elseif ( in_array( $field, array( 'japanese', 'capabilities' ), true ) ) {
 				$labels = 'japanese' === $field ? array( 'audio' => __( '音声', 'node-library' ), 'subtitles' => __( '字幕', 'node-library' ), 'ui' => 'UI' ) : array( 'crossplay' => __( 'クロスプレイ', 'node-library' ), 'crosssave' => __( 'クロスセーブ', 'node-library' ), 'online' => __( 'オンライン対応', 'node-library' ), 'hdr' => 'HDR' );
 				foreach ( $labels as $key => $label ) {
