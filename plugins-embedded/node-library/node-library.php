@@ -3,7 +3,8 @@
  * Plugin Name:  Luna Library
  * Plugin URI:   https://github.com/wingzone94/Node
  * Description:  ゲーム・アプリ情報の管理と表示。カスタム投稿タイプによるリスト管理と、記事への紐付け機能を提供。
- * Version:      1.7.0
+ * Version:      1.7.1
+ * Update URI:   https://github.com/wingzone94/Luna-Frontier
  * Requires at least: 6.5
  * Requires PHP: 8.0
  * Author:       Luminous Core Teams
@@ -17,12 +18,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/includes/class-luna-release.php';
+
+if ( ! function_exists( 'node_library_wordpress_update' ) ) {
+	/** Provide the standalone Luna Library package to the WordPress plugin upgrader. */
+	function node_library_wordpress_update( $update, array $plugin_data, string $plugin_file ) {
+		if ( 'node-library/node-library.php' !== $plugin_file
+			|| Luna_GitHub_Release::REPOSITORY !== ( $plugin_data['UpdateURI'] ?? null )
+			|| empty( $plugin_data['Version'] )
+		) {
+			return false;
+		}
+
+		$release = Luna_GitHub_Release::latest();
+		$package = Luna_GitHub_Release::asset_url( $release, 'node-library.zip' );
+		if ( null === $package ) {
+			return false;
+		}
+
+		$metadata = Luna_GitHub_Release::metadata( $release );
+		$version  = $metadata['plugin_version'] ?? null;
+		if ( ! is_string( $version ) || ! preg_match( '/\A\d+\.\d+\.\d+\z/', $version )
+			|| ! version_compare( $version, $plugin_data['Version'], '>' )
+		) {
+			return false;
+		}
+
+		return array(
+			'slug'    => 'node-library',
+			'version' => $version,
+			'url'     => Luna_GitHub_Release::REPOSITORY . '/releases/tag/' . $release['tag_name'],
+			'package' => $package,
+		);
+	}
+	add_filter( 'update_plugins_github.com', 'node_library_wordpress_update', 10, 3 );
+}
+
 // WordPress activation loads the candidate after the active theme. Its embedded
 // Library may already own these symbols; the standalone copy takes over on the
 // next request. Conditional declarations also prevent function redeclaration.
 if ( ! class_exists( 'Node_Library', false ) && ! function_exists( 'node_library_init' ) ) {
 
-define( 'NODE_LIBRARY_VERSION', '1.7.0' );
+define( 'NODE_LIBRARY_VERSION', '1.7.1' );
 define( 'NODE_LIBRARY_DIR', plugin_dir_path( __FILE__ ) );
 $node_library_embedded_dir = get_template_directory() . '/plugins-embedded/node-library/';
 $node_library_is_embedded  = wp_normalize_path( NODE_LIBRARY_DIR ) === wp_normalize_path( $node_library_embedded_dir );
