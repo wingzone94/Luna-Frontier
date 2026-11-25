@@ -446,6 +446,16 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		node_library_render_cero_warning( $article_id );
 		$this->assertSame( $warning, ob_get_clean() );
+
+		$data = node_library_get_cero_warning_data( $article_id );
+		$this->assertSame(
+			array(
+				'has_cero_z' => true,
+				'titles'     => array( 'Rated Library Game' ),
+				'categories' => array(),
+			),
+			$data
+		);
 	}
 
 	public function test_jsonld_offers_generated_from_l3_prices_and_escaped_safely(): void {
