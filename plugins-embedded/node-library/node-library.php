@@ -66,9 +66,20 @@ function node_library_linked_item_ids( int $post_id ): array {
 
 /** Read the existing catalogue CERO rating, if set. */
 function node_library_cero_rating( int $item_id ): string {
+	if ( 'node_library' !== get_post_type( $item_id ) || 'app' === get_post_meta( $item_id, '_node_library_type', true ) ) {
+		return '';
+	}
+
 	$rating = Node_Library_Structured_Meta::sanitize( 'rating', get_post_meta( $item_id, '_node_library_rating', true ) );
 
 	return $rating['cero'] ?? '';
+}
+
+/** Format a game's CERO rating for Library detail displays. */
+function node_library_cero_rating_label( int $item_id ): string {
+	$rating = node_library_cero_rating( $item_id );
+
+	return Node_Library_Structured_Meta::cero_options()[ $rating ] ?? '';
 }
 
 /** Render the warning option on the category edit screen. */
@@ -110,40 +121,66 @@ function node_library_render_cero_warning( int $post_id ): void {
 		return;
 	}
 
-	$titles = [];
+	$item_ids = array_unique(
+		array_merge(
+			node_library_linked_item_ids( $post_id ),
+			array_map( 'absint', get_post_meta( $post_id, '_node_library_card_reference', false ) )
+		)
+	);
+	$titles     = [];
 	$has_cero_z = false;
-	foreach ( node_library_linked_item_ids( $post_id ) as $item_id ) {
-		$item = get_post( $item_id );
-		if ( ! $item || 'node_library' !== $item->post_type || 'publish' !== $item->post_status || '' !== $item->post_password || 'Z' !== node_library_cero_rating( $item_id ) ) {
+	foreach ( $item_ids as $item_id ) {
+		$item = $item_id > 0 ? get_post( $item_id ) : null;
+		if ( ! $item || 'publish' !== $item->post_status || '' !== $item->post_password || 'Z' !== node_library_cero_rating( $item_id ) ) {
 			continue;
 		}
 		$has_cero_z = true;
-		if ( '' !== trim( $item->post_title ) ) {
-			$titles[] = $item->post_title;
+		$title      = trim( $item->post_title );
+		if ( '' !== $title ) {
+			$titles[] = $title;
 		}
 	}
 
+	$categories = [];
 	if ( ! $has_cero_z ) {
 		foreach ( get_the_category( $post_id ) as $category ) {
 			if ( '1' === get_term_meta( $category->term_id, '_node_library_cero_warning', true ) ) {
-				$titles[] = $category->name;
+				$categories[] = $category->name;
 			}
 		}
 	}
 
-	if ( ! $has_cero_z && ! $titles && 'show' !== $mode ) {
+	if ( ! $has_cero_z && ! $categories && 'show' !== $mode ) {
 		return;
 	}
+
+	$heading_id = wp_unique_id( 'node-library-cero-warning-' );
 	?>
-	<p class="m3-article__cero-warning">
-		<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。', 'node-library' ); ?>
+	<aside class="m3-article__cero-warning" aria-labelledby="<?php echo esc_attr( $heading_id ); ?>">
+		<h2 class="m3-article__cero-warning-title" id="<?php echo esc_attr( $heading_id ); ?>">
+			<span class="material-symbols-outlined" data-icon="warning" aria-hidden="true"></span>
+			<?php esc_html_e( '年齢制限に関する注意事項', 'node-library' ); ?>
+		</h2>
+		<p>
+			<?php if ( $has_cero_z ) : ?>
+				<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。', 'node-library' ); ?>
+			<?php else : ?>
+				<?php esc_html_e( 'この記事では、CERO Z（18歳以上対象）のタイトルを扱う場合があります。', 'node-library' ); ?>
+			<?php endif; ?>
+		</p>
 		<?php if ( $titles ) : ?>
-			<?php
-			/* translators: %s: CERO Z game titles or category names. */
-			echo esc_html( sprintf( __( '対象タイトル：%s', 'node-library' ), implode( '、', $titles ) ) );
-			?>
+			<p><?php
+				/* translators: %s: One or more CERO Z game titles, set in bold. */
+				printf( esc_html__( '対象タイトル：%s', 'node-library' ), '<strong>' . esc_html( implode( '、', array_unique( $titles ) ) ) . '</strong>' );
+			?></p>
+		<?php elseif ( $categories ) : ?>
+			<p><?php
+				/* translators: %s: One or more article category names. */
+				echo esc_html( sprintf( __( '対象カテゴリ：%s', 'node-library' ), implode( '、', $categories ) ) );
+			?></p>
 		<?php endif; ?>
-	</p>
+		<p class="m3-article__cero-warning-note"><?php esc_html_e( '（日本のCEROレーティングに基づく警告です）', 'node-library' ); ?></p>
+	</aside>
 	<?php
 }
 

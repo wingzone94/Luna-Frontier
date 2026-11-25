@@ -89,7 +89,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Publisher Beta', $by_label['発売元']['value'] ?? '' );
 		$this->assertSame( '2025-03-14', $by_label['発売日']['value'] ?? '' );
 		$this->assertSame( 'RPG、アクション', $by_label['ジャンル']['value'] ?? '' );
-		$this->assertSame( 'CERO: C / ESRB: T', $by_label['レーティング']['value'] ?? '' );
+		$this->assertSame( 'CERO C（15歳以上対象） / ESRB: T', $by_label['レーティング']['value'] ?? '' );
 		$this->assertSame( '音声: 対応 / 字幕: 非対応', $by_label['日本語対応']['value'] ?? '' );
 		$this->assertStringNotContainsString( 'UI', $by_label['日本語対応']['value'] ?? '' );
 		$this->assertStringContainsString( 'クロスプレイ: 対応', $by_label['能力・映像仕様']['value'] ?? '' );
@@ -373,6 +373,35 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '対象タイトル', $warning );
 	}
 
+	public function test_warning_uses_unique_rated_game_titles_across_links_and_cards(): void {
+		$first_id     = $this->create_library_item( 'Linked Game' );
+		$second_id    = $this->create_library_item( 'Card & Game' );
+		$duplicate_id = $this->create_library_item( 'Linked Game' );
+		$app_id       = $this->create_library_item( 'Rated App' );
+		$unrated_id   = $this->create_library_item( 'Unrated Game' );
+		foreach ( array( $first_id, $second_id, $duplicate_id, $app_id ) as $item_id ) {
+			update_post_meta( $item_id, '_node_library_rating', array( 'cero' => 'Z' ) );
+		}
+		update_post_meta( $app_id, '_node_library_type', 'app' );
+
+		$content = '';
+		foreach ( array( $first_id, $second_id, $duplicate_id, $app_id, $unrated_id ) as $item_id ) {
+			$content .= '<!-- wp:node-library/item-card {"libraryId":' . $item_id . '} /-->';
+		}
+		$article_id = self::factory()->post->create( array( 'post_content' => $content ) );
+		update_post_meta( $article_id, '_node_linked_library_id', $first_id );
+
+		ob_start();
+		node_library_render_cero_warning( $article_id );
+		$warning = (string) ob_get_clean();
+
+		$this->assertStringContainsString( '対象タイトル：<strong>Linked Game、Card &amp; Game</strong>', $warning );
+		$this->assertStringContainsString( '（日本のCEROレーティングに基づく警告です）', $warning );
+		$this->assertStringNotContainsString( 'Rated App', $warning );
+		$this->assertStringNotContainsString( 'Unrated Game', $warning );
+		$this->assertNotContains( 'レーティング', array_column( node_library_get_spec_rows( $app_id ), 'label' ) );
+	}
+
 	public function test_enabled_category_warns_without_library_links(): void {
 		$category_id = self::factory()->category->create( array( 'name' => 'Grand Theft Auto VI' ) );
 		$article_id  = self::factory()->post->create( array( 'post_category' => array( $category_id ) ) );
@@ -382,7 +411,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		node_library_render_cero_warning( $article_id );
 		$warning = (string) ob_get_clean();
 		$this->assertStringContainsString( 'm3-article__cero-warning', $warning );
-		$this->assertStringContainsString( '対象タイトル：Grand Theft Auto VI', $warning );
+		$this->assertStringContainsString( '対象カテゴリ：Grand Theft Auto VI', $warning );
 	}
 
 	public function test_force_hide_overrides_enabled_category(): void {
@@ -411,7 +440,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		node_library_render_cero_warning( $article_id );
 		$warning = (string) ob_get_clean();
-		$this->assertStringContainsString( '対象タイトル：Rated Library Game', $warning );
+		$this->assertStringContainsString( '対象タイトル：<strong>Rated Library Game</strong>', $warning );
 
 		update_term_meta( $category_id, '_node_library_cero_warning', '1' );
 		ob_start();

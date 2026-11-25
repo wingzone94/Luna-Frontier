@@ -22,7 +22,7 @@ get_header();
 			$library_summary = (string) get_post_meta( $library_id, '_node_library_summary', true );
 		$library_links   = get_post_meta( $library_id, '_node_library_links', true );
 		$library_links   = is_array( $library_links ) ? $library_links : array();
-		$cero_rating     = function_exists( 'node_library_cero_rating' ) ? node_library_cero_rating( $library_id ) : '';
+		$cero_rating     = 'game' === $library_type && function_exists( 'node_library_cero_rating_label' ) ? node_library_cero_rating_label( $library_id ) : '';
 		$library_url     = get_post_type_archive_link( 'node_library' );
 		$linked_articles = new WP_Query(
 			array(
@@ -87,8 +87,8 @@ get_header();
 				<?php if ( '' !== $cero_rating ) : ?>
 					<span class="node-library-single__type node-library-single__rating">
 						<?php
-						/* translators: %s: CERO rating. */
-						echo esc_html( sprintf( __( 'CERO %s', 'node' ), $cero_rating ) );
+						/* translators: %s: CERO rating and age classification. */
+						echo esc_html( sprintf( __( 'レーティング：%s', 'node' ), $cero_rating ) );
 						?>
 					</span>
 				<?php endif; ?>
