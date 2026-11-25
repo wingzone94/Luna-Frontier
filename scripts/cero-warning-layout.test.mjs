@@ -58,3 +58,44 @@ test('CERO warning keeps long titles readable in both themes and across viewport
         await browser.close();
     }
 });
+
+test('CERO warning sits directly below article header and above body in 2-column desktop layout', async () => {
+    const layoutHtml = `<!doctype html><html lang="ja"><body class="lf-theme single single-post is-loaded">
+<main class="site-main article-view"><article class="m3-article">
+<header class="lf-article-header"><h1 class="lf-article-header__title">Sample Article</h1></header>
+<aside class="m3-article__cero-warning" aria-labelledby="warning">
+<h2 class="m3-article__cero-warning-title" id="warning">年齢制限に関する注意事項</h2>
+<p>この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。</p>
+</aside>
+<aside class="lf-reading-aside" style="min-height: 420px;">Reading Aside / TOC</aside>
+<div class="m3-article__body"><p>Article body content.</p></div>
+</article></main></body></html>`;
+
+    const browser = await chromium.launch({ headless: true });
+    try {
+        const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+        await page.setContent(layoutHtml);
+        await page.addStyleTag({ content: css });
+
+        const rects = await page.evaluate(() => {
+            const get = (sel) => {
+                const r = document.querySelector(sel).getBoundingClientRect();
+                return { top: r.top, bottom: r.bottom, left: r.left, width: r.width };
+            };
+            return {
+                header: get('.lf-article-header'),
+                warning: get('.m3-article__cero-warning'),
+                body: get('.m3-article__body'),
+                aside: get('.lf-reading-aside'),
+            };
+        });
+
+        assert.ok(rects.warning.top >= rects.header.bottom, 'warning must be below header');
+        assert.ok(rects.body.top >= rects.warning.bottom, 'body must be below warning');
+        assert.ok(rects.body.top - rects.warning.bottom < 80, 'reading aside must not push body down');
+        assert.equal(Math.round(rects.warning.width), Math.round(rects.body.width), 'warning shares column 1 width with body');
+        assert.ok(rects.aside.left >= rects.warning.left + rects.warning.width, 'aside stays in column 2');
+    } finally {
+        await browser.close();
+    }
+});

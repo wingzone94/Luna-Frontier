@@ -151,11 +151,20 @@ function node_library_save_category_cero_warning( int $term_id ): void {
 }
 add_action( 'edited_category', 'node_library_save_category_cero_warning' );
 
-/** Render the article warning independently of the existing age-confirmation dialog. */
-function node_library_render_cero_warning( int $post_id ): void {
+/**
+ * Resolve the single CERO Z warning payload for an article.
+ *
+ * Precedence:
+ * 1. Explicit article override ('hide' suppresses; 'show' forces display).
+ * 2. Linked / embedded CERO Z library items (titles deduplicated).
+ * 3. Category warning toggle fallback only when no CERO Z library item applies.
+ *
+ * @return array{has_cero_z:bool,titles:string[],categories:string[]}|null
+ */
+function node_library_get_cero_warning_data( int $post_id ): ?array {
 	$mode = get_post_meta( $post_id, '_node_library_cero_warning', true );
 	if ( 'hide' === $mode ) {
-		return;
+		return null;
 	}
 
 	$item_ids = array_unique(
@@ -177,20 +186,42 @@ function node_library_render_cero_warning( int $post_id ): void {
 			$titles[] = $title;
 		}
 	}
+	$titles = array_values( array_unique( $titles ) );
 
 	$categories = [];
 	if ( ! $has_cero_z ) {
 		foreach ( get_the_category( $post_id ) as $category ) {
 			if ( '1' === get_term_meta( $category->term_id, '_node_library_cero_warning', true ) ) {
-				$categories[] = $category->name;
+				$name = trim( $category->name );
+				if ( '' !== $name ) {
+					$categories[] = $name;
+				}
 			}
 		}
+		$categories = array_values( array_unique( $categories ) );
 	}
 
 	if ( ! $has_cero_z && ! $categories && 'show' !== $mode ) {
+		return null;
+	}
+
+	return [
+		'has_cero_z' => $has_cero_z,
+		'titles'     => $titles,
+		'categories' => $categories,
+	];
+}
+
+/** Render the article warning independently of the existing age-confirmation dialog. */
+function node_library_render_cero_warning( int $post_id ): void {
+	$data = node_library_get_cero_warning_data( $post_id );
+	if ( null === $data ) {
 		return;
 	}
 
+	$has_cero_z = $data['has_cero_z'];
+	$titles     = $data['titles'];
+	$categories = $data['categories'];
 	$heading_id = 'node-library-cero-warning-' . $post_id;
 	?>
 	<aside class="m3-article__cero-warning" aria-labelledby="<?php echo esc_attr( $heading_id ); ?>">
@@ -208,7 +239,7 @@ function node_library_render_cero_warning( int $post_id ): void {
 		<?php if ( $titles ) : ?>
 			<p><?php
 				/* translators: %s: One or more CERO Z game titles, set in bold. */
-				printf( esc_html__( '対象タイトル：%s', 'node-library' ), '<strong>' . esc_html( implode( '、', array_unique( $titles ) ) ) . '</strong>' );
+				printf( esc_html__( '対象タイトル：%s', 'node-library' ), '<strong>' . esc_html( implode( '、', $titles ) ) . '</strong>' );
 			?></p>
 		<?php elseif ( $categories ) : ?>
 			<p><?php

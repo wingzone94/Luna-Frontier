@@ -272,10 +272,8 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		min-inline-size: 0;
 	}
 
-	body.lf-theme.single-post .m3-article > .lf-article-header {
-		grid-column: 1;
-	}
-
+	body.lf-theme.single-post .m3-article > .lf-article-header,
+	body.lf-theme.single-post .m3-article > .m3-article__cero-warning,
 	body.lf-theme.single-post .m3-article > .m3-article__body {
 		grid-column: 1;
 	}
@@ -285,6 +283,14 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		grid-row: 2;
 		align-self: stretch;
 		margin-block: 0;
+	}
+
+	body.lf-theme.single-post .m3-article:has(> .m3-article__cero-warning) {
+		grid-template-rows: auto auto 1fr;
+	}
+
+	body.lf-theme.single-post .m3-article:has(> .m3-article__cero-warning) > .lf-reading-aside {
+		grid-row: 2 / span 2;
 	}
 
 	/* Sticky にするのは TOC だけ（§26）。他のブロックは普通に流す。 */
@@ -327,10 +333,8 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	min-inline-size: 0;
 }
 
-:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .lf-article-header {
-	grid-column: 1;
-}
-
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .lf-article-header,
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .m3-article__cero-warning,
 :where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > .m3-article__body {
 	grid-column: 1;
 }
@@ -340,6 +344,14 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	grid-row: 2;
 	align-self: stretch;
 	margin-block: 0;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article:has(> .m3-article__cero-warning) {
+	grid-template-rows: auto auto 1fr;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article:has(> .m3-article__cero-warning) > .lf-reading-aside {
+	grid-row: 2 / span 2;
 }
 
 :where(html.lf-tablet-pc) body.lf-theme.single-post .lf-aside-block--toc {
