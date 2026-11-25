@@ -171,10 +171,18 @@ body.lf-theme .lf-meta__chip-sub {
 	color: var(--lf-on-surface-muted);
 }
 
+body.lf-theme .lf-meta__chip .lf-meta__icon {
+	align-self: center;
+}
+
 body.lf-theme .lf-meta__chip--link {
 	border-color: color-mix(in srgb, var(--lc-accent) 45%, transparent);
 	color: var(--lc-accent);
 	transition: background-color var(--lf-motion-fast) var(--lf-easing-standard);
+}
+
+body.lf-theme .lf-meta__chip--link .lf-meta__icon {
+	color: currentColor;
 }
 
 body.lf-theme .lf-meta__chip--link:hover {

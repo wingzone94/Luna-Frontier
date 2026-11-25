@@ -120,6 +120,7 @@ if ( ! $lf_library instanceof WP_Post || 'node_library' !== $lf_library->post_ty
 
 			<?php if ( $lf_library ) : ?>
 				<a class="lf-meta__chip lf-meta__chip--link" href="<?php echo esc_url( get_permalink( $lf_library ) ); ?>">
+					<span class="material-symbols-outlined lf-meta__icon" data-icon="shelves" aria-hidden="true"></span>
 					<span class="lf-system-label">Library</span>
 					<?php echo esc_html( get_the_title( $lf_library ) ); ?>
 				</a>
