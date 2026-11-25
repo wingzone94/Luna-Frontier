@@ -154,7 +154,7 @@ function node_library_render_cero_warning( int $post_id ): void {
 		return;
 	}
 
-	$heading_id = wp_unique_id( 'node-library-cero-warning-' );
+	$heading_id = 'node-library-cero-warning-' . $post_id;
 	?>
 	<aside class="m3-article__cero-warning" aria-labelledby="<?php echo esc_attr( $heading_id ); ?>">
 		<h2 class="m3-article__cero-warning-title" id="<?php echo esc_attr( $heading_id ); ?>">
