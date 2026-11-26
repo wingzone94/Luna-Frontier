@@ -605,6 +605,189 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'node-library-store-card__status--upcoming', $upcoming_html );
 	}
 
+	public function test_free_title_outputs_zero_yen_offer_and_epic_store_url_without_affecting_paid_unpriced(): void {
+		$free_id = $this->create_library_item( 'Genshin Impact' );
+		update_post_meta( $free_id, '_node_library_is_free', true );
+		update_post_meta( $free_id, '_node_library_store_ids', array( 'epic' => 'genshin-impact' ) );
+		update_post_meta( $free_id, '_node_library_image_url', 'https://cdn.example.com/genshin-key.jpg' );
+
+		$offers = Node_Library_Single_Extensions::store_offers( $free_id, array() );
+		$this->assertCount( 1, $offers );
+		$this->assertSame( 'Epic Games Store', $offers[0]['platform'] );
+		$this->assertSame( 'https://store.epicgames.com/p/genshin-impact', $offers[0]['url'] );
+
+		// Avoid duplicating Epic link when both _node_library_links and _node_library_store_ids['epic'] are set.
+		$deduped_offers = Node_Library_Single_Extensions::store_offers(
+			$free_id,
+			array(
+				array(
+					'platform' => 'Epic Games Store',
+					'url'      => 'https://store.epicgames.com/p/genshin-impact',
+				),
+			)
+		);
+		$this->assertCount( 1, $deduped_offers );
+
+		$jsonld = node_library_get_product_jsonld( $free_id );
+		$this->assertSame( 'Offer', $jsonld['offers']['@type'] ?? '' );
+		$this->assertSame( '0', $jsonld['offers']['price'] ?? '' );
+		$this->assertSame( 'JPY', $jsonld['offers']['priceCurrency'] ?? '' );
+		$this->assertSame( 'https://store.epicgames.com/p/genshin-impact', $jsonld['offers']['url'] ?? '' );
+		$this->assertSame( array( 'https://cdn.example.com/genshin-key.jpg' ), $jsonld['image'] ?? array() );
+
+		// Paid unpriced title must NOT receive ¥0 offers.
+		$paid_unpriced_id = $this->create_library_item( 'GTA VI' );
+		$paid_jsonld      = node_library_get_product_jsonld( $paid_unpriced_id );
+		$this->assertArrayNotHasKey( 'offers', $paid_jsonld );
+
+		// Existing ¥0 price record continues to resolve from price history.
+		$recorded_free_id = $this->create_library_item( 'Fortnite' );
+		update_post_meta( $recorded_free_id, '_node_library_store_ids', array( 'nintendo' => '70010000000030' ) );
+		Node_Library_Prices::record( $recorded_free_id, 'nintendo', '70010000000030', array( 'price' => 0, 'list_price' => 0, 'currency' => 'JPY' ) );
+		$recorded_jsonld = node_library_get_product_jsonld( $recorded_free_id );
+		$this->assertSame( '0', $recorded_jsonld['offers']['price'] ?? '' );
+		$this->assertSame( 'https://store-jp.nintendo.com/item/software/D70010000000030', $recorded_jsonld['offers']['url'] ?? '' );
+	}
+
+	public function test_product_jsonld_image_resolves_catalog_and_featured_image_priority(): void {
+		$item_id = $this->create_library_item( 'Image Priority Game' );
+		update_post_meta(
+			$item_id,
+			'_node_library_catalog',
+			array(
+				'steam' => array( 'image_url' => 'https://cdn.example.com/steam-header.jpg' ),
+			)
+		);
+		$from_catalog = node_library_get_product_jsonld( $item_id );
+		$this->assertSame( array( 'https://cdn.example.com/steam-header.jpg' ), $from_catalog['image'] ?? array() );
+
+		update_post_meta( $item_id, '_node_library_image_url', 'https://cdn.example.com/manual-keyvisual.jpg' );
+		$from_explicit = node_library_get_product_jsonld( $item_id );
+		$this->assertSame( array( 'https://cdn.example.com/manual-keyvisual.jpg' ), $from_explicit['image'] ?? array() );
+
+		$attachment_id = self::factory()->attachment->create_object(
+			array(
+				'file'           => DIR_TESTDATA . '/images/canola.jpg',
+				'post_parent'    => $item_id,
+				'post_mime_type' => 'image/jpeg',
+				'post_title'     => 'Key Visual',
+			)
+		);
+		set_post_thumbnail( $item_id, $attachment_id );
+		$from_thumb = node_library_get_product_jsonld( $item_id );
+		$this->assertNotEmpty( $from_thumb['image'][0] ?? '' );
+		$this->assertStringContainsString( 'canola', $from_thumb['image'][0] );
+	}
+
+	public function test_supported_features_section_renders_manual_and_derived_chips(): void {
+		$empty_id = $this->create_library_item( 'Plain Game' );
+		ob_start();
+		Node_Library_Single_Extensions::render_features_section( $empty_id );
+		$this->assertSame( '', trim( (string) ob_get_clean() ) );
+
+		$item_id = $this->create_library_item( 'Feature Rich Game' );
+		update_post_meta(
+			$item_id,
+			'_node_library_store_ids',
+			array(
+				'microsoft' => '9FEAT0000001',
+				'ps'        => 'JP0000-PPSA00001_00-EXAMPLE',
+				'steam'     => '123456',
+				'epic'      => 'feature-rich',
+			)
+		);
+		update_post_meta(
+			$item_id,
+			'_node_library_capabilities',
+			array(
+				'crossplay'       => true,
+				'crosssave'       => true,
+				'cloud_streaming' => true,
+				'achievements'    => true,
+				'ray_tracing'     => true,
+				'max_fps'         => 120,
+				'resolution'      => '3840×2160',
+			)
+		);
+		update_post_meta(
+			$item_id,
+			'_node_library_subscriptions',
+			array(
+				'gamepass' => true,
+				'psplus'   => true,
+			)
+		);
+
+		ob_start();
+		do_action( 'node_library_single_after_specs', $item_id );
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'node-library-single__features', $html );
+		$this->assertStringContainsString( '対応している機能', $html );
+		$this->assertStringContainsString( 'クロスプレイ', $html );
+		$this->assertStringContainsString( 'クロスセーブ', $html );
+		$this->assertStringContainsString( 'クラウドストリーミング', $html );
+		$this->assertStringContainsString( 'Xbox 実績', $html );
+		$this->assertStringContainsString( 'PlayStation トロフィー', $html );
+		$this->assertStringContainsString( 'Steam 実績', $html );
+		$this->assertStringContainsString( 'Epic 実績', $html );
+		$this->assertStringContainsString( 'Xbox / PC Game Pass', $html );
+		$this->assertStringContainsString( 'PlayStation Plus', $html );
+		$this->assertStringContainsString( '4K対応', $html );
+		$this->assertStringContainsString( '120fps対応', $html );
+		$this->assertStringContainsString( 'レイトレーシング', $html );
+		$this->assertStringContainsString( 'node-library-feature-chip--microsoft', $html );
+		$this->assertStringContainsString( 'node-library-feature-chip--playstation', $html );
+		$this->assertStringContainsString( 'node-library-feature-chip--steam', $html );
+		$this->assertStringContainsString( 'node-library-feature-chip--epic', $html );
+	}
+
+	public function test_sale_animation_attributes_render_when_sale_price_drops_and_respect_pattern_option(): void {
+		$now     = time();
+		$item_id = $this->create_library_item( 'Animated Sale Game' );
+		update_post_meta( $item_id, '_node_library_store_ids', array( 'steam' => '998877' ) );
+
+		Node_Library_Prices::record(
+			$item_id,
+			'steam',
+			'998877',
+			array(
+				'price'      => 6000,
+				'list_price' => 6000,
+				'currency'   => 'JPY',
+			),
+			$now - ( 10 * DAY_IN_SECONDS )
+		);
+		Node_Library_Prices::record(
+			$item_id,
+			'steam',
+			'998877',
+			array(
+				'price'      => 3000,
+				'list_price' => 6000,
+				'currency'   => 'JPY',
+				'sale_end'   => gmdate( 'Y-m-d H:i:s', $now + ( 3 * DAY_IN_SECONDS ) ),
+			),
+			$now - HOUR_IN_SECONDS
+		);
+
+		ob_start();
+		Node_Library_Single_Extensions::render_price_section( $item_id );
+		$default_html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'data-node-library-sale-anim="a"', $default_html );
+		$this->assertStringContainsString( 'data-sale-prev-label="¥6,000"', $default_html );
+		$this->assertStringContainsString( 'data-sale-curr-label="¥3,000"', $default_html );
+		$this->assertStringContainsString( '>¥3,000</strong>', $default_html );
+
+		update_option( 'node_library_sale_animation_pattern', 'b' );
+		ob_start();
+		Node_Library_Single_Extensions::render_price_section( $item_id );
+		$pattern_b_html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'data-node-library-sale-anim="b"', $pattern_b_html );
+		delete_option( 'node_library_sale_animation_pattern' );
+	}
+
 	private function create_library_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(

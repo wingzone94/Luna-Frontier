@@ -446,6 +446,18 @@ function initCategoryOverflowToggle() {
     });
 }
 
+function initNodeLibrarySalePriceAnimationLoader() {
+    if (!document.querySelector('[data-node-library-sale-anim]')) return;
+
+    import('./scripts/library-price-animation')
+        .then(module => {
+            module.initLibrarySaleAnimations();
+        })
+        .catch(e => {
+            console.error('Initializer failed: initLibrarySaleAnimations', e);
+        });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const initializers = [
         initHomeNewsImages,
@@ -458,6 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         initNodeLibraryFilterNavigation,
         initNodeLibraryNintendoWarnings,
         initNodeLibrarySteamEmbedToggles,
+        initNodeLibrarySalePriceAnimationLoader,
         initExpressiveFloatingTOC,
         initHeroTOC,
         initFloatingActions,

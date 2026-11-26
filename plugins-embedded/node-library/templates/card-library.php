@@ -43,6 +43,7 @@ $platform_slug_from_name = static function ( string $platform ): string {
     if ( stripos( $platform, 'playstation' ) !== false || preg_match( '/(^|\s)ps(\s+store|[345](\s|$))/i', $platform ) ) return 'playstation';
     if ( stripos( $platform, 'xbox' ) !== false ) return 'xbox';
     if ( stripos( $platform, 'steam' ) !== false ) return 'steam';
+    if ( stripos( $platform, 'epic' ) !== false ) return 'epic';
     if ( stripos( $platform, 'mac' ) !== false ) return 'mac';
     if ( stripos( $platform, 'ios' ) !== false || stripos( $platform, 'apple' ) !== false || stripos( $platform, 'app store' ) !== false ) return 'ios';
     if ( stripos( $platform, 'android' ) !== false || stripos( $platform, 'google' ) !== false ) return 'android';
@@ -80,7 +81,7 @@ $category_from_link = static function ( array $link ) use ( $hardware_slug_from_
     }
 
     if (
-        in_array( $slug, [ 'mac', 'windows', 'steam', 'geforcenow' ], true ) ||
+        in_array( $slug, [ 'mac', 'windows', 'steam', 'epic', 'geforcenow' ], true ) ||
         false !== strpos( $host, 'steampowered.com' ) ||
         false !== strpos( $host, 'apps.microsoft.com' ) ||
         false !== strpos( $host, 'epicgames.com' ) ||
@@ -532,6 +533,8 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
             $is_pre_release = '' !== $release_date
                 && 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $release_date )
                 && $release_date > wp_date( 'Y-m-d' );
+            $item_is_free   = ! empty( $game_info['is_free'] )
+                || ( isset( $library_id ) && class_exists( 'Node_Library_Structured_Meta' ) && true === Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( (int) $library_id, '_node_library_is_free', true ) ) );
             $subscription_badges = is_array( $game_info['subscription_badges'] ?? null ) ? $game_info['subscription_badges'] : [];
             $assigned_sub_keys   = [];
 
@@ -539,23 +542,23 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 $catalogue_store = (string) ( $link['catalogue_store'] ?? '' );
                 $host            = strtolower( (string) wp_parse_url( (string) ( $link['url'] ?? '' ), PHP_URL_HOST ) );
 
-                if ( 'microsoft' === $catalogue_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
-                    return [ 'slug' => 'microsoft', 'chip' => 'xbox' === $platform_slug ? 'X' : 'M' ];
-                }
-                if ( 'ps' === $catalogue_store || 'playstation' === $platform_slug ) {
-                    return [ 'slug' => 'playstation', 'chip' => 'PS' ];
-                }
-                if ( 'steam' === $catalogue_store || 'steam' === $platform_slug ) {
-                    return [ 'slug' => 'steam', 'chip' => 'S' ];
-                }
-                if ( 'nintendo' === $catalogue_store || 'nintendo' === $platform_slug ) {
-                    return [ 'slug' => 'nintendo', 'chip' => 'N' ];
-                }
                 if ( 'epic' === $catalogue_store || false !== stripos( $platform, 'epic' ) || false !== strpos( $host, 'epicgames.com' ) ) {
                     return [ 'slug' => 'epic', 'chip' => 'E' ];
                 }
                 if ( 'gog' === $catalogue_store || false !== stripos( $platform, 'gog' ) || false !== strpos( $host, 'gog.com' ) ) {
                     return [ 'slug' => 'gog', 'chip' => 'GOG' ];
+                }
+                if ( 'steam' === $catalogue_store || 'steam' === $platform_slug || false !== strpos( $host, 'steampowered.com' ) ) {
+                    return [ 'slug' => 'steam', 'chip' => 'S' ];
+                }
+                if ( 'ps' === $catalogue_store || 'playstation' === $platform_slug || false !== strpos( $host, 'playstation.com' ) ) {
+                    return [ 'slug' => 'playstation', 'chip' => 'PS' ];
+                }
+                if ( 'nintendo' === $catalogue_store || 'nintendo' === $platform_slug || false !== strpos( $host, 'nintendo.com' ) ) {
+                    return [ 'slug' => 'nintendo', 'chip' => 'N' ];
+                }
+                if ( 'microsoft' === $catalogue_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
+                    return [ 'slug' => 'microsoft', 'chip' => 'xbox' === $platform_slug ? 'X' : 'M' ];
                 }
 
                 $initial = mb_strtoupper( mb_substr( trim( $platform ), 0, 1 ) );
@@ -610,7 +613,16 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 $price_date       = (string) ( $link['price_date'] ?? '' );
                 $list_price_label = (string) ( $link['list_price_label'] ?? '' );
                 $discount_percent = (int) ( $link['discount_percent'] ?? 0 );
-                $status_label     = $is_pre_release ? __( '発売前', 'node-library' ) : __( '価格未登録', 'node-library' );
+                if ( $is_pre_release ) {
+                    $status_label = __( '発売前', 'node-library' );
+                    $status_kind  = 'upcoming';
+                } elseif ( $item_is_free ) {
+                    $status_label = __( '無料', 'node-library' );
+                    $status_kind  = 'free';
+                } else {
+                    $status_label = __( '価格未登録', 'node-library' );
+                    $status_kind  = 'unpriced';
+                }
 
                 $offer_cards[] = [
                     'url'                     => (string) $link['url'],
@@ -625,7 +637,7 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                     'list_price_label'        => $list_price_label,
                     'discount_percent'        => $discount_percent,
                     'status_label'            => $status_label,
-                    'status_kind'             => $is_pre_release ? 'upcoming' : 'unpriced',
+                    'status_kind'             => $status_kind,
                     'platform_warning'        => $platform_warning,
                     'platform_warning_device' => $platform_warning_device,
                     'warning_id'              => $warning_id,

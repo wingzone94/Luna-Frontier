@@ -1160,7 +1160,7 @@ final class Node_Library {
 			'hierarchical'        => false,
 			'menu_position'       => 20,
 			'menu_icon'           => 'dashicons-database-add',
-			'supports'            => [ 'title' ],
+			'supports'            => [ 'title', 'thumbnail' ],
 		];
 
 		register_post_type( 'node_library', $args );
