@@ -321,182 +321,9 @@
 	margin-top: 24px;
 }
 
-.node-library-archive__grid {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 14px;
-}
-
-.node-library-shelf-card {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-	border: 1px solid var(--md-sys-color-outline-variant);
-	border-radius: var(--m3-radius-medium);
-	background: var(--md-sys-color-surface-container-low);
-	overflow: hidden;
-}
-
-.node-library-shelf-card__link {
-	display: flex;
-	flex-direction: column;
-	color: inherit;
-	text-decoration: none;
-}
-
-.node-library-shelf-card__link--main {
-	padding: 20px 20px 0;
-}
-
-.node-library-shelf-card__link--footer {
-	margin-top: auto;
-	padding: 0 20px 20px;
-}
-
-.node-library-shelf-card__link:hover {
-	background: var(--md-sys-color-surface-container-high);
-}
-
-.node-library-shelf-card__link:focus-visible {
-	background: var(--md-sys-color-surface-container-high);
-	outline: 2px solid var(--md-sys-color-primary);
-	outline-offset: -2px;
-}
-
-.node-library-shelf-card__meta {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
-
-.node-library-shelf-card__devices {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	color: var(--md-sys-color-on-surface-variant);
-}
-
-.node-library-shelf-card__devices .material-symbols-outlined {
-	font-size: 1.1rem;
-}
-
-.node-library-shelf-card__type,
-.node-library-single__type {
-	width: fit-content;
-	padding: 6px 10px;
-	border-radius: 999px;
-	background: var(--md-sys-color-tertiary-container);
-	color: var(--md-sys-color-on-tertiary-container);
-	font-size: 0.8125rem;
-	font-weight: 700;
-}
-
-.node-library-shelf-card__type--app,
-.node-library-single__type--app {
-	background: var(--md-sys-color-secondary-container);
-	color: var(--md-sys-color-on-secondary-container);
-}
-
-.node-library-shelf-card h2 {
-	margin: 16px 0 0;
-	color: var(--md-sys-color-on-surface);
-	font-size: 1.125rem;
-	line-height: 1.4;
-}
-
-.node-library-shelf-card p {
-	margin: 10px 0 0;
-	color: var(--md-sys-color-on-surface-variant);
-	font-size: 0.9375rem;
-	line-height: 1.7;
-}
-
-.node-library-shelf-card__platforms {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-	margin: 14px 20px 16px;
-}
-
-.node-library-shelf-card__platform-details {
-	margin: 14px 20px 16px;
-}
-
-.node-library-shelf-card__platform-details summary {
-	cursor: pointer;
-	list-style: none;
-}
-
-.node-library-shelf-card__platform-details summary::-webkit-details-marker {
-	display: none;
-}
-
-.node-library-shelf-card__platform-details .node-library-shelf-card__platforms {
-	margin: 0;
-}
-
-.node-library-shelf-card__platform-details .node-library-shelf-card__platforms--expanded {
-	margin-top: 8px;
-}
-
-.node-library-shelf-card__platform-pill {
-	max-width: 100%;
-	padding: 3px 7px;
-	border: 1px solid var(--md-sys-color-outline-variant);
-	border-radius: var(--m3-radius-full);
-	color: var(--md-sys-color-on-surface-variant);
-	font-size: 0.6875rem;
-	font-weight: 700;
-	line-height: 1.25;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.node-library-shelf-card__platform-pill--more {
-	background: var(--md-sys-color-surface-container-high);
-	cursor: pointer;
-}
-
-.node-library-shelf-card__footer {
-	justify-content: space-between;
-	gap: 12px;
-	padding-top: 16px;
-	border-top: 1px solid var(--md-sys-color-outline-variant);
-	color: var(--md-sys-color-on-surface-variant);
-	font-size: 0.875rem;
-}
-
-.node-library-shelf-card__stats,
-.node-library-shelf-card__stats > span {
-	display: inline-flex;
-	align-items: center;
-}
-
-.node-library-shelf-card__stats {
-	gap: 10px;
-}
-
-.node-library-shelf-card__stats > span {
-	gap: 4px;
-	white-space: nowrap;
-}
-
-.node-library-shelf-card__stats .material-symbols-outlined {
-	font-size: 1rem;
-}
-
-.node-library-shelf-card__action,
 .m3-game-card__details-link {
-	display: inline-flex;
-	align-items: center;
 	gap: 4px;
 	font-weight: 700;
-}
-
-.node-library-shelf-card__action {
-	color: var(--md-sys-color-primary);
 }
 
 /* 記事の動的カラーで --md-sys-color-primary が灰色に解決されると
@@ -649,6 +476,11 @@
 }
 
 .node-library-single__type {
+	width: fit-content;
+	padding: 6px 10px;
+	border-radius: 999px;
+	font-size: .8125rem;
+	font-weight: 700;
 	margin-bottom: 20px;
 }
 
@@ -1660,10 +1492,6 @@
 		grid-column: 1 / -1;
 	}
 
-	.node-library-archive__grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
 	.node-library-pagination {
 		grid-template-columns: 1fr;
 	}
@@ -1701,10 +1529,6 @@
 
 	.node-library-tools__reset {
 		justify-content: center;
-	}
-
-	.node-library-archive__grid {
-		grid-template-columns: 1fr;
 	}
 
 	.node-library-archive__showcase,
