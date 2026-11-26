@@ -231,9 +231,9 @@ function node_library_render_cero_warning( int $post_id ): void {
 		</h2>
 		<p>
 			<?php if ( $has_cero_z ) : ?>
-				<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上対象）のタイトルが含まれます。', 'node-library' ); ?>
+				<?php esc_html_e( 'この記事で扱うゲームには、CERO Z（18歳以上のみ対象）のタイトルが含まれます。', 'node-library' ); ?>
 			<?php else : ?>
-				<?php esc_html_e( 'この記事では、CERO Z（18歳以上対象）のタイトルを扱う場合があります。', 'node-library' ); ?>
+				<?php esc_html_e( 'この記事では、CERO Z（18歳以上のみ対象）のタイトルを扱う場合があります。', 'node-library' ); ?>
 			<?php endif; ?>
 		</p>
 		<?php if ( $titles ) : ?>
@@ -247,7 +247,7 @@ function node_library_render_cero_warning( int $post_id ): void {
 				echo esc_html( sprintf( __( '対象カテゴリ：%s', 'node-library' ), implode( '、', $categories ) ) );
 			?></p>
 		<?php endif; ?>
-		<p class="m3-article__cero-warning-note"><?php esc_html_e( '（日本のCEROレーティングに基づく警告です）', 'node-library' ); ?></p>
+		<p class="m3-article__cero-warning-note"><?php esc_html_e( 'レーティングは日本版のCERO区分に基づきます', 'node-library' ); ?></p>
 	</aside>
 	<?php
 }
