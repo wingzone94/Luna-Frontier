@@ -15,6 +15,7 @@ final class Node_Library_Structured_Meta {
 		add_action( 'init', array( self::class, 'register' ) );
 		add_action( 'add_meta_boxes_node_library', array( self::class, 'add_meta_box' ) );
 		add_action( 'save_post_node_library', array( self::class, 'save' ) );
+		add_filter( 'node_library_product_jsonld', array( self::class, 'filter_product_jsonld' ), 10, 2 );
 	}
 
 	/** @return array<string, string> Supported store identifiers. */
@@ -48,6 +49,8 @@ final class Node_Library_Structured_Meta {
 	public static function fields(): array {
 		return array(
 			'store_ids'     => array( 'label' => __( 'ストアID', 'node-library' ), 'type' => 'object' ),
+			'image_url'     => array( 'label' => __( 'キービジュアルURL', 'node-library' ), 'type' => 'string' ),
+			'is_free'       => array( 'label' => __( '無料タイトル', 'node-library' ), 'type' => 'boolean' ),
 			'developer'     => array( 'label' => __( '開発元', 'node-library' ), 'type' => 'string' ),
 			'publisher'     => array( 'label' => __( '発売元', 'node-library' ), 'type' => 'string' ),
 			'release_date'  => array( 'label' => __( '発売日', 'node-library' ), 'type' => 'string' ),
@@ -117,11 +120,18 @@ final class Node_Library_Structured_Meta {
 	 *
 	 * @param string $field Field without the metadata prefix.
 	 * @param mixed  $value Input value.
-	 * @return string|array Normalized metadata.
+	 * @return string|array|bool Normalized metadata.
 	 */
 	public static function sanitize( string $field, $value ) {
 		if ( in_array( $field, array( 'developer', 'publisher' ), true ) ) {
 			return self::text( $value );
+		}
+		if ( 'image_url' === $field ) {
+			$url = is_string( $value ) ? esc_url_raw( trim( $value ), array( 'https', 'http' ) ) : '';
+			return '' !== $url && wp_parse_url( $url, PHP_URL_HOST ) ? $url : '';
+		}
+		if ( 'is_free' === $field ) {
+			return true === self::flag( $value );
 		}
 		if ( 'release_date' === $field ) {
 			$date = self::text( $value );
@@ -155,7 +165,9 @@ final class Node_Library_Structured_Meta {
 				}
 			}
 		} elseif ( in_array( $field, array( 'japanese', 'capabilities' ), true ) ) {
-			$flags = 'japanese' === $field ? array( 'audio', 'subtitles', 'ui' ) : array( 'crossplay', 'crosssave', 'online', 'hdr' );
+			$flags = 'japanese' === $field
+				? array( 'audio', 'subtitles', 'ui' )
+				: array( 'crossplay', 'crosssave', 'online', 'cloud_streaming', 'achievements', 'uhd_4k', 'fps_120', 'ray_tracing', 'hdr' );
 			foreach ( $flags as $flag ) {
 				$normalized = self::flag( $value[ $flag ] ?? null );
 				if ( null !== $normalized ) {
@@ -198,6 +210,9 @@ final class Node_Library_Structured_Meta {
 				foreach ( self::stores() as $store => $label ) {
 					self::input( $field, $store, $label, $value[ $store ] ?? '' );
 				}
+			} elseif ( 'is_free' === $field ) {
+				echo '<input type="hidden" name="node_library_structured[is_free]" value="0">';
+				echo '<p><label for="node-library-structured-is_free"><input id="node-library-structured-is_free" name="node_library_structured[is_free]" type="checkbox" value="1"' . checked( true === $value, true, false ) . '> ' . esc_html__( '無料タイトルとして扱う（価格レコード未取得時も Product JSON-LD に ¥0 を出力）', 'node-library' ) . '</label></p>';
 			} elseif ( 'rating' === $field ) {
 				$cero         = $value['cero'] ?? '';
 				$cero_options = self::cero_options();
@@ -208,7 +223,19 @@ final class Node_Library_Structured_Meta {
 				self::select( $field, 'cero', 'CERO', $cero, $cero_options );
 				self::select( $field, 'esrb', 'ESRB', $value['esrb'] ?? '', array_combine( self::ESRB_CODES, self::ESRB_CODES ) );
 			} elseif ( in_array( $field, array( 'japanese', 'capabilities' ), true ) ) {
-				$labels = 'japanese' === $field ? array( 'audio' => __( '音声', 'node-library' ), 'subtitles' => __( '字幕', 'node-library' ), 'ui' => 'UI' ) : array( 'crossplay' => __( 'クロスプレイ', 'node-library' ), 'crosssave' => __( 'クロスセーブ', 'node-library' ), 'online' => __( 'オンライン対応', 'node-library' ), 'hdr' => 'HDR' );
+				$labels = 'japanese' === $field
+					? array( 'audio' => __( '音声', 'node-library' ), 'subtitles' => __( '字幕', 'node-library' ), 'ui' => 'UI' )
+					: array(
+						'crossplay'       => __( 'クロスプレイ', 'node-library' ),
+						'crosssave'       => __( 'クロスセーブ', 'node-library' ),
+						'online'          => __( 'オンライン対応', 'node-library' ),
+						'cloud_streaming' => __( 'クラウドストリーミング', 'node-library' ),
+						'achievements'    => __( '実績／トロフィー', 'node-library' ),
+						'uhd_4k'          => __( '4K対応', 'node-library' ),
+						'fps_120'         => __( '120fps対応', 'node-library' ),
+						'ray_tracing'     => __( 'レイトレーシング', 'node-library' ),
+						'hdr'             => 'HDR',
+					);
 				foreach ( $labels as $key => $label ) {
 					$selected = array_key_exists( $key, $value ) ? ( $value[ $key ] ? '1' : '0' ) : '';
 					self::select( $field, $key, $label, $selected, array( '1' => __( '対応', 'node-library' ), '0' => __( '非対応', 'node-library' ) ) );
@@ -226,7 +253,8 @@ final class Node_Library_Structured_Meta {
 			} elseif ( 'genres' === $field ) {
 				echo '<label class="screen-reader-text" for="node-library-structured-genres">' . esc_html( $definition['label'] ) . '</label><textarea id="node-library-structured-genres" name="node_library_structured[genres]" rows="3" class="large-text">' . esc_textarea( implode( "\n", $value ) ) . '</textarea>';
 			} else {
-				self::input( $field, '', $definition['label'], $value, 'release_date' === $field ? 'date' : 'text' );
+				$input_type = 'release_date' === $field ? 'date' : ( 'image_url' === $field ? 'url' : 'text' );
+				self::input( $field, '', $definition['label'], $value, $input_type );
 			}
 			echo '</td></tr>';
 		}
@@ -269,12 +297,74 @@ final class Node_Library_Structured_Meta {
 			}
 			$value = self::sanitize( $field, $data[ $field ] );
 			$key   = '_node_library_' . $field;
-			if ( '' === $value || array() === $value ) {
+			if ( '' === $value || array() === $value || false === $value ) {
 				delete_post_meta( $post_id, $key );
 			} else {
 				// Metadata APIs unslash values; preserve literal backslashes in names.
 				update_post_meta( $post_id, $key, wp_slash( $value ) );
 			}
 		}
+		if ( function_exists( 'node_library_delete_detail_cache' ) ) {
+			node_library_delete_detail_cache( $post_id );
+		}
+	}
+
+	/**
+	 * Resolve the best available Product image URL (featured image -> key visual URL -> catalog snapshot -> site icon).
+	 */
+	public static function resolve_image_url( int $post_id ): string {
+		$thumbnail = get_the_post_thumbnail_url( $post_id, 'full' );
+		if ( is_string( $thumbnail ) && '' !== $thumbnail ) {
+			$clean = esc_url_raw( $thumbnail, array( 'https', 'http' ) );
+			if ( '' !== $clean && wp_parse_url( $clean, PHP_URL_HOST ) ) {
+				return $clean;
+			}
+		}
+
+		$explicit = self::sanitize( 'image_url', get_post_meta( $post_id, '_node_library_image_url', true ) );
+		if ( is_string( $explicit ) && '' !== $explicit ) {
+			return $explicit;
+		}
+
+		$catalog = get_post_meta( $post_id, '_node_library_catalog', true );
+		if ( is_array( $catalog ) ) {
+			foreach ( array( 'microsoft', 'steam', 'nintendo', 'ps' ) as $store ) {
+				$candidate = $catalog[ $store ]['image_url'] ?? '';
+				if ( is_string( $candidate ) && '' !== $candidate ) {
+					$clean = esc_url_raw( $candidate, array( 'https', 'http' ) );
+					if ( '' !== $clean && wp_parse_url( $clean, PHP_URL_HOST ) ) {
+						return $clean;
+					}
+				}
+			}
+		}
+
+		$site_icon = function_exists( 'get_site_icon_url' ) ? get_site_icon_url() : '';
+		if ( is_string( $site_icon ) && '' !== $site_icon ) {
+			$clean = esc_url_raw( $site_icon, array( 'https', 'http' ) );
+			if ( '' !== $clean && wp_parse_url( $clean, PHP_URL_HOST ) ) {
+				return $clean;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Populate Product JSON-LD image when missing.
+	 *
+	 * @param mixed $data    Product JSON-LD payload.
+	 * @param int   $post_id Library item ID.
+	 * @return mixed
+	 */
+	public static function filter_product_jsonld( $data, int $post_id ) {
+		if ( ! is_array( $data ) || ! empty( $data['image'] ) ) {
+			return $data;
+		}
+		$image = self::resolve_image_url( $post_id );
+		if ( '' !== $image ) {
+			$data['image'] = array( $image );
+		}
+		return $data;
 	}
 }

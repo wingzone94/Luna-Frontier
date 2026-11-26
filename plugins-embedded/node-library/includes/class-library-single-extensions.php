@@ -22,10 +22,13 @@ final class Node_Library_Single_Extensions {
 		self::$initialized = true;
 
 		add_filter( 'node_library_spec_rows', array( self::class, 'filter_spec_rows' ), 10, 2 );
+		add_action( 'node_library_single_after_specs', array( self::class, 'render_features_section' ), 5, 1 );
 		add_action( 'node_library_single_after_specs', array( self::class, 'render_price_section' ), 10, 1 );
 		add_action( 'node_library_single_after_stores', array( self::class, 'render_relations_section' ), 10, 1 );
 		add_action( 'node_library_single_after_articles', array( self::class, 'render_related_articles_section' ), 10, 1 );
 		add_filter( 'node_library_product_jsonld_offers', array( self::class, 'filter_jsonld_offers' ), 10, 2 );
+		add_action( 'admin_menu', array( self::class, 'register_settings_page' ) );
+		add_action( 'admin_init', array( self::class, 'register_settings' ) );
 	}
 
 	/**
@@ -156,11 +159,19 @@ final class Node_Library_Single_Extensions {
 			}
 			$product = Node_Library_Store_ID_Migration::extract( $url );
 			$store   = $product['store'] ?? '';
+			$prod_id = $product['id'] ?? '';
+			if ( '' === $store ) {
+				$epic_slug = self::extract_epic_slug( $url );
+				if ( '' !== $epic_slug ) {
+					$store   = 'epic';
+					$prod_id = $epic_slug;
+				}
+			}
 			$link['url'] = $url;
 			$link['catalogue_store'] = $store;
 			$link['platform'] = node_library_public_store_label( $link, $ids );
 			unset( $link['price_store'] );
-			if ( isset( $product['id'], $ids[ $store ] ) && $ids[ $store ] === $product['id'] ) {
+			if ( '' !== $prod_id && isset( $ids[ $store ] ) && 0 === strcasecmp( $ids[ $store ], $prod_id ) ) {
 				$link['price_store'] = $store;
 				$matched[ $store ] = true;
 			}
@@ -302,12 +313,16 @@ final class Node_Library_Single_Extensions {
 
 			<?php foreach ( $entries as $entry ) : ?>
 				<?php
-				$stats    = $entry['stats'];
-				$current  = $entry['current'] ?? $stats['current'];
-				$currency = (string) ( $current['currency'] ?? '' );
-				$has_now  = null !== ( $current['price'] ?? null ) && '' !== (string) $current['price'];
-				$on_sale  = null !== $stats['discount_percent'];
-				$sale_end = is_string( $stats['sale_end'] ?? null ) ? $stats['sale_end'] : '';
+				$stats        = $entry['stats'];
+				$current      = $entry['current'] ?? $stats['current'];
+				$currency     = (string) ( $current['currency'] ?? '' );
+				$has_now      = null !== ( $current['price'] ?? null ) && '' !== (string) $current['price'];
+				$on_sale      = null !== $stats['discount_percent'];
+				$sale_end     = is_string( $stats['sale_end'] ?? null ) ? $stats['sale_end'] : '';
+				$prev_row     = $has_now && $on_sale
+					? self::previous_price_for_sale_animation( $current, null !== $stats['discount_percent'] ? (int) $stats['discount_percent'] : null, $entry['history'] )
+					: null;
+				$anim_pattern = null !== $prev_row ? self::sale_animation_pattern( $post_id ) : '';
 				?>
 				<div class="node-library-pricing__card">
 					<h3 class="node-library-pricing__store"><?php echo esc_html( $entry['label'] ); ?></h3>
@@ -316,7 +331,18 @@ final class Node_Library_Single_Extensions {
 							<dt><?php esc_html_e( '現在価格', 'node-library' ); ?></dt>
 							<dd class="node-library-pricing__current">
 								<?php if ( $has_now ) : ?>
-									<strong><?php echo esc_html( self::format_currency( (string) $current['price'], $currency ) ); ?></strong>
+									<?php $curr_label = self::format_currency( (string) $current['price'], $currency ); ?>
+									<strong class="node-library-pricing__price-final"<?php
+									if ( null !== $prev_row ) {
+										$prev_label = self::format_currency( (string) $prev_row['price'], $currency );
+										echo ' data-node-library-sale-anim="' . esc_attr( $anim_pattern ) . '"'
+											. ' data-sale-prev-price="' . esc_attr( (string) (float) $prev_row['price'] ) . '"'
+											. ' data-sale-curr-price="' . esc_attr( (string) (float) $current['price'] ) . '"'
+											. ' data-sale-prev-label="' . esc_attr( $prev_label ) . '"'
+											. ' data-sale-curr-label="' . esc_attr( $curr_label ) . '"'
+											. ' data-sale-currency="' . esc_attr( $currency ) . '"';
+									}
+									?>><?php echo esc_html( $curr_label ); ?></strong>
 									<?php if ( $on_sale && null !== ( $current['list_price'] ?? null ) ) : ?>
 										<del class="node-library-pricing__list-price"><?php echo esc_html( self::format_currency( (string) $current['list_price'], $currency ) ); ?></del>
 										<span class="node-library-pricing__discount"><?php echo esc_html( sprintf( '-%d%%', (int) $stats['discount_percent'] ) ); ?></span>
@@ -555,7 +581,21 @@ final class Node_Library_Single_Extensions {
 		}
 
 		if ( ! $built ) {
-			return $offers;
+			$is_free = class_exists( 'Node_Library_Structured_Meta' )
+				&& true === Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( $post_id, '_node_library_is_free', true ) );
+			if ( ! $is_free ) {
+				return $offers;
+			}
+			$free_offer = array(
+				'@type'         => 'Offer',
+				'price'         => '0',
+				'priceCurrency' => 'JPY',
+			);
+			$resolved_offers = self::store_offers( $post_id, $links );
+			if ( ! empty( $resolved_offers[0]['url'] ) ) {
+				$free_offer['url'] = $resolved_offers[0]['url'];
+			}
+			return $free_offer;
 		}
 
 		return 1 === count( $built ) ? $built[0] : $built;
@@ -848,8 +888,328 @@ final class Node_Library_Single_Extensions {
 		if ( 'apple' === $store && preg_match( '/^(?:id)?([0-9]+)$/D', $id, $m ) ) {
 			return 'https://apps.apple.com/jp/app/id' . $m[1];
 		}
+		if ( 'epic' === $store && preg_match( '/^[A-Za-z0-9._\-]+$/D', $id ) ) {
+			return 'https://store.epicgames.com/p/' . rawurlencode( $id );
+		}
 
 		return '';
+	}
+
+	/**
+	 * Extract Epic Games Store product slug from a store.epicgames.com product URL.
+	 */
+	private static function extract_epic_slug( string $url ): string {
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return '';
+		}
+		$host = strtolower( (string) $parts['host'] );
+		if ( 'store.epicgames.com' !== $host && 'www.store.epicgames.com' !== $host ) {
+			return '';
+		}
+		$path = (string) ( $parts['path'] ?? '' );
+		if ( preg_match( '~^/(?:[a-z]{2}(?:-[a-z]{2})?/)?p/([A-Za-z0-9._\-]+)(?:/|$)~iD', $path, $match ) ) {
+			return $match[1];
+		}
+		return '';
+	}
+
+	/**
+	 * Render the supported features chip section on single Library pages.
+	 */
+	public static function render_features_section( int $post_id ): void {
+		$chips = self::get_feature_chips( $post_id );
+		if ( ! $chips ) {
+			return;
+		}
+		?>
+		<section class="node-library-single__features node-library-single__section" aria-labelledby="node-library-features-title">
+			<div class="node-library-single__section-heading">
+				<span class="material-symbols-outlined" data-icon="tune" aria-hidden="true"></span>
+				<h2 id="node-library-features-title"><?php esc_html_e( '対応している機能', 'node-library' ); ?></h2>
+				<span class="node-library-single__section-count"><?php echo esc_html( sprintf( __( '%s件', 'node-library' ), number_format_i18n( count( $chips ) ) ) ); ?></span>
+			</div>
+			<ul class="node-library-features__list">
+				<?php foreach ( $chips as $chip ) : ?>
+					<li class="node-library-feature-chip node-library-feature-chip--<?php echo esc_attr( $chip['brand'] ); ?>">
+						<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $chip['icon'] ); ?>" aria-hidden="true"></span>
+						<span><?php echo esc_html( $chip['label'] ); ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		</section>
+		<?php
+	}
+
+	/**
+	 * Resolve supported feature chips from capabilities, subscriptions, and linked platforms.
+	 *
+	 * @return array<int, array{key:string,label:string,brand:string,icon:string}>
+	 */
+	public static function get_feature_chips( int $post_id ): array {
+		$capabilities = class_exists( 'Node_Library_Structured_Meta' )
+			? Node_Library_Structured_Meta::sanitize( 'capabilities', get_post_meta( $post_id, '_node_library_capabilities', true ) )
+			: array();
+		$subscriptions = class_exists( 'Node_Library_Structured_Meta' )
+			? Node_Library_Structured_Meta::sanitize( 'subscriptions', get_post_meta( $post_id, '_node_library_subscriptions', true ) )
+			: array();
+		$platforms = self::detect_platforms( $post_id );
+
+		$chips = array();
+
+		if ( true === ( $capabilities['crossplay'] ?? null ) ) {
+			$chips[] = array( 'key' => 'crossplay', 'label' => __( 'クロスプレイ', 'node-library' ), 'brand' => 'neutral', 'icon' => 'sync' );
+		}
+		if ( true === ( $capabilities['crosssave'] ?? null ) ) {
+			$chips[] = array( 'key' => 'crosssave', 'label' => __( 'クロスセーブ', 'node-library' ), 'brand' => 'neutral', 'icon' => 'devices' );
+		}
+		if ( true === ( $capabilities['online'] ?? null ) ) {
+			$chips[] = array( 'key' => 'online', 'label' => __( 'オンライン対応', 'node-library' ), 'brand' => 'neutral', 'icon' => 'travel_explore' );
+		}
+
+		$cloud_flag = $capabilities['cloud_streaming'] ?? null;
+		if ( true === $cloud_flag ) {
+			$chips[] = array( 'key' => 'cloud_streaming', 'label' => __( 'クラウドストリーミング', 'node-library' ), 'brand' => 'neutral', 'icon' => 'media_output' );
+		} elseif ( null === $cloud_flag && ! empty( $platforms['geforcenow'] ) ) {
+			$chips[] = array( 'key' => 'cloud_streaming', 'label' => __( 'GeForce NOW クラウド', 'node-library' ), 'brand' => 'neutral', 'icon' => 'media_output' );
+		}
+
+		if ( true === ( $capabilities['achievements'] ?? null ) ) {
+			$achievement_platforms = array(
+				'microsoft'   => __( 'Xbox 実績', 'node-library' ),
+				'playstation' => __( 'PlayStation トロフィー', 'node-library' ),
+				'steam'       => __( 'Steam 実績', 'node-library' ),
+				'epic'        => __( 'Epic 実績', 'node-library' ),
+			);
+			$matched_ach = false;
+			foreach ( $achievement_platforms as $brand => $label ) {
+				if ( ! empty( $platforms[ $brand ] ) ) {
+					$chips[]     = array( 'key' => 'achievements_' . $brand, 'label' => $label, 'brand' => $brand, 'icon' => 'verified' );
+					$matched_ach = true;
+				}
+			}
+			if ( ! $matched_ach ) {
+				$chips[] = array( 'key' => 'achievements', 'label' => __( '実績／トロフィー', 'node-library' ), 'brand' => 'neutral', 'icon' => 'verified' );
+			}
+		}
+
+		$sub_map = array(
+			'gamepass'     => array( 'label' => 'Xbox / PC Game Pass', 'brand' => 'microsoft' ),
+			'psplus'       => array( 'label' => 'PlayStation Plus', 'brand' => 'playstation' ),
+			'nso'          => array( 'label' => 'Nintendo Switch Online', 'brand' => 'nintendo' ),
+			'ea_play'      => array( 'label' => 'EA Play', 'brand' => 'neutral' ),
+			'ubisoft_plus' => array( 'label' => 'Ubisoft+', 'brand' => 'neutral' ),
+			'apple_arcade' => array( 'label' => 'Apple Arcade', 'brand' => 'neutral' ),
+		);
+		foreach ( $sub_map as $sub_key => $meta ) {
+			if ( ! empty( $subscriptions[ $sub_key ] ) ) {
+				$chips[] = array(
+					'key'   => 'sub_' . $sub_key,
+					'label' => $meta['label'],
+					'brand' => $meta['brand'],
+					'icon'  => 'apps',
+				);
+			}
+		}
+
+		$resolution   = strtolower( trim( (string) ( $capabilities['resolution'] ?? '' ) ) );
+		$auto_4k      = '' !== $resolution && ( str_contains( $resolution, '4k' ) || str_contains( $resolution, '3840' ) || str_contains( $resolution, '2160' ) );
+		$explicit_4k  = $capabilities['uhd_4k'] ?? null;
+		if ( true === $explicit_4k || ( null === $explicit_4k && $auto_4k ) ) {
+			$chips[] = array( 'key' => 'uhd_4k', 'label' => __( '4K対応', 'node-library' ), 'brand' => 'neutral', 'icon' => 'image' );
+		}
+
+		$max_fps      = (int) ( $capabilities['max_fps'] ?? 0 );
+		$auto_120     = $max_fps >= 120;
+		$explicit_120 = $capabilities['fps_120'] ?? null;
+		if ( true === $explicit_120 || ( null === $explicit_120 && $auto_120 ) ) {
+			$chips[] = array( 'key' => 'fps_120', 'label' => __( '120fps対応', 'node-library' ), 'brand' => 'neutral', 'icon' => 'bolt' );
+		}
+
+		if ( true === ( $capabilities['hdr'] ?? null ) ) {
+			$chips[] = array( 'key' => 'hdr', 'label' => __( 'HDR対応', 'node-library' ), 'brand' => 'neutral', 'icon' => 'check_circle' );
+		}
+		if ( true === ( $capabilities['ray_tracing'] ?? null ) ) {
+			$chips[] = array( 'key' => 'ray_tracing', 'label' => __( 'レイトレーシング', 'node-library' ), 'brand' => 'neutral', 'icon' => 'auto_awesome' );
+		}
+
+		return $chips;
+	}
+
+	/**
+	 * Detect linked platform/store slugs from store IDs and links.
+	 *
+	 * @return array<string, bool>
+	 */
+	private static function detect_platforms( int $post_id ): array {
+		$found     = array();
+		$store_ids = get_post_meta( $post_id, '_node_library_store_ids', true );
+		if ( is_array( $store_ids ) ) {
+			if ( ! empty( $store_ids['microsoft'] ) ) {
+				$found['microsoft'] = true;
+			}
+			if ( ! empty( $store_ids['ps'] ) ) {
+				$found['playstation'] = true;
+			}
+			if ( ! empty( $store_ids['nintendo'] ) ) {
+				$found['nintendo'] = true;
+			}
+			if ( ! empty( $store_ids['steam'] ) ) {
+				$found['steam'] = true;
+			}
+			if ( ! empty( $store_ids['epic'] ) ) {
+				$found['epic'] = true;
+			}
+		}
+
+		$links = get_post_meta( $post_id, '_node_library_links', true );
+		if ( is_array( $links ) ) {
+			foreach ( $links as $link ) {
+				if ( ! is_array( $link ) ) {
+					continue;
+				}
+				$url      = (string) ( $link['url'] ?? '' );
+				$host     = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+				$platform = strtolower( (string) ( $link['platform'] ?? '' ) );
+				$hardware = (string) ( $link['hardware'] ?? '' );
+
+				if ( in_array( $hardware, array( 'xbox-one', 'xbox-series', 'xbox-crossgen' ), true ) || false !== strpos( $host, 'xbox.com' ) || false !== strpos( $platform, 'xbox' ) ) {
+					$found['microsoft'] = true;
+				}
+				if ( in_array( $hardware, array( 'playstation-4', 'playstation-5', 'playstation-crossgen' ), true ) || false !== strpos( $host, 'playstation.com' ) || false !== strpos( $platform, 'playstation' ) || preg_match( '/(^|\s)ps([345]|\s+store)/', $platform ) ) {
+					$found['playstation'] = true;
+				}
+				if ( in_array( $hardware, array( 'nintendo-switch', 'nintendo-switch-2' ), true ) || false !== strpos( $host, 'nintendo.com' ) || false !== strpos( $platform, 'nintendo' ) || false !== strpos( $platform, 'switch' ) ) {
+					$found['nintendo'] = true;
+				}
+				if ( false !== strpos( $host, 'steampowered.com' ) || false !== strpos( $platform, 'steam' ) ) {
+					$found['steam'] = true;
+				}
+				if ( false !== strpos( $host, 'epicgames.com' ) || false !== strpos( $platform, 'epic' ) ) {
+					$found['epic'] = true;
+				}
+				if ( false !== strpos( $host, 'nvidia.com' ) || false !== strpos( $platform, 'geforce' ) ) {
+					$found['geforcenow'] = true;
+				}
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Resolve the immediately preceding price history row when the current sale price is lower.
+	 *
+	 * @param array<string, mixed>             $current          Current observation row.
+	 * @param int|null                         $discount_percent Active discount percentage.
+	 * @param array<int, array<string, mixed>> $history          Recent history ordered newest-first.
+	 * @return array<string, mixed>|null
+	 */
+	private static function previous_price_for_sale_animation( array $current, ?int $discount_percent, array $history ): ?array {
+		if ( null === $discount_percent || $discount_percent <= 0 || count( $history ) < 2 ) {
+			return null;
+		}
+		$curr_price    = $current['price'] ?? null;
+		$curr_currency = strtoupper( trim( (string) ( $current['currency'] ?? '' ) ) );
+		if ( ! is_numeric( $curr_price ) || '' === $curr_currency ) {
+			return null;
+		}
+
+		$prev          = $history[1] ?? null;
+		$prev_price    = is_array( $prev ) ? ( $prev['price'] ?? null ) : null;
+		$prev_currency = is_array( $prev ) ? strtoupper( trim( (string) ( $prev['currency'] ?? '' ) ) ) : '';
+		if ( ! is_numeric( $prev_price ) || $prev_currency !== $curr_currency ) {
+			return null;
+		}
+		if ( (float) $curr_price >= (float) $prev_price ) {
+			return null;
+		}
+
+		return $prev;
+	}
+
+	/**
+	 * Determine the active sale price animation pattern ('a' = 3D drum picker, 'b' = canvas particle dispersion).
+	 */
+	public static function sale_animation_pattern( int $post_id ): string {
+		$option  = (string) get_option( 'node_library_sale_animation_pattern', 'a' );
+		$pattern = apply_filters( 'node_library_sale_animation_pattern', $option, $post_id );
+		return self::sanitize_sale_animation_pattern( $pattern );
+	}
+
+	/**
+	 * Normalize animation pattern identifier to 'a' or 'b'.
+	 *
+	 * @param mixed $value Raw option or filter value.
+	 */
+	public static function sanitize_sale_animation_pattern( $value ): string {
+		$normalized = is_string( $value ) ? strtolower( trim( $value ) ) : 'a';
+		return 'b' === $normalized ? 'b' : 'a';
+	}
+
+	/** Register display settings submenu under Luna Library. */
+	public static function register_settings_page(): void {
+		add_submenu_page(
+			'edit.php?post_type=node_library',
+			__( 'Luna Library 表示設定', 'node-library' ),
+			__( '表示設定', 'node-library' ),
+			'manage_options',
+			'node-library-display-settings',
+			array( self::class, 'render_settings_page' )
+		);
+	}
+
+	/** Register plugin display options. */
+	public static function register_settings(): void {
+		register_setting(
+			'node_library_display_settings',
+			'node_library_sale_animation_pattern',
+			array(
+				'type'              => 'string',
+				'default'           => 'a',
+				'sanitize_callback' => array( self::class, 'sanitize_sale_animation_pattern' ),
+			)
+		);
+	}
+
+	/** Render display settings form in WP Admin. */
+	public static function render_settings_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$current = self::sanitize_sale_animation_pattern( get_option( 'node_library_sale_animation_pattern', 'a' ) );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Luna Library 表示設定', 'node-library' ); ?></h1>
+			<form method="post" action="options.php">
+				<?php settings_fields( 'node_library_display_settings' ); ?>
+				<table class="form-table" role="presentation">
+					<tbody>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'セール時の価格アニメーション', 'node-library' ); ?></th>
+							<td>
+								<fieldset>
+									<p>
+										<label>
+											<input type="radio" name="node_library_sale_animation_pattern" value="a"<?php checked( $current, 'a' ); ?>>
+											<?php esc_html_e( 'パターンA：ドラム式ピッカー（縦スクロール／3D回転・デフォルト）', 'node-library' ); ?>
+										</label>
+									</p>
+									<p>
+										<label>
+											<input type="radio" name="node_library_sale_animation_pattern" value="b"<?php checked( $current, 'b' ); ?>>
+											<?php esc_html_e( 'パターンB：粒子霧散（Canvas で旧価格を霧散させて新価格を表示）', 'node-library' ); ?>
+										</label>
+									</p>
+								</fieldset>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
 	}
 
 	/**

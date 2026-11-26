@@ -101,6 +101,10 @@
         if (pending.summary) {
             setValue(document.querySelector('textarea[name="node_library_summary"]'), pending.summary);
         }
+        var imageField = document.getElementById('node-library-structured-image_url');
+        if (pending.image_url && imageField && !imageField.value.trim()) {
+            setValue(imageField, pending.image_url);
+        }
         Object.keys(pending.meta).forEach(function (field) {
             var value = pending.meta[field];
             if (field === 'store_ids') {

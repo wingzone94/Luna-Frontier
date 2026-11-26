@@ -161,6 +161,47 @@ class Node_Library_Structured_Meta_Test extends WP_UnitTestCase {
 		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_subscriptions' ) );
 	}
 
+	public function test_free_flag_image_url_and_extended_capabilities_round_trip(): void {
+		$this->submit( array(
+			'is_free'      => '1',
+			'image_url'    => 'https://cdn.example.com/genshin.jpg',
+			'capabilities' => array(
+				'cloud_streaming' => '1',
+				'achievements'    => '1',
+				'uhd_4k'          => '1',
+				'fps_120'         => '0',
+				'ray_tracing'     => '1',
+			),
+		) );
+
+		$this->assertTrue( (bool) get_post_meta( $this->item_id, '_node_library_is_free', true ) );
+		$this->assertSame( 'https://cdn.example.com/genshin.jpg', get_post_meta( $this->item_id, '_node_library_image_url', true ) );
+		$this->assertSame(
+			array(
+				'cloud_streaming' => true,
+				'achievements'    => true,
+				'uhd_4k'          => true,
+				'fps_120'         => false,
+				'ray_tracing'     => true,
+			),
+			get_post_meta( $this->item_id, '_node_library_capabilities', true )
+		);
+
+		ob_start();
+		Node_Library_Structured_Meta::render( get_post( $this->item_id ) );
+		$html = (string) ob_get_clean();
+		$this->assertMatchesRegularExpression( '/id="node-library-structured-is_free"[^>]*checked=\'checked\'/', $html );
+		$this->assertStringContainsString( 'value="https://cdn.example.com/genshin.jpg"', $html );
+
+		// Unchecking free flag and submitting invalid image URL deletes both.
+		$this->submit( array(
+			'is_free'   => '0',
+			'image_url' => 'javascript:alert(1)',
+		) );
+		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_is_free' ) );
+		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_image_url' ) );
+	}
+
 	public function test_standalone_package_matches_canonical_source(): void {
 		$root = dirname( __DIR__ );
 		$zip  = new ZipArchive();
