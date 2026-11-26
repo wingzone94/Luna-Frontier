@@ -37,6 +37,12 @@ if ( false !== strpos( $list_class, 'm3-post-grid--2col-list' ) ) {
 					$card_args = array(
 						'card_class' => 'card-standard',
 					);
+					if ( $wp_query->current_post < 6 ) {
+						$card_args['image_loading'] = 'eager';
+						if ( $wp_query->current_post < 3 ) {
+							$card_args['image_fetchpriority'] = 'high';
+						}
+					}
 					if ( $featured_first && $wp_query->current_post < 4 && ! is_paged() ) {
 						$card_args['card_class'] = 'card-featured';
 					}
