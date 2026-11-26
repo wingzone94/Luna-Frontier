@@ -23,7 +23,8 @@ final class Node_Library_Single_Extensions {
 
 		add_filter( 'node_library_spec_rows', array( self::class, 'filter_spec_rows' ), 10, 2 );
 		add_action( 'node_library_single_after_specs', array( self::class, 'render_features_section' ), 5, 1 );
-		add_action( 'node_library_single_after_specs', array( self::class, 'render_price_section' ), 10, 1 );
+		add_action( 'node_library_single_after_specs', array( self::class, 'render_price_section' ), 10, 2 );
+		add_action( 'node_library_single_before_stores', array( self::class, 'render_price_section' ) );
 		add_action( 'node_library_single_after_stores', array( self::class, 'render_relations_section' ), 10, 1 );
 		add_action( 'node_library_single_after_articles', array( self::class, 'render_related_articles_section' ), 10, 1 );
 		add_filter( 'node_library_product_jsonld_offers', array( self::class, 'filter_jsonld_offers' ), 10, 2 );
@@ -237,7 +238,10 @@ final class Node_Library_Single_Extensions {
 	/**
 	 * Render price history summary, badges, and recent price changes after the spec table.
 	 */
-	public static function render_price_section( int $post_id ): void {
+	public static function render_price_section( int $post_id, bool $price_already_placed = false ): void {
+		if ( $price_already_placed ) {
+			return;
+		}
 		$store_ids = get_post_meta( $post_id, '_node_library_store_ids', true );
 		$store_ids = is_array( $store_ids ) ? $store_ids : array();
 
@@ -264,6 +268,12 @@ final class Node_Library_Single_Extensions {
 		}
 
 		if ( ! $entries ) {
+			if ( doing_action( 'node_library_single_before_stores' ) ) {
+				$free = Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( $post_id, '_node_library_is_free', true ) );
+				?>
+				<p class="library-price-status"><?php echo esc_html( $free ? __( '無料', 'node-library' ) : __( '価格データなし', 'node-library' ) ); ?></p>
+				<?php
+			}
 			return;
 		}
 
@@ -922,6 +932,18 @@ final class Node_Library_Single_Extensions {
 		if ( ! $chips ) {
 			return;
 		}
+		$groups = array();
+		foreach ( $chips as $chip ) {
+			$groups[ $chip['brand'] ][] = $chip;
+		}
+		$labels = array(
+			'neutral' => __( '共通機能', 'node-library' ),
+			'microsoft' => 'Xbox',
+			'playstation' => 'PlayStation',
+			'nintendo' => 'Nintendo',
+			'steam' => 'Steam',
+			'epic' => 'Epic Games Store',
+		);
 		?>
 		<section class="node-library-single__features node-library-single__section" aria-labelledby="node-library-features-title">
 			<div class="node-library-single__section-heading">
@@ -929,14 +951,19 @@ final class Node_Library_Single_Extensions {
 				<h2 id="node-library-features-title"><?php esc_html_e( '対応している機能', 'node-library' ); ?></h2>
 				<span class="node-library-single__section-count"><?php echo esc_html( sprintf( __( '%s件', 'node-library' ), number_format_i18n( count( $chips ) ) ) ); ?></span>
 			</div>
-			<ul class="node-library-features__list">
-				<?php foreach ( $chips as $chip ) : ?>
-					<li class="node-library-feature-chip node-library-feature-chip--<?php echo esc_attr( $chip['brand'] ); ?>">
-						<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $chip['icon'] ); ?>" aria-hidden="true"></span>
-						<span><?php echo esc_html( $chip['label'] ); ?></span>
-					</li>
-				<?php endforeach; ?>
-			</ul>
+			<?php foreach ( $groups as $brand => $features ) : ?>
+				<div class="library-feature-group">
+					<h3><?php echo esc_html( $labels[ $brand ] ?? $brand ); ?></h3>
+					<ul class="node-library-features__list">
+						<?php foreach ( $features as $chip ) : ?>
+							<li class="node-library-feature-chip node-library-feature-chip--<?php echo esc_attr( $chip['brand'] ); ?>">
+								<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $chip['icon'] ); ?>" aria-hidden="true"></span>
+								<span><?php echo esc_html( $chip['label'] ); ?></span>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endforeach; ?>
 		</section>
 		<?php
 	}

@@ -27,6 +27,7 @@
 @import './_notice.css' layer(components);
 @import './_date-archive.css' layer(components);
 @import './_library.css' layer(components);
+@import "./_library-layout.css";
 @import './_search-results.css' layer(components);
 @import './_cards.css' layer(components);
 /* Scoped Nexus rules must also override the unlayered legacy blocks.css. */

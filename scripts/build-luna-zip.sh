@@ -47,6 +47,7 @@ rsync -a \
   --exclude='tests/' \
   --exclude='test-results/' \
   --exclude='design/' \
+  --exclude='mockups/' \
   --exclude='memory/' \
   --exclude='AGENTS.md' \
   --exclude='AGENT.MD' \

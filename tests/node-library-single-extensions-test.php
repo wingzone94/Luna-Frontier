@@ -204,6 +204,17 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-icon="sell"', $html );
 		$this->assertStringContainsString( 'data-icon="verified"', $html );
 		$this->assertStringContainsString( 'data-icon="schedule"', $html );
+
+		// Split layout: the same price DOM appears once in the purchase column.
+		ob_start();
+		do_action( 'node_library_single_before_stores', $item_id );
+		$purchase = (string) ob_get_clean();
+		ob_start();
+		do_action( 'node_library_single_after_specs', $item_id, true );
+		$editorial = (string) ob_get_clean();
+		$this->assertStringContainsString( 'data-node-library-sale-anim', $purchase );
+		$this->assertStringNotContainsString( 'node-library-single__pricing', $editorial );
+		$this->assertStringContainsString( 'node-library-single__features', $editorial );
 	}
 
 	public function test_bidirectional_relations_resolve_published_items_only_and_hide_unregistered(): void {
