@@ -156,6 +156,7 @@ jobs:
           php scripts/verify-luna-material3-roles.php
           for mode in embedded standalone missing; do
             PRODUCT_CARD_TEST_MODE="$mode" php -r '
+              require getcwd() . "/vendor/autoload.php";
               putenv("WP_PHPUNIT__TESTS_CONFIG=" . getcwd() . "/tests/wp-tests-config.php");
               require getcwd() . "/vendor/wp-phpunit/wp-phpunit/includes/bootstrap.php";
               require getcwd() . "/scripts/product-card-regression.php";
