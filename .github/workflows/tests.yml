@@ -143,9 +143,27 @@ jobs:
           NODE_TEST_WP_CORE_DIR: /tmp/wp-core
         run: vendor/bin/phpunit
 
-  # Node 側の静的検証テスト（アイコンサブセット検証器と topic-nav の名指し回帰テスト）。
+      - name: Run PHP regression scripts
+        env:
+          NODE_TEST_DB_HOST: 127.0.0.1:3306
+          NODE_TEST_DB_NAME: wordpress_test
+          NODE_TEST_DB_USER: root
+          NODE_TEST_DB_PASSWORD: root
+          NODE_TEST_WP_CORE_DIR: /tmp/wp-core
+        run: |
+          set -e
+          php scripts/native-app-logic-test.php
+          php scripts/verify-luna-material3-roles.php
+          for mode in embedded standalone missing; do
+            PRODUCT_CARD_TEST_MODE="$mode" php -r '
+              putenv("WP_PHPUNIT__TESTS_CONFIG=" . getcwd() . "/tests/wp-tests-config.php");
+              require getcwd() . "/vendor/wp-phpunit/wp-phpunit/includes/bootstrap.php";
+              require getcwd() . "/scripts/product-card-regression.php";
+            '
+          done
+
+  # Node 側の静的検証テスト（アイコンサブセット検証器と各種ユニットテスト）。
   # phpunit ジョブとは独立で、依存パッケージも要らない（相対 import と repo のファイルだけ）。
-  # 標準コマンド（package.json の verify:icons:tests）をそのまま実行する。
   node-tests:
     runs-on: ubuntu-latest
 
@@ -163,14 +181,11 @@ jobs:
         with:
           bun-version: '1.3.13'
 
-      - name: Run icon / topic-nav unit tests
-        run: npm run verify:icons:tests
+      - name: Run Node unit tests
+        run: npm run test:node-unit
 
       - name: Verify icon subset (static)
         run: bun run verify:icon-subset -- --static-only
-
-      - name: Run hero CSS sync test
-        run: npm run verify:hero-css
 
   ui-accessibility:
     runs-on: ubuntu-latest
@@ -183,9 +198,9 @@ jobs:
           bun-version: '1.3.13'
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
-      - name: Install Chromium
-        run: bun x playwright install --with-deps chromium
+      - name: Install Chromium and WebKit
+        run: bun x playwright install --with-deps chromium webkit
       - name: Build frontend
         run: bun run build
-      - name: Check search, view controls, enlarged text and the CERO warning
-        run: node --test scripts/search-accessibility.test.mjs scripts/search-open-focus.test.mjs scripts/list-text-reflow.test.mjs scripts/view-mode-accessibility.test.mjs scripts/view-mode-suggest.test.mjs scripts/cero-warning-layout.test.mjs
+      - name: Check UI accessibility, archive flow, and table guides
+        run: bun run test:ui-a11y

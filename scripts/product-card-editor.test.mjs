@@ -8,6 +8,8 @@ function loadEditor(available, { apiFetchImpl = () => Promise.resolve({}), initi
   const registered = new Map();
   const components = new Proxy({}, { get: (_, key) => key });
   let stateIndex = 0;
+  let refIndex = 0;
+  const refs = [];
   const alerts = [];
   const window = {
     alert: (msg) => alerts.push(msg),
@@ -22,11 +24,18 @@ function loadEditor(available, { apiFetchImpl = () => Promise.resolve({}), initi
           const setter = (next) => { initialStates[idx] = next; };
           return [current, setter];
         },
+        useRef: (value) => {
+          const idx = refIndex++;
+          if (!(idx in refs)) {
+            refs[idx] = { current: value };
+          }
+          return refs[idx];
+        },
       },
       components, data: {}, apiFetch: apiFetchImpl, blockEditor: { InspectorControls: 'InspectorControls' },
     },
   };
-  vm.runInNewContext(source, { window, console });
+  vm.runInNewContext(source, { window, console, URL });
   return { registered, alerts, states: initialStates };
 }
 function findNodes(node, predicate, out = []) {
