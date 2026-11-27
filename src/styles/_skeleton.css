@@ -32,6 +32,12 @@
     100% { transform: translateX(60%); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .m3-skeleton::after {
+        animation: none;
+    }
+}
+
 /* Skeleton Elements */
 .m3-skeleton__image { aspect-ratio: 16 / 9; border-radius: 24px; margin-bottom: 16px; }
 .m3-skeleton__title { height: 28px; width: 80%; margin-bottom: 12px; border-radius: 4px; }

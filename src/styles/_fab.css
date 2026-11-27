@@ -300,6 +300,12 @@ body.is-active-toc .m3-fab:not(#m3-toc-trigger) {
     100% { left: 150%; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .m3-fab--ai-expressive::after {
+        animation: none;
+    }
+}
+
 /* Tooltip on Hover (PC) */
 .m3-fab-label-top {
     position: absolute;

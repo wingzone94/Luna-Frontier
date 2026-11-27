@@ -78,6 +78,8 @@ endif;
         </ol>
 
         <?php the_comments_navigation(); ?>
+    <?php else : ?>
+        <h2 class="comments-title screen-reader-text"><?php esc_html_e( 'コメント', 'node' ); ?></h2>
     <?php endif; ?>
 
     <?php if ( ! comments_open() && get_comments_number() && post_type_supports( get_post_type(), 'comments' ) ) : ?>

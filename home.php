@@ -182,7 +182,7 @@ get_header();
 					<h2 id="lf-popular-title"><span class="material-symbols-outlined" data-icon="local_fire_department" aria-hidden="true"></span><?php esc_html_e( '人気記事', 'node' ); ?></h2>
 					<nav class="lf-home__period" aria-label="<?php esc_attr_e( '人気記事の集計期間', 'node' ); ?>">
 						<?php foreach ( array( 7 => __( '過去7日間', 'node' ), 30 => __( '過去30日間', 'node' ) ) as $lf_days => $lf_label ) : ?>
-						<a href="<?php echo esc_url( add_query_arg( 'lf_period', $lf_days, $lf_popular_url ) . '#popular' ); ?>"<?php echo $lf_period === $lf_days ? ' aria-current="true"' : ''; ?>><span><?php echo esc_html( $lf_label ); ?></span></a>
+						<a href="<?php echo esc_url( add_query_arg( 'lf_period', $lf_days, $lf_popular_url ) . '#popular' ); ?>"<?php echo $lf_period === $lf_days ? ' aria-current="page"' : ''; ?>><span><?php echo esc_html( $lf_label ); ?></span></a>
 						<?php endforeach; ?>
 					</nav>
 				</div>

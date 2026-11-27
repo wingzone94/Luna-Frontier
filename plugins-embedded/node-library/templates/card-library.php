@@ -480,14 +480,15 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
             <img class="m3-platform-store-badge" src="<?php echo esc_url( $badge_url ); ?>" alt="<?php echo esc_attr( $button_label ); ?>">
         </a>
     <?php else : ?>
+        <?php $inline_warning_id = $platform_warning ? wp_unique_id( 'node-library-warning-' ) : ''; ?>
         <?php if ( $platform_warning ) : ?>
             <span class="node-library-platform-link node-library-nintendo-link">
-                <span class="node-library-platform-warning node-library-nintendo-warning" role="note" hidden><?php echo esc_html( $platform_warning ); ?></span>
+                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $inline_warning_id ); ?>" role="status" aria-live="polite" hidden><?php echo esc_html( $platform_warning ); ?></span>
         <?php endif; ?>
         <a href="<?php echo esc_url( $link['url'] ); ?>"
            class="m3-platform-button m3-platform-button--<?php echo esc_attr( $platform_slug ); ?><?php echo $platform_hardware_note ? ' m3-platform-button--has-note' : ''; ?> m3-ripple-host"
            target="_blank"
-           rel="noopener"<?php echo $platform_warning ? ' data-node-library-platform-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-platform-warning="' . esc_attr( $platform_warning ) . '" data-node-library-nintendo-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-nintendo-warning="' . esc_attr( $platform_warning ) . '"' : ''; ?>>
+           rel="noopener"<?php echo $platform_warning ? ' aria-describedby="' . esc_attr( $inline_warning_id ) . '" data-node-library-platform-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-platform-warning="' . esc_attr( $platform_warning ) . '" data-node-library-nintendo-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-nintendo-warning="' . esc_attr( $platform_warning ) . '"' : ''; ?>>
             <span class="m3-platform-button__main">
                 <span class="material-symbols-outlined" data-icon="shopping_cart" aria-hidden="true"></span>
                 <span><?php echo esc_html( $button_label ); ?></span>
@@ -754,7 +755,7 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                                 </dialog>
                             <?php endif; ?>
                             <?php if ( $card['platform_warning'] ) : ?>
-                                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $card['warning_id'] ); ?>" role="note" hidden><?php echo esc_html( $card['platform_warning'] ); ?></span>
+                                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $card['warning_id'] ); ?>" role="status" aria-live="polite" hidden><?php echo esc_html( $card['platform_warning'] ); ?></span>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>

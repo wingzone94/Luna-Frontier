@@ -707,8 +707,8 @@ function node_the_post_badges($post_id = null, $mode = 'compact', $types = ['ai'
             $pos_attr = ' data-tooltip-pos="left"';
         }
 
-        echo '<span class="' . esc_attr($sp_class) . '" data-tooltip="' . esc_attr($sponsor_tooltip) . '"' . $pos_attr . '>';
-        echo '<span class="material-symbols-outlined" data-icon="info"></span>';
+        echo '<span class="' . esc_attr($sp_class) . '" data-tooltip="' . esc_attr($sponsor_tooltip) . '" aria-label="' . esc_attr($sponsor_tooltip) . '"' . $pos_attr . '>';
+        echo '<span class="material-symbols-outlined" data-icon="info" aria-hidden="true"></span>';
         if ($mode === 'full') {
             echo '<span class="m3-label__text">' . esc_html($sponsor_text) . '</span>';
         }

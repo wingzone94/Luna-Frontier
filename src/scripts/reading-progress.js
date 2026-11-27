@@ -104,6 +104,10 @@ export function initReadingProgressSingleOnly() {
 
 function playBarShatterAnimation(parent, bar) {
     if (!parent || !bar || !gsapApi) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        bar.style.opacity = '0';
+        return;
+    }
 
     gsapApi.to(bar, {
         opacity: 0,
