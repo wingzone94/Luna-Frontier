@@ -24,31 +24,25 @@ get_header();
 		$library_links   = is_array( $library_links ) ? $library_links : array();
 		$cero_rating     = 'game' === $library_type && function_exists( 'node_library_cero_rating_label' ) ? node_library_cero_rating_label( $library_id ) : '';
 		$library_url     = get_post_type_archive_link( 'node_library' );
-		$linked_articles = new WP_Query(
-			array(
-				'post_type'           => 'post',
-				'post_status'         => 'publish',
-				'posts_per_page'      => 12,
-				'ignore_sticky_posts' => true,
-				'meta_query'          => array(
-					'relation' => 'OR',
-					array(
-						'key'   => '_node_linked_library_id',
-						'value' => (string) $library_id,
-					),
-					array(
-						'key'   => '_node_linked_library_second_id',
-						'value' => (string) $library_id,
-					),
-					array(
-						'key'   => '_node_library_card_reference',
-						'value' => (string) $library_id,
-					),
-				),
-				'orderby'             => 'date',
-				'order'               => 'DESC',
+		$linked_article_ids = is_callable( array( 'Node_Library_Single_Extensions', 'find_linked_article_ids' ) )
+			? Node_Library_Single_Extensions::find_linked_article_ids( array( (int) $library_id ), 12 )
+			: array();
+		$linked_articles = $linked_article_ids
+			? new WP_Query(
+				array(
+					'post_type'           => 'post',
+					'post_status'         => 'publish',
+					'post__in'            => $linked_article_ids,
+					'posts_per_page'      => count( $linked_article_ids ),
+					'ignore_sticky_posts' => true,
+					'no_found_rows'       => true,
+					'orderby'             => 'post__in',
+				)
 			)
-		);
+			: new WP_Query( array( 'post__in' => array( 0 ) ) );
+		if ( $linked_article_ids ) {
+			update_post_thumbnail_cache( $linked_articles );
+		}
 		$game_info = array(
 			'title'        => get_the_title(),
 			'type'         => $library_type,

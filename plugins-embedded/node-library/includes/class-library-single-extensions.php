@@ -470,37 +470,23 @@ final class Node_Library_Single_Extensions {
 		}
 
 		$primary_article_ids = self::primary_linked_article_ids( $post_id );
-
-		$meta_clauses = array( 'relation' => 'OR' );
-		foreach ( $related_ids as $rid ) {
-			$meta_clauses[] = array(
-				'key'   => '_node_linked_library_id',
-				'value' => (string) $rid,
-			);
-			$meta_clauses[] = array(
-				'key'   => '_node_linked_library_second_id',
-				'value' => (string) $rid,
-			);
-			$meta_clauses[] = array(
-				'key'   => '_node_library_card_reference',
-				'value' => (string) $rid,
-			);
+		$matched_ids         = self::find_linked_article_ids( $related_ids, 12, $primary_article_ids );
+		if ( ! $matched_ids ) {
+			return;
 		}
 
-		$query_args = array(
-			'post_type'           => 'post',
-			'post_status'         => 'publish',
-			'posts_per_page'      => 12,
-			'ignore_sticky_posts' => true,
-			'meta_query'          => $meta_clauses,
-			'orderby'             => 'date',
-			'order'               => 'DESC',
+		$query = new WP_Query(
+			array(
+				'post_type'           => 'post',
+				'post_status'         => 'publish',
+				'post__in'            => $matched_ids,
+				'posts_per_page'      => count( $matched_ids ),
+				'ignore_sticky_posts' => true,
+				'no_found_rows'       => true,
+				'orderby'             => 'post__in',
+			)
 		);
-		if ( $primary_article_ids ) {
-			$query_args['post__not_in'] = $primary_article_ids;
-		}
-
-		$query    = new WP_Query( $query_args );
+		update_post_thumbnail_cache( $query );
 		$articles = array_values(
 			array_filter(
 				$query->posts,
@@ -840,36 +826,52 @@ final class Node_Library_Single_Extensions {
 	 *
 	 * @return array<int, int>
 	 */
-	private static function primary_linked_article_ids( int $post_id ): array {
-		$query = new WP_Query(
-			array(
-				'post_type'           => 'post',
-				'post_status'         => 'publish',
-				'posts_per_page'      => 12,
-				'ignore_sticky_posts' => true,
-				'fields'              => 'ids',
-				'no_found_rows'       => true,
-				'meta_query'          => array(
-					'relation' => 'OR',
-					array(
-						'key'   => '_node_linked_library_id',
-						'value' => (string) $post_id,
-					),
-					array(
-						'key'   => '_node_linked_library_second_id',
-						'value' => (string) $post_id,
-					),
-					array(
-						'key'   => '_node_library_card_reference',
-						'value' => (string) $post_id,
-					),
-				),
-				'orderby'             => 'date',
-				'order'               => 'DESC',
+	/**
+	 * 3つの紐付けメタキーに対する OR 三重 JOIN を単一 SQL IN 句へ統合する（H-8）。
+	 *
+	 * @param array<int, int> $library_ids 対象の node_library ID 配列。
+	 * @param int             $limit       最大件数。
+	 * @param array<int, int> $exclude_ids 除外する投稿 ID 配列。
+	 * @return array<int, int>
+	 */
+	public static function find_linked_article_ids( array $library_ids, int $limit = 12, array $exclude_ids = array() ): array {
+		$lib_values = array_values( array_unique( array_filter( array_map( 'intval', $library_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( ! $lib_values || $limit <= 0 ) {
+			return array();
+		}
+
+		global $wpdb;
+		$val_placeholders = implode( ',', array_fill( 0, count( $lib_values ), '%s' ) );
+		$params           = array_map( 'strval', $lib_values );
+		$exclude_sql      = '';
+		$clean_exclude    = array_values( array_unique( array_filter( array_map( 'intval', $exclude_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( $clean_exclude ) {
+			$ex_placeholders = implode( ',', array_fill( 0, count( $clean_exclude ), '%d' ) );
+			$exclude_sql     = " AND p.ID NOT IN ({$ex_placeholders})";
+			$params          = array_merge( $params, $clean_exclude );
+		}
+		$params[] = $limit;
+
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT p.ID
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+				WHERE p.post_type = 'post'
+				AND p.post_status = 'publish'
+				AND m.meta_key IN ('_node_linked_library_id', '_node_linked_library_second_id', '_node_library_card_reference')
+				AND m.meta_value IN ({$val_placeholders}){$exclude_sql}
+				ORDER BY p.post_date DESC, p.ID DESC
+				LIMIT %d",
+				$params
 			)
 		);
 
-		return array_values( array_filter( array_map( 'absint', is_array( $query->posts ) ? $query->posts : array() ) ) );
+		return array_values( array_map( 'intval', is_array( $ids ) ? $ids : array() ) );
+	}
+
+	private static function primary_linked_article_ids( int $post_id ): array {
+		return self::find_linked_article_ids( array( $post_id ), 12 );
 	}
 
 	/**
