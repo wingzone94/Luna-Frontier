@@ -109,6 +109,9 @@ final class Luminous_Blocks {
 	}
 
 	public function enqueue_frontend_assets(): void {
+		if ( ! is_singular() ) {
+			return;
+		}
 		$style_asset = $this->resolve_asset( 'assets/css/blocks.css', 'assets/css/blocks.css' );
 		$script_asset = $this->resolve_asset( 'assets/js/blocks.js', 'assets/js/blocks.js' );
 

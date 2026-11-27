@@ -292,6 +292,23 @@ if ( ! function_exists( 'node_code_font_is_enabled' ) ) {
     }
 }
 
+if ( ! function_exists( 'node_should_load_code_font' ) ) {
+	/**
+	 * コード専用フォント（JetBrains Mono + M PLUS 1 Code 224KB）を現ページで読み込むべきか判定する（H-9）。
+	 * 単一投稿・固定ページかつ本文にコード要素がある場合のみ true。
+	 */
+	function node_should_load_code_font(): bool {
+		if ( ! node_code_font_is_enabled() || ! is_singular() ) {
+			return false;
+		}
+		$post = get_post();
+		if ( ! ( $post instanceof WP_Post ) ) {
+			return false;
+		}
+		return 1 === preg_match( '/(?:<code\b|<pre\b|<kbd\b|<samp\b|wp-block-code)/i', (string) $post->post_content );
+	}
+}
+
 if ( ! function_exists( 'node_get_code_font_stylesheet_url' ) ) {
 	/**
 	 * コード／コマンド用の英数字フォント（JetBrains Mono）だけ。
@@ -335,7 +352,7 @@ if ( ! function_exists( 'node_enqueue_code_font_stylesheet' ) ) {
 	 * テーマ本体の CSS より後。色や余白は触らない。
 	 */
 	function node_enqueue_code_font_stylesheet(): void {
-		if ( is_admin() || ! node_code_font_is_enabled() ) {
+		if ( is_admin() || ! node_should_load_code_font() ) {
 			return;
 		}
 
