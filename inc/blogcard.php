@@ -122,6 +122,9 @@ function node_blogcard_internal_archive_ogp( string $url ) {
 		}
 		if ( '' === $title ) {
 			foreach ( get_post_types( array( 'publicly_queryable' => true, 'has_archive' => true ), 'objects' ) as $type ) {
+				if ( is_array( $type->rewrite ) && ! array_key_exists( 'with_front', $type->rewrite ) ) {
+					continue;
+				}
 				$link = get_post_type_archive_link( $type->name );
 				if ( $link && $target === $normalize( $link ) ) {
 					$title = $type->labels->name;
