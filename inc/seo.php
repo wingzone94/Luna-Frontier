@@ -16,37 +16,52 @@ declare(strict_types=1);
 function node_seo_json_ld() {
     $payloads = [];
 
-    // 1. Article Schema (Singular only)
-    if ( is_singular() ) {
-        $post_id = get_the_ID();
+    // 1. Article Schema (Singular only, excluding node_library which outputs its own Product JSON-LD)
+    if ( is_singular() && ! is_singular( 'node_library' ) ) {
+        $post_id   = get_the_ID();
         $author_id = get_post_field( 'post_author', $post_id );
-        
-        $payloads[] = [
-            '@context' => 'https://schema.org',
-            '@type'    => 'Article',
+        $site_icon = get_site_icon_url();
+        $image_url = get_the_post_thumbnail_url( $post_id, 'large' ) ?: $site_icon;
+        $headline  = html_entity_decode( (string) get_the_title(), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+        $excerpt   = trim( html_entity_decode( wp_strip_all_tags( (string) wp_trim_words( get_the_excerpt(), 160 ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+
+        $publisher = [
+            '@type' => 'Organization',
+            'name'  => html_entity_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
+        ];
+        if ( is_string( $site_icon ) && '' !== $site_icon ) {
+            $publisher['logo'] = [
+                '@type' => 'ImageObject',
+                'url'   => $site_icon,
+            ];
+        }
+
+        $article = [
+            '@context'         => 'https://schema.org',
+            '@type'            => 'Article',
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
                 '@id'   => wp_get_canonical_url( $post_id ) ?: get_permalink( $post_id ),
             ],
-            'headline' => get_the_title(),
-            'image'    => [ get_the_post_thumbnail_url( $post_id, 'large' ) ?: get_site_icon_url() ],
+            'headline'      => $headline,
             'datePublished' => get_the_date( 'c' ),
             'dateModified'  => get_the_modified_date( 'c' ),
-            'author' => [
+            'author'        => [
                 '@type' => 'Person',
                 'name'  => get_the_author_meta( 'display_name', $author_id ),
                 'url'   => get_author_posts_url( $author_id ),
             ],
-            'publisher' => [
-                '@type' => 'Organization',
-                'name'  => get_bloginfo( 'name' ),
-                'logo'  => [
-                    '@type' => 'ImageObject',
-                    'url'   => get_site_icon_url(),
-                ],
-            ],
-            'description' => wp_trim_words( get_the_excerpt(), 160 ),
+            'publisher'     => $publisher,
         ];
+
+        if ( is_string( $image_url ) && '' !== $image_url ) {
+            $article['image'] = [ $image_url ];
+        }
+        if ( '' !== $excerpt ) {
+            $article['description'] = $excerpt;
+        }
+
+        $payloads[] = $article;
     }
 
     // 2. WebSite Schema (Home page only)
@@ -54,7 +69,7 @@ function node_seo_json_ld() {
         $payloads[] = [
             '@context' => 'https://schema.org',
             '@type'    => 'WebSite',
-            'name'     => get_bloginfo( 'name' ),
+            'name'     => html_entity_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
             'url'      => home_url( '/' ),
             // target は文字列ではなく EntryPoint で包む。
             // 素の文字列で書くと Google がテンプレートを普通のURLとみなして
@@ -74,7 +89,10 @@ function node_seo_json_ld() {
     }
 
     foreach ( $payloads as $payload ) {
-        echo "\n" . '<script type="application/ld+json">' . json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) . '</script>' . "\n";
+        $json = wp_json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP );
+        if ( is_string( $json ) && '' !== $json ) {
+            echo "\n" . '<script type="application/ld+json">' . $json . '</script>' . "\n";
+        }
     }
 }
 add_action( 'wp_head', 'node_seo_json_ld' );

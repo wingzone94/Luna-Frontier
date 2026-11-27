@@ -119,7 +119,11 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 			$this->assertSame( [ pathinfo( $archive, PATHINFO_FILENAME ) => true ], $roots, basename( $archive ) . ' のZIPルート/slug' );
 			$this->assertNotNull( $main, basename( $archive ) . ' のメインファイル' );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Plugin Name:\s*Luna\b/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
-			$expected_version = 'node-library.zip' === basename( $archive ) ? $this->library_version() : ( 'node-ai-tools.zip' === basename( $archive ) ? '1.6.0' : '1.4.0' );
+			$expected_version = 'node-library.zip' === basename( $archive )
+				? $this->library_version()
+				: ( 'node-ai-tools.zip' === basename( $archive )
+					? '1.6.0'
+					: ( 'luna-interactive.zip' === basename( $archive ) ? '1.5.0' : '1.4.0' ) );
 			$this->assertMatchesRegularExpression( '/^\s*\*?\s*Version:\s*' . preg_quote( $expected_version, '/' ) . '\s*$/m', substr( (string) $main, 0, 1200 ), basename( $archive ) );
 		}
 	}
