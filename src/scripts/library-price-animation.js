@@ -140,6 +140,11 @@ function runDrumPickerAnimation(el, data) {
         } else {
             updateWheel(targetIndex);
             drum.classList.add('is-settled');
+            window.setTimeout(() => {
+                drum.remove();
+                stage.classList.remove('node-library-pricing__price-stage--drum');
+                el.classList.remove('node-library-pricing__price-final--sr-only');
+            }, 350);
         }
     };
 
@@ -353,5 +358,43 @@ export function initLibrarySaleAnimations() {
         }
     };
 
-    targets.forEach((el) => startTarget(el));
+    const waitForSplash = () => new Promise((resolve) => {
+        const splash = document.getElementById('ll-splash');
+        if (!splash || splash.hidden || splash.classList.contains('is-done') || window.getComputedStyle(splash).display === 'none') {
+            resolve();
+            return;
+        }
+        let settled = false;
+        const done = () => {
+            if (settled) return;
+            settled = true;
+            observer.disconnect();
+            window.clearTimeout(fallbackTimer);
+            resolve();
+        };
+        const observer = new MutationObserver(() => {
+            if (!document.getElementById('ll-splash') || splash.hidden || splash.classList.contains('is-done') || window.getComputedStyle(splash).display === 'none') {
+                done();
+            }
+        });
+        observer.observe(splash, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
+        document.addEventListener('ll-splash:done', done, { once: true });
+        const fallbackTimer = window.setTimeout(done, 2500);
+    });
+
+    waitForSplash().then(() => {
+        if (typeof window.IntersectionObserver !== 'function') {
+            targets.forEach((el) => startTarget(el));
+            return;
+        }
+        const io = new window.IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    io.unobserve(entry.target);
+                    startTarget(entry.target);
+                }
+            });
+        }, { threshold: 0.2 });
+        targets.forEach((el) => io.observe(el));
+    });
 }

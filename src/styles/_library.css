@@ -978,8 +978,11 @@
 }
 
 .node-library-single__more {
+	margin-top: 16px;
 	border-top: 1px solid var(--md-sys-color-outline-variant);
+	border-radius: 12px;
 	background: var(--md-sys-color-surface-container);
+	overflow: hidden;
 }
 
 .node-library-single__more summary {
@@ -1161,10 +1164,15 @@
 	overflow-wrap: anywhere;
 }
 
+.node-library-store-card__row:has(:focus-visible) {
+	overflow: visible;
+}
+
 .node-library-store-card__link:focus-visible,
 .node-library-store-card__more:focus-visible {
-	outline: 2px solid var(--md-sys-color-primary);
-	outline-offset: -2px;
+	outline: 2px solid var(--lf-brand-text, var(--md-sys-color-primary));
+	outline-offset: -3px;
+	border-radius: inherit;
 }
 
 .node-library-store-card__identity {

@@ -1133,7 +1133,7 @@ final class Node_Library_Single_Extensions {
 	 * @return array<string, mixed>|null
 	 */
 	private static function previous_price_for_sale_animation( array $current, ?int $discount_percent, array $history ): ?array {
-		if ( null === $discount_percent || $discount_percent <= 0 || count( $history ) < 2 ) {
+		if ( null === $discount_percent || $discount_percent <= 0 ) {
 			return null;
 		}
 		$curr_price    = $current['price'] ?? null;
@@ -1142,17 +1142,25 @@ final class Node_Library_Single_Extensions {
 			return null;
 		}
 
-		$prev          = $history[1] ?? null;
-		$prev_price    = is_array( $prev ) ? ( $prev['price'] ?? null ) : null;
-		$prev_currency = is_array( $prev ) ? strtoupper( trim( (string) ( $prev['currency'] ?? '' ) ) ) : '';
-		if ( ! is_numeric( $prev_price ) || $prev_currency !== $curr_currency ) {
-			return null;
-		}
-		if ( (float) $curr_price >= (float) $prev_price ) {
-			return null;
+		if ( count( $history ) >= 2 ) {
+			$prev          = $history[1] ?? null;
+			$prev_price    = is_array( $prev ) ? ( $prev['price'] ?? null ) : null;
+			$prev_currency = is_array( $prev ) ? strtoupper( trim( (string) ( $prev['currency'] ?? '' ) ) ) : '';
+			if ( is_numeric( $prev_price ) && $prev_currency === $curr_currency && (float) $curr_price < (float) $prev_price ) {
+				return $prev;
+			}
 		}
 
-		return $prev;
+		// 履歴1件目の初回セールでも定価（list_price）が現在価格より高ければ旧価格としてアニメーション可能にする（A-9）。
+		$list_price = $current['list_price'] ?? null;
+		if ( is_numeric( $list_price ) && (float) $curr_price < (float) $list_price ) {
+			return array(
+				'price'    => $list_price,
+				'currency' => $curr_currency,
+			);
+		}
+
+		return null;
 	}
 
 	/**
