@@ -233,8 +233,7 @@ final class Node_Library_Single_Extensions {
 		$parts = wp_parse_url( $url );
 		$host  = strtolower( (string) ( $parts['host'] ?? '' ) );
 		parse_str( $parts['query'] ?? '', $query );
-		return 'store.steampowered.com' === $host
-			|| (bool) preg_match( '~(?:\.jp$|^store-jp\.)~i', $host )
+		return (bool) preg_match( '~(?:\.jp$|^store-jp\.)~i', $host )
 			|| (bool) preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
 			|| ( is_string( $query['gl'] ?? null ) && 0 === strcasecmp( $query['gl'], 'JP' ) );
 	}

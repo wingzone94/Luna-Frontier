@@ -169,7 +169,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		do_action( 'node_library_single_after_specs', $item_id );
 		$regular_only_html = (string) ob_get_clean();
-		$this->assertStringNotContainsString( '過去最安値', $regular_only_html );
+		$this->assertStringNotContainsString( 'node-library-pricing__badge--lowest', $regular_only_html );
 
 		// Current lowest sale price with future end date.
 		$sale_end_utc = gmdate( 'Y-m-d H:i:s', $now + ( 3 * DAY_IN_SECONDS ) );
