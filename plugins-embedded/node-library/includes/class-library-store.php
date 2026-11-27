@@ -70,6 +70,9 @@ final class Node_Library_Store {
 		$table = $wpdb->prefix . 'node_library_relations';
 		$wpdb->delete( $table, array( 'item_id' => $post_id ), array( '%d' ) );
 		$wpdb->update( $table, array( 'related_item_id' => null ), array( 'related_item_id' => $post_id ) );
+		if ( function_exists( 'node_library_queue_related_cache_invalidation' ) ) {
+			node_library_queue_related_cache_invalidation( $post_id );
+		}
 	}
 
 	public static function routes(): void {

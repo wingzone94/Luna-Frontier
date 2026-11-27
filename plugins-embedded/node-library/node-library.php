@@ -72,7 +72,102 @@ define(
 define( 'NODE_LIBRARY_BADGE_BASE_URL', NODE_LIBRARY_URL . 'assets/images/' );
 
 /**
- * Expire the public Library detail URL after a history write.
+ * Queue related public URLs (archives, bidirectional relations, referencing posts)
+ * for deduplicated WP Super Cache invalidation on shutdown (H-7).
+ */
+function node_library_queue_related_cache_invalidation( int $item_id ): void {
+	if ( $item_id <= 0 ) {
+		return;
+	}
+	$GLOBALS['node_library_cache_invalidation_items'] = is_array( $GLOBALS['node_library_cache_invalidation_items'] ?? null )
+		? $GLOBALS['node_library_cache_invalidation_items']
+		: [];
+	$GLOBALS['node_library_cache_invalidation_items'][ $item_id ] = true;
+
+	if ( ! has_action( 'shutdown', 'node_library_flush_cache_invalidation_queue' ) ) {
+		add_action( 'shutdown', 'node_library_flush_cache_invalidation_queue', 20 );
+	}
+}
+
+/**
+ * Flush queued Library-related WP Super Cache invalidations once per request (H-7).
+ */
+function node_library_flush_cache_invalidation_queue(): void {
+	$items = is_array( $GLOBALS['node_library_cache_invalidation_items'] ?? null )
+		? array_keys( $GLOBALS['node_library_cache_invalidation_items'] )
+		: [];
+	$GLOBALS['node_library_cache_invalidation_items'] = [];
+
+	if ( ! $items || ! function_exists( 'wpsc_delete_url_cache' ) ) {
+		return;
+	}
+
+	global $wpdb;
+	$urls = [
+		home_url( '/library/' ),
+		home_url( '/library/game/' ),
+		home_url( '/library/app/' ),
+	];
+
+	$item_ids = array_values( array_filter( array_map( 'intval', $items ), static fn( int $id ): bool => $id > 0 ) );
+	if ( ! $item_ids ) {
+		return;
+	}
+
+	$placeholders = implode( ',', array_fill( 0, count( $item_ids ), '%d' ) );
+
+	// Bidirectional relations (forward & reverse).
+	if ( '1' === get_option( 'node_library_relations_schema' ) ) {
+		$rel_table   = $wpdb->prefix . 'node_library_relations';
+		$related_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT related_item_id FROM {$rel_table} WHERE item_id IN ({$placeholders}) AND related_item_id IS NOT NULL
+				UNION
+				SELECT DISTINCT item_id FROM {$rel_table} WHERE related_item_id IN ({$placeholders})",
+				array_merge( $item_ids, $item_ids )
+			)
+		);
+		foreach ( (array) $related_ids as $rel_id ) {
+			$rel_id = (int) $rel_id;
+			if ( $rel_id > 0 && 'publish' === get_post_status( $rel_id ) ) {
+				$rel_url = get_permalink( $rel_id );
+				if ( is_string( $rel_url ) && '' !== $rel_url ) {
+					$urls[] = $rel_url;
+				}
+			}
+		}
+	}
+
+	// Referencing articles (card embeds and explicit meta box links).
+	$str_placeholders = implode( ',', array_fill( 0, count( $item_ids ), '%s' ) );
+	$ref_post_ids     = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT DISTINCT m.post_id FROM {$wpdb->postmeta} m
+			INNER JOIN {$wpdb->posts} p ON p.ID = m.post_id
+			WHERE m.meta_key IN ('_node_library_card_reference', '_node_linked_library_id', '_node_linked_library_second_id')
+			AND m.meta_value IN ({$str_placeholders})
+			AND p.post_type = 'post' AND p.post_status = 'publish'",
+			array_map( 'strval', $item_ids )
+		)
+	);
+	foreach ( (array) $ref_post_ids as $ref_id ) {
+		$ref_id  = (int) $ref_id;
+		$ref_url = $ref_id > 0 ? get_permalink( $ref_id ) : false;
+		if ( is_string( $ref_url ) && '' !== $ref_url ) {
+			$urls[] = $ref_url;
+		}
+	}
+
+	$home_clean = untrailingslashit( home_url() );
+	foreach ( array_unique( $urls ) as $target_url ) {
+		if ( is_string( $target_url ) && '' !== $target_url && untrailingslashit( $target_url ) !== $home_clean ) {
+			wpsc_delete_url_cache( $target_url );
+		}
+	}
+}
+
+/**
+ * Expire the public Library detail URL after a history write, and queue related archives/relations/articles.
  *
  * WP Super Cache's post-level API also expires the author's archive.
  */
@@ -85,7 +180,33 @@ function node_library_delete_detail_cache( int $item_id ): void {
 	if ( $url && untrailingslashit( $url ) !== untrailingslashit( home_url() ) ) {
 		wpsc_delete_url_cache( $url );
 	}
+	node_library_queue_related_cache_invalidation( $item_id );
 }
+
+/**
+ * 単体プラグイン運用時にテーマ版が最小要求版未満なら管理画面で通知する（M-11）。
+ */
+function node_library_check_theme_version_notice(): void {
+	if ( ! current_user_can( 'update_themes' ) ) {
+		return;
+	}
+	$embedded = wp_normalize_path( get_template_directory() . '/plugins-embedded/node-library/' );
+	if ( wp_normalize_path( NODE_LIBRARY_DIR ) === $embedded ) {
+		return;
+	}
+	$theme = wp_get_theme();
+	$ver   = is_object( $theme ) ? (string) $theme->get( 'Version' ) : '';
+	if ( '' !== $ver && version_compare( $ver, '2.0.6', '<' ) ) {
+		echo '<div class="notice notice-warning"><p>' . esc_html(
+			sprintf(
+				'Luna Library %s は Luna Frontier テーマ 2.0.6 以上を推奨しています（現在: %s）。CSS・テンプレートの整合を保つためテーマも更新してください。',
+				defined( 'NODE_LIBRARY_VERSION' ) ? NODE_LIBRARY_VERSION : '',
+				$ver
+			)
+		) . '</p></div>';
+	}
+}
+add_action( 'admin_notices', 'node_library_check_theme_version_notice' );
 
 /**
  * Read the two explicit article links in display order.
@@ -1449,6 +1570,7 @@ final class Node_Library {
 				}
 				update_post_meta( $post_id, '_node_library_links', $links );
 			}
+			node_library_delete_detail_cache( $post_id );
 		}
 
 		if ( 'post' !== get_post_type( $post_id ) || wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) {
