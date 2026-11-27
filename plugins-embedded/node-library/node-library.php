@@ -1444,7 +1444,7 @@ final class Node_Library {
 				update_post_meta( $post_id, '_node_library_type', in_array( $type, [ 'game', 'app' ], true ) ? $type : 'game' );
 			}
 			if ( isset( $_POST['node_library_summary'] ) ) {
-				update_post_meta( $post_id, '_node_library_summary', sanitize_textarea_field( wp_unslash( (string) $_POST['node_library_summary'] ) ) );
+				update_post_meta( $post_id, '_node_library_summary', wp_slash( sanitize_textarea_field( wp_unslash( (string) $_POST['node_library_summary'] ) ) ) );
 			}
 			if ( isset( $_POST['node_library_links'] ) && is_array( $_POST['node_library_links'] ) ) {
 				$links = [];
@@ -1458,7 +1458,7 @@ final class Node_Library {
 						];
 					}
 				}
-				update_post_meta( $post_id, '_node_library_links', $links );
+				update_post_meta( $post_id, '_node_library_links', wp_slash( $links ) );
 			}
 		}
 
