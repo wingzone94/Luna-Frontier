@@ -167,7 +167,7 @@ add_action( 'admin_init', 'node_register_settings' );
 function node_render_settings_page() {
     ?>
     <div class="wrap">
-        <h1 style="margin-bottom: 30px;">Luminous Core テーマ設定</h1>
+        <h1 style="margin-bottom: 30px;">Luna Frontier テーマ設定</h1>
         <form method="post" action="options.php">
             <?php
             settings_fields( 'node_settings_group' );

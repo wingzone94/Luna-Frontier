@@ -42,7 +42,10 @@ rsync -a \
   --exclude='src/styles/' \
   --exclude='src/scripts/' \
   --exclude='src/fonts/' \
+  --exclude='src/luna/' \
   --exclude='src/*.js' \
+  --exclude='plugins/' \
+  --exclude='docs/' \
   --exclude='/vendor/' \
   --exclude='tests/' \
   --exclude='test-results/' \

@@ -2189,20 +2189,20 @@ function node_library_render_archive_toolbar(): void {
 	?>
 	<form id="node-library-tools" class="node-library-tools" method="get" action="<?php echo esc_url( $action ); ?>" role="search">
 		<label class="node-library-tools__field node-library-tools__field--keyword">
-			<span><?php esc_html_e( 'キーワード', 'node' ); ?></span>
-			<input class="node-library-tools__control" type="search" name="q" maxlength="80" value="<?php echo esc_attr( $state['q'] ); ?>" placeholder="<?php esc_attr_e( 'タイトル・紹介文', 'node' ); ?>">
+			<span><?php esc_html_e( 'キーワード', 'node-library' ); ?></span>
+			<input class="node-library-tools__control" type="search" name="q" maxlength="80" value="<?php echo esc_attr( $state['q'] ); ?>" placeholder="<?php esc_attr_e( 'タイトル・紹介文', 'node-library' ); ?>">
 		</label>
 		<label class="node-library-tools__field">
-			<span><?php esc_html_e( '分類', 'node' ); ?></span>
+			<span><?php esc_html_e( '分類', 'node-library' ); ?></span>
 			<select class="node-library-tools__control" name="tab">
-				<option value=""><?php esc_html_e( 'すべて', 'node' ); ?></option>
+				<option value=""><?php esc_html_e( 'すべて', 'node-library' ); ?></option>
 				<?php foreach ( $public_tabs as $tab_value => $tab_label ) : ?>
 					<option value="<?php echo esc_attr( $tab_value ); ?>" <?php selected( $state['tab'], $tab_value ); ?>><?php echo esc_html( $tab_label ); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</label>
 		<label class="node-library-tools__field">
-			<span><span class="material-symbols-outlined" data-icon="sort" aria-hidden="true"></span><?php esc_html_e( '並び順', 'node' ); ?></span>
+			<span><span class="material-symbols-outlined" data-icon="sort" aria-hidden="true"></span><?php esc_html_e( '並び順', 'node-library' ); ?></span>
 			<select class="node-library-tools__control" name="sort">
 				<?php foreach ( $sorts as $sort_value => $sort_label ) : ?>
 					<option value="<?php echo esc_attr( $sort_value ); ?>" <?php selected( $state['sort'], $sort_value ); ?>><?php echo esc_html( $sort_label ); ?></option>
@@ -2210,15 +2210,15 @@ function node_library_render_archive_toolbar(): void {
 			</select>
 		</label>
 		<label class="node-library-tools__field">
-			<span><?php esc_html_e( '順序', 'node' ); ?></span>
+			<span><?php esc_html_e( '順序', 'node-library' ); ?></span>
 			<select class="node-library-tools__control" name="dir">
-				<option value="desc" <?php selected( $dir, 'desc' ); ?>><?php esc_html_e( '降順', 'node' ); ?></option>
-				<option value="asc" <?php selected( $dir, 'asc' ); ?>><?php esc_html_e( '昇順', 'node' ); ?></option>
+				<option value="desc" <?php selected( $dir, 'desc' ); ?>><?php esc_html_e( '降順', 'node-library' ); ?></option>
+				<option value="asc" <?php selected( $dir, 'asc' ); ?>><?php esc_html_e( '昇順', 'node-library' ); ?></option>
 			</select>
 		</label>
 		<button class="node-library-tools__submit" type="submit">
 			<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
-			<?php esc_html_e( '検索', 'node' ); ?>
+			<?php esc_html_e( '検索', 'node-library' ); ?>
 		</button>
 		<?php
 		/**
@@ -2420,7 +2420,7 @@ function node_library_render_spec_table( int $post_id ): void {
 	<section class="node-library-single__specs" aria-labelledby="node-library-specs-title">
 		<div class="node-library-single__section-heading">
 			<span class="material-symbols-outlined" data-icon="info" aria-hidden="true"></span>
-			<h2 id="node-library-specs-title"><?php esc_html_e( '仕様', 'node' ); ?></h2>
+			<h2 id="node-library-specs-title"><?php esc_html_e( '仕様', 'node-library' ); ?></h2>
 		</div>
 		<table class="node-library-specs">
 			<tbody>
