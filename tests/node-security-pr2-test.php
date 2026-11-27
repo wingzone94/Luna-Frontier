@@ -22,17 +22,22 @@ class Node_Security_PR2_Test extends WP_UnitTestCase {
 	public function test_seo_json_ld_escapes_script_tag_and_omits_empty_fields(): void {
 		$post_id = self::factory()->post->create(
 			[
-				'post_title'   => 'Test </script><script>alert(1)</script> & Title',
+				'post_title'   => 'Plain Title',
 				'post_content' => '',
 				'post_excerpt' => '',
 				'post_status'  => 'publish',
 			]
 		);
+		$title_filter = static function (): string {
+			return 'Test </script><script>alert(1)</script> & Title';
+		};
+		add_filter( 'the_title', $title_filter );
 		$this->go_to( get_permalink( $post_id ) );
 
 		ob_start();
 		node_seo_json_ld();
 		$output = (string) ob_get_clean();
+		remove_filter( 'the_title', $title_filter );
 
 		$this->assertStringNotContainsString( '</script><script>', $output, 'JSON_HEX_TAG により </script> がエスケープされること' );
 		$this->assertStringContainsString( '\u003C/script\u003E', $output );
