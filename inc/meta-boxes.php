@@ -93,29 +93,26 @@ add_action( 'admin_enqueue_scripts', 'node_meta_boxes_admin_assets' );
  * 記事メタデータをREST APIに公開
  */
 function node_register_post_meta() {
+    $auth_edit_post = static function ( $allowed, $meta_key, $post_id ) {
+        return current_user_can( 'edit_post', $post_id );
+    };
     register_post_meta('post', '_node_primary_category', [
         'show_in_rest'  => true,
         'single'        => true,
         'type'          => 'integer',
-        'auth_callback' => function() {
-            return current_user_can('edit_posts');
-        }
+        'auth_callback' => $auth_edit_post,
     ]);
     register_meta('post', '_node_is_ai_generated', [
         'show_in_rest'  => true,
         'single'        => true,
         'type'          => 'boolean',
-        'auth_callback' => function() {
-            return current_user_can('edit_posts');
-        }
+        'auth_callback' => $auth_edit_post,
     ]);
     register_meta('post', '_node_is_ai_text_generated', [
         'show_in_rest'  => true,
         'single'        => true,
         'type'          => 'boolean',
-        'auth_callback' => function() {
-            return current_user_can('edit_posts');
-        }
+        'auth_callback' => $auth_edit_post,
     ]);
 }
 add_action('init', 'node_register_post_meta');

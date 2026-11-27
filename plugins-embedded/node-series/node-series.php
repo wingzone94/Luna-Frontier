@@ -361,7 +361,7 @@ final class Node_Series {
 	 * シリーズのプライマリカラーをterm metaに保存。
 	 */
 	public function save_term_color_field( int $term_id ): void {
-		if ( ! isset( $_POST['node_series_color'] ) ) {
+		if ( ! current_user_can( 'manage_categories' ) || ! isset( $_POST['node_series_color'] ) ) {
 			return;
 		}
 
@@ -497,7 +497,8 @@ final class Node_Series {
 			}
 
 			$order          = (int) $order;
-			$used[ $order ] = get_the_title( $other_post );
+			$can_see_title  = 'publish' === $other_post->post_status || current_user_can( 'edit_post', $other_post->ID );
+			$used[ $order ] = $can_see_title ? get_the_title( $other_post ) : __( '（非公開の下書き）', 'node-series' );
 
 			if ( 'publish' === $other_post->post_status && $order > $max_published ) {
 				$max_published = $order;

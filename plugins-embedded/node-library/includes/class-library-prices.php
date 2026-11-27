@@ -164,20 +164,48 @@ final class Node_Library_Prices {
 			}
 		}
 		$ids = get_post_meta( $id, '_node_library_store_ids', true );
+		$ext = (string) ( $ids[ $store ] ?? '' );
 		$table = self::table();
-		$where = $wpdb->prepare( 'item_id=%d AND store=%s AND external_id=%s', $id, $store, $ids[ $store ] );
-		$currency = $current['currency'] ?: $wpdb->get_var( "SELECT currency FROM $table WHERE $where AND price IS NOT NULL ORDER BY recorded_at DESC,id DESC LIMIT 1" );
+		$currency = $current['currency'] ?: $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT currency FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND price IS NOT NULL ORDER BY recorded_at DESC,id DESC LIMIT 1",
+				$id,
+				$store,
+				$ext
+			)
+		);
 		if ( $currency ) {
 			$stats['lowest'] = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT MIN(price) FROM $table WHERE $where AND currency=%s AND price IS NOT NULL AND list_price IS NOT NULL AND price < list_price",
+					"SELECT MIN(price) FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND currency=%s AND price IS NOT NULL AND list_price IS NOT NULL AND price < list_price",
+					$id,
+					$store,
+					$ext,
 					$currency
 				)
 			);
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', $now - YEAR_IN_SECONDS );
-		$previous = $wpdb->get_row( $wpdb->prepare( "SELECT price,list_price,currency,sale_end FROM $table WHERE $where AND recorded_at<%s ORDER BY recorded_at DESC,id DESC LIMIT 1", $cutoff ), ARRAY_A );
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT price,list_price,currency,sale_end,recorded_at FROM $table WHERE $where AND recorded_at>=%s ORDER BY recorded_at,id", $cutoff ), ARRAY_A );
+		$previous = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT price,list_price,currency,sale_end FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND recorded_at<%s ORDER BY recorded_at DESC,id DESC LIMIT 1",
+				$id,
+				$store,
+				$ext,
+				$cutoff
+			),
+			ARRAY_A
+		);
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT price,list_price,currency,sale_end,recorded_at FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND recorded_at>=%s ORDER BY recorded_at,id",
+				$id,
+				$store,
+				$ext,
+				$cutoff
+			),
+			ARRAY_A
+		);
 		foreach ( $rows as $row ) {
 			if ( self::on_sale( $row ) && ( ! self::on_sale( $previous ) || $row['currency'] !== $previous['currency'] || ( $previous['sale_end'] && $previous['sale_end'] < $row['recorded_at'] ) ) ) {
 				++$stats['sales_last_year'];
