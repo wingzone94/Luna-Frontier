@@ -702,7 +702,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 			'_node_library_store_ids',
 			array(
 				'microsoft' => '9FEAT0000001',
-				'ps'        => 'JP0000-PPSA00001_00-EXAMPLE',
+				'ps'        => 'JP0000-PPSA00001_00-EXAMPLE000000001',
 				'steam'     => '123456',
 				'epic'      => 'feature-rich',
 			)
