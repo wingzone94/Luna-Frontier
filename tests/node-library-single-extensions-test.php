@@ -810,6 +810,97 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		delete_option( 'node_library_sale_animation_pattern' );
 	}
 
+	public function test_nso_only_item_suppresses_price_display_and_jsonld_offers_and_renders_in_app_play(): void {
+		$nso_only_id = $this->create_library_item( 'Super Mario World (NSO)' );
+		update_post_meta( $nso_only_id, '_node_library_subscriptions', array( 'nso' => true ) );
+		// Even if is_free is set, NSO-only items must not emit price/offers.
+		update_post_meta( $nso_only_id, '_node_library_is_free', true );
+
+		$this->assertTrue( Node_Library_Single_Extensions::is_nso_only( $nso_only_id ) );
+
+		ob_start();
+		do_action( 'node_library_single_before_stores', $nso_only_id );
+		$before_stores_html = (string) ob_get_clean();
+		$this->assertSame( '', trim( $before_stores_html ) );
+
+		$jsonld = node_library_get_product_jsonld( $nso_only_id );
+		$this->assertArrayNotHasKey( 'offers', $jsonld );
+
+		$game_info = array(
+			'title'               => 'Super Mario World (NSO)',
+			'links'               => Node_Library_Single_Extensions::store_offers( $nso_only_id, array() ),
+			'subscription_badges' => array( 'nso' => 'Nintendo Switch Online' ),
+			'is_free'             => true,
+		);
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$card_html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'Nintendo Switch Online 加入者向けアプリ内プレイ', $card_html );
+		$this->assertStringNotContainsString( 'node-library-store-card__offer', $card_html );
+		$this->assertStringNotContainsString( '価格未登録', $card_html );
+		$this->assertStringNotContainsString( '無料', $card_html );
+		$this->assertStringNotContainsString( 'ストアリンクは未登録です。', $card_html );
+	}
+
+	public function test_nso_with_other_store_keeps_price_offers_and_shows_nso_badge(): void {
+		$hybrid_id = $this->create_library_item( 'Hybrid NSO + Steam Game' );
+		update_post_meta( $hybrid_id, '_node_library_subscriptions', array( 'nso' => true ) );
+		update_post_meta( $hybrid_id, '_node_library_store_ids', array( 'steam' => '777888' ) );
+		Node_Library_Prices::record(
+			$hybrid_id,
+			'steam',
+			'777888',
+			array(
+				'currency'   => 'JPY',
+				'price'      => 1500,
+				'list_price' => 1500,
+			)
+		);
+
+		$this->assertFalse( Node_Library_Single_Extensions::is_nso_only( $hybrid_id ) );
+
+		ob_start();
+		do_action( 'node_library_single_before_stores', $hybrid_id );
+		$price_html = (string) ob_get_clean();
+		$this->assertStringContainsString( '¥1,500', $price_html );
+
+		$jsonld = node_library_get_product_jsonld( $hybrid_id );
+		$this->assertSame( '1500', $jsonld['offers']['price'] ?? '' );
+
+		$game_info = array(
+			'title'               => 'Hybrid NSO + Steam Game',
+			'links'               => Node_Library_Single_Extensions::store_offers( $hybrid_id, array() ),
+			'subscription_badges' => array( 'nso' => 'Nintendo Switch Online' ),
+		);
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$card_html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( '¥1,500', $card_html );
+		$this->assertStringContainsString( 'node-library-pricing__badge--subscription', $card_html );
+		$this->assertStringContainsString( 'Nintendo Switch Online', $card_html );
+		$this->assertStringNotContainsString( 'Nintendo Switch Online 加入者向けアプリ内プレイ', $card_html );
+	}
+
+	public function test_price_polling_and_history_reject_nso(): void {
+		$this->assertNotContains( 'nso', Node_Library_Store::price_stores() );
+
+		$item_id = $this->create_library_item( 'NSO Guard Item' );
+		$result  = Node_Library_Prices::record(
+			$item_id,
+			'nso',
+			'nso-app',
+			array(
+				'currency'   => 'JPY',
+				'price'      => 0,
+				'list_price' => 0,
+			)
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_price_store', $result->get_error_code() );
+	}
+
 	private function create_library_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(
