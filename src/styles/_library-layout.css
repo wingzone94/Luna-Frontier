@@ -72,6 +72,7 @@
 .library-card-copy h2 a::after { position: absolute; inset: 0; content: ""; }
 .node-library-shelf-card:is(:hover,:focus-within), .library-story:hover { border-color: var(--lf-brand-text); }
 .node-library-shelf-card:focus-within { outline: 2px solid var(--lf-brand-text); outline-offset: 2px; }
+.library-card-copy h2 a:focus-visible { outline: none; }
 .library-summary { margin: 0; font-size: .875rem; line-height: 1.65; color: var(--md-sys-color-on-surface-variant); }
 .library-category, .library-card-open { color: var(--lf-brand-text); font-size: .75rem; font-weight: 800; }
 .library-card-stores { margin-top: auto; }

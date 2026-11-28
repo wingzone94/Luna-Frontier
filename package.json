@@ -14,7 +14,9 @@
     "verify:icon-subset:test": "node --test scripts/verify-icon-subset.test.mjs",
     "verify:topic-nav-icons:test": "node --test scripts/topic-nav-icons.test.mjs",
     "verify:icons:tests": "node --test scripts/verify-icon-subset.test.mjs scripts/topic-nav-icons.test.mjs",
-    "verify:hero-css": "node --test scripts/hero-css-sync.test.mjs"
+    "verify:hero-css": "node --test scripts/hero-css-sync.test.mjs",
+    "test:node-unit": "node --test scripts/verify-icon-subset.test.mjs scripts/topic-nav-icons.test.mjs scripts/hero-css-sync.test.mjs scripts/mobile-pull-tab.test.mjs scripts/product-card-editor.test.mjs scripts/product-card-motion.test.mjs scripts/product-card-popover.test.mjs",
+    "test:ui-a11y": "node --test scripts/search-accessibility.test.mjs scripts/search-open-focus.test.mjs scripts/list-text-reflow.test.mjs scripts/view-mode-accessibility.test.mjs scripts/view-mode-suggest.test.mjs scripts/cero-warning-layout.test.mjs scripts/archive-flow.test.mjs scripts/table-guides.test.mjs"
   },
   "dependencies": {
     "colorthief": "^2.4.0",

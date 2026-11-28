@@ -331,6 +331,9 @@ final class Luna_Ads_Settings {
 		 * @param array<string,array<string,bool>> $allowed 許可タグと属性。
 		 */
 		$allowed = apply_filters( 'luna_ads_allowed_html', $allowed );
+		if ( function_exists( 'current_user_can' ) && ! current_user_can( 'unfiltered_html' ) ) {
+			unset( $allowed['script'], $allowed['iframe'], $allowed['amp-ad'] );
+		}
 
 		return trim( wp_kses( $code, $allowed ) );
 	}

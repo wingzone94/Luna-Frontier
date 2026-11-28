@@ -183,7 +183,7 @@ $req_503->set_param( 'url', $failed_url );
 $res_503  = $library->handle_fetch_ogp( $req_503 );
 $data_503 = $res_503 instanceof WP_REST_Response ? $res_503->get_data() : array();
 product_card_check( ! is_wp_error( $res_503 ) && true === ( $data_503['ogp_error'] ?? false ), 'OGP 503 failure degrades gracefully without returning a blocking WP_Error' );
-product_card_check( str_contains( (string) ( $data_503['message'] ?? '' ), 'OGPを取得できませんでした。手入力で登録できます' ), 'OGP 503 failure returns actionable Japanese guidance' );
+product_card_check( str_contains( (string) ( $data_503['message'] ?? '' ), 'OGPを取得できませんでした。手入力またはブラウザーから取り込めます。' ), 'OGP 503 failure returns actionable Japanese guidance' );
 product_card_check( ! str_contains( wp_json_encode( $data_503 ), 'Failed to fetch OGP data' ), 'Raw technical 503 string is not exposed to editor users' );
 product_card_check( 'B098765432' === ( $data_503['asin'] ?? '' ), 'ASIN is still extracted from URL on 503 failure' );
 

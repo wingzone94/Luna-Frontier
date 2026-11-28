@@ -14,6 +14,10 @@
 set -euo pipefail
 
 repo_dir=$(cd "$(dirname "$0")/.." && pwd)
+if [ ! -f "$repo_dir/dist/.vite/manifest.json" ]; then
+  echo "Error: dist/.vite/manifest.json not found. Run 'bun run build' before packaging luna.zip." >&2
+  exit 1
+fi
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 

@@ -151,10 +151,31 @@ final class Node_Library_Structured_Meta {
 		if ( 'store_ids' === $field ) {
 			foreach ( self::stores() as $store => $label ) {
 				$id = self::text( $value[ $store ] ?? '' );
-				// Treat IDs as opaque strings. Reject URLs and whitespace, preserve leading zeroes.
-				if ( '' !== $id && strlen( $id ) <= 255 && preg_match( '/^[A-Za-z0-9._:\-]+$/D', $id ) ) {
-					$result[ $store ] = $id;
+				if ( '' === $id || strlen( $id ) > 255 || ! preg_match( '/^[A-Za-z0-9._:\-]+$/D', $id ) ) {
+					continue;
 				}
+				if ( 'steam' === $store ) {
+					$id = ltrim( $id, '0' );
+					if ( class_exists( 'Node_Library_Steam_Store' ) && ! Node_Library_Steam_Store::valid_id( $id ) ) {
+						continue;
+					}
+				} elseif ( 'microsoft' === $store ) {
+					$id = strtoupper( $id );
+					if ( 1 !== preg_match( '/^[A-Z0-9]{12}$/D', $id ) ) {
+						continue;
+					}
+				} elseif ( 'ps' === $store ) {
+					$id = strtoupper( $id );
+					if ( class_exists( 'Node_Library_PS_Store' ) && ! Node_Library_PS_Store::valid_id( $id ) ) {
+						continue;
+					}
+				} elseif ( 'nintendo' === $store ) {
+					$id = strtoupper( $id );
+					if ( 1 !== preg_match( '/^(?:[0-9]{14}|(?:HAC|BEE)_[A-Z]_[A-Z0-9]{5})$/D', $id ) ) {
+						continue;
+					}
+				}
+				$result[ $store ] = $id;
 			}
 		} elseif ( 'rating' === $field ) {
 			$options = array( 'cero' => array_keys( self::cero_options() ), 'esrb' => self::ESRB_CODES );

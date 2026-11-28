@@ -121,7 +121,10 @@ function node_blogcard_internal_archive_ogp( string $url ) {
 			}
 		}
 		if ( '' === $title ) {
-			foreach ( get_post_types( array( 'public' => true, 'has_archive' => true ), 'objects' ) as $type ) {
+			foreach ( get_post_types( array( 'publicly_queryable' => true, 'has_archive' => true ), 'objects' ) as $type ) {
+				if ( is_array( $type->rewrite ) && ! array_key_exists( 'with_front', $type->rewrite ) ) {
+					continue;
+				}
 				$link = get_post_type_archive_link( $type->name );
 				if ( $link && $target === $normalize( $link ) ) {
 					$title = $type->labels->name;
@@ -202,7 +205,8 @@ function node_get_ogp_data( string $url ) {
 	$response = wp_safe_remote_get(
 		$url,
 		array(
-			'timeout'    => 4,
+			'timeout'             => 4,
+			'limit_response_size' => 512 * KB_IN_BYTES,
 			// ゲームストア（任天堂・PlayStation・Xbox 等）はボット防御下にあり、
 			// 「compatible; ...」型の自己申告ボット UA では 403 を返す。同梱の
 			// node-library と同じブラウザ UA に揃えて商品ページを取得できるようにする。
@@ -845,7 +849,10 @@ function node_render_blogcard( string $url, bool $brand_override = false, array 
 	}
 
 	$store = node_store_provider( $url );
-	$ogp   = node_get_ogp_data( $url );
+	$has_manual_override = ! node_is_internal_url( $url )
+		&& '' !== trim( (string) ( $overrides['title'] ?? '' ) )
+		&& ( '' !== trim( (string) ( $overrides['description'] ?? '' ) ) || '' !== trim( (string) ( $overrides['image'] ?? '' ) ) );
+	$ogp   = $has_manual_override ? false : node_get_ogp_data( $url );
 
 	if ( ! empty( $store ) ) {
 		// ストア側のボット防御でメタが取れなくても、URL から組み立てた情報でカードにする

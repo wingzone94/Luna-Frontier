@@ -39,7 +39,7 @@ declare(strict_types=1);
     <!-- 本文フォント: 可変軸の CSS を非同期で読む。静的ウェイトの重複列挙はしない。
          フォントファイルと display=swap は維持する。URL は inc/icon-font.php。 -->
     <?php $node_text_font_url = node_get_text_font_stylesheet_url(); ?>
-    <?php $node_code_font_enabled = node_code_font_is_enabled(); ?>
+    <?php $node_code_font_enabled = function_exists( 'node_should_load_code_font' ) ? node_should_load_code_font() : node_code_font_is_enabled(); ?>
     <?php if ( $node_code_font_enabled ) : ?>
     <?php $node_code_font_url = node_get_code_font_stylesheet_url(); ?>
     <?php $node_mplus_code_font_url = node_get_mplus_code_font_stylesheet_url(); ?>
@@ -54,9 +54,9 @@ declare(strict_types=1);
     <?php $node_icon_font_url = node_get_icon_font_url(); ?>
     <link rel="preload" as="style" href="<?php echo esc_url( $node_icon_font_url ); ?>">
     <link rel="stylesheet" href="<?php echo esc_url( $node_icon_font_url ); ?>">
-    <!-- Adobe Fonts kit: edit at fonts.adobe.com to load DIN 2014 only. -->
+    <!-- Adobe Fonts kit: edit at fonts.adobe.com to load DIN 2014 only (non-render-blocking, H-9). -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin>
-    <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
+    <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css" media="print" onload="this.media='all'">
 
     <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>" media="print" onload="this.media='all'">
     <?php if ( $node_code_font_enabled ) : ?>
@@ -65,6 +65,7 @@ declare(strict_types=1);
     <?php endif; ?>
 
     <noscript>
+        <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
         <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>">
         <?php if ( $node_code_font_enabled ) : ?>
         <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>">

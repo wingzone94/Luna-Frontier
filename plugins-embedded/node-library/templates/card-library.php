@@ -423,15 +423,22 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
         'geforcenow'  => 'GeForce NOWで見る',
         default       => $platform . ' ' . $button_text,
     };
+    $link_host       = strtolower( (string) wp_parse_url( (string) ( $link['url'] ?? '' ), PHP_URL_HOST ) );
+    $is_ms_store_url = 'microsoft' === ( $link['catalogue_store'] ?? '' )
+        || str_ends_with( $link_host, 'microsoft.com' )
+        || str_ends_with( $link_host, 'xbox.com' )
+        || false !== stripos( $platform, 'microsoft' )
+        || false !== stripos( $platform, 'xbox' );
     $badge_file = match ( $platform_slug ) {
         'ios'     => 'app-store-badge-ja.svg',
         'android' => 'google-play-badge-ja.png',
         'mac'     => 'mac-app-store-badge-ja.svg',
-        'windows', 'xbox' => 'microsoft-store-badge-ja.svg',
+        'xbox'    => 'microsoft-store-badge-ja.svg',
+        'windows' => $is_ms_store_url ? 'microsoft-store-badge-ja.svg' : '',
         default   => '',
     };
     $badge_url = $badge_file ? $badge_base_url . $badge_file : '';
-    $badge_always_visible = in_array( $platform_slug, [ 'mac', 'windows' ], true );
+    $badge_always_visible = 'mac' === $platform_slug || ( 'windows' === $platform_slug && $is_ms_store_url );
     if ( $supports_qr ) :
     ?>
         <div class="m3-platform-action m3-platform-action--qr">
@@ -558,7 +565,13 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 if ( 'nintendo' === $catalogue_store || 'nintendo' === $platform_slug || false !== strpos( $host, 'nintendo.com' ) ) {
                     return [ 'slug' => 'nintendo', 'chip' => 'N' ];
                 }
-                if ( 'microsoft' === $catalogue_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
+                $is_ms_link = 'microsoft' === $catalogue_store
+                    || 'xbox' === $platform_slug
+                    || str_ends_with( $host, 'microsoft.com' )
+                    || str_ends_with( $host, 'xbox.com' )
+                    || false !== stripos( $platform, 'microsoft' )
+                    || false !== stripos( $platform, 'xbox' );
+                if ( $is_ms_link ) {
                     return [ 'slug' => 'microsoft', 'chip' => 'xbox' === $platform_slug ? 'X' : 'M' ];
                 }
 
