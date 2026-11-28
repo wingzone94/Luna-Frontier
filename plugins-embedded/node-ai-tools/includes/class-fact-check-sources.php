@@ -429,6 +429,10 @@ final class Node_AI_Fact_Check_Sources {
 				continue;
 			}
 
+			if ( function_exists( 'wp_http_validate_url' ) && false === wp_http_validate_url( $url ) ) {
+				continue;
+			}
+
 			$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
 			if ( '' === $host || $host === $self_host ) {
 				continue;
@@ -476,11 +480,14 @@ final class Node_AI_Fact_Check_Sources {
 		$rules     = get_transient( $cache_key );
 
 		if ( ! is_array( $rules ) ) {
-			$response = wp_remote_get(
+			$response = wp_safe_remote_get(
 				$origin . '/robots.txt',
 				array(
-					'timeout'    => 8,
-					'user-agent' => self::user_agent(),
+					'timeout'             => 8,
+					'redirection'         => 2,
+					'reject_unsafe_urls'  => true,
+					'limit_response_size' => 64 * KB_IN_BYTES,
+					'user-agent'          => self::user_agent(),
 				)
 			);
 
@@ -580,12 +587,14 @@ final class Node_AI_Fact_Check_Sources {
 				continue;
 			}
 
-			$response = wp_remote_get(
+			$response = wp_safe_remote_get(
 				$url,
 				array(
-					'timeout'     => 12,
-					'redirection' => 3,
-					'user-agent'  => self::user_agent(),
+					'timeout'             => 12,
+					'redirection'         => 3,
+					'reject_unsafe_urls'  => true,
+					'limit_response_size' => 2 * MB_IN_BYTES,
+					'user-agent'          => self::user_agent(),
 				)
 			);
 
