@@ -160,6 +160,179 @@ class Node_Library_Subscriptions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '2026/04/01 〜 2026/05/10（終了）', $left_html );
 	}
 
+	public function test_manual_giveaway_period_creation_backdating_update_and_close(): void {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$previous_post = $_POST;
+
+		try {
+			$item_id = $this->create_item( 'Epic Giveaway Game' );
+
+			// Save via meta box POST with backdated start/end dates for epic_free and optional leaving_at for psplus.
+			$_POST = wp_slash(
+				array(
+					'node_library_structured_nonce'    => wp_create_nonce( 'node_library_save_structured' ),
+					'node_library_structured'          => array(
+						'subscriptions' => array(
+							'_present'  => '1',
+							'epic_free' => '1',
+							'psplus'    => '1',
+						),
+					),
+					'node_library_subscription_periods' => array(
+						'epic_free' => array(
+							'joined_date'       => '2025-12-19',
+							'leaving_date'      => '2025-12-26',
+							'prev_leaving_date' => '',
+						),
+						'psplus'    => array(
+							'leaving_date'      => '2027-01-15',
+							'prev_leaving_date' => '',
+						),
+					),
+				)
+			);
+			wp_update_post( array( 'ID' => $item_id, 'post_title' => 'Epic Giveaway Game' ) );
+
+			$rows   = Node_Library_Subscriptions::get_item_history( $item_id );
+			$by_svc = array();
+			foreach ( $rows as $row ) {
+				$by_svc[ $row['service'] ] = $row;
+			}
+			$this->assertArrayHasKey( 'epic_free', $by_svc );
+			$this->assertArrayHasKey( 'psplus', $by_svc );
+			// 2025-12-19 00:00:00 JST -> 2025-12-18 15:00:00 UTC.
+			$this->assertSame( '2025-12-18 15:00:00', $by_svc['epic_free']['joined_at'] );
+			// 2025-12-26 23:59:59 JST -> 2025-12-26 14:59:59 UTC.
+			$this->assertSame( '2025-12-26 14:59:59', $by_svc['epic_free']['leaving_at'] );
+			$this->assertNull( $by_svc['epic_free']['left_at'] );
+			$this->assertTrue( Node_Library_Subscriptions::is_period_ended( $by_svc['epic_free'], strtotime( '2026-01-01 00:00:00 UTC' ) ) );
+			$this->assertSame( '2027-01-15 14:59:59', $by_svc['psplus']['leaving_at'] );
+
+			// Expired open giveaway row must display as 配布終了 in single history and ended in recent changes.
+			ob_start();
+			Node_Library_Subscriptions::render_single_history( $item_id );
+			$history_html = (string) ob_get_clean();
+			$this->assertStringContainsString( 'Epic Games Store 無料配布', $history_html );
+			$this->assertStringContainsString( '2025/12/19 〜 2025/12/26（配布終了）', $history_html );
+
+			$changes = Node_Library_Subscriptions::get_recent_changes( 10 );
+			$epic_change = null;
+			foreach ( $changes as $change ) {
+				if ( 'epic_free' === $change['service'] && $item_id === $change['item_id'] ) {
+					$epic_change = $change;
+					break;
+				}
+			}
+			$this->assertNotNull( $epic_change );
+			$this->assertSame( 'ended', $epic_change['status'] );
+			$this->assertSame( 'Epic Games Store 無料配布', $epic_change['service_label'] );
+
+			// Update dates in place on the open row, and clear psplus leaving_at explicitly.
+			$_POST = wp_slash(
+				array(
+					'node_library_structured_nonce'    => wp_create_nonce( 'node_library_save_structured' ),
+					'node_library_structured'          => array(
+						'subscriptions' => array(
+							'_present'  => '1',
+							'epic_free' => '1',
+							'psplus'    => '1',
+						),
+					),
+					'node_library_subscription_periods' => array(
+						'epic_free' => array(
+							'joined_date'       => '2026-11-01',
+							'leaving_date'      => '2099-11-08',
+							'prev_leaving_date' => '2025-12-26',
+						),
+						'psplus'    => array(
+							'leaving_date'      => '',
+							'prev_leaving_date' => '2027-01-15',
+						),
+					),
+				)
+			);
+			wp_update_post( array( 'ID' => $item_id, 'post_title' => 'Epic Giveaway Game' ) );
+
+			$updated_periods = Node_Library_Subscriptions::get_open_periods( $item_id );
+			$this->assertSame( '2026-11-01', $updated_periods['epic_free']['joined_date'] );
+			$this->assertSame( '2099-11-08', $updated_periods['epic_free']['leaving_date'] );
+			$this->assertSame( '', $updated_periods['psplus']['leaving_date'] );
+
+			// Unchecking epic_free closes the open row.
+			$_POST = wp_slash(
+				array(
+					'node_library_structured_nonce'    => wp_create_nonce( 'node_library_save_structured' ),
+					'node_library_structured'          => array(
+						'subscriptions' => array(
+							'_present' => '1',
+							'psplus'   => '1',
+						),
+					),
+					'node_library_subscription_periods' => array(
+						'epic_free' => array(
+							'joined_date'       => '2026-11-01',
+							'leaving_date'      => '2099-11-08',
+							'prev_leaving_date' => '2099-11-08',
+						),
+					),
+				)
+			);
+			wp_update_post( array( 'ID' => $item_id, 'post_title' => 'Epic Giveaway Game' ) );
+
+			$after_close = Node_Library_Subscriptions::get_open_periods( $item_id );
+			$this->assertArrayNotHasKey( 'epic_free', $after_close );
+			$this->assertArrayHasKey( 'psplus', $after_close );
+		} finally {
+			$_POST = $previous_post;
+			wp_set_current_user( 0 );
+		}
+	}
+
+	public function test_manual_period_rejects_invalid_range_and_preserves_gamepass_timestamp(): void {
+		$item_id = $this->create_item( 'Game Pass Timestamp Preservation' );
+		$t1      = strtotime( '2026-06-01 00:00:00 UTC' );
+
+		Node_Library_Subscriptions::observe_from_catalog(
+			$item_id,
+			array(
+				'store'                 => 'microsoft',
+				'id'                    => '9GPPRESERVE1',
+				'subscriptions'         => array( 'CFQ7TTC0K6L8' ),
+				'subscription_metadata' => array(
+					'CFQ7TTC0K6L8' => array(
+						'leavingDate' => '2026-07-15T10:30:00Z',
+					),
+				),
+				'relations'             => array(),
+			),
+			$t1
+		);
+
+		// Unchanged JST date input must keep the exact UTC leaving_at timestamp from Microsoft.
+		$res = Node_Library_Subscriptions::record_manual_period(
+			$item_id,
+			'gamepass',
+			true,
+			null,
+			'2026-07-15',
+			$t1,
+			'2026-07-15'
+		);
+		$this->assertSame( 'unchanged', $res );
+		$rows = Node_Library_Subscriptions::get_item_history( $item_id );
+		$this->assertSame( '2026-07-15 10:30:00', $rows[0]['leaving_at'] );
+
+		// Inverted range (start > end) must return invalid and not insert a row.
+		$invalid_res = Node_Library_Subscriptions::record_manual_period(
+			$item_id,
+			'psplus_freeplay',
+			true,
+			'2026-12-10',
+			'2026-12-01'
+		);
+		$this->assertSame( 'invalid', $invalid_res );
+	}
+
 	private function create_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(

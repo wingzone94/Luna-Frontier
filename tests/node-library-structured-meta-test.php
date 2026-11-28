@@ -165,6 +165,41 @@ class Node_Library_Structured_Meta_Test extends WP_UnitTestCase {
 		$this->assertFalse( metadata_exists( 'post', $this->item_id, '_node_library_subscriptions' ) );
 	}
 
+	public function test_subscription_service_keys_and_period_fields_render_for_giveaway_and_catalog(): void {
+		$services = Node_Library_Structured_Meta::subscriptions();
+		$this->assertSame( 'PlayStation Plus', $services['psplus'] ?? '' );
+		$this->assertSame( 'PlayStation Plus フリープレイ', $services['psplus_freeplay'] ?? '' );
+		$this->assertSame( 'Epic Games Store 無料配布', $services['epic_free'] ?? '' );
+		$this->assertSame( array( 'psplus_freeplay', 'epic_free' ), Node_Library_Structured_Meta::giveaway_subscriptions() );
+
+		$this->submit(
+			array(
+				'subscriptions' => array(
+					'_present'        => '1',
+					'psplus_freeplay' => '1',
+					'epic_free'       => '1',
+				),
+			)
+		);
+		$this->assertSame(
+			array(
+				'psplus_freeplay' => true,
+				'epic_free'       => true,
+			),
+			get_post_meta( $this->item_id, '_node_library_subscriptions', true )
+		);
+
+		ob_start();
+		Node_Library_Structured_Meta::render( get_post( $this->item_id ) );
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'id="node-library-subscription-period-psplus_freeplay-joined"', $html );
+		$this->assertStringContainsString( 'id="node-library-subscription-period-psplus_freeplay-leaving"', $html );
+		$this->assertStringContainsString( 'id="node-library-subscription-period-epic_free-joined"', $html );
+		$this->assertStringContainsString( 'id="node-library-subscription-period-epic_free-leaving"', $html );
+		$this->assertStringContainsString( 'id="node-library-subscription-period-gamepass-leaving"', $html );
+		$this->assertStringNotContainsString( 'id="node-library-subscription-period-gamepass-joined"', $html );
+	}
+
 	public function test_free_flag_image_url_and_extended_capabilities_round_trip(): void {
 		$this->submit( array(
 			'is_free'      => '1',
