@@ -345,7 +345,7 @@
 
 .node-library-empty-state a,
 .node-library-single__footer a {
-	color: var(--md-sys-color-primary);
+	color: var(--lf-brand-text, var(--md-sys-color-primary));
 	font-weight: 700;
 }
 
@@ -363,7 +363,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	color: var(--md-sys-color-primary);
+	color: var(--lf-brand-text, var(--md-sys-color-primary));
 	font-size: 0.875rem;
 	font-weight: 700;
 	letter-spacing: 0.06em;
@@ -621,7 +621,7 @@
 }
 
 .node-library-specs__links a {
-	color: var(--md-sys-color-primary);
+	color: var(--lf-brand-text, var(--md-sys-color-primary));
 	overflow-wrap: anywhere;
 }
 
@@ -1018,7 +1018,7 @@
 .node-library-single__more-label {
 	display: inline-flex;
 	align-items: center;
-	color: var(--md-sys-color-primary);
+	color: var(--lf-brand-text, var(--md-sys-color-primary));
 }
 
 .node-library-single__more-label--open {

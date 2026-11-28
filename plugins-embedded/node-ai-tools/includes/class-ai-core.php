@@ -54,34 +54,46 @@ final class Node_AI_Core {
 
 	/** Copy the complete legacy tuple once, never mixing keys with another configured endpoint. */
 	public static function migrate_provider_settings(): void {
-		if ( '1' !== get_option( 'node_ai_gemini_scope_migration' ) ) {
-			if ( 'gemini' === get_option( 'node_ai_provider' ) ) {
-				update_option( 'node_ai_provider', 'ollama' );
-			}
-			update_option( 'node_ai_gemini_scope_migration', '1', false );
-		}
-
-		$provider = get_option( 'node_ai_provider', '' );
-		if ( '1' === get_option( 'node_ai_openai_migration' ) ) {
+		if ( '1' === get_option( 'node_ai_gemini_scope_migration' ) && '1' === get_option( 'node_ai_openai_migration' ) ) {
 			return;
 		}
-		$legacy = 'qwen' === $provider;
-		$configured = false;
-		foreach ( array( 'endpoint', 'model', 'api_key' ) as $field ) {
-			$legacy = $legacy || '' !== (string) get_option( 'node_ai_qwen_' . $field, '' );
-			$configured = $configured || false !== get_option( 'node_ai_openai_' . $field, false );
+		global $wpdb;
+		$lock = 'node_ai_provider_mig_' . md5( DB_NAME . ':' . $wpdb->prefix );
+		if ( 1 !== (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) ) ) {
+			return;
 		}
-		$configured = $configured || false !== get_option( 'node_ai_openai_preset', false );
-		if ( $legacy && ! $configured ) {
-			add_option( 'node_ai_openai_endpoint', get_option( 'node_ai_qwen_endpoint', '' ), '', false );
-			add_option( 'node_ai_openai_model', get_option( 'node_ai_qwen_model', '' ), '', false );
-			add_option( 'node_ai_openai_api_key', get_option( 'node_ai_qwen_api_key', '' ), '', false );
-			add_option( 'node_ai_openai_preset', 'dashscope', '', false );
+		try {
+			if ( '1' !== get_option( 'node_ai_gemini_scope_migration' ) ) {
+				if ( 'gemini' === get_option( 'node_ai_provider' ) ) {
+					update_option( 'node_ai_provider', 'ollama' );
+				}
+				update_option( 'node_ai_gemini_scope_migration', '1', false );
+			}
+
+			$provider = get_option( 'node_ai_provider', '' );
+			if ( '1' === get_option( 'node_ai_openai_migration' ) ) {
+				return;
+			}
+			$legacy = 'qwen' === $provider;
+			$configured = false;
+			foreach ( array( 'endpoint', 'model', 'api_key' ) as $field ) {
+				$legacy = $legacy || '' !== (string) get_option( 'node_ai_qwen_' . $field, '' );
+				$configured = $configured || false !== get_option( 'node_ai_openai_' . $field, false );
+			}
+			$configured = $configured || false !== get_option( 'node_ai_openai_preset', false );
+			if ( $legacy && ! $configured ) {
+				add_option( 'node_ai_openai_endpoint', get_option( 'node_ai_qwen_endpoint', '' ), '', false );
+				add_option( 'node_ai_openai_model', get_option( 'node_ai_qwen_model', '' ), '', false );
+				add_option( 'node_ai_openai_api_key', get_option( 'node_ai_qwen_api_key', '' ), '', false );
+				add_option( 'node_ai_openai_preset', 'dashscope', '', false );
+			}
+			if ( 'qwen' === $provider ) {
+				update_option( 'node_ai_provider', 'openai' );
+			}
+			update_option( 'node_ai_openai_migration', '1', false );
+		} finally {
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
 		}
-		if ( 'qwen' === $provider ) {
-			update_option( 'node_ai_provider', 'openai' );
-		}
-		update_option( 'node_ai_openai_migration', '1', false );
 	}
 
 	public function is_enabled(): bool {

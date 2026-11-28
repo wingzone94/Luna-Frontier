@@ -172,9 +172,11 @@ final class Node_Library_Single_Extensions {
 			$link['catalogue_store'] = $store;
 			$link['platform'] = node_library_public_store_label( $link, $ids );
 			unset( $link['price_store'] );
+			if ( '' !== $store ) {
+				$matched[ $store ] = true;
+			}
 			if ( '' !== $prod_id && isset( $ids[ $store ] ) && 0 === strcasecmp( $ids[ $store ], $prod_id ) ) {
 				$link['price_store'] = $store;
-				$matched[ $store ] = true;
 			}
 			$offers[] = $link;
 		}
@@ -197,17 +199,19 @@ final class Node_Library_Single_Extensions {
 		foreach ( $offers as $link ) {
 			$store = $link['price_store'] ?? '';
 			$link['price_label']      = '';
+			$link['price_numeric']    = null;
 			$link['price_date']       = '';
 			$link['list_price_label'] = '';
 			$link['discount_percent'] = 0;
 			if ( in_array( $store, Node_Library_Store::price_stores(), true ) ) {
 				if ( ! array_key_exists( $store, $prices ) ) {
-					$prices[ $store ] = Node_Library_Prices::current( $post_id, $store );
+					$prices[ $store ] = Node_Library_Prices::effective_offer( Node_Library_Prices::current( $post_id, $store ) );
 				}
 				$current = $prices[ $store ];
 				if ( is_numeric( $current['price'] ?? null ) && ! empty( $current['currency'] ) ) {
-					$link['price_label'] = self::format_currency( $current['price'], $current['currency'] );
-					$link['price_date']  = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
+					$link['price_label']   = self::format_currency( $current['price'], $current['currency'] );
+					$link['price_numeric'] = (float) $current['price'];
+					$link['price_date']    = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
 					if ( is_numeric( $current['list_price'] ?? null ) && (float) $current['list_price'] > (float) $current['price'] && (float) $current['list_price'] > 0 ) {
 						$discount = (int) round( ( ( (float) $current['list_price'] - (float) $current['price'] ) / (float) $current['list_price'] ) * 100 );
 						if ( $discount > 0 ) {
@@ -229,9 +233,10 @@ final class Node_Library_Single_Extensions {
 	/** Region-specific destinations precede unmarked and overseas links. */
 	private static function is_japanese_store_url( string $url ): bool {
 		$parts = wp_parse_url( $url );
+		$host  = strtolower( (string) ( $parts['host'] ?? '' ) );
 		parse_str( $parts['query'] ?? '', $query );
-		return preg_match( '~(?:\.jp$|^store-jp\.)~i', $parts['host'] )
-			|| preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
+		return (bool) preg_match( '~(?:\.jp$|^store-jp\.)~i', $host )
+			|| (bool) preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
 			|| ( is_string( $query['gl'] ?? null ) && 0 === strcasecmp( $query['gl'], 'JP' ) );
 	}
 
@@ -258,12 +263,25 @@ final class Node_Library_Single_Extensions {
 			if ( null === ( $stats['current'] ?? null ) ) {
 				continue;
 			}
+			$history       = self::recent_price_history( $post_id, $store, $external_id, 10 );
+			$has_numeric   = is_numeric( $stats['current']['price'] ?? null );
+			if ( ! $has_numeric ) {
+				foreach ( $history as $hrow ) {
+					if ( is_numeric( $hrow['price'] ?? null ) ) {
+						$has_numeric = true;
+						break;
+					}
+				}
+			}
+			if ( ! $has_numeric ) {
+				continue;
+			}
 			$entries[] = array(
 				'store'       => $store,
 				'label'       => $store_labels[ $store ] ?? $store,
 				'external_id' => $external_id,
 				'stats'       => $stats,
-				'history'     => self::recent_price_history( $post_id, $store, $external_id, 10 ),
+				'history'     => $history,
 			);
 		}
 
@@ -557,7 +575,7 @@ final class Node_Library_Single_Extensions {
 			if ( '' === $external_id ) {
 				continue;
 			}
-			$current = Node_Library_Prices::current( $post_id, $store );
+			$current = Node_Library_Prices::effective_offer( Node_Library_Prices::current( $post_id, $store ) );
 			if ( ! is_array( $current ) ) {
 				continue;
 			}
@@ -576,10 +594,9 @@ final class Node_Library_Single_Extensions {
 			$sale_end = $current['sale_end'] ?? null;
 			if ( is_string( $sale_end ) && '' !== $sale_end ) {
 				$end_ts = strtotime( $sale_end . ' UTC' );
-				if ( false === $end_ts || $end_ts <= time() ) {
-					continue;
+				if ( false !== $end_ts && $end_ts > time() ) {
+					$offer['priceValidUntil'] = wp_date( 'Y-m-d', $end_ts, new DateTimeZone( 'Asia/Tokyo' ) );
 				}
-				$offer['priceValidUntil'] = wp_date( 'Y-m-d', $end_ts, new DateTimeZone( 'Asia/Tokyo' ) );
 			}
 
 			$url = self::resolve_offer_url( $store, $external_id, $links );
