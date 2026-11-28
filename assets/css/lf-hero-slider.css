@@ -154,10 +154,7 @@
 }
 
 .lf-hero-slide__title {
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+	display: block;
 	overflow-wrap: anywhere;
 	margin: 0;
 	font-family: var(--font-heading, "Manrope", "Noto Sans JP", sans-serif);
