@@ -21,6 +21,12 @@ foreach ( $offers as $offer ) {
 	}
 }
 $free = class_exists( 'Node_Library_Structured_Meta' ) && Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( $id, '_node_library_is_free', true ) );
+$sub_badges = is_callable( array( 'Node_Library_Subscriptions', 'get_display_badges' ) )
+	? Node_Library_Subscriptions::get_display_badges( (int) $id )
+	: array();
+$sub_chips = $sub_badges && is_callable( array( 'Node_Library_Subscriptions', 'expand_display_chips' ) )
+	? Node_Library_Subscriptions::expand_display_chips( $sub_badges )
+	: array();
 $discount = (int) ( $price['discount_percent'] ?? 0 );
 $summary  = (string) get_post_meta( $id, '_node_library_summary', true );
 ?>
@@ -38,6 +44,23 @@ $summary  = (string) get_post_meta( $id, '_node_library_summary', true );
 				<span class="library-chip library-chip--store" data-store="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></span>
 			<?php endforeach; ?>
 		</div>
+		<?php if ( $sub_chips ) : ?>
+			<div class="library-chips library-card-subscriptions">
+				<?php foreach ( $sub_chips as $chip ) : ?>
+					<?php
+					$sub_classes = array(
+						'library-chip',
+						'library-chip--subscription',
+						'library-chip--' . ( $chip['kind'] ?? 'catalog' ),
+					);
+					if ( 'ended' === ( $chip['status'] ?? '' ) ) {
+						$sub_classes[] = 'library-chip--ended';
+					}
+					?>
+					<span class="<?php echo esc_attr( implode( ' ', $sub_classes ) ); ?>" data-sub="<?php echo esc_attr( (string) ( $chip['service'] ?? '' ) ); ?>" data-brand="<?php echo esc_attr( (string) ( $chip['brand'] ?? 'neutral' ) ); ?>"><?php echo esc_html( (string) ( $chip['text'] ?? '' ) ); ?></span>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
 		<div class="library-card-footer">
 			<div class="library-money">
 				<?php if ( $price ) : ?>

@@ -1002,7 +1002,20 @@ final class Node_Library_Single_Extensions {
 					<h3><?php echo esc_html( $labels[ $brand ] ?? $brand ); ?></h3>
 					<ul class="node-library-features__list">
 						<?php foreach ( $features as $chip ) : ?>
-							<li class="node-library-feature-chip node-library-feature-chip--<?php echo esc_attr( $chip['brand'] ); ?>">
+							<?php
+							$chip_classes = array(
+								'node-library-feature-chip',
+								'node-library-feature-chip--' . $chip['brand'],
+							);
+							if ( ! empty( $chip['sub_kind'] ) ) {
+								$chip_classes[] = 'node-library-feature-chip--subscription';
+								$chip_classes[] = 'node-library-feature-chip--' . $chip['sub_kind'];
+							}
+							if ( 'ended' === ( $chip['sub_status'] ?? '' ) ) {
+								$chip_classes[] = 'node-library-feature-chip--ended';
+							}
+							?>
+							<li class="<?php echo esc_attr( implode( ' ', $chip_classes ) ); ?>">
 								<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $chip['icon'] ); ?>" aria-hidden="true"></span>
 								<span><?php echo esc_html( $chip['label'] ); ?></span>
 							</li>
@@ -1067,20 +1080,45 @@ final class Node_Library_Single_Extensions {
 		}
 
 		$sub_map = array(
-			'gamepass'     => array( 'label' => 'Xbox / PC Game Pass', 'brand' => 'microsoft' ),
-			'psplus'       => array( 'label' => 'PlayStation Plus', 'brand' => 'playstation' ),
-			'nso'          => array( 'label' => 'Nintendo Switch Online', 'brand' => 'nintendo' ),
-			'ea_play'      => array( 'label' => 'EA Play', 'brand' => 'neutral' ),
-			'ubisoft_plus' => array( 'label' => 'Ubisoft+', 'brand' => 'neutral' ),
-			'apple_arcade' => array( 'label' => 'Apple Arcade', 'brand' => 'neutral' ),
+			'gamepass'        => array( 'label' => 'Xbox / PC Game Pass', 'brand' => 'microsoft' ),
+			'psplus'          => array( 'label' => 'PlayStation Plus', 'brand' => 'playstation' ),
+			'psplus_freeplay' => array( 'label' => 'PlayStation Plus フリープレイ', 'brand' => 'playstation' ),
+			'epic_free'       => array( 'label' => 'Epic Games Store 無料配布', 'brand' => 'epic' ),
+			'nso'             => array( 'label' => 'Nintendo Switch Online', 'brand' => 'nintendo' ),
+			'ea_play'         => array( 'label' => 'EA Play', 'brand' => 'neutral' ),
+			'ubisoft_plus'    => array( 'label' => 'Ubisoft+', 'brand' => 'neutral' ),
+			'apple_arcade'    => array( 'label' => 'Apple Arcade', 'brand' => 'neutral' ),
 		);
+		$display_badges = class_exists( 'Node_Library_Subscriptions' )
+			? Node_Library_Subscriptions::get_display_badges( $post_id )
+			: array();
 		foreach ( $sub_map as $sub_key => $meta ) {
 			if ( ! empty( $subscriptions[ $sub_key ] ) ) {
+				$badge_info  = $display_badges[ $sub_key ] ?? null;
+				$is_giveaway = is_array( $badge_info ) && 'giveaway' === ( $badge_info['kind'] ?? '' );
+				if ( 'psplus' === $sub_key ) {
+					$chip_label = 'PlayStation Plus（ゲームカタログ対象）';
+				} elseif ( 'psplus_freeplay' === $sub_key ) {
+					$end_mmdd = is_array( $badge_info ) ? (string) ( $badge_info['end_mmdd'] ?? '' ) : '';
+					if ( '' !== $end_mmdd ) {
+						$chip_label = 'ended' === ( $badge_info['status'] ?? '' )
+							? sprintf( 'PlayStation Plus フリープレイ対象（%sまで・配布終了）', $end_mmdd )
+							: sprintf( 'PlayStation Plus フリープレイ対象（%sまで）', $end_mmdd );
+					} else {
+						$chip_label = 'ended' === ( $badge_info['status'] ?? '' )
+							? 'PlayStation Plus フリープレイ対象（配布終了）'
+							: 'PlayStation Plus フリープレイ対象（配布中）';
+					}
+				} else {
+					$chip_label = is_array( $badge_info ) ? $badge_info['badge_text'] : sprintf( '%s（%s）', $meta['label'], __( '加入中', 'node-library' ) );
+				}
 				$chips[] = array(
-					'key'   => 'sub_' . $sub_key,
-					'label' => $meta['label'],
-					'brand' => $meta['brand'],
-					'icon'  => 'apps',
+					'key'        => 'sub_' . $sub_key,
+					'label'      => $chip_label,
+					'brand'      => $meta['brand'],
+					'icon'       => $is_giveaway ? 'sell' : 'apps',
+					'sub_kind'   => is_array( $badge_info ) ? $badge_info['kind'] : 'catalog',
+					'sub_status' => is_array( $badge_info ) ? $badge_info['status'] : 'active',
 				);
 			}
 		}

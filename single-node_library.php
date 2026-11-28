@@ -52,8 +52,16 @@ get_header();
 		);
 		if ( is_callable( array( 'Node_Library_Single_Extensions', 'store_offers' ) ) ) {
 			$game_info['links'] = Node_Library_Single_Extensions::store_offers( $library_id, $library_links );
-			$flags = (array) get_post_meta( $library_id, '_node_library_subscriptions', true );
-			$game_info['subscription_badges'] = array_intersect_key( Node_Library_Structured_Meta::subscriptions(), array_filter( $flags ) );
+			$badge_items = is_callable( array( 'Node_Library_Subscriptions', 'get_display_badges' ) )
+				? Node_Library_Subscriptions::get_display_badges( (int) $library_id )
+				: array();
+			if ( $badge_items ) {
+				$game_info['subscription_badge_items'] = $badge_items;
+				$game_info['subscription_badges']      = array_map( static fn( array $b ): string => $b['badge_text'], $badge_items );
+			} else {
+				$flags = (array) get_post_meta( $library_id, '_node_library_subscriptions', true );
+				$game_info['subscription_badges'] = array_intersect_key( Node_Library_Structured_Meta::subscriptions(), array_filter( $flags ) );
+			}
 		}
 		$linked_article_posts = array_values(
 			array_filter(

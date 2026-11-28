@@ -13,6 +13,9 @@ final class Node_Library_Subscriptions {
 	/** @var bool */
 	private static $initialized = false;
 
+	/** @var array<int, array<int, array<string, mixed>>> */
+	private static array $history_cache = array();
+
 	/** Register subscription tracking hooks once. */
 	public static function init(): void {
 		if ( self::$initialized ) {
@@ -60,10 +63,262 @@ final class Node_Library_Subscriptions {
 
 	/** Remove subscription history rows when a library item is permanently deleted. */
 	public static function delete_item( int $id, WP_Post $post ): void {
+		unset( self::$history_cache[ $id ] );
 		if ( 'node_library' === $post->post_type && '1' === get_option( 'node_library_subscription_schema' ) ) {
 			global $wpdb;
 			$wpdb->delete( self::table(), array( 'item_id' => $id ), array( '%d' ) );
 		}
+	}
+
+	/**
+	 * Whether a service key represents a time-limited distribution period (free giveaway).
+	 */
+	public static function is_giveaway_service( string $service ): bool {
+		if ( class_exists( 'Node_Library_Structured_Meta' ) && method_exists( 'Node_Library_Structured_Meta', 'giveaway_subscriptions' ) ) {
+			return in_array( $service, Node_Library_Structured_Meta::giveaway_subscriptions(), true );
+		}
+		return in_array( $service, array( 'psplus_freeplay', 'epic_free' ), true );
+	}
+
+	/**
+	 * Determine whether a history row has ended (explicitly closed or giveaway leaving_at elapsed).
+	 *
+	 * @param array<string, mixed> $row History row.
+	 * @param int|null             $now Optional UNIX timestamp override.
+	 */
+	public static function is_period_ended( array $row, ?int $now = null ): bool {
+		if ( is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ) {
+			return true;
+		}
+		$service = (string) ( $row['service'] ?? '' );
+		$leaving = $row['leaving_at'] ?? null;
+		if ( self::is_giveaway_service( $service ) && is_string( $leaving ) && '' !== $leaving ) {
+			$leaving_ts = strtotime( $leaving . ' UTC' );
+			return false !== $leaving_ts && $leaving_ts <= ( $now ?? time() );
+		}
+		return false;
+	}
+
+	/**
+	 * Prefetch subscription history rows for archive loops to avoid N+1 queries.
+	 *
+	 * @param array<int, int> $item_ids Library post IDs.
+	 */
+	public static function prime_history_cache( array $item_ids ): void {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $item_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( ! $ids || '1' !== get_option( 'node_library_subscription_schema' ) ) {
+			return;
+		}
+		$missing = array_values( array_filter( $ids, static fn( int $id ): bool => ! array_key_exists( $id, self::$history_cache ) ) );
+		if ( ! $missing ) {
+			return;
+		}
+		foreach ( $missing as $mid ) {
+			self::$history_cache[ $mid ] = array();
+		}
+		global $wpdb;
+		$table        = self::table();
+		$placeholders = implode( ',', array_fill( 0, count( $missing ), '%d' ) );
+		$rows         = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, item_id, service, joined_at, leaving_at, left_at FROM {$table} WHERE item_id IN ({$placeholders}) ORDER BY joined_at DESC, id DESC",
+				$missing
+			),
+			ARRAY_A
+		);
+		foreach ( (array) $rows as $row ) {
+			$item_id = (int) ( $row['item_id'] ?? 0 );
+			if ( $item_id > 0 ) {
+				self::$history_cache[ $item_id ][] = $row;
+			}
+		}
+	}
+
+	/**
+	 * Build display badges/chips for all active subscription flags of an item,
+	 * distinguishing ongoing catalogue memberships from giveaway distribution periods.
+	 *
+	 * @return array<string, array{service:string,label:string,brand:string,kind:string,status:string,status_label:string,period_text:string,end_mmdd:string,badge_text:string}>
+	 */
+	public static function get_display_badges( int $item_id, ?int $now = null ): array {
+		if ( $item_id <= 0 || ! class_exists( 'Node_Library_Structured_Meta' ) ) {
+			return array();
+		}
+		$services = Node_Library_Structured_Meta::subscriptions();
+		$flags    = Node_Library_Structured_Meta::sanitize( 'subscriptions', get_post_meta( $item_id, '_node_library_subscriptions', true ) );
+		if ( ! $flags ) {
+			return array();
+		}
+
+		$brand_map = array(
+			'gamepass'        => 'microsoft',
+			'psplus'          => 'playstation',
+			'psplus_freeplay' => 'playstation',
+			'epic_free'       => 'epic',
+			'nso'             => 'nintendo',
+		);
+
+		$now          = $now ?? time();
+		$history_rows = self::get_item_history( $item_id );
+		$latest_open  = array();
+		$latest_any   = array();
+		foreach ( $history_rows as $row ) {
+			$svc = (string) ( $row['service'] ?? '' );
+			if ( '' === $svc ) {
+				continue;
+			}
+			if ( ! isset( $latest_any[ $svc ] ) ) {
+				$latest_any[ $svc ] = $row;
+			}
+			if ( null === ( $row['left_at'] ?? null ) && ! isset( $latest_open[ $svc ] ) ) {
+				$latest_open[ $svc ] = $row;
+			}
+		}
+
+		$badges = array();
+		foreach ( $services as $service => $label ) {
+			if ( empty( $flags[ $service ] ) ) {
+				continue;
+			}
+			$row         = $latest_open[ $service ] ?? ( $latest_any[ $service ] ?? null );
+			$is_giveaway = self::is_giveaway_service( $service );
+			$brand       = $brand_map[ $service ] ?? 'neutral';
+			$end_mmdd    = '';
+			if ( $is_giveaway ) {
+				$start       = is_array( $row ) ? self::format_jst_date( (string) ( $row['joined_at'] ?? '' ) ) : '';
+				$end_raw     = is_array( $row ) && is_string( $row['leaving_at'] ?? null ) ? $row['leaving_at'] : '';
+				$end         = '' !== $end_raw ? self::format_jst_date( $end_raw ) : '';
+				$end_mmdd    = '' !== $end_raw ? self::format_jst_mmdd( $end_raw ) : '';
+				if ( '' !== $start && '' !== $end ) {
+					$period_text = $start . '〜' . $end;
+				} elseif ( '' !== $start ) {
+					$period_text = $start . '〜';
+				} elseif ( '' !== $end ) {
+					$period_text = '〜' . $end;
+				} else {
+					$period_text = '';
+				}
+				$ended        = is_array( $row ) && self::is_period_ended( $row, $now );
+				$status       = $ended ? 'ended' : 'active';
+				$status_label = $ended ? __( '配布終了', 'node-library' ) : __( '配布中', 'node-library' );
+				if ( 'psplus_freeplay' === $service ) {
+					if ( '' !== $end_mmdd ) {
+						$badge_text = $ended
+							? sprintf( 'PS Plus フリープレイ対象（%sまで・配布終了）', $end_mmdd )
+							: sprintf( 'PS Plus フリープレイ対象（%sまで）', $end_mmdd );
+					} else {
+						$badge_text = $ended
+							? 'PS Plus フリープレイ対象（配布終了）'
+							: 'PS Plus フリープレイ対象（配布中）';
+					}
+				} else {
+					$badge_text = '' !== $period_text
+						? sprintf( '%s（%s：%s）', $label, $status_label, $period_text )
+						: sprintf( '%s（%s）', $label, $status_label );
+				}
+				$kind = 'giveaway';
+			} else {
+				$kind         = 'catalog';
+				$status       = 'active';
+				$status_label = 'psplus' === $service ? __( 'ゲームカタログ対象', 'node-library' ) : __( '加入中', 'node-library' );
+				$period_text  = '';
+				$badge_text   = 'psplus' === $service
+					? 'PS Plus ゲームカタログ対象'
+					: sprintf( '%s（%s）', $label, $status_label );
+			}
+
+			$badges[ $service ] = array(
+				'service'      => $service,
+				'label'        => $label,
+				'brand'        => $brand,
+				'kind'         => $kind,
+				'status'       => $status,
+				'status_label' => $status_label,
+				'period_text'  => $period_text,
+				'end_mmdd'     => $end_mmdd,
+				'badge_text'   => $badge_text,
+			);
+		}
+
+		return $badges;
+	}
+
+	/**
+	 * Expand subscription badge items into display chips.
+	 * PS Plus services emit a unified "PS Plus" brand chip plus target chip(s)
+	 * ("ゲームカタログ対象" / "フリープレイ対象（MM/DDまで）").
+	 *
+	 * @param array<string, array<string, mixed>> $badges Result from get_display_badges().
+	 * @return array<int, array{key:string,service:string,brand:string,kind:string,status:string,text:string}>
+	 */
+	public static function expand_display_chips( array $badges ): array {
+		$chips          = array();
+		$emitted_psplus = false;
+
+		foreach ( $badges as $service => $badge ) {
+			if ( ! is_array( $badge ) ) {
+				continue;
+			}
+			$svc    = (string) ( $badge['service'] ?? $service );
+			$brand  = (string) ( $badge['brand'] ?? 'neutral' );
+			$kind   = (string) ( $badge['kind'] ?? 'catalog' );
+			$status = (string) ( $badge['status'] ?? 'active' );
+
+			if ( 'psplus' === $svc || 'psplus_freeplay' === $svc ) {
+				if ( ! $emitted_psplus ) {
+					$chips[] = array(
+						'key'     => 'psplus_brand',
+						'service' => 'psplus',
+						'brand'   => 'playstation',
+						'kind'    => 'psplus',
+						'status'  => 'active',
+						'text'    => 'PS Plus',
+					);
+					$emitted_psplus = true;
+				}
+				if ( 'psplus' === $svc ) {
+					$chips[] = array(
+						'key'     => 'psplus',
+						'service' => 'psplus',
+						'brand'   => 'playstation',
+						'kind'    => 'catalog',
+						'status'  => $status,
+						'text'    => __( 'ゲームカタログ対象', 'node-library' ),
+					);
+				} else {
+					$end_mmdd = (string) ( $badge['end_mmdd'] ?? '' );
+					if ( '' !== $end_mmdd ) {
+						$fp_text = 'ended' === $status
+							? sprintf( __( 'フリープレイ対象（%sまで・配布終了）', 'node-library' ), $end_mmdd )
+							: sprintf( __( 'フリープレイ対象（%sまで）', 'node-library' ), $end_mmdd );
+					} else {
+						$fp_text = 'ended' === $status
+							? __( 'フリープレイ対象（配布終了）', 'node-library' )
+							: __( 'フリープレイ対象（配布中）', 'node-library' );
+					}
+					$chips[] = array(
+						'key'     => 'psplus_freeplay',
+						'service' => 'psplus_freeplay',
+						'brand'   => 'playstation',
+						'kind'    => 'giveaway',
+						'status'  => $status,
+						'text'    => $fp_text,
+					);
+				}
+				continue;
+			}
+
+			$chips[] = array(
+				'key'     => $svc,
+				'service' => $svc,
+				'brand'   => $brand,
+				'kind'    => $kind,
+				'status'  => $status,
+				'text'    => (string) ( $badge['badge_text'] ?? $badge['label'] ?? $svc ),
+			);
+		}
+
+		return $chips;
 	}
 
 	/**
@@ -122,6 +377,7 @@ final class Node_Library_Subscriptions {
 					if ( false === $inserted ) {
 						return 'invalid';
 					}
+					unset( self::$history_cache[ $item_id ] );
 					node_library_delete_detail_cache( $item_id );
 					return 'joined';
 				}
@@ -137,6 +393,7 @@ final class Node_Library_Subscriptions {
 							array( '%d' )
 						);
 						if ( $updated ) {
+							unset( self::$history_cache[ $item_id ] );
 							node_library_delete_detail_cache( $item_id );
 						}
 						return 'updated_leaving';
@@ -160,6 +417,7 @@ final class Node_Library_Subscriptions {
 			);
 
 			if ( $updated ) {
+				unset( self::$history_cache[ $item_id ] );
 				node_library_delete_detail_cache( $item_id );
 			}
 			return 'left';
@@ -215,35 +473,6 @@ final class Node_Library_Subscriptions {
 		}
 
 		return $results;
-	}
-
-	/**
-	 * Whether a service key represents a time-limited distribution period (free giveaway).
-	 */
-	public static function is_giveaway_service( string $service ): bool {
-		if ( class_exists( 'Node_Library_Structured_Meta' ) && method_exists( 'Node_Library_Structured_Meta', 'giveaway_subscriptions' ) ) {
-			return in_array( $service, Node_Library_Structured_Meta::giveaway_subscriptions(), true );
-		}
-		return in_array( $service, array( 'psplus_freeplay', 'epic_free' ), true );
-	}
-
-	/**
-	 * Determine whether a history row has ended (explicitly closed or giveaway leaving_at elapsed).
-	 *
-	 * @param array<string, mixed> $row History row.
-	 * @param int|null             $now Optional UNIX timestamp override.
-	 */
-	public static function is_period_ended( array $row, ?int $now = null ): bool {
-		if ( is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ) {
-			return true;
-		}
-		$service = (string) ( $row['service'] ?? '' );
-		$leaving = $row['leaving_at'] ?? null;
-		if ( self::is_giveaway_service( $service ) && is_string( $leaving ) && '' !== $leaving ) {
-			$leaving_ts = strtotime( $leaving . ' UTC' );
-			return false !== $leaving_ts && $leaving_ts <= ( $now ?? time() );
-		}
-		return false;
 	}
 
 	/**
@@ -351,6 +580,7 @@ final class Node_Library_Subscriptions {
 					)
 				);
 				if ( $updated ) {
+					unset( self::$history_cache[ $item_id ] );
 					node_library_delete_detail_cache( $item_id );
 				}
 				return 'left';
@@ -398,6 +628,7 @@ final class Node_Library_Subscriptions {
 				if ( false === $inserted ) {
 					return 'invalid';
 				}
+				unset( self::$history_cache[ $item_id ] );
 				node_library_delete_detail_cache( $item_id );
 				return 'joined';
 			}
@@ -421,6 +652,7 @@ final class Node_Library_Subscriptions {
 			if ( false === $updated ) {
 				return 'invalid';
 			}
+			unset( self::$history_cache[ $item_id ] );
 			node_library_delete_detail_cache( $item_id );
 			return $joined_changed ? 'updated_period' : 'updated_leaving';
 		} finally {
@@ -511,6 +743,9 @@ final class Node_Library_Subscriptions {
 		if ( $item_id <= 0 || '1' !== get_option( 'node_library_subscription_schema' ) ) {
 			return array();
 		}
+		if ( array_key_exists( $item_id, self::$history_cache ) ) {
+			return self::$history_cache[ $item_id ];
+		}
 		global $wpdb;
 		$table = self::table();
 		$rows  = $wpdb->get_results(
@@ -564,11 +799,7 @@ final class Node_Library_Subscriptions {
 				$status   = 'left';
 				$event_at = $left;
 			} elseif ( null !== $leaving ) {
-				if ( self::is_period_ended( $row ) ) {
-					$status = 'ended';
-				} else {
-					$status = 'leaving';
-				}
+				$status   = self::is_period_ended( $row ) ? 'ended' : 'leaving';
 				$event_at = $leaving;
 			} else {
 				$status   = 'joined';
@@ -669,12 +900,28 @@ final class Node_Library_Subscriptions {
 		if ( ! $rows ) {
 			return;
 		}
-		$labels = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
+		$labels       = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
+		$has_giveaway = false;
+		$has_catalog  = false;
+		foreach ( $rows as $row ) {
+			if ( self::is_giveaway_service( (string) ( $row['service'] ?? '' ) ) ) {
+				$has_giveaway = true;
+			} else {
+				$has_catalog = true;
+			}
+		}
+		if ( $has_giveaway && ! $has_catalog ) {
+			$section_heading = __( '配布期間履歴', 'node-library' );
+		} elseif ( $has_giveaway && $has_catalog ) {
+			$section_heading = __( 'サブスク在籍・配布期間履歴', 'node-library' );
+		} else {
+			$section_heading = __( 'サブスク在籍履歴', 'node-library' );
+		}
 		?>
 		<section class="node-library-single__subscriptions" aria-labelledby="node-library-subscriptions-title">
 			<div class="node-library-single__section-heading">
 				<span class="material-symbols-outlined" data-icon="sports_esports" aria-hidden="true"></span>
-				<h2 id="node-library-subscriptions-title"><?php esc_html_e( 'サブスク在籍履歴', 'node-library' ); ?></h2>
+				<h2 id="node-library-subscriptions-title"><?php echo esc_html( $section_heading ); ?></h2>
 			</div>
 			<ul class="node-library-subscriptions__list">
 				<?php foreach ( $rows as $row ) : ?>
@@ -685,13 +932,17 @@ final class Node_Library_Subscriptions {
 					$left        = is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ? self::format_jst_date( $row['left_at'] ) : '';
 					$leaving     = is_string( $row['leaving_at'] ?? null ) && '' !== $row['leaving_at'] ? self::format_jst_date( $row['leaving_at'] ) : '';
 					$is_giveaway = self::is_giveaway_service( $service );
+					$is_ended    = self::is_period_ended( $row );
+					$epic_note   = 'epic_free' === $service ? __( '入手後は恒久所持（サブスク加入不要）', 'node-library' ) : '';
+
 					if ( $is_giveaway ) {
-						if ( '' !== $left ) {
-							$period = sprintf( '%s 〜 %s（配布終了）', $joined, '' !== $leaving ? $leaving : $left );
+						$end_display = '' !== $leaving ? $leaving : $left;
+						if ( $is_ended && '' !== $end_display ) {
+							$period = sprintf( '%s 〜 %s（配布終了）', $joined, $end_display );
+						} elseif ( $is_ended ) {
+							$period = sprintf( '%s 〜（配布終了）', $joined );
 						} elseif ( '' !== $leaving ) {
-							$period = self::is_period_ended( $row )
-								? sprintf( '%s 〜 %s（配布終了）', $joined, $leaving )
-								: sprintf( '%s 〜 %s（配布中）', $joined, $leaving );
+							$period = sprintf( '%s 〜 %s（配布中）', $joined, $leaving );
 						} else {
 							$period = sprintf( '%s 〜（配布中）', $joined );
 						}
@@ -707,10 +958,26 @@ final class Node_Library_Subscriptions {
 					} else {
 						$period = sprintf( '%s 〜（在籍中）', $joined );
 					}
+
+					$item_classes = array( 'node-library-subscriptions__item' );
+					$item_classes[] = $is_giveaway ? 'node-library-subscriptions__item--giveaway' : 'node-library-subscriptions__item--catalog';
+					if ( $is_ended ) {
+						$item_classes[] = 'node-library-subscriptions__item--ended';
+					}
 					?>
-					<li class="node-library-subscriptions__item">
-						<span class="node-library-subscriptions__service"><?php echo esc_html( $label ); ?></span>
-						<span class="node-library-subscriptions__period"><?php echo esc_html( $period ); ?></span>
+					<li class="<?php echo esc_attr( implode( ' ', $item_classes ) ); ?>">
+						<span class="node-library-subscriptions__service-group">
+							<?php if ( $is_giveaway ) : ?>
+								<span class="node-library-subscriptions__kind"><?php esc_html_e( '配布期間', 'node-library' ); ?></span>
+							<?php endif; ?>
+							<span class="node-library-subscriptions__service"><?php echo esc_html( $label ); ?></span>
+						</span>
+						<span class="node-library-subscriptions__meta">
+							<span class="node-library-subscriptions__period"><?php echo esc_html( $period ); ?></span>
+							<?php if ( '' !== $epic_note ) : ?>
+								<span class="node-library-subscriptions__note"><?php echo esc_html( $epic_note ); ?></span>
+							<?php endif; ?>
+						</span>
 					</li>
 				<?php endforeach; ?>
 			</ul>
@@ -752,6 +1019,18 @@ final class Node_Library_Subscriptions {
 		$value = trim( $value );
 		$ts    = strtotime( $value . ( preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $value ) ? ' UTC' : '' ) );
 		return false !== $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : null;
+	}
+
+	private static function format_jst_mmdd( string $utc_datetime ): string {
+		$utc_datetime = trim( $utc_datetime );
+		if ( '' === $utc_datetime ) {
+			return '';
+		}
+		$ts = strtotime( $utc_datetime . ' UTC' );
+		if ( false === $ts ) {
+			return '';
+		}
+		return wp_date( 'm/d', $ts, new DateTimeZone( 'Asia/Tokyo' ) );
 	}
 
 	/**
