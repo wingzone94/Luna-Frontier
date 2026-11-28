@@ -214,10 +214,13 @@ if ( ! function_exists( 'node_m3_color_meta_box_callback' ) ) {
         $natural_categories = function_exists('node_deduplicate_post_categories')
             ? node_deduplicate_post_categories($assigned_categories)
             : array();
-        echo '<script type="application/json" id="node-color-inherit-data">' . wp_json_encode(array(
-            'map'        => $inherit_map,
-            'fallbackId' => !empty($natural_categories) ? (int) $natural_categories[0]->term_id : 0,
-        )) . '</script>';
+        echo '<script type="application/json" id="node-color-inherit-data">' . wp_json_encode(
+            array(
+                'map'        => $inherit_map,
+                'fallbackId' => !empty($natural_categories) ? (int) $natural_categories[0]->term_id : 0,
+            ),
+            JSON_HEX_TAG | JSON_HEX_AMP
+        ) . '</script>';
     }
 }
 
