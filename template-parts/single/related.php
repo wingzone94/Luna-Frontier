@@ -66,13 +66,11 @@ if ($related_query->have_posts()) :
                     <?php
                     $lf_rel_thumb_html = '';
                     if ( has_post_thumbnail() ) {
-                        $lf_rel_thumb_id   = (int) get_post_thumbnail_id();
-                        $lf_rel_saved_alt  = $lf_rel_thumb_id ? trim( (string) get_post_meta( $lf_rel_thumb_id, '_wp_attachment_image_alt', true ) ) : '';
                         $lf_rel_thumb_html = get_the_post_thumbnail(
                             get_the_ID(),
                             'medium_large',
                             array(
-                                'alt' => esc_attr( '' !== $lf_rel_saved_alt ? $lf_rel_saved_alt : get_the_title() ),
+                                'alt' => '', // The adjacent title names this link.
                             )
                         );
                     }
