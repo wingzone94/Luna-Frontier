@@ -111,7 +111,7 @@ get_header();
 		<?php if ( ! $lf_news ) : ?><p class="lf-home__empty"><?php esc_html_e( 'ニュース記事がまだありません。', 'node' ); ?></p><?php endif; ?>
 	</section>
 
-	<div class="lf-home__columns">
+	<div class="lf-home__columns<?php echo count( $lf_latest ) <= 2 ? ' lf-home__columns--few-stories' : ''; ?>">
 		<section id="latest" class="lf-home__latest" aria-labelledby="lf-latest-title">
 			<div class="lf-home__section-head">
 				<h2 id="lf-latest-title"><?php esc_html_e( '新着記事', 'node' ); ?></h2>

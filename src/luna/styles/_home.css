@@ -31,6 +31,13 @@ body.lf-theme .lf-home a:hover h3 { color: var(--lf-home-accent); text-decoratio
 body.lf-theme .lf-home__section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
 body.lf-theme .lf-home__section-head h2 { display: flex; align-items: center; gap: 10px; font-size: clamp(20px, 1.8vw, 26px); font-weight: 800; line-height: 1.4; color: var(--lf-home-ink); }
 body.lf-theme .lf-home__section-head h2 > .material-symbols-outlined { color: var(--lf-brand); font-size: 30px; }
+@media (min-width: 1001px) {
+	body.lf-theme .lf-home__columns--few-stories { grid-template-columns: minmax(0, 1fr); }
+	body.lf-theme .lf-home__columns--few-stories > .lf-home__aside {
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		align-items: start;
+	}
+}
 body.lf-theme :is(.lf-home__latest, .lf-home__panel) h2:not(:has(.material-symbols-outlined))::before { content: ''; width: 5px; height: 1.25em; border-radius: 4px; background: var(--lf-brand); }
 body.lf-theme .lf-home__intro { color: var(--lf-home-muted); font-size: 14px; }
 body.lf-theme .lf-home .lf-home__more { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; min-height: 48px; color: var(--lf-home-accent); font-size: 14px; font-weight: 700; }
