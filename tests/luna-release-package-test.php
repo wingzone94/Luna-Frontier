@@ -128,6 +128,57 @@ class Luna_Release_Package_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/** 単体配布プラグイン ZIP の全ファイルが plugins-embedded/ の正本ソースと SHA-256 完全一致すること。 */
+	public function test_standalone_plugin_archives_match_embedded_source_sha256(): void {
+		$archives = glob( $this->repo_dir() . '/production_plugins/*.zip' ) ?: [];
+		$this->assertCount( 11, $archives );
+
+		foreach ( $archives as $archive ) {
+			$slug       = pathinfo( $archive, PATHINFO_FILENAME );
+			$source_dir = $this->repo_dir() . '/plugins-embedded/' . $slug;
+			$this->assertDirectoryExists( $source_dir, '正本ソースが存在しません: ' . $slug );
+
+			$zip = new ZipArchive();
+			$this->assertTrue( true === $zip->open( $archive ), 'ZIPを開けません: ' . basename( $archive ) );
+			$zip_hashes = [];
+			$prefix     = $slug . '/';
+			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+				$name = (string) $zip->getNameIndex( $i );
+				if ( str_ends_with( $name, '/' ) ) {
+					continue;
+				}
+				$this->assertStringStartsWith( $prefix, $name, basename( $archive ) . ' の不正なエントリ: ' . $name );
+				$rel = substr( $name, strlen( $prefix ) );
+				if ( '.DS_Store' === basename( $rel ) ) {
+					continue;
+				}
+				$zip_hashes[ $rel ] = hash( 'sha256', (string) $zip->getFromIndex( $i ) );
+			}
+			$zip->close();
+
+			$source_hashes = [];
+			$iterator      = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $source_dir, FilesystemIterator::SKIP_DOTS )
+			);
+			foreach ( $iterator as $file ) {
+				if ( ! $file->isFile() || '.DS_Store' === $file->getFilename() ) {
+					continue;
+				}
+				$rel                   = str_replace( $source_dir . '/', '', $file->getPathname() );
+				$source_hashes[ $rel ] = hash_file( 'sha256', $file->getPathname() );
+			}
+
+			ksort( $zip_hashes );
+			ksort( $source_hashes );
+
+			$this->assertSame(
+				$source_hashes,
+				$zip_hashes,
+				sprintf( 'production_plugins/%s.zip が plugins-embedded/%s/ と一致しません。scripts/build-plugin-zips.sh で再生成してください。', $slug, $slug )
+			);
+		}
+	}
+
 	/** 画像修復と実行時PHPが、検証したソースと同じ内容で同梱されること。 */
 	public function test_image_repair_and_runtime_php_match_source(): void {
 		$zip = new ZipArchive();
