@@ -333,6 +333,23 @@ body.lf-theme .m3-card__footer {
 	color: var(--lf-on-surface-secondary);
 }
 
+@media (min-width: 768px) {
+	body.lf-theme.archive .m3-card__footer {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	body.lf-theme.archive .m3-card__dates {
+		flex-wrap: wrap;
+		justify-content: flex-start;
+	}
+
+	body.lf-theme.archive .m3-card__topline {
+		min-block-size: 3em;
+		align-content: start;
+	}
+}
+
 body.lf-theme .m3-card__writer-name,
 body.lf-theme .m3-card__date {
 	font-size: var(--lf-text-2xs);
