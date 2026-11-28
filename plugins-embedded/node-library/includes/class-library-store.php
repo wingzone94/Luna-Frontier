@@ -424,7 +424,46 @@ final class Node_Library_Microsoft_Store {
 				$platforms[] = array( 'category' => $map[ $platform ][0], 'hardware' => $map[ $platform ][1] );
 			}
 		}
-		return array( 'store' => 'microsoft', 'id' => $product['ProductId'], 'title' => sanitize_text_field( $summary['title'] ), 'summary' => sanitize_textarea_field( $summary['description'] ?? $localized['ProductDescription'] ?? '' ), 'url' => 'https://www.xbox.com/ja-JP/games/store/-/' . $product['ProductId'], 'image_url' => $image, 'price' => self::price( $product ), 'meta' => $meta, 'features' => $flags, 'editions' => array_values( array_filter( $summary['editions'] ?? array(), static fn( $id ) => is_string( $id ) && 1 === preg_match( '/^[A-Z0-9]{12}$/D', $id ) ) ), 'subscriptions' => $summary['includedWithPassesProductIds'] ?? array(), 'subscription_metadata' => $summary['passMetadataByPassProductId'] ?? array(), 'platforms' => $platforms, 'relations' => $relations, 'fetched_at' => gmdate( 'c' ), 'source' => 'microsoft_catalog' );
+		$price    = self::price( $product );
+		$editions = array_values( array_filter( $summary['editions'] ?? array(), static fn( $id ) => is_string( $id ) && 1 === preg_match( '/^[A-Z0-9]{12}$/D', $id ) ) );
+		$notice   = '';
+		if ( null === $price ) {
+			$candidates = array_values( array_diff( $editions, array( (string) $product['ProductId'] ) ) );
+			if ( ! empty( $candidates ) ) {
+				$notice = 'このIDは単体購入できないベース枠（親商品）の可能性があります。販売エディションID（候補: ' . implode( ', ', array_slice( $candidates, 0, 5 ) ) . '）を指定してください。';
+			} else {
+				$notice = 'このIDでは購入可能な日本円価格が見つかりませんでした（非売親枠・販売終了・価格未定の可能性があります）。';
+			}
+		}
+		return array( 'store' => 'microsoft', 'id' => $product['ProductId'], 'title' => sanitize_text_field( $summary['title'] ), 'summary' => sanitize_textarea_field( $summary['description'] ?? $localized['ProductDescription'] ?? '' ), 'url' => 'https://www.xbox.com/ja-JP/games/store/-/' . $product['ProductId'], 'image_url' => $image, 'price' => $price, 'price_notice' => $notice, 'meta' => $meta, 'features' => $flags, 'editions' => $editions, 'subscriptions' => $summary['includedWithPassesProductIds'] ?? array(), 'subscription_metadata' => $summary['passMetadataByPassProductId'] ?? array(), 'platforms' => $platforms, 'relations' => $relations, 'fetched_at' => gmdate( 'c' ), 'source' => 'microsoft_catalog' );
+	}
+
+	/**
+	 * PIFilter.InclusionProperties が決済手段制限のみか判定する（日本の CERO Z 年齢確認クレカ制限を許容）。
+	 *
+	 * @param array<int, mixed> $properties PIFilter.InclusionProperties の配列。
+	 */
+	private static function is_payment_instrument_filter_only( array $properties ): bool {
+		if ( empty( $properties ) ) {
+			return true;
+		}
+		foreach ( $properties as $prop ) {
+			if ( ! is_string( $prop ) ) {
+				return false;
+			}
+			$norm = strtolower( trim( $prop ) );
+			if ( '' === $norm ) {
+				continue;
+			}
+			$is_pi = in_array( $norm, array( 'credit_card', 'token', 'paypal', 'direct_debit', 'stored_value', 'debit_card' ), true )
+				|| str_starts_with( $norm, 'ewallet:' )
+				|| str_starts_with( $norm, 'legacy:' )
+				|| str_starts_with( $norm, 'mobile_billing' );
+			if ( ! $is_pi ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Poll the purchase catalogue without fetching slower editorial metadata or DLC. */
@@ -451,9 +490,13 @@ final class Node_Library_Microsoft_Store {
 				continue;
 			}
 			foreach ( $entry['Availabilities'] ?? array() as $offer ) {
-				$start = strtotime( $offer['Conditions']['StartDate'] ?? '' );
-				$end = strtotime( $offer['Conditions']['EndDate'] ?? '' );
-				if ( ! in_array( 'Purchase', $offer['Actions'] ?? array(), true ) || ! empty( $offer['RemediationRequired'] ) || ! empty( $offer['OrderManagementData']['PIFilter']['InclusionProperties'] ) || false === $start || false === $end || $start > time() || $end <= time() ) {
+				$start            = strtotime( $offer['Conditions']['StartDate'] ?? '' );
+				$end              = strtotime( $offer['Conditions']['EndDate'] ?? '' );
+				$pi_inclusion     = $offer['OrderManagementData']['PIFilter']['InclusionProperties'] ?? array();
+				$has_affirmations = ! empty( $offer['Conditions']['EligibilityProperties']['Affirmations'] )
+					|| ! empty( $offer['OrderManagementData']['EligibilityProperties']['Affirmations'] );
+				$blocked_pi       = is_array( $pi_inclusion ) && ! self::is_payment_instrument_filter_only( $pi_inclusion );
+				if ( ! in_array( 'Purchase', $offer['Actions'] ?? array(), true ) || ! empty( $offer['RemediationRequired'] ) || $has_affirmations || $blocked_pi || false === $start || false === $end || $start > time() || $end <= time() ) {
 					continue;
 				}
 				$price = $offer['OrderManagementData']['Price'] ?? array();

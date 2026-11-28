@@ -146,7 +146,7 @@ function node_connect_sanitize_webhooks( $input ): array {
 		$url = trim( (string) ( $row['url'] ?? '' ) );
 		if ( '' !== $url ) {
 			$url = sanitize_url( $url );
-			if ( ! str_starts_with( $url, 'https://' ) ) {
+			if ( ! Node_Connect_Webhook_Sender::is_allowed_webhook_url( $url ) ) {
 				$url = '';
 			}
 		}

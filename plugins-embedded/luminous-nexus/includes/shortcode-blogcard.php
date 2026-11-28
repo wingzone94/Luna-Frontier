@@ -32,27 +32,32 @@ function luminous_nexus_get_ogp_data( $url ) {
 		'is_internal' => false,
 	];
 
-	// 内部記事の判定とデータ取得
+	// 内部記事の判定とデータ取得（公開済みかつ非パスワード保護のみ許可）
 	$home_url = home_url();
 	if ( str_contains( $url, $home_url ) ) {
 		$post_id = url_to_postid( $url );
 		if ( $post_id ) {
-			$ogp['title']       = get_the_title( $post_id );
-			$ogp['description'] = get_the_excerpt( $post_id );
-			$ogp['image']       = get_the_post_thumbnail_url( $post_id, 'large' );
-			$ogp['site_name']   = get_bloginfo( 'name' );
-			$ogp['is_internal'] = true;
-			$ogp['favicon']     = get_site_icon_url( 32 );
-			set_transient( $transient_key, $ogp, WEEK_IN_SECONDS );
-			return $ogp;
+			$target_post = get_post( $post_id );
+			if ( $target_post instanceof WP_Post && 'publish' === $target_post->post_status && '' === $target_post->post_password ) {
+				$ogp['title']       = get_the_title( $post_id );
+				$ogp['description'] = get_the_excerpt( $post_id );
+				$ogp['image']       = get_the_post_thumbnail_url( $post_id, 'large' );
+				$ogp['site_name']   = get_bloginfo( 'name' );
+				$ogp['is_internal'] = true;
+				$ogp['favicon']     = get_site_icon_url( 32 );
+				set_transient( $transient_key, $ogp, WEEK_IN_SECONDS );
+				return $ogp;
+			}
+			return false;
 		}
 	}
 
 	// 外部サイトからの取得
 	$response = wp_safe_remote_get( $url, [
-		'timeout'    => 15,
-		'sslverify'  => false,
-		'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+		'timeout'             => 15,
+		'reject_unsafe_urls'  => true,
+		'limit_response_size' => 512 * KB_IN_BYTES,
+		'user-agent'          => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
 	] );
 
 	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -65,27 +70,27 @@ function luminous_nexus_get_ogp_data( $url ) {
 	}
 
 	// 文字化け対策
-	$content_type = wp_remote_retrieve_header( $response, 'content-type' );
-	if ( str_contains( $content_type, 'shift_jis' ) || str_contains( $content_type, 'sjis' ) ) {
+	$content_type = (string) wp_remote_retrieve_header( $response, 'content-type' );
+	if ( str_contains( strtolower( $content_type ), 'shift_jis' ) || str_contains( strtolower( $content_type ), 'sjis' ) ) {
 		$html = mb_convert_encoding( $html, 'UTF-8', 'SJIS' );
 	}
 
 	$dom = new DOMDocument();
 	libxml_use_internal_errors( true );
-	$html_entities = mb_convert_encoding( $html, 'HTML-ENTITIES', 'UTF-8' );
-	@$dom->loadHTML( $html_entities );
+	@$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
 	libxml_clear_errors();
 	
 	$xpath = new DOMXPath( $dom );
 
+	$host               = (string) wp_parse_url( $url, PHP_URL_HOST );
 	$ogp['title']       = $xpath->evaluate( 'string(//meta[@property="og:title"]/@content)' ) ?: $xpath->evaluate( 'string(//title)' );
 	$ogp['description'] = $xpath->evaluate( 'string(//meta[@property="og:description"]/@content)' ) ?: $xpath->evaluate( 'string(//meta[@name="description"]/@content)' );
 	$ogp['image']       = $xpath->evaluate( 'string(//meta[@property="og:image"]/@content)' );
-	$ogp['site_name']   = $xpath->evaluate( 'string(//meta[@property="og:site_name"]/@content)' ) ?: parse_url( $url, PHP_URL_HOST );
-	$ogp['favicon']     = 'https://www.google.com/s2/favicons?domain=' . parse_url( $url, PHP_URL_HOST ) . '&sz=64';
+	$ogp['site_name']   = $xpath->evaluate( 'string(//meta[@property="og:site_name"]/@content)' ) ?: $host;
+	$ogp['favicon']     = '' !== $host ? 'https://www.google.com/s2/favicons?domain=' . rawurlencode( $host ) . '&sz=64' : '';
 
 	// 空文字のクリーニング
-	$ogp['title'] = trim( $ogp['title'] );
+	$ogp['title'] = trim( (string) $ogp['title'] );
 
 	set_transient( $transient_key, $ogp, WEEK_IN_SECONDS );
 	return $ogp;
@@ -98,25 +103,30 @@ endif;
 if ( ! function_exists( 'luminous_nexus_blogcard_shortcode' ) ) :
 function luminous_nexus_blogcard_shortcode( $atts ) {
 	$atts = shortcode_atts( [ 'url' => '' ], $atts, 'blogcard' );
-	if ( empty( $atts['url'] ) ) {
+	$url  = esc_url_raw( trim( (string) $atts['url'] ) );
+	if ( '' === $url ) {
 		return '';
 	}
 
-	$ogp = luminous_nexus_get_ogp_data( $atts['url'] );
+	// テーマ側のブログカード実装が利用可能であればそちらへ委譲する。
+	if ( function_exists( 'node_render_blogcard' ) ) {
+		return (string) node_render_blogcard( $url );
+	}
+
+	$ogp = luminous_nexus_get_ogp_data( $url );
 	if ( ! $ogp ) {
-		return '<a href="' . esc_url( $atts['url'] ) . '">' . esc_html( $atts['url'] ) . '</a>';
+		return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $url ) . '</a>';
 	}
 
 	// Amazon アフィリエイト ID の付与 (Nexus設定から取得)
 	$amazon_id = get_option( 'luminous_nexus_amazon_id' );
-	if ( $amazon_id && str_contains( $atts['url'], 'amazon.co.jp' ) && ! str_contains( $atts['url'], 'tag=' ) ) {
-		$separator = str_contains( $atts['url'], '?' ) ? '&' : '?';
-		$atts['url'] .= "{$separator}tag={$amazon_id}";
+	if ( $amazon_id && str_contains( $url, 'amazon.co.jp' ) && ! str_contains( $url, 'tag=' ) ) {
+		$url = add_query_arg( 'tag', rawurlencode( (string) $amazon_id ), $url );
 	}
 
 	ob_start();
 	?>
-	<div class="m3-blogcard m3-reveal" onclick="window.open('<?php echo esc_url( $atts['url'] ); ?>', '_blank')">
+	<a class="m3-blogcard m3-reveal" href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer">
 		<div class="m3-blogcard__content">
 			<div class="m3-blogcard__text">
 				<h4 class="m3-blogcard__title"><?php echo esc_html( $ogp['title'] ); ?></h4>
@@ -137,7 +147,7 @@ function luminous_nexus_blogcard_shortcode( $atts ) {
 				</div>
 			<?php endif; ?>
 		</div>
-	</div>
+	</a>
 	<?php
 	return ob_get_clean();
 }
