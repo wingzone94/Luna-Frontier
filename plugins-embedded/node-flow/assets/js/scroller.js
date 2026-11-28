@@ -137,7 +137,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Luna Flow: Error loading posts.', error);
-            triggerEl.innerHTML = '';
+            triggerEl.remove();
+            observer.disconnect();
+            if (pagination) pagination.style.display = '';
+            if (archivePill) archivePill.style.display = '';
         } finally {
             isLoading = false;
         }
