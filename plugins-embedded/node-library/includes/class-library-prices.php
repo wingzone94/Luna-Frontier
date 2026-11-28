@@ -74,9 +74,6 @@ final class Node_Library_Prices {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 	}
 
-<<<<<<< HEAD
-	public static function delete_item( int $id, WP_Post $post ): void {
-=======
 	/** @var array<int, array<string, array<string, array<string, mixed>|null>>> */
 	private static array $current_cache = array();
 
@@ -138,7 +135,6 @@ final class Node_Library_Prices {
 
 	public static function delete_item( int $id, WP_Post $post ): void {
 		unset( self::$current_cache[ $id ] );
->>>>>>> perf/pr9-query-optimization
 		if ( 'node_library' === $post->post_type && '1' === get_option( 'node_library_price_schema' ) ) {
 			global $wpdb;
 			$wpdb->delete( self::table(), array( 'item_id' => $id ), array( '%d' ) );
@@ -152,9 +148,6 @@ final class Node_Library_Prices {
 		if ( '1' !== get_option( 'node_library_price_schema' ) ) {
 			return null;
 		}
-<<<<<<< HEAD
-		return is_string( $external_id ) && '' !== $external_id ? self::latest( $id, $store, $external_id ) : null;
-=======
 		if ( ! is_string( $external_id ) || '' === $external_id ) {
 			return null;
 		}
@@ -162,7 +155,6 @@ final class Node_Library_Prices {
 			return self::$current_cache[ $id ][ $store ][ $external_id ] ?? null;
 		}
 		return self::latest( $id, $store, $external_id );
->>>>>>> perf/pr9-query-optimization
 	}
 
 	private static function latest( int $id, string $store, string $external_id ): ?array {
@@ -246,10 +238,7 @@ final class Node_Library_Prices {
 			return new WP_Error( 'price_write_failed', '価格履歴の保存に失敗しました。' );
 		}
 
-<<<<<<< HEAD
-=======
 		unset( self::$current_cache[ $id ] );
->>>>>>> perf/pr9-query-optimization
 		node_library_delete_detail_cache( $id );
 		return true;
 	}
