@@ -218,6 +218,219 @@ final class Node_Library_Subscriptions {
 	}
 
 	/**
+	 * Whether a service key represents a time-limited distribution period (free giveaway).
+	 */
+	public static function is_giveaway_service( string $service ): bool {
+		if ( class_exists( 'Node_Library_Structured_Meta' ) && method_exists( 'Node_Library_Structured_Meta', 'giveaway_subscriptions' ) ) {
+			return in_array( $service, Node_Library_Structured_Meta::giveaway_subscriptions(), true );
+		}
+		return in_array( $service, array( 'psplus_freeplay', 'epic_free' ), true );
+	}
+
+	/**
+	 * Determine whether a history row has ended (explicitly closed or giveaway leaving_at elapsed).
+	 *
+	 * @param array<string, mixed> $row History row.
+	 * @param int|null             $now Optional UNIX timestamp override.
+	 */
+	public static function is_period_ended( array $row, ?int $now = null ): bool {
+		if ( is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ) {
+			return true;
+		}
+		$service = (string) ( $row['service'] ?? '' );
+		$leaving = $row['leaving_at'] ?? null;
+		if ( self::is_giveaway_service( $service ) && is_string( $leaving ) && '' !== $leaving ) {
+			$leaving_ts = strtotime( $leaving . ' UTC' );
+			return false !== $leaving_ts && $leaving_ts <= ( $now ?? time() );
+		}
+		return false;
+	}
+
+	/**
+	 * Fetch open subscription periods formatted as JST YYYY-MM-DD dates for the edit form.
+	 *
+	 * @return array<string, array{joined_date:string,leaving_date:string}>
+	 */
+	public static function get_open_periods( int $item_id ): array {
+		if ( $item_id <= 0 || '1' !== get_option( 'node_library_subscription_schema' ) ) {
+			return array();
+		}
+		global $wpdb;
+		$table = self::table();
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT service, joined_at, leaving_at FROM {$table} WHERE item_id = %d AND left_at IS NULL ORDER BY id DESC",
+				$item_id
+			),
+			ARRAY_A
+		);
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+		$periods = array();
+		foreach ( $rows as $row ) {
+			$service = (string) ( $row['service'] ?? '' );
+			if ( '' === $service || isset( $periods[ $service ] ) ) {
+				continue;
+			}
+			$periods[ $service ] = array(
+				'joined_date'  => self::format_jst_input_date( (string) ( $row['joined_at'] ?? '' ) ),
+				'leaving_date' => is_string( $row['leaving_at'] ?? null ) && '' !== $row['leaving_at']
+					? self::format_jst_input_date( $row['leaving_at'] )
+					: '',
+			);
+		}
+		return $periods;
+	}
+
+	/**
+	 * Dedicated manual period recording path for the admin meta box.
+	 * Unlike sync_item_flags(), manual period entry allows backdated start dates and updates leaving_at.
+	 *
+	 * @param int         $item_id           Library item post ID.
+	 * @param string      $service           Canonical service key.
+	 * @param bool        $present           Whether the service checkbox is checked.
+	 * @param string|null $joined_date       Optional JST Y-m-d or UTC datetime start.
+	 * @param string|null $leaving_date      Optional JST Y-m-d or UTC datetime end.
+	 * @param int|null    $now               Optional UNIX timestamp override.
+	 * @param string|null $prev_leaving_date Previous JST Y-m-d rendered in the form to detect explicit clear.
+	 * @return string One of 'joined', 'left', 'updated_period', 'updated_leaving', 'unchanged', 'invalid'.
+	 */
+	public static function record_manual_period(
+		int $item_id,
+		string $service,
+		bool $present,
+		?string $joined_date = null,
+		?string $leaving_date = null,
+		?int $now = null,
+		?string $prev_leaving_date = null
+	): string {
+		$services = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
+		if ( $item_id <= 0 || ! isset( $services[ $service ] ) ) {
+			return 'invalid';
+		}
+
+		self::install();
+		if ( '1' !== get_option( 'node_library_subscription_schema' ) ) {
+			return 'invalid';
+		}
+
+		$clean_joined  = self::normalize_manual_date( $joined_date, false );
+		$clean_leaving = self::normalize_manual_date( $leaving_date, true );
+		if ( false === $clean_joined || false === $clean_leaving ) {
+			return 'invalid';
+		}
+
+		global $wpdb;
+		$lock     = 'node_library_sub_' . md5( DB_NAME . ':' . $wpdb->prefix . ':' . $item_id . ':' . $service );
+		$got_lock = 1 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 2)', $lock ) );
+
+		try {
+			$table    = self::table();
+			$now_ts   = $now ?? time();
+			$now_utc  = gmdate( 'Y-m-d H:i:s', $now_ts );
+			$open_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id, joined_at, leaving_at FROM {$table} WHERE item_id = %d AND service = %s AND left_at IS NULL ORDER BY id DESC LIMIT 1",
+					$item_id,
+					$service
+				),
+				ARRAY_A
+			);
+
+			if ( ! $present ) {
+				if ( null === $open_row ) {
+					return 'unchanged';
+				}
+				$updated = $wpdb->query(
+					$wpdb->prepare(
+						"UPDATE {$table} SET left_at = %s WHERE item_id = %d AND service = %s AND left_at IS NULL",
+						$now_utc,
+						$item_id,
+						$service
+					)
+				);
+				if ( $updated ) {
+					node_library_delete_detail_cache( $item_id );
+				}
+				return 'left';
+			}
+
+			$current_joined  = is_string( $open_row['joined_at'] ?? null ) && '' !== $open_row['joined_at'] ? $open_row['joined_at'] : null;
+			$current_leaving = is_string( $open_row['leaving_at'] ?? null ) && '' !== $open_row['leaving_at'] ? $open_row['leaving_at'] : null;
+			$target_joined   = is_string( $clean_joined ) ? $clean_joined : ( $current_joined ?? $now_utc );
+
+			if ( is_string( $clean_leaving ) ) {
+				$raw_leaving_trimmed = null !== $leaving_date ? trim( $leaving_date ) : '';
+				if (
+					null !== $current_leaving
+					&& null !== $prev_leaving_date
+					&& '' !== $prev_leaving_date
+					&& self::format_jst_input_date( $current_leaving ) === $prev_leaving_date
+					&& $raw_leaving_trimmed === $prev_leaving_date
+				) {
+					// Preserve exact UTC timestamp (e.g. Microsoft leavingDate) when the date input was not changed.
+					$target_leaving = $current_leaving;
+				} else {
+					$target_leaving = $clean_leaving;
+				}
+			} elseif ( null !== $prev_leaving_date && '' !== trim( $prev_leaving_date ) ) {
+				$target_leaving = null;
+			} else {
+				$target_leaving = $current_leaving;
+			}
+
+			if ( null !== $target_leaving && $target_joined > $target_leaving ) {
+				return 'invalid';
+			}
+
+			if ( null === $open_row ) {
+				$inserted = $wpdb->insert(
+					$table,
+					array(
+						'item_id'    => $item_id,
+						'service'    => $service,
+						'joined_at'  => $target_joined,
+						'leaving_at' => $target_leaving,
+						'left_at'    => null,
+					)
+				);
+				if ( false === $inserted ) {
+					return 'invalid';
+				}
+				node_library_delete_detail_cache( $item_id );
+				return 'joined';
+			}
+
+			$joined_changed  = $target_joined !== $current_joined;
+			$leaving_changed = $target_leaving !== $current_leaving;
+			if ( ! $joined_changed && ! $leaving_changed ) {
+				return 'unchanged';
+			}
+
+			$updated = $wpdb->update(
+				$table,
+				array(
+					'joined_at'  => $target_joined,
+					'leaving_at' => $target_leaving,
+				),
+				array( 'id' => (int) $open_row['id'] ),
+				array( '%s', null === $target_leaving ? null : '%s' ),
+				array( '%d' )
+			);
+			if ( false === $updated ) {
+				return 'invalid';
+			}
+			node_library_delete_detail_cache( $item_id );
+			return $joined_changed ? 'updated_period' : 'updated_leaving';
+		} finally {
+			if ( $got_lock ) {
+				$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+			}
+		}
+	}
+
+	/**
 	 * Sync history when an editor saves _node_library_subscriptions in the meta box.
 	 */
 	public static function sync_from_saved_meta( int $post_id ): void {
@@ -235,6 +448,28 @@ final class Node_Library_Subscriptions {
 		$skip_services = array();
 		if ( ! empty( $_POST['node_library_catalog_ticket'] ) && is_string( $_POST['node_library_catalog_ticket'] ) ) {
 			$skip_services[] = 'gamepass';
+		}
+
+		$periods_raw = isset( $_POST['node_library_subscription_periods'] ) && is_array( $_POST['node_library_subscription_periods'] )
+			? wp_unslash( $_POST['node_library_subscription_periods'] )
+			: array();
+
+		if ( $periods_raw ) {
+			$services = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
+			$stored   = get_post_meta( $post_id, '_node_library_subscriptions', true );
+			$stored   = is_array( $stored ) ? $stored : array();
+			foreach ( array_keys( $services ) as $service ) {
+				if ( in_array( $service, $skip_services, true ) || ! isset( $periods_raw[ $service ] ) || ! is_array( $periods_raw[ $service ] ) ) {
+					continue;
+				}
+				$entry             = $periods_raw[ $service ];
+				$joined_raw        = is_string( $entry['joined_date'] ?? null ) ? sanitize_text_field( $entry['joined_date'] ) : null;
+				$leaving_raw       = is_string( $entry['leaving_date'] ?? null ) ? sanitize_text_field( $entry['leaving_date'] ) : null;
+				$prev_leaving_raw  = is_string( $entry['prev_leaving_date'] ?? null ) ? sanitize_text_field( $entry['prev_leaving_date'] ) : null;
+				$present           = ! empty( $stored[ $service ] );
+				self::record_manual_period( $post_id, $service, $present, $joined_raw, $leaving_raw, null, $prev_leaving_raw );
+				$skip_services[] = $service;
+			}
 		}
 
 		self::sync_item_flags( $post_id, null, $skip_services );
@@ -329,7 +564,11 @@ final class Node_Library_Subscriptions {
 				$status   = 'left';
 				$event_at = $left;
 			} elseif ( null !== $leaving ) {
-				$status   = 'leaving';
+				if ( self::is_period_ended( $row ) ) {
+					$status = 'ended';
+				} else {
+					$status = 'leaving';
+				}
 				$event_at = $leaving;
 			} else {
 				$status   = 'joined';
@@ -374,7 +613,14 @@ final class Node_Library_Subscriptions {
 		$status_labels = array(
 			'joined'  => __( '新規加入', 'node-library' ),
 			'leaving' => __( '終了予定', 'node-library' ),
+			'ended'   => __( '終了', 'node-library' ),
 			'left'    => __( '終了', 'node-library' ),
+		);
+		$giveaway_status_labels = array(
+			'joined'  => __( '配布開始', 'node-library' ),
+			'leaving' => __( '配布終了予定', 'node-library' ),
+			'ended'   => __( '配布終了', 'node-library' ),
+			'left'    => __( '配布終了', 'node-library' ),
 		);
 		?>
 		<div class="wrap">
@@ -393,7 +639,10 @@ final class Node_Library_Subscriptions {
 					</thead>
 					<tbody>
 						<?php foreach ( $changes as $entry ) : ?>
-							<?php $edit_link = get_edit_post_link( (int) $entry['item_id'] ); ?>
+							<?php
+							$edit_link = get_edit_post_link( (int) $entry['item_id'] );
+							$label_map = self::is_giveaway_service( (string) $entry['service'] ) ? $giveaway_status_labels : $status_labels;
+							?>
 							<tr>
 								<td>
 									<?php if ( is_string( $edit_link ) && '' !== $edit_link ) : ?>
@@ -403,7 +652,7 @@ final class Node_Library_Subscriptions {
 									<?php endif; ?>
 								</td>
 								<td><?php echo esc_html( $entry['service_label'] ); ?></td>
-								<td><?php echo esc_html( $status_labels[ $entry['status'] ] ?? $entry['status'] ); ?></td>
+								<td><?php echo esc_html( $label_map[ $entry['status'] ] ?? $entry['status'] ); ?></td>
 								<td><?php echo esc_html( self::format_jst_date( (string) $entry['event_at'] ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>
@@ -430,12 +679,23 @@ final class Node_Library_Subscriptions {
 			<ul class="node-library-subscriptions__list">
 				<?php foreach ( $rows as $row ) : ?>
 					<?php
-					$service = (string) ( $row['service'] ?? '' );
-					$label   = $labels[ $service ] ?? $service;
-					$joined  = self::format_jst_date( (string) ( $row['joined_at'] ?? '' ) );
-					$left    = is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ? self::format_jst_date( $row['left_at'] ) : '';
-					$leaving = is_string( $row['leaving_at'] ?? null ) && '' !== $row['leaving_at'] ? self::format_jst_date( $row['leaving_at'] ) : '';
-					if ( '' !== $left ) {
+					$service     = (string) ( $row['service'] ?? '' );
+					$label       = $labels[ $service ] ?? $service;
+					$joined      = self::format_jst_date( (string) ( $row['joined_at'] ?? '' ) );
+					$left        = is_string( $row['left_at'] ?? null ) && '' !== $row['left_at'] ? self::format_jst_date( $row['left_at'] ) : '';
+					$leaving     = is_string( $row['leaving_at'] ?? null ) && '' !== $row['leaving_at'] ? self::format_jst_date( $row['leaving_at'] ) : '';
+					$is_giveaway = self::is_giveaway_service( $service );
+					if ( $is_giveaway ) {
+						if ( '' !== $left ) {
+							$period = sprintf( '%s 〜 %s（配布終了）', $joined, '' !== $leaving ? $leaving : $left );
+						} elseif ( '' !== $leaving ) {
+							$period = self::is_period_ended( $row )
+								? sprintf( '%s 〜 %s（配布終了）', $joined, $leaving )
+								: sprintf( '%s 〜 %s（配布中）', $joined, $leaving );
+						} else {
+							$period = sprintf( '%s 〜（配布中）', $joined );
+						}
+					} elseif ( '' !== $left ) {
 						$period = sprintf( '%s 〜 %s（終了）', $joined, $left );
 					} elseif ( '' !== $leaving ) {
 						$leaving_ts = strtotime( (string) $row['leaving_at'] . ' UTC' );
@@ -492,6 +752,42 @@ final class Node_Library_Subscriptions {
 		$value = trim( $value );
 		$ts    = strtotime( $value . ( preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $value ) ? ' UTC' : '' ) );
 		return false !== $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : null;
+	}
+
+	/**
+	 * Normalize a manual JST date (YYYY-MM-DD) or datetime string to UTC Y-m-d H:i:s.
+	 *
+	 * @return string|null|false Null when empty, false when non-empty and invalid.
+	 */
+	private static function normalize_manual_date( ?string $value, bool $end_of_day ) {
+		if ( null === $value || '' === trim( $value ) ) {
+			return null;
+		}
+		$trimmed = trim( $value );
+		if ( preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/D', $trimmed, $m ) ) {
+			if ( ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+				return false;
+			}
+			$dt = new DateTimeImmutable(
+				$m[1] . '-' . $m[2] . '-' . $m[3] . ( $end_of_day ? ' 23:59:59' : ' 00:00:00' ),
+				new DateTimeZone( 'Asia/Tokyo' )
+			);
+			return $dt->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+		}
+		$normalized = self::normalize_datetime( $trimmed );
+		return null !== $normalized ? $normalized : false;
+	}
+
+	private static function format_jst_input_date( string $utc_datetime ): string {
+		$utc_datetime = trim( $utc_datetime );
+		if ( '' === $utc_datetime ) {
+			return '';
+		}
+		$ts = strtotime( $utc_datetime . ' UTC' );
+		if ( false === $ts ) {
+			return '';
+		}
+		return wp_date( 'Y-m-d', $ts, new DateTimeZone( 'Asia/Tokyo' ) );
 	}
 
 	private static function format_jst_date( string $utc_datetime ): string {
