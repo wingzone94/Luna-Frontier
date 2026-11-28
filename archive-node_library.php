@@ -78,6 +78,12 @@ $archive_descriptions = array(
 
 	<section class="node-library-archive__collection" aria-label="<?php esc_attr_e( 'ライブラリ一覧', 'node' ); ?>">
 		<?php if ( have_posts() ) : ?>
+			<?php
+			update_post_thumbnail_cache( $wp_query );
+			if ( is_callable( array( 'Node_Library_Prices', 'prime_current_cache' ) ) ) {
+				Node_Library_Prices::prime_current_cache( wp_list_pluck( $wp_query->posts, 'ID' ) );
+			}
+			?>
 			<div class="node-library-archive__grid">
 				<?php while ( have_posts() ) : ?>
 					<?php the_post(); ?>

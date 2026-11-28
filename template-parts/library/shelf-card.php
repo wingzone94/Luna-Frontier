@@ -14,8 +14,10 @@ foreach ( $offers as $offer ) {
 	$key   = $offer['catalogue_store'];
 	$label = $labels[ $key ] ?? $offer['platform'];
 	$stores[ $label ] = $key;
-	if ( null === $price && '' !== $offer['price_label'] ) {
-		$price = $offer;
+	if ( '' !== $offer['price_label'] ) {
+		if ( null === $price || ( is_numeric( $offer['price_numeric'] ?? null ) && is_numeric( $price['price_numeric'] ?? null ) && (float) $offer['price_numeric'] < (float) $price['price_numeric'] ) ) {
+			$price = $offer;
+		}
 	}
 }
 $free = class_exists( 'Node_Library_Structured_Meta' ) && Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( $id, '_node_library_is_free', true ) );

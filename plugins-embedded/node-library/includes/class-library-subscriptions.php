@@ -77,7 +77,7 @@ final class Node_Library_Subscriptions {
 	 * @param string|null $leaving_at Optional scheduled leaving datetime (UTC Y-m-d H:i:s or parseable string).
 	 * @return string One of 'joined', 'left', 'updated_leaving', 'unchanged', 'invalid'.
 	 */
-	public static function observe( int $item_id, string $service, bool $present, ?int $now = null, ?string $leaving_at = null ): string {
+	public static function observe( int $item_id, string $service, bool $present, ?int $now = null, ?string $leaving_at = null, bool $update_leaving = true ): string {
 		$services = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
 		if ( $item_id <= 0 || ! isset( $services[ $service ] ) ) {
 			return 'invalid';
@@ -89,74 +89,85 @@ final class Node_Library_Subscriptions {
 		}
 
 		global $wpdb;
-		$table         = self::table();
-		$now_ts        = $now ?? time();
-		$now_utc       = gmdate( 'Y-m-d H:i:s', $now_ts );
-		$clean_leaving = self::normalize_datetime( $leaving_at );
+		$lock     = 'node_library_sub_' . md5( DB_NAME . ':' . $wpdb->prefix . ':' . $item_id . ':' . $service );
+		$got_lock = 1 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 2)', $lock ) );
 
-		$open_row = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT id, joined_at, leaving_at FROM {$table} WHERE item_id = %d AND service = %s AND left_at IS NULL ORDER BY id DESC LIMIT 1",
-				$item_id,
-				$service
-			),
-			ARRAY_A
-		);
+		try {
+			$table         = self::table();
+			$now_ts        = $now ?? time();
+			$now_utc       = gmdate( 'Y-m-d H:i:s', $now_ts );
+			$clean_leaving = self::normalize_datetime( $leaving_at );
 
-		if ( $present ) {
-			if ( null === $open_row ) {
-				$inserted = $wpdb->insert(
-					$table,
-					array(
-						'item_id'    => $item_id,
-						'service'    => $service,
-						'joined_at'  => $now_utc,
-						'leaving_at' => $clean_leaving,
-						'left_at'    => null,
-					)
-				);
-				if ( false === $inserted ) {
-					return 'invalid';
-				}
-				node_library_delete_detail_cache( $item_id );
-				return 'joined';
-			}
+			$open_row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id, joined_at, leaving_at FROM {$table} WHERE item_id = %d AND service = %s AND left_at IS NULL ORDER BY id DESC LIMIT 1",
+					$item_id,
+					$service
+				),
+				ARRAY_A
+			);
 
-			$current_leaving = is_string( $open_row['leaving_at'] ?? null ) && '' !== $open_row['leaving_at'] ? $open_row['leaving_at'] : null;
-			if ( $clean_leaving !== $current_leaving ) {
-				$updated = $wpdb->update(
-					$table,
-					array( 'leaving_at' => $clean_leaving ),
-					array( 'id' => (int) $open_row['id'] ),
-					array( null === $clean_leaving ? null : '%s' ),
-					array( '%d' )
-				);
-				if ( $updated ) {
+			if ( $present ) {
+				if ( null === $open_row ) {
+					$inserted = $wpdb->insert(
+						$table,
+						array(
+							'item_id'    => $item_id,
+							'service'    => $service,
+							'joined_at'  => $now_utc,
+							'leaving_at' => $clean_leaving,
+							'left_at'    => null,
+						)
+					);
+					if ( false === $inserted ) {
+						return 'invalid';
+					}
 					node_library_delete_detail_cache( $item_id );
+					return 'joined';
 				}
-				return 'updated_leaving';
+
+				if ( $update_leaving ) {
+					$current_leaving = is_string( $open_row['leaving_at'] ?? null ) && '' !== $open_row['leaving_at'] ? $open_row['leaving_at'] : null;
+					if ( $clean_leaving !== $current_leaving ) {
+						$updated = $wpdb->update(
+							$table,
+							array( 'leaving_at' => $clean_leaving ),
+							array( 'id' => (int) $open_row['id'] ),
+							array( null === $clean_leaving ? null : '%s' ),
+							array( '%d' )
+						);
+						if ( $updated ) {
+							node_library_delete_detail_cache( $item_id );
+						}
+						return 'updated_leaving';
+					}
+				}
+
+				return 'unchanged';
 			}
 
-			return 'unchanged';
-		}
+			if ( null === $open_row ) {
+				return 'unchanged';
+			}
 
-		if ( null === $open_row ) {
-			return 'unchanged';
-		}
+			$updated = $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$table} SET left_at = %s WHERE item_id = %d AND service = %s AND left_at IS NULL",
+					$now_utc,
+					$item_id,
+					$service
+				)
+			);
 
-		$updated = $wpdb->query(
-			$wpdb->prepare(
-				"UPDATE {$table} SET left_at = %s WHERE item_id = %d AND service = %s AND left_at IS NULL",
-				$now_utc,
-				$item_id,
-				$service
-			)
-		);
-
-		if ( $updated ) {
-			node_library_delete_detail_cache( $item_id );
+			if ( $updated ) {
+				node_library_delete_detail_cache( $item_id );
+			}
+			return 'left';
+		} finally {
+			if ( $got_lock ) {
+				$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+			}
 		}
-		return 'left';
 	}
 
 	/**
@@ -220,26 +231,37 @@ final class Node_Library_Subscriptions {
 			return;
 		}
 
-		self::sync_item_flags( $post_id );
+		// Microsoft カタログチケット同時保存時は observe_from_catalog() が gamepass 履歴を正規更新するため、手動同期から除外して履歴分断を防ぐ（H-4）。
+		$skip_services = array();
+		if ( ! empty( $_POST['node_library_catalog_ticket'] ) && is_string( $_POST['node_library_catalog_ticket'] ) ) {
+			$skip_services[] = 'gamepass';
+		}
+
+		self::sync_item_flags( $post_id, null, $skip_services );
 	}
 
 	/**
 	 * Reconcile current _node_library_subscriptions post meta against open history rows.
 	 * Existing flagged items without an open row get an initial row at observation time (never backdated).
 	 *
-	 * @param int      $item_id Library item post ID.
-	 * @param int|null $now     Optional UNIX timestamp override.
+	 * @param int             $item_id       Library item post ID.
+	 * @param int|null        $now           Optional UNIX timestamp override.
+	 * @param array<int,string> $skip_services Optional service keys to skip.
 	 * @return array<string, string>
 	 */
-	public static function sync_item_flags( int $item_id, ?int $now = null ): array {
+	public static function sync_item_flags( int $item_id, ?int $now = null, array $skip_services = array() ): array {
 		$services = class_exists( 'Node_Library_Structured_Meta' ) ? Node_Library_Structured_Meta::subscriptions() : array();
 		$stored   = get_post_meta( $item_id, '_node_library_subscriptions', true );
 		$stored   = is_array( $stored ) ? $stored : array();
 		$results  = array();
 
 		foreach ( array_keys( $services ) as $service ) {
+			if ( in_array( $service, $skip_services, true ) ) {
+				continue;
+			}
 			$present             = ! empty( $stored[ $service ] );
-			$results[ $service ] = self::observe( $item_id, $service, $present, $now );
+			// 通常編集保存では leaving_at を NULL 上書きしない（H-4）。
+			$results[ $service ] = self::observe( $item_id, $service, $present, $now, null, false );
 		}
 
 		return $results;
@@ -416,7 +438,12 @@ final class Node_Library_Subscriptions {
 					if ( '' !== $left ) {
 						$period = sprintf( '%s 〜 %s（終了）', $joined, $left );
 					} elseif ( '' !== $leaving ) {
-						$period = sprintf( '%s 〜（在籍中・%s 終了予定）', $joined, $leaving );
+						$leaving_ts = strtotime( (string) $row['leaving_at'] . ' UTC' );
+						if ( false !== $leaving_ts && $leaving_ts <= time() ) {
+							$period = sprintf( '%s 〜（%s 終了予定・確認中）', $joined, $leaving );
+						} else {
+							$period = sprintf( '%s 〜（在籍中・%s 終了予定）', $joined, $leaving );
+						}
 					} else {
 						$period = sprintf( '%s 〜（在籍中）', $joined );
 					}

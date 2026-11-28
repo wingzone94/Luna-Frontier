@@ -6,25 +6,53 @@ declare(strict_types=1);
  */
 $post_id = get_the_ID();
 $categories = get_the_category($post_id);
-$args = array(
-    'post__not_in'   => array($post_id),
-    'posts_per_page' => 4,
-    'orderby'        => 'rand',
+$pool_args = array(
+    'post_type'              => 'post',
+    'post_status'            => 'publish',
+    'post__not_in'           => array($post_id),
+    'posts_per_page'         => 30,
+    'orderby'                => 'date',
+    'order'                  => 'DESC',
+    'fields'                 => 'ids',
+    'no_found_rows'          => true,
+    'ignore_sticky_posts'    => true,
+    'update_post_meta_cache' => false,
+    'update_post_term_cache' => false,
 );
 
 if ($categories) {
     $cat_ids = array();
     foreach($categories as $cat) $cat_ids[] = $cat->term_id;
-    $args['category__in'] = $cat_ids;
+    $pool_args['category__in'] = $cat_ids;
 }
 
-$related_query = new WP_Query($args);
+$pool_ids = get_posts($pool_args);
 
 // Fallback to recent posts if no related posts found in same category
-if (!$related_query->have_posts()) {
-    unset($args['category__in']);
-    $args['orderby'] = 'date';
-    $related_query = new WP_Query($args);
+if (empty($pool_ids)) {
+    unset($pool_args['category__in']);
+    $pool_ids = get_posts($pool_args);
+}
+
+$selected_ids = array();
+if (!empty($pool_ids)) {
+    shuffle($pool_ids);
+    $selected_ids = array_slice($pool_ids, 0, 4);
+}
+
+$related_query = $selected_ids
+    ? new WP_Query(array(
+        'post_type'           => 'post',
+        'post_status'         => 'publish',
+        'post__in'            => $selected_ids,
+        'posts_per_page'      => count($selected_ids),
+        'orderby'             => 'post__in',
+        'no_found_rows'       => true,
+        'ignore_sticky_posts' => true,
+    ))
+    : new WP_Query(array('post__in' => array(0)));
+if ($selected_ids) {
+    update_post_thumbnail_cache($related_query);
 }
 
 if ($related_query->have_posts()) :

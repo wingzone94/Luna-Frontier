@@ -94,16 +94,56 @@ final class Node_Connect_Webhook_Sender {
 	}
 
 	/**
+	 * Discord 公式 Webhook URL か検証する（SSRF 防止）。
+	 */
+	public static function is_allowed_webhook_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) ) {
+			return false;
+		}
+
+		$scheme = strtolower( (string) ( $parts['scheme'] ?? '' ) );
+		$host   = strtolower( (string) ( $parts['host'] ?? '' ) );
+		$path   = (string) ( $parts['path'] ?? '' );
+
+		if ( 'https' !== $scheme || isset( $parts['user'] ) || isset( $parts['pass'] ) || isset( $parts['port'] ) ) {
+			return false;
+		}
+
+		$allowed_hosts = [
+			'discord.com',
+			'discordapp.com',
+			'canary.discord.com',
+			'ptb.discord.com',
+		];
+
+		if ( ! in_array( $host, $allowed_hosts, true ) ) {
+			return false;
+		}
+
+		return str_starts_with( $path, '/api/webhooks/' ) && strlen( $path ) > strlen( '/api/webhooks/' );
+	}
+
+	/**
 	 * @param array<string, mixed> $body Discord Webhook ペイロード。
 	 * @return array{ok: bool, status: string}
 	 */
 	private static function post( string $url, array $body ): array {
-		$response = wp_remote_post(
+		if ( ! self::is_allowed_webhook_url( $url ) ) {
+			return [
+				'ok'     => false,
+				'status' => 'Invalid webhook URL',
+			];
+		}
+
+		$response = wp_safe_remote_post(
 			$url,
 			[
-				'timeout' => self::TIMEOUT,
-				'headers' => [ 'Content-Type' => 'application/json' ],
-				'body'    => wp_json_encode( $body ),
+				'timeout'            => self::TIMEOUT,
+				'redirection'        => 0,
+				'reject_unsafe_urls' => true,
+				'headers'            => [ 'Content-Type' => 'application/json' ],
+				'body'               => wp_json_encode( $body ),
 			]
 		);
 

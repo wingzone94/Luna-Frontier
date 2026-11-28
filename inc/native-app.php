@@ -405,6 +405,30 @@ function node_native_app_sync_cookie(): void {
 add_action( 'init', 'node_native_app_sync_cookie', 1 );
 
 /**
+ * アプリ内表示モード（?native=1 / Cookie）のリクエストでページキャッシュを抑止する（C-1）。
+ * WP Super Cache にも Cookie 除外を登録し、外枠なし HTML が一般ブラウザへ汚染しないようにする。
+ */
+function node_native_app_prevent_page_cache(): void {
+	do_action( 'wpsc_add_cookie', NODE_NATIVE_APP_COOKIE );
+
+	$has_query  = null !== node_native_app_query_value();
+	$has_cookie = isset( $_COOKIE[ NODE_NATIVE_APP_COOKIE ] ) && '' !== (string) $_COOKIE[ NODE_NATIVE_APP_COOKIE ];
+
+	if ( ! node_is_native_app() && ! $has_query && ! $has_cookie ) {
+		return;
+	}
+
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true );
+	}
+
+	if ( ! headers_sent() && function_exists( 'nocache_headers' ) ) {
+		nocache_headers();
+	}
+}
+add_action( 'init', 'node_native_app_prevent_page_cache', 1 );
+
+/**
  * @param string $output language_attributes() の属性文字列。
  */
 function node_native_app_language_attributes( string $output ): string {

@@ -201,4 +201,21 @@ class Node_Library_Nintendo_Store_Test extends WP_UnitTestCase {
 			remove_filter( 'pre_http_request', $mock, 10 );
 		}
 	}
+
+	public function test_preorder_status_with_valid_price_is_accepted(): void {
+		$normalized = Node_Library_Nintendo_Store::normalize(
+			array(
+				'nsuid'         => '70010000999999',
+				'title'         => 'Upcoming Preorder Title',
+				'ssitu'         => 'preorder',
+				'dprice'        => 7980,
+				'current_price' => 7980,
+				'sale_flg'      => '0',
+			)
+		);
+		$this->assertIsArray( $normalized );
+		$this->assertIsArray( $normalized['price'] );
+		$this->assertSame( 7980.0, $normalized['price']['price'] );
+		$this->assertSame( 7980.0, $normalized['price']['list_price'] );
+	}
 }
