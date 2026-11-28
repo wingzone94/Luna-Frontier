@@ -28,10 +28,13 @@ $sub_chips = $sub_badges && is_callable( array( 'Node_Library_Subscriptions', 'e
 	? Node_Library_Subscriptions::expand_display_chips( $sub_badges )
 	: array();
 $discount = (int) ( $price['discount_percent'] ?? 0 );
-$summary  = (string) get_post_meta( $id, '_node_library_summary', true );
+$summary     = (string) get_post_meta( $id, '_node_library_summary', true );
+ob_start();
+get_template_part( 'template-parts/library/visual', null, array( 'id' => $id ) );
+$visual_html = trim( (string) ob_get_clean() );
 ?>
-<article <?php post_class( 'node-library-shelf-card' ); ?>>
-	<?php get_template_part( 'template-parts/library/visual', null, array( 'id' => $id ) ); ?>
+<article <?php post_class( 'node-library-shelf-card' . ( '' !== $visual_html ? ' has-visual' : '' ) ); ?>>
+	<?php echo $visual_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered visual template part. ?>
 	<div class="library-card-copy">
 		<div class="library-chips">
 			<?php get_template_part( 'template-parts/library/category' ); ?>

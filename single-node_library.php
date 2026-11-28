@@ -81,8 +81,13 @@ get_header();
 				node_library_render_product_jsonld( (int) $library_id );
 			}
 			?>
-			<header class="node-library-single__hero">
-				<?php get_template_part( 'template-parts/library/visual', null, array( 'id' => $library_id, 'size' => 'large', 'eager' => true ) ); ?>
+			<?php
+			ob_start();
+			get_template_part( 'template-parts/library/visual', null, array( 'id' => $library_id, 'size' => 'large', 'eager' => true ) );
+			$hero_visual_html = trim( (string) ob_get_clean() );
+			?>
+			<header class="node-library-single__hero<?php echo '' !== $hero_visual_html ? ' has-visual' : ''; ?>">
+				<?php echo $hero_visual_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered visual template part. ?>
 				<div class="library-hero-copy">
 					<?php get_template_part( 'template-parts/library/category' ); ?>
 					<?php if ( '' !== $cero_rating ) : ?>
