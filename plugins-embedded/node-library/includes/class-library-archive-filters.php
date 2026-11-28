@@ -490,9 +490,21 @@ final class Node_Library_Archive_Filters {
 
 		update_meta_cache( 'post', $ids );
 
+		$now         = $now ?? time();
+		$has_min     = '' !== $filters['price_min'];
+		$has_max     = '' !== $filters['price_max'];
+		$price_min   = $has_min ? (float) $filters['price_min'] : 0.0;
+		$price_max   = $has_max ? (float) $filters['price_max'] : 0.0;
+		$on_sale     = '1' === $filters['on_sale'];
+		$matched_map = array();
+
+		$allow_free_flag = ! $on_sale && ( ! $has_min || $price_min <= 0.0 ) && ( ! $has_max || $price_max >= 0.0 );
 		$store_ids_by_post = array();
 		$query_ids         = array();
 		foreach ( $ids as $post_id ) {
+			if ( $allow_free_flag && class_exists( 'Node_Library_Structured_Meta' ) && true === Node_Library_Structured_Meta::sanitize( 'is_free', get_post_meta( $post_id, '_node_library_is_free', true ) ) ) {
+				$matched_map[ $post_id ] = true;
+			}
 			$store_ids = get_post_meta( $post_id, '_node_library_store_ids', true );
 			if ( ! is_array( $store_ids ) || ! $store_ids ) {
 				continue;
@@ -509,19 +521,8 @@ final class Node_Library_Archive_Filters {
 			}
 		}
 
-		if ( ! $query_ids ) {
-			return array();
-		}
-
 		global $wpdb;
-		$table       = $wpdb->prefix . 'node_library_price_history';
-		$now         = $now ?? time();
-		$has_min     = '' !== $filters['price_min'];
-		$has_max     = '' !== $filters['price_max'];
-		$price_min   = $has_min ? (float) $filters['price_min'] : 0.0;
-		$price_max   = $has_max ? (float) $filters['price_max'] : 0.0;
-		$on_sale     = '1' === $filters['on_sale'];
-		$matched_map = array();
+		$table = $wpdb->prefix . 'node_library_price_history';
 
 		foreach ( array_chunk( $query_ids, self::PRICE_CHUNK_SIZE ) as $chunk ) {
 			$placeholders = implode( ',', array_fill( 0, count( $chunk ), '%d' ) );
@@ -555,7 +556,10 @@ final class Node_Library_Archive_Filters {
 				if ( ! isset( $store_ids_by_post[ $item_id ][ $store ] ) || $store_ids_by_post[ $item_id ][ $store ] !== $external_id ) {
 					continue;
 				}
-				if ( null === $row['price'] || '' === (string) $row['price'] ) {
+				if ( class_exists( 'Node_Library_Prices' ) ) {
+					$row = Node_Library_Prices::effective_offer( $row, $now );
+				}
+				if ( null === ( $row['price'] ?? null ) || '' === (string) $row['price'] ) {
 					continue;
 				}
 

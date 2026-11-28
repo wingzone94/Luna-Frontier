@@ -123,6 +123,6 @@
         });
         ticket.value = pending.ticket;
         preview.hidden = true;
-        status.textContent = '編集欄へ反映しました。項目を保存すると価格・画像・関連商品も記録されます。';
+        status.textContent = '編集欄へ反映しました。項目を保存すると画像・関連商品も記録されます（価格は定期ポーリング時に自動記録されます）。';
     });
 })();
