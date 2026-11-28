@@ -206,7 +206,7 @@ final class Node_Library_Prices {
 		if ( $currency ) {
 			$stats['lowest'] = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT MIN(price) FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND currency=%s AND price IS NOT NULL AND list_price IS NOT NULL AND price < list_price",
+					"SELECT MIN(price) FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND currency=%s AND price IS NOT NULL",
 					$id,
 					$store,
 					$ext,
