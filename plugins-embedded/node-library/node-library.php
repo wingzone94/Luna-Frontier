@@ -1116,11 +1116,15 @@ final class Node_Library {
 		$lib_post = get_post( $lib_id );
 		if ( ! $lib_post || $lib_post->post_type !== 'node_library' ) return '';
 
+		$links = get_post_meta( $lib_id, '_node_library_links', true );
+		if ( ( ! is_array( $links ) || empty( $links ) ) && class_exists( 'Node_Library_Single_Extensions' ) ) {
+			$links = Node_Library_Single_Extensions::store_offers( $lib_id, array() );
+		}
 		$game_info = [
 			'title'   => $lib_post->post_title,
 			'type'    => get_post_meta( $lib_id, '_node_library_type', true ) ?: 'game',
 			'summary' => get_post_meta( $lib_id, '_node_library_summary', true ),
-			'links'   => get_post_meta( $lib_id, '_node_library_links', true ),
+			'links'   => $links,
 		];
 
 		ob_start();
@@ -1602,8 +1606,20 @@ final class Node_Library {
 			return;
 		}
 
-		$this->synchronize_all_post_library_card_references();
-		update_option( 'node_library_card_reference_index_version', self::REFERENCE_INDEX_VERSION, false );
+		global $wpdb;
+		$lock = 'node_library_ref_mig_' . md5( DB_NAME . ':' . $wpdb->prefix );
+		if ( 1 !== (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) ) ) {
+			return;
+		}
+		try {
+			if ( self::REFERENCE_INDEX_VERSION === get_option( 'node_library_card_reference_index_version' ) ) {
+				return;
+			}
+			$this->synchronize_all_post_library_card_references();
+			update_option( 'node_library_card_reference_index_version', self::REFERENCE_INDEX_VERSION, false );
+		} finally {
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+		}
 	}
 
 	/**
@@ -1761,11 +1777,15 @@ final class Node_Library {
 				continue;
 			}
 
+			$links = get_post_meta( $lib_id, '_node_library_links', true );
+			if ( ( ! is_array( $links ) || empty( $links ) ) && class_exists( 'Node_Library_Single_Extensions' ) ) {
+				$links = Node_Library_Single_Extensions::store_offers( $lib_id, array() );
+			}
 			$game_info = [
 				'title'   => $lib_post->post_title,
 				'type'    => get_post_meta( $lib_id, '_node_library_type', true ) ?: 'game',
 				'summary' => get_post_meta( $lib_id, '_node_library_summary', true ),
-				'links'   => get_post_meta( $lib_id, '_node_library_links', true ),
+				'links'   => $links,
 			];
 
 			include NODE_LIBRARY_DIR . 'templates/card-library.php';

@@ -29,6 +29,10 @@ class Node_Library_Structured_Meta_Test extends WP_UnitTestCase {
 
 	public function test_all_metadata_round_trips_and_is_rendered(): void {
 		$ids = array_fill_keys( array_keys( Node_Library_Structured_Meta::stores() ), '000123' );
+		$ids['microsoft'] = '9NBLGGH537BL';
+		$ids['steam']     = '620';
+		$ids['nintendo']  = '70010000000026';
+		$ids['ps']        = 'JP0000-PPSA00000_00-EXAMPLE000000001';
 		$this->submit( array(
 			'store_ids' => $ids, 'developer' => 'Studio \\ One', 'publisher' => 'Publisher',
 			'release_date' => '2024-02-29', 'genres' => "Action\nRPG\nAction",

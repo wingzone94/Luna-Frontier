@@ -172,9 +172,11 @@ final class Node_Library_Single_Extensions {
 			$link['catalogue_store'] = $store;
 			$link['platform'] = node_library_public_store_label( $link, $ids );
 			unset( $link['price_store'] );
+			if ( '' !== $store ) {
+				$matched[ $store ] = true;
+			}
 			if ( '' !== $prod_id && isset( $ids[ $store ] ) && 0 === strcasecmp( $ids[ $store ], $prod_id ) ) {
 				$link['price_store'] = $store;
-				$matched[ $store ] = true;
 			}
 			$offers[] = $link;
 		}

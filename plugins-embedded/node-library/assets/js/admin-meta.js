@@ -93,6 +93,11 @@
     });
     function setValue(element, value) {
         if (!element) return;
+        if (element.type === 'checkbox') {
+            element.checked = Boolean(value);
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+            return;
+        }
         element.value = value;
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
@@ -121,6 +126,15 @@
                 setValue(document.getElementById('node-library-structured-' + field), value);
             }
         });
+        if (pending.store === 'microsoft') {
+            setValue(
+                document.getElementById('node-library-structured-subscriptions-gamepass'),
+                Array.isArray(pending.subscriptions) && pending.subscriptions.length > 0
+            );
+        }
+        if (pending.price && Number(pending.price.price) === 0) {
+            setValue(document.getElementById('node-library-structured-is_free'), true);
+        }
         ticket.value = pending.ticket;
         preview.hidden = true;
         status.textContent = '編集欄へ反映しました。項目を保存すると画像・関連商品も記録されます（価格は定期ポーリング時に自動記録されます）。';
