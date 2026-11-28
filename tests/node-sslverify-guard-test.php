@@ -14,11 +14,9 @@ class Node_Sslverify_Guard_Test extends WP_UnitTestCase {
 
 	/**
 	 * 許容リスト: 相対パス => 'sslverify' => false の出現回数。
-	 * 既存1件のみ。新規追加は禁止（AGENT.MD / STRUCTURAL-REVIEW-1.2.md F-2）。
+	 * 全件撤去済み（0件維持）。新規追加は禁止（AGENT.MD / STRUCTURAL-REVIEW-1.2.md F-2）。
 	 */
-	private const ALLOWED_OCCURRENCES = [
-		'plugins-embedded/luminous-nexus/includes/shortcode-blogcard.php' => 1,
-	];
+	private const ALLOWED_OCCURRENCES = [];
 
 	/**
 	 * 走査から除外するリポジトリ直下のディレクトリ。

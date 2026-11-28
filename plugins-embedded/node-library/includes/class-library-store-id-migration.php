@@ -31,7 +31,7 @@ final class Node_Library_Store_ID_Migration {
 			return $host === $domain || str_ends_with( $host, '.' . $domain );
 		};
 		if ( $is_host( 'microsoft.com' ) || $is_host( 'xbox.com' ) ) {
-			if ( preg_match( '~/(?:games/store|store/(?:p|apps|games)|detail|p)/~i', $path ) && preg_match( '~/(?:[^/]+/)*([A-Z0-9]{12})/?$~iD', $path, $match ) ) {
+			if ( preg_match( '~/(?:games/store|store/(?:p|apps|games)|detail|p)/~i', $path ) && preg_match( '~/(?:[^/]+/)*([A-Z0-9]{12})(?:/[0-9]{4})?/?$~iD', $path, $match ) ) {
 				return array( 'store' => 'microsoft', 'id' => strtoupper( $match[1] ) );
 			}
 			$id = $query['productid'] ?? $query['ProductId'] ?? '';
@@ -40,7 +40,10 @@ final class Node_Library_Store_ID_Migration {
 			}
 		} elseif ( 'store.steampowered.com' === $host || 'steamcommunity.com' === $host ) {
 			if ( preg_match( '~^/app/([0-9]+)(?:/|$)~D', $path, $match ) ) {
-				return array( 'store' => 'steam', 'id' => $match[1] );
+				$steam_id = ltrim( $match[1], '0' );
+				if ( '' !== $steam_id && ( ! class_exists( 'Node_Library_Steam_Store' ) || Node_Library_Steam_Store::valid_id( $steam_id ) ) ) {
+					return array( 'store' => 'steam', 'id' => $steam_id );
+				}
 			}
 		} elseif ( $is_host( 'amazon.co.jp' ) || $is_host( 'amazon.com' ) ) {
 			if ( preg_match( '~/(?:dp|gp/product|gp/aw/d)/([A-Z0-9]{10})(?:/|$)~iD', $path, $match ) ) {
@@ -52,7 +55,10 @@ final class Node_Library_Store_ID_Migration {
 			}
 		} elseif ( 'store.playstation.com' === $host ) {
 			if ( preg_match( '~^/(?:[a-z]{2}-[a-z]{2}/)?product/([A-Z0-9_\-]+)(?:/|$)~iD', $path, $match ) ) {
-				return array( 'store' => 'ps', 'id' => strtoupper( $match[1] ) );
+				$ps_id = strtoupper( $match[1] );
+				if ( ! class_exists( 'Node_Library_PS_Store' ) || Node_Library_PS_Store::valid_id( $ps_id ) ) {
+					return array( 'store' => 'ps', 'id' => $ps_id );
+				}
 			}
 			if ( str_contains( $path, '/concept/' ) ) {
 				return array( 'reason' => 'concept_requires_edition_product_id' );

@@ -321,11 +321,11 @@ class Node_Library_Archive_Filters_Test extends WP_UnitTestCase {
 		$this->assertSame( array( $active_sale_id ), $sale_ids );
 		$this->assertSame( 1, $price_queries, 'Price filtering must issue exactly one batched query per chunk.' );
 
-		// Price range query via full archive request.
+		// Price range query via full archive request (expired sale normalizes to list_price per H-5).
 		$this->go_to_library( array( 'q' => self::TOKEN, 'price_min' => '1000', 'price_max' => '2000' ) );
 		$found_range = $this->found_ids();
 		sort( $found_range );
-		$expected_range = array( $active_sale_id, $expired_sale_id );
+		$expected_range = array( $active_sale_id );
 		sort( $expected_range );
 		$this->assertSame( $expected_range, $found_range );
 

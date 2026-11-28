@@ -119,9 +119,9 @@ native_app_assert( str_contains( $out, '<link rel="canonical" href="https://lumi
 native_app_assert( str_contains( $out, '<script>var html = \'<a href="/secret/">x</a>\';</script>' ), 'script 内のリンクは書き換えない' );
 
 $root = dirname( __DIR__ );
-$header = (string) file_get_contents( $root . '/header.php' );
+$header = (string) file_get_contents( $root . '/header.php' ) . "\n" . (string) file_get_contents( $root . '/template-parts/legacy/header.php' );
 $footer = (string) file_get_contents( $root . '/footer.php' );
-$single = (string) file_get_contents( $root . '/single.php' );
+$single = (string) file_get_contents( $root . '/single.php' ) . "\n" . (string) file_get_contents( $root . '/template-parts/single/inline-toc.php' );
 $share  = (string) file_get_contents( $root . '/template-parts/single/footer.php' );
 $toc    = (string) file_get_contents( $root . '/template-parts/single/toc.php' );
 $seo    = (string) file_get_contents( $root . '/inc/seo.php' );
