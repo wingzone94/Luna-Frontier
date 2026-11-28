@@ -69,8 +69,8 @@ get_header();
 				}
 			)
 		);
-		$visible_linked_article_posts = array_slice( $linked_article_posts, 0, 5 );
-		$more_linked_article_posts    = array_slice( $linked_article_posts, 5 );
+		$visible_linked_article_posts = array_slice( $linked_article_posts, 0, 6 );
+		$more_linked_article_posts    = array_slice( $linked_article_posts, 6 );
 		?>
 
 		<article <?php post_class( 'node-library-single__article' ); ?>>
@@ -80,7 +80,7 @@ get_header();
 			}
 			?>
 			<header class="node-library-single__hero">
-				<?php get_template_part( 'template-parts/library/visual', null, array( 'id' => $library_id, 'size' => 'large' ) ); ?>
+				<?php get_template_part( 'template-parts/library/visual', null, array( 'id' => $library_id, 'size' => 'large', 'eager' => true ) ); ?>
 				<div class="library-hero-copy">
 					<?php get_template_part( 'template-parts/library/category' ); ?>
 					<?php if ( '' !== $cero_rating ) : ?>
