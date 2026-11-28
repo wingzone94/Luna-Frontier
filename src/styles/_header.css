@@ -27,6 +27,9 @@
     /* 管理バー(ログイン時)の分も含めて完全に画面外へ退避させる */
     transform: translateY(calc(-100% - var(--wp-admin-bar-offset, 0px)));
 }
+.m3-header.is-hidden:focus-within {
+    transform: none;
+}
 
 /* モバイルの追従セクションナビ（SPOTLIGHT/HOT/HEADLINE/LATEST のプルダウン）は
    2026-09-03 のユーザー指示で撤去した。ヘッダー直下の clearance は
@@ -425,27 +428,41 @@
 }
 /* ID指定 — _buttons.css の `.m3-header .m3-icon-button { background: transparent !important }` より優先させる */
 #m3-search-clear {
-    /* 薄いオレンジのティントサークル × オレンジアイコン（検索バーに馴染むトーナル配色） */
+    /* 薄いオレンジのティントサークル × オレンジアイコン（検索バーに馴染むトーナル配色）。タッチ領域は 44px を確保 */
+    position: relative;
     color: var(--md-sys-color-primary, #FF9900) !important;
-    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 14%, transparent) !important;
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    flex: 0 0 28px !important; /* モバイル幅の .m3-icon-button 用 flex-basis 上書きを打ち消し正円を維持 */
-    margin: 0 4px;
+    background: transparent !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    flex: 0 0 44px !important;
+    margin: 0;
     transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
+#m3-search-clear::before {
+    content: "";
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 14%, transparent);
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
 #m3-search-clear[hidden] {
     display: none !important;
 }
-#m3-search-clear:hover {
-    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 26%, transparent) !important;
+#m3-search-clear:hover::before {
+    background: color-mix(in srgb, var(--md-sys-color-primary, #FF9900) 26%, transparent);
 }
 #m3-search-clear .material-symbols-outlined {
+    position: relative;
+    z-index: 1;
     font-size: 16px !important;
 }
 /* 検索クリア — 読了ゲージ破壊時と同じ「一瞬で弾けて消える」フェード。破片はJSが .m3-search-shard で飛ばす */
@@ -661,6 +678,10 @@
     cursor: pointer;
     white-space: nowrap; /* Prevent text wrapping */
 }
+.m3-modal__tab:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary, #FF9900);
+    outline-offset: 2px;
+}
 .m3-modal__tab.is-active { 
     color: #FFFFFF !important; /* ABSOLUTE WHITE */
 }
@@ -842,6 +863,10 @@
     width: 33.3333%; flex-shrink: 0; padding: 24px 20px 180px; /* Increased bottom padding */
     opacity: 1; pointer-events: auto;
 }
+.m3-modal__page[inert] {
+    visibility: hidden;
+    pointer-events: none;
+}
 
 @media (max-width: 600px) {
     .m3-modal__body { 
@@ -955,6 +980,26 @@
 .m3-text-input:focus, .m3-select:focus { 
     background: var(--md-sys-color-surface); border-color: var(--md-sys-color-primary); outline: none; 
     box-shadow: 0 0 0 4px rgba(255, 153, 0, 0.1);
+}
+
+.m3-text-input:focus-visible, .m3-select:focus-visible, .m3-date-input:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary, #FF9900);
+    outline-offset: 2px;
+}
+.m3-radio-item input:focus-visible + .m3-radio-label,
+.m3-platform-chip input:focus-visible + span,
+.m3-checkbox-label input:focus-visible ~ .m3-checkbox-custom {
+    outline: 2px solid var(--md-sys-color-primary, #FF9900);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m3-header__progress-bar {
+        animation: none;
+    }
+    .m3-modal__pages-container {
+        transition: none;
+    }
 }
 
 /* --- Date Inputs & Icons --- */

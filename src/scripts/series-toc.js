@@ -4,6 +4,7 @@ const initSeriesChartToggle = () => {
         if (!panel) return;
 
         panel.style.maxHeight = '0px';
+        panel.inert = true;
 
         toggle.addEventListener('click', () => {
             const isOpen = toggle.getAttribute('aria-expanded') === 'true';
@@ -11,6 +12,7 @@ const initSeriesChartToggle = () => {
 
             toggle.setAttribute('aria-expanded', String(nextOpen));
             panel.classList.toggle('is-open', nextOpen);
+            panel.inert = !nextOpen;
             panel.style.maxHeight = nextOpen ? `${panel.scrollHeight}px` : '0px';
         });
     });

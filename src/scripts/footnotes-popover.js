@@ -220,6 +220,16 @@ export function initFootnotesPopover() {
         reference.addEventListener('mouseleave', () => {
             hideTimer = window.setTimeout(hide, 120);
         });
+        reference.addEventListener('focusin', () => show(reference));
+        reference.addEventListener('focusout', () => {
+            hideTimer = window.setTimeout(hide, 120);
+        });
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && activeReference) {
+            hide();
+        }
     });
 
     popover.addEventListener('mouseenter', () => {

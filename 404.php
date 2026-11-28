@@ -40,7 +40,8 @@ $node_404_links = array(
 
 		<div class="m3-404-lite__search">
 			<form role="search" method="get" class="m3-404-search" action="<?php echo esc_url( home_url( '/' ) ); ?>">
-				<input type="search" class="m3-404-search__field" placeholder="キーワードで検索" value="" name="s" />
+				<label for="node-404-search-field" class="screen-reader-text">キーワードで検索</label>
+				<input type="search" id="node-404-search-field" class="m3-404-search__field" placeholder="キーワードで検索" value="" name="s" />
 				<button type="submit" class="m3-404-search__submit" aria-label="検索">
 					<span class="material-symbols-outlined" data-icon="search" aria-hidden="true"></span>
 				</button>

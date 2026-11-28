@@ -424,8 +424,17 @@ export function initSearchBar() {
         const movePercent = (100 / allPages.length) * (pageNum - 1);
         pagesContainer.style.transform = `translateX(-${movePercent}%)`;
 
-        allPages.forEach(p => p.classList.toggle('is-active', p.dataset.page == pageNum));
-        allTabs.forEach(t => t.classList.toggle('is-active', t.dataset.page == pageNum));
+        allPages.forEach(p => {
+            const isActive = p.dataset.page == pageNum;
+            p.classList.toggle('is-active', isActive);
+            p.inert = !isActive;
+        });
+        allTabs.forEach(t => {
+            const isActive = t.dataset.page == pageNum;
+            t.classList.toggle('is-active', isActive);
+            t.setAttribute('aria-selected', String(isActive));
+            t.tabIndex = isActive ? 0 : -1;
+        });
 
         // Update tab indicator
         const tabsContainer = document.getElementById('m3-search-tabs');
@@ -439,8 +448,21 @@ export function initSearchBar() {
         }
     };
 
-    modal.querySelectorAll('.m3-modal__tab').forEach(el => {
-        el.addEventListener('click', () => switchPage(parseInt(el.dataset.page)));
+    const modalTabs = Array.from(modal.querySelectorAll('.m3-modal__tab'));
+    modalTabs.forEach((el, index) => {
+        el.addEventListener('click', () => switchPage(parseInt(el.dataset.page, 10)));
+        el.addEventListener('keydown', (event) => {
+            let nextIndex = -1;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % modalTabs.length;
+            else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + modalTabs.length) % modalTabs.length;
+            else if (event.key === 'Home') nextIndex = 0;
+            else if (event.key === 'End') nextIndex = modalTabs.length - 1;
+            if (nextIndex < 0) return;
+            event.preventDefault();
+            const nextTab = modalTabs[nextIndex];
+            switchPage(parseInt(nextTab.dataset.page, 10));
+            nextTab.focus();
+        });
     });
 
     // タブ幅はモーダルを開くときの再レイアウトや画面回転で変わる。開いた直後に一度

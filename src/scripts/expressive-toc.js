@@ -84,7 +84,11 @@ export function initExpressiveFloatingTOC() {
             tocPanel = document.createElement('div');
             tocPanel.id = 'm3-sticky-toc';
             tocPanel.className = 'm3-sticky-toc';
+            tocPanel.setAttribute('role', 'dialog');
+            tocPanel.setAttribute('aria-modal', 'true');
+            tocPanel.setAttribute('aria-label', '目次');
             tocPanel.setAttribute('aria-hidden', 'true');
+            tocPanel.inert = true;
             tocPanel.innerHTML = [
                 '<div class="m3-sticky-toc__header">',
                 '<span class="material-symbols-outlined m3-toc-icon" data-icon="toc" aria-hidden="true"></span>',
@@ -101,6 +105,15 @@ export function initExpressiveFloatingTOC() {
 
         if (tocPanel.parentElement !== document.body) {
             document.body.appendChild(tocPanel);
+        }
+
+        if (!tocPanel.hasAttribute('role')) {
+            tocPanel.setAttribute('role', 'dialog');
+            tocPanel.setAttribute('aria-modal', 'true');
+            tocPanel.setAttribute('aria-label', '目次');
+        }
+        if (!tocPanel.classList.contains('is-active')) {
+            tocPanel.inert = true;
         }
 
         if (!tocContainer && tocPanel) {
@@ -163,6 +176,7 @@ export function initExpressiveFloatingTOC() {
 
         tocPanel.classList.toggle('is-active', open);
         tocPanel.setAttribute('aria-hidden', String(!open));
+        tocPanel.inert = !open;
         tocPanel.style.display = 'flex';
         tocPanel.style.opacity = open ? '1' : '0';
         tocPanel.style.visibility = open ? 'visible' : 'hidden';
@@ -172,6 +186,10 @@ export function initExpressiveFloatingTOC() {
         document.body.classList.toggle('is-active-toc', open);
         scrim.classList.toggle('is-active', open);
         tocTrigger?.setAttribute('aria-expanded', String(open));
+        const pageContainer = document.querySelector('.m3-page-container');
+        if (pageContainer && !pageContainer.contains(tocPanel)) {
+            pageContainer.inert = open;
+        }
 
         if (open) {
             updateActiveLink();
