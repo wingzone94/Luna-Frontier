@@ -256,7 +256,7 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		display: flow-root;
 	}
 
-	body.lf-theme.single-post .m3-article {
+	body.lf-theme.single-post :is(.m3-article, .lf-comments-layout) {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
 		column-gap: var(--lf-column-gap);
@@ -264,6 +264,15 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		grid-auto-flow: row dense;
 		max-inline-size: var(--lf-content-max);
 		margin-inline: auto;
+	}
+
+	body.lf-theme.single-post .lf-comments-layout {
+		padding-inline: var(--node-gutter-inline-lg);
+	}
+
+	body.lf-theme.single-post .lf-comments-layout > section {
+		grid-column: 1;
+		min-inline-size: 0;
 	}
 
 	/* 既定は全幅。ヘッダー・ページネーション・コメント等はそのまま横断させる。 */

@@ -72,6 +72,16 @@ body.lf-theme .lf-topic-nav__group--topics {
 	max-inline-size: 55%;
 }
 
+@media (min-width: 1200px) {
+	body.lf-theme .lf-topic-nav__group--topics {
+		max-inline-size: none;
+	}
+
+	body.lf-theme .lf-topic-nav__group--topics .lf-topic-nav__list {
+		flex-wrap: wrap;
+	}
+}
+
 body.lf-theme .lf-topic-nav__group--topics:only-child {
 	max-inline-size: 100%;
 }
