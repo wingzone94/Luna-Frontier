@@ -185,4 +185,40 @@ class Node_Library_Steam_Store_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $this->requests );
 		$this->assertWPError( Node_Library_Store::fetch( 'steam', '730' ) );
 	}
+
+	public function test_is_free_takes_precedence_over_price_overview_and_bundle_only_sets_notice(): void {
+		$free_with_pack = Node_Library_Steam_Store::normalize(
+			array(
+				'steam_appid'    => 999001,
+				'name'           => 'F2P With Paid Pack',
+				'is_free'        => true,
+				'price_overview' => array(
+					'currency' => 'JPY',
+					'initial'  => 298000,
+					'final'    => 298000,
+				),
+			)
+		);
+		$this->assertIsArray( $free_with_pack );
+		$this->assertSame( 0, $free_with_pack['price']['price'] );
+		$this->assertSame( 0, $free_with_pack['price']['list_price'] );
+
+		$bundle_only = Node_Library_Steam_Store::normalize(
+			array(
+				'steam_appid'    => 271590,
+				'name'           => 'Bundle Only Title',
+				'is_free'        => false,
+				'package_groups' => array(
+					array(
+						'subs' => array(
+							array( 'packageid' => 12345 ),
+						),
+					),
+				),
+			)
+		);
+		$this->assertIsArray( $bundle_only );
+		$this->assertNull( $bundle_only['price'] );
+		$this->assertStringContainsString( 'バンドル', $bundle_only['price_notice'] );
+	}
 }
