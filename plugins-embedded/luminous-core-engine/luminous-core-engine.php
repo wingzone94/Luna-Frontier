@@ -63,7 +63,33 @@ namespace LuminousCore\Engine {
 			}
 
 			$this->persist( $post_id, self::calculate( $post->post_content ) );
+			self::persist_media_types( $post_id, (string) $post->post_content );
 			$this->clear_distribution_cache();
+		}
+
+		/**
+		 * 詳細検索のメディア種別フィルタ用に記事本文のメディア種別を保存時事前計算する（M-6）。
+		 */
+		public static function persist_media_types( int $post_id, string $content ): void {
+			$patterns = array(
+				'image'    => '/<img|wp-block-image/i',
+				'video'    => '/<video|wp-block-video/i',
+				'map'      => '/google\.com\/maps|wp-block-embed-google-maps/i',
+				'youtube'  => '/youtube\.com|youtu\.be|wp-block-embed-youtube/i',
+				'sns'      => '/twitter\.com|x\.com|instagram\.com|tiktok\.com|wp-block-embed-/i',
+				'download' => '/\.(pdf|zip|exe|dmg|rar|7z)/i',
+			);
+			$found = array();
+			foreach ( $patterns as $type => $regex ) {
+				if ( 1 === preg_match( $regex, $content ) ) {
+					$found[] = $type;
+				}
+			}
+			delete_post_meta( $post_id, '_node_media_type' );
+			foreach ( $found as $type ) {
+				add_post_meta( $post_id, '_node_media_type', $type, false );
+			}
+			update_post_meta( $post_id, '_node_media_types_indexed', '1' );
 		}
 
 		/**
@@ -99,23 +125,27 @@ namespace LuminousCore\Engine {
 				);
 			}
 
-			$post_ids = get_posts(
-				array(
-					'post_type'              => 'post',
-					'post_status'            => 'publish',
-					'posts_per_page'         => -1,
-					'fields'                 => 'ids',
-					'orderby'                => 'ID',
-					'order'                  => 'ASC',
-					'no_found_rows'          => true,
-					'update_post_meta_cache' => false,
-					'update_post_term_cache' => false,
-				)
+			global $wpdb;
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT p.ID, m.meta_value, p.post_content
+					FROM {$wpdb->posts} p
+					LEFT JOIN {$wpdb->postmeta} m
+						ON m.post_id = p.ID AND m.meta_key = %s
+					WHERE p.post_type = 'post' AND p.post_status = 'publish'
+					ORDER BY p.ID ASC",
+					self::CHARACTER_COUNT_META_KEY
+				),
+				ARRAY_A
 			);
 			$lengths = array();
 
-			foreach ( $post_ids as $post_id ) {
-				$lengths[] = $this->get( (int) $post_id )['chars'];
+			foreach ( (array) $rows as $row ) {
+				if ( isset( $row['meta_value'] ) && '' !== (string) $row['meta_value'] ) {
+					$lengths[] = (int) $row['meta_value'];
+				} else {
+					$lengths[] = self::calculate( (string) ( $row['post_content'] ?? '' ) )['chars'];
+				}
 			}
 
 			sort( $lengths, SORT_NUMERIC );
@@ -911,16 +941,24 @@ namespace LuminousCore\Engine {
 				'sns'      => 'twitter.com|x.com|instagram.com|tiktok.com|wp-block-embed-',
 				'download' => '\\.(pdf|zip|exe|dmg|rar|7z)',
 			);
-			$conditions = array();
+			$selected_types = array();
+			$regex_clauses  = array();
 
 			foreach ( (array) $query->get( 'node_media_types' ) as $type ) {
 				if ( isset( $patterns[ $type ] ) ) {
-					$conditions[] = "{$wpdb->posts}.post_content REGEXP '" . esc_sql( $patterns[ $type ] ) . "'";
+					$selected_types[] = $type;
+					$regex_clauses[]  = "{$wpdb->posts}.post_content REGEXP '" . esc_sql( $patterns[ $type ] ) . "'";
 				}
 			}
 
-			if ( array() !== $conditions ) {
-				$where .= ' AND (' . implode( ' OR ', $conditions ) . ')';
+			if ( array() !== $selected_types ) {
+				$placeholders = implode( ',', array_fill( 0, count( $selected_types ), '%s' ) );
+				$meta_exists  = $wpdb->prepare(
+					"EXISTS (SELECT 1 FROM {$wpdb->postmeta} pm_mt WHERE pm_mt.post_id = {$wpdb->posts}.ID AND pm_mt.meta_key = '_node_media_type' AND pm_mt.meta_value IN ({$placeholders}))",
+					$selected_types
+				);
+				$unindexed_fallback = "NOT EXISTS (SELECT 1 FROM {$wpdb->postmeta} pm_mi WHERE pm_mi.post_id = {$wpdb->posts}.ID AND pm_mi.meta_key = '_node_media_types_indexed') AND (" . implode( ' OR ', $regex_clauses ) . ')';
+				$where .= " AND ({$meta_exists} OR ({$unindexed_fallback}))";
 			}
 
 			return $where;

@@ -78,9 +78,8 @@ function setupFootnoteRelocation() {
   const anchor = document.createComment('luna-frontier:footnotes');
   footnotes.parentNode.insertBefore(anchor, footnotes);
 
-  const block = document.createElement('section');
+  const block = document.createElement('div');
   block.className = 'lf-aside-block lf-aside-block--footnotes';
-  block.setAttribute('aria-label', '脚注');
 
   const media = window.matchMedia('(min-width: 1024px)');
   const isDesktop = () => media.matches || isTabletPcMode();

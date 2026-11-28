@@ -169,7 +169,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		do_action( 'node_library_single_after_specs', $item_id );
 		$regular_only_html = (string) ob_get_clean();
-		$this->assertStringNotContainsString( '過去最安値', $regular_only_html );
+		$this->assertStringNotContainsString( 'node-library-pricing__badge--lowest', $regular_only_html );
 
 		// Current lowest sale price with future end date.
 		$sale_end_utc = gmdate( 'Y-m-d H:i:s', $now + ( 3 * DAY_IN_SECONDS ) );
@@ -507,7 +507,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '"price":"2980"', $html );
 	}
 
-	public function test_expired_sale_does_not_publish_an_offer_without_a_new_observation(): void {
+	public function test_expired_sale_normalizes_to_list_price_across_jsonld_and_store_offers(): void {
 		$item_id = $this->create_library_item( 'Expired sale' );
 		$product = '9JSONLD00001';
 		update_post_meta( $item_id, '_node_library_store_ids', array( 'microsoft' => $product ) );
@@ -518,7 +518,18 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 			'sale_end'   => gmdate( 'c', time() - DAY_IN_SECONDS ),
 		);
 		$this->assertTrue( Node_Library_Prices::record( $item_id, 'microsoft', $product, $offer, time() - 2 * DAY_IN_SECONDS ) );
-		$this->assertArrayNotHasKey( 'offers', node_library_get_product_jsonld( $item_id ) );
+
+		$jsonld = node_library_get_product_jsonld( $item_id );
+		$this->assertSame( '200', $jsonld['offers']['price'] ?? null, 'sale_end 経過後は定価へ正規化されること' );
+		$this->assertArrayNotHasKey( 'priceValidUntil', $jsonld['offers'] ?? array() );
+
+		$store_offers = Node_Library_Single_Extensions::store_offers( $item_id, array() );
+		$this->assertSame( '¥200', $store_offers[0]['price_label'] ?? '' );
+		$this->assertSame( 0, $store_offers[0]['discount_percent'] ?? -1 );
+
+		$stats = Node_Library_Prices::stats( $item_id, 'microsoft' );
+		$this->assertSame( '200.0000', $stats['current']['price'] ?? null );
+		$this->assertNull( $stats['discount_percent'] );
 	}
 
 	public function test_nintendo_offer_links_to_registered_product(): void {
@@ -702,7 +713,7 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 			'_node_library_store_ids',
 			array(
 				'microsoft' => '9FEAT0000001',
-				'ps'        => 'JP0000-PPSA00001_00-EXAMPLE',
+				'ps'        => 'JP0000-PPSA00001_00-EXAMPLE000000001',
 				'steam'     => '123456',
 				'epic'      => 'feature-rich',
 			)

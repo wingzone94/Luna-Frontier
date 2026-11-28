@@ -82,6 +82,17 @@ final class Luminous_Interactivity {
 	}
 
 	public function enqueue_assets(): void {
+		if ( ! is_singular() ) {
+			return;
+		}
+		$post = get_post();
+		if ( $post instanceof WP_Post ) {
+			$has_spoiler = has_shortcode( (string) $post->post_content, 'spoiler' ) || str_contains( (string) $post->post_content, 'luminous-spoiler' );
+			$is_cero_z   = '1' === get_post_meta( $post->ID, '_node_is_cero_z', true );
+			if ( ! $has_spoiler && ! $is_cero_z ) {
+				return;
+			}
+		}
 		wp_enqueue_style(
 			'luminous-interactivity',
 			LUMINOUS_INTER_URL . 'assets/css/interactivity.css',

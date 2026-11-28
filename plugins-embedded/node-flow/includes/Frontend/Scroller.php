@@ -19,8 +19,18 @@ class Scroller {
     }
 
     public function enqueue_scripts() {
-        // 記事一覧が表示されるページ（ホーム、アーカイブ、検索等）のみ読み込む
+        // 記事一覧が表示されるページ（アーカイブ、検索、2ページ目以降のホーム）のみ読み込む。
+        // トップ1ページ目・/library/・luna-archive-flow 対象ページでは不要な出力を抑止（M-7）。
         if ( ! is_home() && ! is_archive() && ! is_search() ) {
+            return;
+        }
+        if ( is_front_page() && ! is_paged() ) {
+            return;
+        }
+        if ( is_post_type_archive( 'node_library' ) || is_tax( 'node_library_category' ) ) {
+            return;
+        }
+        if ( function_exists( 'luna_frontier_uses_archive_flow' ) && luna_frontier_uses_archive_flow() ) {
             return;
         }
 
@@ -32,14 +42,16 @@ class Scroller {
             true
         );
 
-        // API URL や Nonce などの設定をJSに渡す
-        wp_localize_script( 'node-flow-scroller', 'nodeFlowSettings', [
+        // 公開 GET エンドポイントのため未ログイン時は wp_rest nonce を出力しない（M-7）。
+        $settings = [
             'restUrl'     => esc_url_raw( rest_url( 'node-flow/v1/posts' ) ),
-            'nonce'       => wp_create_nonce( 'wp_rest' ),
             'currentPage' => max( 1, (int) get_query_var( 'paged' ) ),
-            // 現在のクエリパラメータ（カテゴリIDや検索キーワード）を渡す
-            'query'       => $this->get_current_query_vars()
-        ]);
+            'query'       => $this->get_current_query_vars(),
+        ];
+        if ( is_user_logged_in() ) {
+            $settings['nonce'] = wp_create_nonce( 'wp_rest' );
+        }
+        wp_localize_script( 'node-flow-scroller', 'nodeFlowSettings', $settings );
     }
 
     /**

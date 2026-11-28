@@ -172,9 +172,11 @@ final class Node_Library_Single_Extensions {
 			$link['catalogue_store'] = $store;
 			$link['platform'] = node_library_public_store_label( $link, $ids );
 			unset( $link['price_store'] );
+			if ( '' !== $store ) {
+				$matched[ $store ] = true;
+			}
 			if ( '' !== $prod_id && isset( $ids[ $store ] ) && 0 === strcasecmp( $ids[ $store ], $prod_id ) ) {
 				$link['price_store'] = $store;
-				$matched[ $store ] = true;
 			}
 			$offers[] = $link;
 		}
@@ -197,17 +199,19 @@ final class Node_Library_Single_Extensions {
 		foreach ( $offers as $link ) {
 			$store = $link['price_store'] ?? '';
 			$link['price_label']      = '';
+			$link['price_numeric']    = null;
 			$link['price_date']       = '';
 			$link['list_price_label'] = '';
 			$link['discount_percent'] = 0;
 			if ( in_array( $store, Node_Library_Store::price_stores(), true ) ) {
 				if ( ! array_key_exists( $store, $prices ) ) {
-					$prices[ $store ] = Node_Library_Prices::current( $post_id, $store );
+					$prices[ $store ] = Node_Library_Prices::effective_offer( Node_Library_Prices::current( $post_id, $store ) );
 				}
 				$current = $prices[ $store ];
 				if ( is_numeric( $current['price'] ?? null ) && ! empty( $current['currency'] ) ) {
-					$link['price_label'] = self::format_currency( $current['price'], $current['currency'] );
-					$link['price_date']  = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
+					$link['price_label']   = self::format_currency( $current['price'], $current['currency'] );
+					$link['price_numeric'] = (float) $current['price'];
+					$link['price_date']    = substr( self::format_jst_datetime( $current['recorded_at'] ), 0, 10 );
 					if ( is_numeric( $current['list_price'] ?? null ) && (float) $current['list_price'] > (float) $current['price'] && (float) $current['list_price'] > 0 ) {
 						$discount = (int) round( ( ( (float) $current['list_price'] - (float) $current['price'] ) / (float) $current['list_price'] ) * 100 );
 						if ( $discount > 0 ) {
@@ -229,9 +233,10 @@ final class Node_Library_Single_Extensions {
 	/** Region-specific destinations precede unmarked and overseas links. */
 	private static function is_japanese_store_url( string $url ): bool {
 		$parts = wp_parse_url( $url );
+		$host  = strtolower( (string) ( $parts['host'] ?? '' ) );
 		parse_str( $parts['query'] ?? '', $query );
-		return preg_match( '~(?:\.jp$|^store-jp\.)~i', $parts['host'] )
-			|| preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
+		return (bool) preg_match( '~(?:\.jp$|^store-jp\.)~i', $host )
+			|| (bool) preg_match( '~/(?:ja-jp|ja|jp)(?:/|$)~i', $parts['path'] ?? '' )
 			|| ( is_string( $query['gl'] ?? null ) && 0 === strcasecmp( $query['gl'], 'JP' ) );
 	}
 
@@ -258,12 +263,25 @@ final class Node_Library_Single_Extensions {
 			if ( null === ( $stats['current'] ?? null ) ) {
 				continue;
 			}
+			$history       = self::recent_price_history( $post_id, $store, $external_id, 10 );
+			$has_numeric   = is_numeric( $stats['current']['price'] ?? null );
+			if ( ! $has_numeric ) {
+				foreach ( $history as $hrow ) {
+					if ( is_numeric( $hrow['price'] ?? null ) ) {
+						$has_numeric = true;
+						break;
+					}
+				}
+			}
+			if ( ! $has_numeric ) {
+				continue;
+			}
 			$entries[] = array(
 				'store'       => $store,
 				'label'       => $store_labels[ $store ] ?? $store,
 				'external_id' => $external_id,
 				'stats'       => $stats,
-				'history'     => self::recent_price_history( $post_id, $store, $external_id, 10 ),
+				'history'     => $history,
 			);
 		}
 
@@ -470,37 +488,23 @@ final class Node_Library_Single_Extensions {
 		}
 
 		$primary_article_ids = self::primary_linked_article_ids( $post_id );
-
-		$meta_clauses = array( 'relation' => 'OR' );
-		foreach ( $related_ids as $rid ) {
-			$meta_clauses[] = array(
-				'key'   => '_node_linked_library_id',
-				'value' => (string) $rid,
-			);
-			$meta_clauses[] = array(
-				'key'   => '_node_linked_library_second_id',
-				'value' => (string) $rid,
-			);
-			$meta_clauses[] = array(
-				'key'   => '_node_library_card_reference',
-				'value' => (string) $rid,
-			);
+		$matched_ids         = self::find_linked_article_ids( $related_ids, 12, $primary_article_ids );
+		if ( ! $matched_ids ) {
+			return;
 		}
 
-		$query_args = array(
-			'post_type'           => 'post',
-			'post_status'         => 'publish',
-			'posts_per_page'      => 12,
-			'ignore_sticky_posts' => true,
-			'meta_query'          => $meta_clauses,
-			'orderby'             => 'date',
-			'order'               => 'DESC',
+		$query = new WP_Query(
+			array(
+				'post_type'           => 'post',
+				'post_status'         => 'publish',
+				'post__in'            => $matched_ids,
+				'posts_per_page'      => count( $matched_ids ),
+				'ignore_sticky_posts' => true,
+				'no_found_rows'       => true,
+				'orderby'             => 'post__in',
+			)
 		);
-		if ( $primary_article_ids ) {
-			$query_args['post__not_in'] = $primary_article_ids;
-		}
-
-		$query    = new WP_Query( $query_args );
+		update_post_thumbnail_cache( $query );
 		$articles = array_values(
 			array_filter(
 				$query->posts,
@@ -557,7 +561,7 @@ final class Node_Library_Single_Extensions {
 			if ( '' === $external_id ) {
 				continue;
 			}
-			$current = Node_Library_Prices::current( $post_id, $store );
+			$current = Node_Library_Prices::effective_offer( Node_Library_Prices::current( $post_id, $store ) );
 			if ( ! is_array( $current ) ) {
 				continue;
 			}
@@ -576,10 +580,9 @@ final class Node_Library_Single_Extensions {
 			$sale_end = $current['sale_end'] ?? null;
 			if ( is_string( $sale_end ) && '' !== $sale_end ) {
 				$end_ts = strtotime( $sale_end . ' UTC' );
-				if ( false === $end_ts || $end_ts <= time() ) {
-					continue;
+				if ( false !== $end_ts && $end_ts > time() ) {
+					$offer['priceValidUntil'] = wp_date( 'Y-m-d', $end_ts, new DateTimeZone( 'Asia/Tokyo' ) );
 				}
-				$offer['priceValidUntil'] = wp_date( 'Y-m-d', $end_ts, new DateTimeZone( 'Asia/Tokyo' ) );
 			}
 
 			$url = self::resolve_offer_url( $store, $external_id, $links );
@@ -840,36 +843,52 @@ final class Node_Library_Single_Extensions {
 	 *
 	 * @return array<int, int>
 	 */
-	private static function primary_linked_article_ids( int $post_id ): array {
-		$query = new WP_Query(
-			array(
-				'post_type'           => 'post',
-				'post_status'         => 'publish',
-				'posts_per_page'      => 12,
-				'ignore_sticky_posts' => true,
-				'fields'              => 'ids',
-				'no_found_rows'       => true,
-				'meta_query'          => array(
-					'relation' => 'OR',
-					array(
-						'key'   => '_node_linked_library_id',
-						'value' => (string) $post_id,
-					),
-					array(
-						'key'   => '_node_linked_library_second_id',
-						'value' => (string) $post_id,
-					),
-					array(
-						'key'   => '_node_library_card_reference',
-						'value' => (string) $post_id,
-					),
-				),
-				'orderby'             => 'date',
-				'order'               => 'DESC',
+	/**
+	 * 3つの紐付けメタキーに対する OR 三重 JOIN を単一 SQL IN 句へ統合する（H-8）。
+	 *
+	 * @param array<int, int> $library_ids 対象の node_library ID 配列。
+	 * @param int             $limit       最大件数。
+	 * @param array<int, int> $exclude_ids 除外する投稿 ID 配列。
+	 * @return array<int, int>
+	 */
+	public static function find_linked_article_ids( array $library_ids, int $limit = 12, array $exclude_ids = array() ): array {
+		$lib_values = array_values( array_unique( array_filter( array_map( 'intval', $library_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( ! $lib_values || $limit <= 0 ) {
+			return array();
+		}
+
+		global $wpdb;
+		$val_placeholders = implode( ',', array_fill( 0, count( $lib_values ), '%s' ) );
+		$params           = array_map( 'strval', $lib_values );
+		$exclude_sql      = '';
+		$clean_exclude    = array_values( array_unique( array_filter( array_map( 'intval', $exclude_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( $clean_exclude ) {
+			$ex_placeholders = implode( ',', array_fill( 0, count( $clean_exclude ), '%d' ) );
+			$exclude_sql     = " AND p.ID NOT IN ({$ex_placeholders})";
+			$params          = array_merge( $params, $clean_exclude );
+		}
+		$params[] = $limit;
+
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT p.ID
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID
+				WHERE p.post_type = 'post'
+				AND p.post_status = 'publish'
+				AND m.meta_key IN ('_node_linked_library_id', '_node_linked_library_second_id', '_node_library_card_reference')
+				AND m.meta_value IN ({$val_placeholders}){$exclude_sql}
+				ORDER BY p.post_date DESC, p.ID DESC
+				LIMIT %d",
+				$params
 			)
 		);
 
-		return array_values( array_filter( array_map( 'absint', is_array( $query->posts ) ? $query->posts : array() ) ) );
+		return array_values( array_map( 'intval', is_array( $ids ) ? $ids : array() ) );
+	}
+
+	private static function primary_linked_article_ids( int $post_id ): array {
+		return self::find_linked_article_ids( array( $post_id ), 12 );
 	}
 
 	/**
@@ -1133,7 +1152,7 @@ final class Node_Library_Single_Extensions {
 	 * @return array<string, mixed>|null
 	 */
 	private static function previous_price_for_sale_animation( array $current, ?int $discount_percent, array $history ): ?array {
-		if ( null === $discount_percent || $discount_percent <= 0 || count( $history ) < 2 ) {
+		if ( null === $discount_percent || $discount_percent <= 0 ) {
 			return null;
 		}
 		$curr_price    = $current['price'] ?? null;
@@ -1142,17 +1161,25 @@ final class Node_Library_Single_Extensions {
 			return null;
 		}
 
-		$prev          = $history[1] ?? null;
-		$prev_price    = is_array( $prev ) ? ( $prev['price'] ?? null ) : null;
-		$prev_currency = is_array( $prev ) ? strtoupper( trim( (string) ( $prev['currency'] ?? '' ) ) ) : '';
-		if ( ! is_numeric( $prev_price ) || $prev_currency !== $curr_currency ) {
-			return null;
-		}
-		if ( (float) $curr_price >= (float) $prev_price ) {
-			return null;
+		if ( count( $history ) >= 2 ) {
+			$prev          = $history[1] ?? null;
+			$prev_price    = is_array( $prev ) ? ( $prev['price'] ?? null ) : null;
+			$prev_currency = is_array( $prev ) ? strtoupper( trim( (string) ( $prev['currency'] ?? '' ) ) ) : '';
+			if ( is_numeric( $prev_price ) && $prev_currency === $curr_currency && (float) $curr_price < (float) $prev_price ) {
+				return $prev;
+			}
 		}
 
-		return $prev;
+		// 履歴1件目の初回セールでも定価（list_price）が現在価格より高ければ旧価格としてアニメーション可能にする（A-9）。
+		$list_price = $current['list_price'] ?? null;
+		if ( is_numeric( $list_price ) && (float) $curr_price < (float) $list_price ) {
+			return array(
+				'price'    => $list_price,
+				'currency' => $curr_currency,
+			);
+		}
+
+		return null;
 	}
 
 	/**

@@ -332,6 +332,36 @@ add_action( 'wp_enqueue_scripts', 'luna_frontier_enqueue_archive_flow', 1000 );
 
 /** Preserve other GET filters when submitting a result sort form. */
 function luna_frontier_sort_hidden_fields( $excluded ) {
+	$allowed_keys = array(
+		's',
+		'm3_cat',
+		'm3_min',
+		'm3_max',
+		'm3_start_date',
+		'm3_end_date',
+		'm3_tag',
+		'm3_media_type',
+		'm3_platform',
+		'm3_sort',
+		'sort',
+		'cat',
+		'tag',
+		'author',
+		'm',
+		'year',
+		'monthnum',
+		'day',
+		'post_type',
+		'q',
+		'type',
+		'genre',
+		'platform',
+		'price_min',
+		'price_max',
+		'on_sale',
+		'sub',
+		'native',
+	);
 	$render = static function ( $name, $value ) use ( &$render ) {
 		if ( is_array( $value ) ) {
 			foreach ( $value as $key => $child ) {
@@ -342,8 +372,9 @@ function luna_frontier_sort_hidden_fields( $excluded ) {
 		}
 	};
 	foreach ( $_GET as $key => $value ) {
-		if ( ! in_array( $key, $excluded, true ) ) {
-			$render( (string) $key, $value );
+		$key_str = (string) $key;
+		if ( in_array( $key_str, $allowed_keys, true ) && ! in_array( $key_str, $excluded, true ) ) {
+			$render( $key_str, $value );
 		}
 	}
 }

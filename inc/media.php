@@ -35,6 +35,9 @@ function node_register_attachment_meta() {
         'type'           => 'boolean',
         'single'         => true,
         'show_in_rest'   => true,
+        'auth_callback'  => static function ( $allowed, $meta_key, $post_id ) {
+            return current_user_can( 'edit_post', $post_id );
+        },
     ]);
 }
 add_action('init', 'node_register_attachment_meta');

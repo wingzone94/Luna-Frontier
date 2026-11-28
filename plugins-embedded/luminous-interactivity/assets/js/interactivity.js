@@ -2,13 +2,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. スポイラー機能
     const spoilers = document.querySelectorAll('.node-spoiler');
     spoilers.forEach(spoiler => {
+        const content = spoiler.querySelector('.node-spoiler__content');
+        if (!spoiler.classList.contains('is-revealed')) {
+            spoiler.setAttribute('aria-label', 'ネタバレを表示（クリックまたはEnterで展開）');
+            if (content) {
+                content.setAttribute('aria-hidden', 'true');
+            }
+        }
         spoiler.addEventListener('click', () => {
             spoiler.classList.add('is-revealed');
             spoiler.setAttribute('aria-expanded', 'true');
+            spoiler.removeAttribute('aria-label');
+            if (content) {
+                content.removeAttribute('aria-hidden');
+            }
         });
         spoiler.setAttribute('tabindex', '0');
         spoiler.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') spoiler.click();
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                spoiler.click();
+            }
         });
     });
 

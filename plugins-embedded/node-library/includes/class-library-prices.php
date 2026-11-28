@@ -74,7 +74,67 @@ final class Node_Library_Prices {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 	}
 
+	/** @var array<int, array<string, array<string, array<string, mixed>|null>>> */
+	private static array $current_cache = array();
+
+	/**
+	 * 一覧ページ等で対象 item_id 群の最新価格行を単一クエリでプリフェッチし N+1 を解消する（H-14③）。
+	 *
+	 * @param array<int, int> $item_ids 対象の node_library 投稿 ID 配列。
+	 */
+	public static function prime_current_cache( array $item_ids ): void {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $item_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( ! $ids || '1' !== get_option( 'node_library_price_schema' ) ) {
+			return;
+		}
+		$missing = array_values( array_filter( $ids, static fn( int $id ): bool => ! array_key_exists( $id, self::$current_cache ) ) );
+		if ( ! $missing ) {
+			return;
+		}
+		update_meta_cache( 'post', $missing );
+		foreach ( $missing as $mid ) {
+			self::$current_cache[ $mid ] = array();
+		}
+		global $wpdb;
+		$table        = self::table();
+		$placeholders = implode( ',', array_fill( 0, count( $missing ), '%d' ) );
+		$rows         = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT h.item_id, h.store, h.external_id, h.price, h.list_price, h.currency, h.sale_end, h.recorded_at
+				FROM {$table} h
+				WHERE h.item_id IN ({$placeholders})
+				AND NOT EXISTS (
+					SELECT 1 FROM {$table} h2
+					WHERE h2.item_id = h.item_id
+					AND h2.store = h.store
+					AND h2.external_id = h.external_id
+					AND (
+						h2.recorded_at > h.recorded_at
+						OR (h2.recorded_at = h.recorded_at AND h2.id > h.id)
+					)
+				)",
+				$missing
+			),
+			ARRAY_A
+		);
+		foreach ( (array) $rows as $row ) {
+			$item_id = (int) ( $row['item_id'] ?? 0 );
+			$store   = (string) ( $row['store'] ?? '' );
+			$ext_id  = (string) ( $row['external_id'] ?? '' );
+			if ( $item_id > 0 && '' !== $store && '' !== $ext_id ) {
+				self::$current_cache[ $item_id ][ $store ][ $ext_id ] = array(
+					'price'       => $row['price'],
+					'list_price'  => $row['list_price'],
+					'currency'    => $row['currency'],
+					'sale_end'    => $row['sale_end'],
+					'recorded_at' => $row['recorded_at'],
+				);
+			}
+		}
+	}
+
 	public static function delete_item( int $id, WP_Post $post ): void {
+		unset( self::$current_cache[ $id ] );
 		if ( 'node_library' === $post->post_type && '1' === get_option( 'node_library_price_schema' ) ) {
 			global $wpdb;
 			$wpdb->delete( self::table(), array( 'item_id' => $id ), array( '%d' ) );
@@ -88,7 +148,13 @@ final class Node_Library_Prices {
 		if ( '1' !== get_option( 'node_library_price_schema' ) ) {
 			return null;
 		}
-		return is_string( $external_id ) && '' !== $external_id ? self::latest( $id, $store, $external_id ) : null;
+		if ( ! is_string( $external_id ) || '' === $external_id ) {
+			return null;
+		}
+		if ( array_key_exists( $id, self::$current_cache ) ) {
+			return self::$current_cache[ $id ][ $store ][ $external_id ] ?? null;
+		}
+		return self::latest( $id, $store, $external_id );
 	}
 
 	private static function latest( int $id, string $store, string $external_id ): ?array {
@@ -102,6 +168,31 @@ final class Node_Library_Prices {
 
 	private static function on_sale( ?array $row ): bool {
 		return isset( $row['price'], $row['list_price'] ) && (float) $row['price'] < (float) $row['list_price'];
+	}
+
+	/**
+	 * セール終了日時（sale_end）経過後の価格行を定価（list_price）へ正規化する（H-5: 5経路統一）。
+	 *
+	 * @param array<string, mixed>|null $row 価格レコード行。
+	 * @param int|null                  $now 任意の現在 UNIX タイムスタンプ。
+	 * @return array<string, mixed>|null
+	 */
+	public static function effective_offer( ?array $row, ?int $now = null ): ?array {
+		if ( null === $row ) {
+			return null;
+		}
+		$now      = $now ?? time();
+		$sale_end = $row['sale_end'] ?? null;
+		if ( is_string( $sale_end ) && '' !== $sale_end ) {
+			$end_ts = strtotime( $sale_end . ' UTC' );
+			if ( false === $end_ts || $end_ts <= $now ) {
+				if ( is_numeric( $row['list_price'] ?? null ) ) {
+					$row['price'] = $row['list_price'];
+				}
+				$row['sale_end'] = null;
+			}
+		}
+		return $row;
 	}
 
 	/** @return bool|WP_Error True for a new observation, false for an unchanged offer. */
@@ -131,6 +222,10 @@ final class Node_Library_Prices {
 			$price['sale_end'] = $end && self::on_sale( $price ) ? gmdate( 'Y-m-d H:i:s', $end ) : null;
 		}
 		$latest = self::latest( $id, $store, $external_id );
+		// 初回ポーリングで価格取得不能（null）のときは NULL 行を記録しない（A-6 / M-4①）。
+		if ( null === $offer && null === $latest ) {
+			return false;
+		}
 		if ( null !== $latest && $price === array_intersect_key( $latest, $price ) ) {
 			return false;
 		}
@@ -143,6 +238,7 @@ final class Node_Library_Prices {
 			return new WP_Error( 'price_write_failed', '価格履歴の保存に失敗しました。' );
 		}
 
+		unset( self::$current_cache[ $id ] );
 		node_library_delete_detail_cache( $id );
 		return true;
 	}
@@ -150,9 +246,9 @@ final class Node_Library_Prices {
 	/** Current observation, currency-specific minimum, and observed sale starts within one year. */
 	public static function stats( int $id, string $store, ?int $now = null ): array {
 		global $wpdb;
-		$current = self::current( $id, $store );
-		$now = $now ?? time();
-		$stats = array( 'current' => $current, 'lowest' => null, 'sales_last_year' => 0, 'sale_end' => null, 'discount_percent' => null );
+		$now     = $now ?? time();
+		$current = self::effective_offer( self::current( $id, $store ), $now );
+		$stats   = array( 'current' => $current, 'lowest' => null, 'sales_last_year' => 0, 'sale_end' => null, 'discount_percent' => null );
 		if ( null === $current ) {
 			return $stats;
 		}
@@ -164,20 +260,48 @@ final class Node_Library_Prices {
 			}
 		}
 		$ids = get_post_meta( $id, '_node_library_store_ids', true );
+		$ext = (string) ( $ids[ $store ] ?? '' );
 		$table = self::table();
-		$where = $wpdb->prepare( 'item_id=%d AND store=%s AND external_id=%s', $id, $store, $ids[ $store ] );
-		$currency = $current['currency'] ?: $wpdb->get_var( "SELECT currency FROM $table WHERE $where AND price IS NOT NULL ORDER BY recorded_at DESC,id DESC LIMIT 1" );
+		$currency = $current['currency'] ?: $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT currency FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND price IS NOT NULL ORDER BY recorded_at DESC,id DESC LIMIT 1",
+				$id,
+				$store,
+				$ext
+			)
+		);
 		if ( $currency ) {
 			$stats['lowest'] = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT MIN(price) FROM $table WHERE $where AND currency=%s AND price IS NOT NULL AND list_price IS NOT NULL AND price < list_price",
+					"SELECT MIN(price) FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND currency=%s AND price IS NOT NULL",
+					$id,
+					$store,
+					$ext,
 					$currency
 				)
 			);
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', $now - YEAR_IN_SECONDS );
-		$previous = $wpdb->get_row( $wpdb->prepare( "SELECT price,list_price,currency,sale_end FROM $table WHERE $where AND recorded_at<%s ORDER BY recorded_at DESC,id DESC LIMIT 1", $cutoff ), ARRAY_A );
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT price,list_price,currency,sale_end,recorded_at FROM $table WHERE $where AND recorded_at>=%s ORDER BY recorded_at,id", $cutoff ), ARRAY_A );
+		$previous = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT price,list_price,currency,sale_end FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND recorded_at<%s ORDER BY recorded_at DESC,id DESC LIMIT 1",
+				$id,
+				$store,
+				$ext,
+				$cutoff
+			),
+			ARRAY_A
+		);
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT price,list_price,currency,sale_end,recorded_at FROM $table WHERE item_id=%d AND store=%s AND external_id=%s AND recorded_at>=%s ORDER BY recorded_at,id",
+				$id,
+				$store,
+				$ext,
+				$cutoff
+			),
+			ARRAY_A
+		);
 		foreach ( $rows as $row ) {
 			if ( self::on_sale( $row ) && ( ! self::on_sale( $previous ) || $row['currency'] !== $previous['currency'] || ( $previous['sale_end'] && $previous['sale_end'] < $row['recorded_at'] ) ) ) {
 				++$stats['sales_last_year'];
@@ -227,6 +351,9 @@ final class Node_Library_Prices {
 			$store_ids = (array) get_post_meta( $id, '_node_library_store_ids', true );
 			$checks = (array) get_post_meta( $id, '_node_library_price_poll_state', true );
 			foreach ( Node_Library_Store::price_stores() as $store ) {
+				if ( $request_count >= 10 || microtime( true ) >= $deadline ) {
+					break;
+				}
 				$external_id = $store_ids[ $store ] ?? '';
 				if ( ! is_string( $external_id ) || '' === $external_id || (int) ( $status[ $store ]['retry_after'] ?? 0 ) > $now ) {
 					continue;
@@ -276,7 +403,7 @@ final class Node_Library_Prices {
 		global $wpdb;
 		return (bool) $wpdb->get_var( $wpdb->prepare(
 			"SELECT 1 FROM {$wpdb->postmeta} m INNER JOIN {$wpdb->posts} p ON p.ID=m.post_id
-			WHERE m.meta_key='_node_library_card_reference' AND m.meta_value=%s AND p.post_type='post' AND p.post_status='publish' LIMIT 1",
+			WHERE m.meta_key IN ('_node_library_card_reference', '_node_linked_library_id', '_node_linked_library_second_id') AND m.meta_value=%s AND p.post_type='post' AND p.post_status='publish' LIMIT 1",
 			(string) $id
 		) );
 	}

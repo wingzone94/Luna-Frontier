@@ -376,7 +376,7 @@ function initNodeLibraryNintendoWarnings() {
         link.dataset.nodeLibraryNintendoReady = 'true';
         link.dataset.nodeLibraryPlatformArmed = 'false';
         link.dataset.nodeLibraryNintendoArmed = 'false';
-        link.setAttribute('aria-haspopup', 'true');
+        link.removeAttribute('aria-haspopup');
         link.setAttribute('aria-expanded', 'false');
 
         link.addEventListener('click', event => {
@@ -390,10 +390,10 @@ function initNodeLibraryNintendoWarnings() {
             }
         });
 
-        link.addEventListener('blur', () => {
-            window.setTimeout(() => {
-                if (!link.matches(':focus')) hideWarning(link);
-            }, 80);
+        link.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && (link.dataset.nodeLibraryPlatformArmed === 'true' || link.dataset.nodeLibraryNintendoArmed === 'true')) {
+                hideWarning(link);
+            }
         });
     });
 }

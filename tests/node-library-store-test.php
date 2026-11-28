@@ -249,4 +249,41 @@ class Node_Library_Store_Test extends WP_UnitTestCase {
 		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}node_library_relations WHERE item_id=%d", $id ) ) );
 	}
 
+	public function test_cero_z_payment_instrument_filter_is_allowed_while_affirmations_are_excluded(): void {
+		$product = $this->product();
+		$product['DisplaySkuAvailabilities'][0]['Availabilities'][0]['OrderManagementData']['PIFilter']['InclusionProperties'] = array(
+			'credit_card',
+			'ewallet:token',
+			'Token',
+			'legacy:CreditCard',
+			'legacy:Tokens',
+		);
+		$offer = Node_Library_Microsoft_Store::price( $product );
+		$this->assertIsArray( $offer, 'CERO Z の決済手段制限のみのオファーは価格取得できること' );
+		$this->assertSame( 'JPY', $offer['currency'] );
+
+		$product_remediation = $this->product();
+		$product_remediation['DisplaySkuAvailabilities'][0]['Availabilities'][0]['RemediationRequired'] = true;
+		$this->assertNull( Node_Library_Microsoft_Store::price( $product_remediation ), 'RemediationRequired=true は除外されること' );
+
+		$product_affirmation = $this->product();
+		$product_affirmation['DisplaySkuAvailabilities'][0]['Availabilities'][0]['Conditions']['EligibilityProperties']['Affirmations'] = array( 'gamepass-affirmation' );
+		$this->assertNull( Node_Library_Microsoft_Store::price( $product_affirmation ), 'EligibilityProperties.Affirmations ありは除外されること' );
+	}
+
+	public function test_non_purchasable_parent_product_returns_price_notice_and_sku_url_extracts(): void {
+		$product = $this->product();
+		$product['DisplaySkuAvailabilities'][0]['Availabilities'][0]['Actions'] = array( 'Details' );
+		$summary = array(
+			'title'    => 'Grand Theft Auto VI',
+			'editions' => array( '9NL3WWNZLZZN', '9NP019G7NZXT' ),
+		);
+		$normalized = Node_Library_Microsoft_Store::normalize( $product, $summary, array() );
+		$this->assertNull( $normalized['price'] );
+		$this->assertStringContainsString( '9NP019G7NZXT', $normalized['price_notice'] );
+
+		$extracted = Node_Library_Store_ID_Migration::extract( 'https://www.xbox.com/ja-JP/games/store/p/9n431px143p8/0010' );
+		$this->assertSame( array( 'store' => 'microsoft', 'id' => '9N431PX143P8' ), $extracted );
+	}
+
 }

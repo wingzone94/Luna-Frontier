@@ -39,7 +39,7 @@ declare(strict_types=1);
     <!-- 本文フォント: 可変軸の CSS を非同期で読む。静的ウェイトの重複列挙はしない。
          フォントファイルと display=swap は維持する。URL は inc/icon-font.php。 -->
     <?php $node_text_font_url = node_get_text_font_stylesheet_url(); ?>
-    <?php $node_code_font_enabled = node_code_font_is_enabled(); ?>
+    <?php $node_code_font_enabled = function_exists( 'node_should_load_code_font' ) ? node_should_load_code_font() : node_code_font_is_enabled(); ?>
     <?php if ( $node_code_font_enabled ) : ?>
     <?php $node_code_font_url = node_get_code_font_stylesheet_url(); ?>
     <?php $node_mplus_code_font_url = node_get_mplus_code_font_stylesheet_url(); ?>
@@ -54,9 +54,9 @@ declare(strict_types=1);
     <?php $node_icon_font_url = node_get_icon_font_url(); ?>
     <link rel="preload" as="style" href="<?php echo esc_url( $node_icon_font_url ); ?>">
     <link rel="stylesheet" href="<?php echo esc_url( $node_icon_font_url ); ?>">
-    <!-- Adobe Fonts kit: edit at fonts.adobe.com to load DIN 2014 only. -->
+    <!-- Adobe Fonts kit: edit at fonts.adobe.com to load DIN 2014 only (non-render-blocking, H-9). -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin>
-    <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
+    <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css" media="print" onload="this.media='all'">
 
     <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>" media="print" onload="this.media='all'">
     <?php if ( $node_code_font_enabled ) : ?>
@@ -65,6 +65,7 @@ declare(strict_types=1);
     <?php endif; ?>
 
     <noscript>
+        <link rel="stylesheet" href="https://use.typekit.net/xzl0lmg.css">
         <link rel="stylesheet" href="<?php echo esc_url( $node_text_font_url ); ?>">
         <?php if ( $node_code_font_enabled ) : ?>
         <link rel="stylesheet" href="<?php echo esc_url( $node_code_font_url ); ?>">
@@ -161,6 +162,7 @@ declare(strict_types=1);
 </head>
 <body <?php body_class(); ?><?php echo ( function_exists( 'node_is_native_app' ) && node_is_native_app() ) ? ' data-native-app="1"' : ''; ?>>
 <?php wp_body_open(); ?>
+<a class="skip-link screen-reader-text" href="#primary">本文へスキップ</a>
 
 <div class="m3-page-container">
 <?php if ( ! function_exists( 'node_is_native_app' ) || ! node_is_native_app() ) : ?>
@@ -229,9 +231,13 @@ declare(strict_types=1);
                     }
 
                     // 読了ゲージ破壊時（playBarShatterAnimation）と同じ破片演出
+                    function prefersReducedMotion() {
+                        return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+                    }
+
                     function spawnShards() {
                         var text = input.value;
-                        if (!text || !input.animate) return;
+                        if (!text || !input.animate || prefersReducedMotion()) return;
                         var cs = window.getComputedStyle(input);
                         var probe = document.createElement('span');
                         probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;';
@@ -269,6 +275,12 @@ declare(strict_types=1);
                     function animateClear(done) {
                         if (clearing) return;
                         if (!input.value || !input.value.trim()) {
+                            if (done) done();
+                            return;
+                        }
+                        if (prefersReducedMotion()) {
+                            input.value = '';
+                            updateClearBtn();
                             if (done) done();
                             return;
                         }
@@ -370,21 +382,21 @@ declare(strict_types=1);
             </button>
         </div>
 
-        <div class="m3-modal__tabs" id="m3-search-tabs">
-            <div class="m3-modal__tab-indicator"></div>
+        <div class="m3-modal__tabs" id="m3-search-tabs" role="tablist" aria-label="詳細検索のタブ">
+            <div class="m3-modal__tab-indicator" aria-hidden="true"></div>
             <?php // 狭い画面では 3 タブを等分に並べるため、短いラベルへ差し替える（CSS で切替） ?>
-            <button type="button" class="m3-modal__tab is-active" data-page="1" aria-label="絞り込み">
-                <span class="material-symbols-outlined" data-icon="filter_alt"></span>
+            <button type="button" class="m3-modal__tab is-active" id="m3-search-tab-1" role="tab" aria-selected="true" aria-controls="m3-search-page-1" tabindex="0" data-page="1" aria-label="絞り込み">
+                <span class="material-symbols-outlined" data-icon="filter_alt" aria-hidden="true"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">絞り込み</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">条件</span>
             </button>
-            <button type="button" class="m3-modal__tab" data-page="2" aria-label="ボリューム">
-                <span class="material-symbols-outlined" data-icon="schedule"></span>
+            <button type="button" class="m3-modal__tab" id="m3-search-tab-2" role="tab" aria-selected="false" aria-controls="m3-search-page-2" tabindex="-1" data-page="2" aria-label="ボリューム">
+                <span class="material-symbols-outlined" data-icon="schedule" aria-hidden="true"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">ボリューム</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">分量</span>
             </button>
-            <button type="button" class="m3-modal__tab" data-page="3" aria-label="プラットフォーム">
-                <span class="material-symbols-outlined" data-icon="devices"></span>
+            <button type="button" class="m3-modal__tab" id="m3-search-tab-3" role="tab" aria-selected="false" aria-controls="m3-search-page-3" tabindex="-1" data-page="3" aria-label="プラットフォーム">
+                <span class="material-symbols-outlined" data-icon="devices" aria-hidden="true"></span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--full">プラットフォーム</span>
                 <span class="m3-modal__tab-label m3-modal__tab-label--compact">機種</span>
             </button>
@@ -393,13 +405,13 @@ declare(strict_types=1);
         <div class="m3-modal__body">
             <div class="m3-modal__pages-container m3-modal__pages-container--3">
                 <!-- Page 1: Basic Filters -->
-                <div class="m3-modal__page is-active" data-page="1">
+                <div class="m3-modal__page is-active" id="m3-search-page-1" role="tabpanel" aria-labelledby="m3-search-tab-1" data-page="1">
                     <div class="m3-advanced-search-grid-layout">
                         <div class="m3-advanced-search-column">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="category"></span> カテゴリ</label>
+                                <label class="m3-search-section-label" for="m3-cat-select"><span class="material-symbols-outlined" data-icon="category" aria-hidden="true"></span> カテゴリ</label>
                                 <div class="m3-select-wrapper">
-                                    <select name="m3_cat" class="m3-select">
+                                    <select name="m3_cat" id="m3-cat-select" class="m3-select">
                                         <option value="">すべてのカテゴリ</option>
                                         <?php
                                         $categories = get_categories(['hide_empty' => true]);
@@ -429,11 +441,11 @@ declare(strict_types=1);
                         </div>
                         <div class="m3-advanced-search-column m3-mobile-hidden">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="calendar_month"></span> 期間</label>
+                                <span class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="calendar_month" aria-hidden="true"></span> 期間</span>
                                 <div class="m3-date-picker-grid">
-                                    <input type="date" name="m3_start_date" class="m3-date-input">
-                                    <span class="m3-date-range-sep">~</span>
-                                    <input type="date" name="m3_end_date" class="m3-date-input">
+                                    <input type="date" name="m3_start_date" id="m3-start-date" class="m3-date-input" aria-label="開始日">
+                                    <span class="m3-date-range-sep" aria-hidden="true">~</span>
+                                    <input type="date" name="m3_end_date" id="m3-end-date" class="m3-date-input" aria-label="終了日">
                                 </div>
                             </div>
                         </div>
@@ -441,16 +453,16 @@ declare(strict_types=1);
                 </div>
 
                 <!-- Page 2: Volume & Media -->
-                <div class="m3-modal__page" data-page="2">
+                <div class="m3-modal__page" id="m3-search-page-2" role="tabpanel" aria-labelledby="m3-search-tab-2" data-page="2" inert>
                     <div class="m3-advanced-search-grid-layout">
                         <div class="m3-advanced-search-column">
                                 <div class="m3-search-section">
                                     <!-- Range Slider -->
-                                    <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="schedule"></span> 読了目安・ボリューム</label>
+                                    <span class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="schedule" aria-hidden="true"></span> 読了目安・ボリューム</span>
                                     <?php // 読了目安（m3_reading_time）はバックエンド未実装のためUIから退避（F-11）。文字数範囲（m3_min/m3_max）は実装済みなので残す ?>
 
                                     <div class="m3-slider-container">
-                                        <div class="m3-search-section-label m3-search-section-label--sub"><span class="material-symbols-outlined" data-icon="straighten"></span> 文字数範囲</div>
+                                        <div class="m3-search-section-label m3-search-section-label--sub"><span class="material-symbols-outlined" data-icon="straighten" aria-hidden="true"></span> 文字数範囲</div>
                                         <div class="m3-range-slider" id="m3-word-count-slider">
                                             <div class="m3-range-slider__track"></div>
                                             <div class="m3-range-slider__range" id="m3-slider-range"></div>
@@ -463,11 +475,11 @@ declare(strict_types=1);
                                         </div>
                                         <div class="m3-char-input-grid">
                                             <div class="m3-char-input-field">
-                                                <span class="m3-char-input-label">最小</span>
+                                                <label class="m3-char-input-label" for="m3-min-chars">最小</label>
                                                 <input type="number" name="m3_min" id="m3-min-chars" value="0" class="m3-text-input m3-char-input">
                                             </div>
                                             <div class="m3-char-input-field">
-                                                <span class="m3-char-input-label">最大</span>
+                                                <label class="m3-char-input-label" for="m3-max-chars">最大</label>
                                                 <input type="number" name="m3_max" id="m3-max-chars" value="10000" class="m3-text-input m3-char-input">
                                             </div>
                                         </div>
@@ -476,7 +488,7 @@ declare(strict_types=1);
                         </div>
                         <div class="m3-advanced-search-column">
                             <div class="m3-search-section">
-                                <label class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="media_output"></span> メディア</label>
+                                <span class="m3-search-section-label"><span class="material-symbols-outlined" data-icon="media_output" aria-hidden="true"></span> メディア</span>
                                 <div class="m3-platform-list">
                                     <label class="m3-platform-chip m3-platform-chip--image"><input type="checkbox" name="m3_media_type[]" value="image"><span>画像</span></label>
                                     <label class="m3-platform-chip m3-platform-chip--video"><input type="checkbox" name="m3_media_type[]" value="video"><span>動画</span></label>
@@ -489,7 +501,7 @@ declare(strict_types=1);
                 </div>
 
                 <!-- Page 3: Platforms -->
-                <div class="m3-modal__page" data-page="3">
+                <div class="m3-modal__page" id="m3-search-page-3" role="tabpanel" aria-labelledby="m3-search-tab-3" data-page="3" inert>
                     <div class="m3-platform-layout" id="m3-platform-options" data-state="idle"></div>
                 </div>
             </div>
@@ -506,7 +518,7 @@ declare(strict_types=1);
 
         <div class="m3-modal__footer">
             <div class="m3-search-hits-display">
-                <span class="m3-search-hits-text">
+                <span class="m3-search-hits-text" role="status" aria-live="polite" aria-atomic="true">
                     <strong id="m3-search-hit-count"><?php echo number_format_i18n(node_get_total_published_posts()); ?></strong> 件の記事
                 </span>
             </div>

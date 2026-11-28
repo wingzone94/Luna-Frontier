@@ -136,6 +136,9 @@ jobs:
       - name: Create luna.zip
         run: bash scripts/build-luna-zip.sh
 
+      - name: Build standalone node-library.zip
+        run: bash scripts/build-library-zip.sh
+
       - name: Verify release package (phpunit)
         env:
           NODE_TEST_DB_HOST: 127.0.0.1:3306

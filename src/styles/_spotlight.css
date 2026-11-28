@@ -57,6 +57,27 @@
     width: 1px;
     word-wrap: normal !important;
 }
+.skip-link.screen-reader-text:focus {
+    background-color: var(--md-sys-color-primary, #FF9900);
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    clip: auto !important;
+    clip-path: none;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    height: auto;
+    left: 12px;
+    line-height: 1.4;
+    margin: 0;
+    padding: 12px 20px;
+    text-decoration: none;
+    top: 12px;
+    width: auto;
+    z-index: 100000;
+}
 
 
 /* --- Headlines Section --- */

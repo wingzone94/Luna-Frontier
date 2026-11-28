@@ -423,15 +423,22 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
         'geforcenow'  => 'GeForce NOWで見る',
         default       => $platform . ' ' . $button_text,
     };
+    $link_host       = strtolower( (string) wp_parse_url( (string) ( $link['url'] ?? '' ), PHP_URL_HOST ) );
+    $is_ms_store_url = 'microsoft' === ( $link['catalogue_store'] ?? '' )
+        || str_ends_with( $link_host, 'microsoft.com' )
+        || str_ends_with( $link_host, 'xbox.com' )
+        || false !== stripos( $platform, 'microsoft' )
+        || false !== stripos( $platform, 'xbox' );
     $badge_file = match ( $platform_slug ) {
         'ios'     => 'app-store-badge-ja.svg',
         'android' => 'google-play-badge-ja.png',
         'mac'     => 'mac-app-store-badge-ja.svg',
-        'windows', 'xbox' => 'microsoft-store-badge-ja.svg',
+        'xbox'    => 'microsoft-store-badge-ja.svg',
+        'windows' => $is_ms_store_url ? 'microsoft-store-badge-ja.svg' : '',
         default   => '',
     };
     $badge_url = $badge_file ? $badge_base_url . $badge_file : '';
-    $badge_always_visible = in_array( $platform_slug, [ 'mac', 'windows' ], true );
+    $badge_always_visible = 'mac' === $platform_slug || ( 'windows' === $platform_slug && $is_ms_store_url );
     if ( $supports_qr ) :
     ?>
         <div class="m3-platform-action m3-platform-action--qr">
@@ -480,14 +487,15 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
             <img class="m3-platform-store-badge" src="<?php echo esc_url( $badge_url ); ?>" alt="<?php echo esc_attr( $button_label ); ?>">
         </a>
     <?php else : ?>
+        <?php $inline_warning_id = $platform_warning ? wp_unique_id( 'node-library-warning-' ) : ''; ?>
         <?php if ( $platform_warning ) : ?>
             <span class="node-library-platform-link node-library-nintendo-link">
-                <span class="node-library-platform-warning node-library-nintendo-warning" role="note" hidden><?php echo esc_html( $platform_warning ); ?></span>
+                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $inline_warning_id ); ?>" role="status" aria-live="polite" hidden><?php echo esc_html( $platform_warning ); ?></span>
         <?php endif; ?>
         <a href="<?php echo esc_url( $link['url'] ); ?>"
            class="m3-platform-button m3-platform-button--<?php echo esc_attr( $platform_slug ); ?><?php echo $platform_hardware_note ? ' m3-platform-button--has-note' : ''; ?> m3-ripple-host"
            target="_blank"
-           rel="noopener"<?php echo $platform_warning ? ' data-node-library-platform-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-platform-warning="' . esc_attr( $platform_warning ) . '" data-node-library-nintendo-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-nintendo-warning="' . esc_attr( $platform_warning ) . '"' : ''; ?>>
+           rel="noopener"<?php echo $platform_warning ? ' aria-describedby="' . esc_attr( $inline_warning_id ) . '" data-node-library-platform-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-platform-warning="' . esc_attr( $platform_warning ) . '" data-node-library-nintendo-device="' . esc_attr( $platform_warning_device ) . '" data-node-library-nintendo-warning="' . esc_attr( $platform_warning ) . '"' : ''; ?>>
             <span class="m3-platform-button__main">
                 <span class="material-symbols-outlined" data-icon="shopping_cart" aria-hidden="true"></span>
                 <span><?php echo esc_html( $button_label ); ?></span>
@@ -557,7 +565,13 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 if ( 'nintendo' === $catalogue_store || 'nintendo' === $platform_slug || false !== strpos( $host, 'nintendo.com' ) ) {
                     return [ 'slug' => 'nintendo', 'chip' => 'N' ];
                 }
-                if ( 'microsoft' === $catalogue_store || in_array( $platform_slug, [ 'xbox', 'windows' ], true ) ) {
+                $is_ms_link = 'microsoft' === $catalogue_store
+                    || 'xbox' === $platform_slug
+                    || str_ends_with( $host, 'microsoft.com' )
+                    || str_ends_with( $host, 'xbox.com' )
+                    || false !== stripos( $platform, 'microsoft' )
+                    || false !== stripos( $platform, 'xbox' );
+                if ( $is_ms_link ) {
                     return [ 'slug' => 'microsoft', 'chip' => 'xbox' === $platform_slug ? 'X' : 'M' ];
                 }
 
@@ -754,7 +768,7 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                                 </dialog>
                             <?php endif; ?>
                             <?php if ( $card['platform_warning'] ) : ?>
-                                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $card['warning_id'] ); ?>" role="note" hidden><?php echo esc_html( $card['platform_warning'] ); ?></span>
+                                <span class="node-library-platform-warning node-library-nintendo-warning" id="<?php echo esc_attr( $card['warning_id'] ); ?>" role="status" aria-live="polite" hidden><?php echo esc_html( $card['platform_warning'] ); ?></span>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>

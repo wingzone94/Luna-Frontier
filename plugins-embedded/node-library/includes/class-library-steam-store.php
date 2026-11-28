@@ -59,9 +59,12 @@ final class Node_Library_Steam_Store {
 
 	/** @return array|null|WP_Error */
 	private static function price( array $data ) {
+		if ( true === ( $data['is_free'] ?? null ) ) {
+			return array( 'price' => 0, 'list_price' => 0, 'currency' => 'JPY', 'sale_end' => null );
+		}
 		$price = $data['price_overview'] ?? null;
 		if ( null === $price ) {
-			return true === ( $data['is_free'] ?? null ) ? array( 'price' => 0, 'list_price' => 0, 'currency' => 'JPY', 'sale_end' => null ) : null;
+			return null;
 		}
 		if ( ! is_array( $price ) || 'JPY' !== ( $price['currency'] ?? '' ) || ! is_int( $price['initial'] ?? null ) || ! is_int( $price['final'] ?? null ) || $price['final'] < 0 || $price['initial'] < $price['final'] ) {
 			return new WP_Error( 'steam_invalid_price', 'Steamの日本円価格データを読み取れませんでした。', array( 'status' => 502 ) );
@@ -188,6 +191,13 @@ final class Node_Library_Steam_Store {
 		foreach ( $meta as $field => $value ) {
 			$meta[ $field ] = Node_Library_Structured_Meta::sanitize( $field, $value );
 		}
+		$price_notice = '';
+		if ( null === $price ) {
+			$has_packages = ! empty( $data['package_groups'][0]['subs'] ) && is_array( $data['package_groups'][0]['subs'] );
+			$price_notice = $has_packages
+				? '単体価格（price_overview）がなく、バンドル／パッケージ専用商品の可能性があります。'
+				: '単体販売の価格情報がありません（旧版・販売終了・価格未定の可能性があります）。';
+		}
 		return array(
 			'store'                 => 'steam',
 			'id'                    => $id,
@@ -196,6 +206,7 @@ final class Node_Library_Steam_Store {
 			'url'                   => 'https://store.steampowered.com/app/' . $id . '/',
 			'image_url'             => esc_url_raw( $data['header_image'] ?? '', array( 'https' ) ),
 			'price'                 => $price,
+			'price_notice'          => $price_notice,
 			'meta'                  => $meta,
 			'features'              => array_values( wp_list_pluck( (array) ( $data['categories'] ?? array() ), 'description' ) ),
 			'editions'              => array(),

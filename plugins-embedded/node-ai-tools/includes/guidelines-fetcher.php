@@ -85,11 +85,13 @@ if ( ! function_exists( 'node_ai_fetch_guidelines' ) ) {
 			return $cached;
 		}
 
-		$response = wp_remote_get(
+		$response = wp_safe_remote_get(
 			$url,
 			array(
-				'timeout'    => 20,
-				'user-agent' => 'Mozilla/5.0 (compatible; LuminousCore/1.0; +https://luminous-core.net/)',
+				'timeout'             => 20,
+				'reject_unsafe_urls'  => true,
+				'limit_response_size' => MB_IN_BYTES,
+				'user-agent'          => 'Mozilla/5.0 (compatible; LuminousCore/1.0; +https://luminous-core.net/)',
 			)
 		);
 
