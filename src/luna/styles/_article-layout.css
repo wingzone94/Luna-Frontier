@@ -241,6 +241,17 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	}
 }
 
+body.lf-theme.single-post :is(.m3-article, .lf-comments-layout) {
+	--lf-reading-aside-width: clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
+	--lf-reading-columns: minmax(0, 1fr) var(--lf-reading-aside-width);
+}
+
+/* Keep exactly the width of the original reading track when the aside is absent. */
+body.lf-theme.single-post .m3-article:not(:has(> .lf-reading-aside)),
+body.lf-theme.single-post .m3-article:not(:has(> .lf-reading-aside)) ~ .lf-comments-layout {
+	--lf-reading-columns: minmax(0, calc(100% - var(--lf-reading-aside-width) - var(--lf-column-gap)));
+}
+
 /* ---------------------------------------------------------------------
  * PC: 2 カラム（§25）
  * --------------------------------------------------------------------- */
@@ -256,14 +267,24 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 		display: flow-root;
 	}
 
-	body.lf-theme.single-post .m3-article {
+	body.lf-theme.single-post :is(.m3-article, .lf-comments-layout) {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
+		grid-template-columns: var(--lf-reading-columns);
+		justify-content: center;
 		column-gap: var(--lf-column-gap);
 		align-items: start;
 		grid-auto-flow: row dense;
 		max-inline-size: var(--lf-content-max);
 		margin-inline: auto;
+	}
+
+	body.lf-theme.single-post .lf-comments-layout {
+		padding-inline: var(--node-gutter-inline-lg);
+	}
+
+	body.lf-theme.single-post .lf-comments-layout > section {
+		grid-column: 1;
+		min-inline-size: 0;
 	}
 
 	/* 既定は全幅。ヘッダー・ページネーション・コメント等はそのまま横断させる。 */
@@ -318,14 +339,25 @@ body.lf-theme .lf-aside-list--inline .lf-aside-list__item a {
 	display: flow-root;
 }
 
-:where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article {
+:where(html.lf-tablet-pc) body.lf-theme.single-post :is(.m3-article, .lf-comments-layout) {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) clamp(var(--lf-aside-min), 26%, var(--lf-aside-max));
+	grid-template-columns: var(--lf-reading-columns);
+	justify-content: center;
 	column-gap: var(--lf-column-gap);
 	align-items: start;
 	grid-auto-flow: row dense;
 	max-inline-size: var(--lf-content-max);
 	margin-inline: auto;
+}
+
+:where(html.lf-tablet-pc) body.lf-theme.single-post .lf-comments-layout {
+	padding-inline: var(--node-gutter-inline);
+}
+
+@media (min-width: 768px) {
+	:where(html.lf-tablet-pc) body.lf-theme.single-post .lf-comments-layout {
+		padding-inline: var(--node-gutter-inline-lg);
+	}
 }
 
 :where(html.lf-tablet-pc) body.lf-theme.single-post .m3-article > * {

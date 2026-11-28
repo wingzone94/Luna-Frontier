@@ -59,9 +59,11 @@ get_header();
         <?php get_template_part( 'template-parts/single/related' ); ?>
 
         <?php if ( comments_open() || get_comments_number() ) : ?>
+            <div class="lf-comments-layout">
             <section id="comments-section" class="m3-comments-section m3-reveal" aria-label="<?php esc_attr_e( 'コメント', 'node' ); ?>">
                 <?php comments_template(); ?>
             </section>
+            </div>
         <?php endif; ?>
         <?php endif; ?>
 
