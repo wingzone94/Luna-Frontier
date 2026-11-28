@@ -1235,7 +1235,7 @@ final class Node_Library {
 		if ( ! $lib_id ) return '';
 
 		$lib_post = get_post( $lib_id );
-		if ( ! $lib_post || $lib_post->post_type !== 'node_library' ) return '';
+		if ( ! $lib_post || 'node_library' !== $lib_post->post_type || 'publish' !== $lib_post->post_status || '' !== $lib_post->post_password ) return '';
 
 		$links = get_post_meta( $lib_id, '_node_library_links', true );
 		if ( ( ! is_array( $links ) || empty( $links ) ) && class_exists( 'Node_Library_Single_Extensions' ) ) {
@@ -1439,13 +1439,16 @@ final class Node_Library {
 			
 			<div id="node-library-links-editor">
 				<label><strong>ストア・配信ページリンク:</strong></label>
-				<div class="links-container" style="margin-top:10px;" data-max-rows="10">
+				<?php
+				$filled_count = is_array( $links ) ? count( $links ) : 0;
+				$max_rows     = max( 10, $filled_count + 2 );
+				$visible_rows = max( 2, min( $max_rows, $filled_count + 1 ) );
+				?>
+				<div class="links-container" style="margin-top:10px;" data-max-rows="<?php echo esc_attr( (string) $max_rows ); ?>">
 					<?php
-					$filled_count = is_array( $links ) ? count( $links ) : 0;
-					$visible_rows = max( 2, min( 10, $filled_count + 1 ) );
 					$tab_categories = function_exists( 'node_library_tab_categories' ) ? node_library_tab_categories() : [ 'auto' => '自動判定' ];
 					$hardware_options = function_exists( 'node_library_hardware_options' ) ? node_library_hardware_options() : [ 'auto' => '自動判定' ];
-					for ( $i = 0; $i < 10; $i++ ) :
+					for ( $i = 0; $i < $max_rows; $i++ ) :
 						$p       = $links[ $i ]['platform'] ?? '';
 						$u       = $links[ $i ]['url'] ?? '';
 						$c       = function_exists( 'node_library_normalize_category' ) ? node_library_normalize_category( $links[ $i ]['category'] ?? '' ) : 'auto';
@@ -1552,27 +1555,35 @@ final class Node_Library {
 	 * 保存処理
 	 */
 	public function save_meta_boxes( int $post_id ): void {
-		if ( isset( $_POST['node_library_details_nonce'] ) && wp_verify_nonce( $_POST['node_library_details_nonce'], 'node_library_save_details' ) ) {
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) || ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		if (
+			'node_library' === get_post_type( $post_id )
+			&& isset( $_POST['node_library_details_nonce'] )
+			&& is_string( $_POST['node_library_details_nonce'] )
+			&& wp_verify_nonce( wp_unslash( $_POST['node_library_details_nonce'] ), 'node_library_save_details' )
+		) {
 			if ( isset( $_POST['node_library_type'] ) ) {
-				$type = sanitize_key( wp_unslash( $_POST['node_library_type'] ) );
+				$type = sanitize_key( wp_unslash( (string) $_POST['node_library_type'] ) );
 				update_post_meta( $post_id, '_node_library_type', in_array( $type, [ 'game', 'app' ], true ) ? $type : 'game' );
 			}
 			if ( isset( $_POST['node_library_summary'] ) ) {
-				update_post_meta( $post_id, '_node_library_summary', sanitize_textarea_field( $_POST['node_library_summary'] ) );
+				update_post_meta( $post_id, '_node_library_summary', wp_slash( sanitize_textarea_field( wp_unslash( (string) $_POST['node_library_summary'] ) ) ) );
 			}
-			if ( isset( $_POST['node_library_links'] ) ) {
+			if ( isset( $_POST['node_library_links'] ) && is_array( $_POST['node_library_links'] ) ) {
 				$links = [];
-				foreach ( $_POST['node_library_links'] as $link ) {
-					if ( ! empty( $link['platform'] ) && ! empty( $link['url'] ) ) {
+				foreach ( wp_unslash( $_POST['node_library_links'] ) as $link ) {
+					if ( is_array( $link ) && ! empty( $link['platform'] ) && ! empty( $link['url'] ) ) {
 						$links[] = [
-							'platform' => sanitize_text_field( $link['platform'] ),
-							'url'      => esc_url_raw( $link['url'] ),
+							'platform' => sanitize_text_field( (string) $link['platform'] ),
+							'url'      => esc_url_raw( (string) $link['url'] ),
 							'category' => node_library_normalize_category( $link['category'] ?? '' ),
 							'hardware' => node_library_normalize_hardware( $link['hardware'] ?? '' ),
 						];
 					}
 				}
-				update_post_meta( $post_id, '_node_library_links', $links );
+				update_post_meta( $post_id, '_node_library_links', wp_slash( $links ) );
 			}
 			node_library_delete_detail_cache( $post_id );
 		}
