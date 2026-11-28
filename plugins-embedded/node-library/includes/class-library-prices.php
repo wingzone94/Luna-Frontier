@@ -197,6 +197,9 @@ final class Node_Library_Prices {
 
 	/** @return bool|WP_Error True for a new observation, false for an unchanged offer. */
 	public static function record( int $id, string $store, string $external_id, ?array $offer, ?int $now = null ) {
+		if ( 'nso' === $store || ( class_exists( 'Node_Library_Structured_Meta' ) && array_key_exists( $store, Node_Library_Structured_Meta::subscriptions() ) ) ) {
+			return new WP_Error( 'invalid_price_store', 'サブスクリプション種別は価格履歴に記録できません。' );
+		}
 		global $wpdb;
 		$price = array( 'price' => null, 'list_price' => null, 'currency' => '', 'sale_end' => null );
 		if ( null !== $offer ) {
