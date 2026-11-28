@@ -757,7 +757,27 @@ function node_series_get_term( int $post_id ): ?WP_Term {
  * @param int $term_id node_series term ID。
  * @return WP_Post[]
  */
-function node_series_get_posts( int $term_id ): array {
+function node_series_flush_posts_cache(): void {
+	$GLOBALS['node_series_posts_cache'] = [];
+}
+add_action( 'save_post_post', 'node_series_flush_posts_cache' );
+add_action( 'deleted_post', 'node_series_flush_posts_cache' );
+add_action( 'set_object_terms', 'node_series_flush_posts_cache' );
+add_action( 'updated_post_meta', 'node_series_flush_posts_cache' );
+add_action( 'added_post_meta', 'node_series_flush_posts_cache' );
+add_action( 'deleted_post_meta', 'node_series_flush_posts_cache' );
+
+function node_series_get_posts( int $term_id, bool $force_refresh = false ): array {
+	if ( ! isset( $GLOBALS['node_series_posts_cache'] ) || ! is_array( $GLOBALS['node_series_posts_cache'] ) ) {
+		$GLOBALS['node_series_posts_cache'] = [];
+	}
+	if ( $force_refresh ) {
+		unset( $GLOBALS['node_series_posts_cache'][ $term_id ] );
+	}
+	if ( isset( $GLOBALS['node_series_posts_cache'][ $term_id ] ) ) {
+		return $GLOBALS['node_series_posts_cache'][ $term_id ];
+	}
+
 	$query = new WP_Query(
 		[
 			'post_type'      => 'post',
@@ -776,7 +796,8 @@ function node_series_get_posts( int $term_id ): array {
 		]
 	);
 
-	return node_series_sort_posts( $query->posts );
+	$GLOBALS['node_series_posts_cache'][ $term_id ] = node_series_sort_posts( $query->posts );
+	return $GLOBALS['node_series_posts_cache'][ $term_id ];
 }
 
 /**
