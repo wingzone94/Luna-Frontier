@@ -690,11 +690,11 @@
 	background: #0070d1;
 }
 
-.node-library-pricing__badge--giveaway {
+.node-library-pricing__badge--subscription.node-library-pricing__badge--giveaway {
 	background: #0f6d5e;
 }
 
-.node-library-pricing__badge--ended {
+.node-library-pricing__badge--subscription.node-library-pricing__badge--ended {
 	background: #5a6270;
 }
 
@@ -1337,13 +1337,14 @@
 .node-library-store-card__sub-badge {
 	display: inline-flex;
 	align-items: center;
-	padding: 2px 9px;
-	border-radius: 999px;
+	max-width: 100%;
+	padding: 3px 10px;
+	border-radius: 12px;
 	background: #3d5082;
 	color: #ffffff;
 	font-size: 0.75rem;
 	font-weight: 700;
-	line-height: 1.3;
+	line-height: 1.4;
 }
 
 .node-library-store-card__sub-badge[data-brand="microsoft"] {
@@ -1362,11 +1363,11 @@
 	background: #0070d1;
 }
 
-.node-library-store-card__sub-badge--giveaway {
+.node-library-store-card__sub-badge.node-library-store-card__sub-badge--giveaway {
 	background: #0f6d5e;
 }
 
-.node-library-store-card__sub-badge--ended {
+.node-library-store-card__sub-badge.node-library-store-card__sub-badge--ended {
 	background: #5a6270;
 }
 
