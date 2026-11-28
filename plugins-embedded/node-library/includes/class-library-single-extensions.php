@@ -1067,11 +1067,27 @@ final class Node_Library_Single_Extensions {
 			: array();
 		foreach ( $sub_map as $sub_key => $meta ) {
 			if ( ! empty( $subscriptions[ $sub_key ] ) ) {
-				$badge_info = $display_badges[ $sub_key ] ?? null;
+				$badge_info  = $display_badges[ $sub_key ] ?? null;
 				$is_giveaway = is_array( $badge_info ) && 'giveaway' === ( $badge_info['kind'] ?? '' );
+				if ( 'psplus' === $sub_key ) {
+					$chip_label = 'PlayStation Plus（ゲームカタログ対象）';
+				} elseif ( 'psplus_freeplay' === $sub_key ) {
+					$end_mmdd = is_array( $badge_info ) ? (string) ( $badge_info['end_mmdd'] ?? '' ) : '';
+					if ( '' !== $end_mmdd ) {
+						$chip_label = 'ended' === ( $badge_info['status'] ?? '' )
+							? sprintf( 'PlayStation Plus フリープレイ対象（%sまで・配布終了）', $end_mmdd )
+							: sprintf( 'PlayStation Plus フリープレイ対象（%sまで）', $end_mmdd );
+					} else {
+						$chip_label = 'ended' === ( $badge_info['status'] ?? '' )
+							? 'PlayStation Plus フリープレイ対象（配布終了）'
+							: 'PlayStation Plus フリープレイ対象（配布中）';
+					}
+				} else {
+					$chip_label = is_array( $badge_info ) ? $badge_info['badge_text'] : sprintf( '%s（%s）', $meta['label'], __( '加入中', 'node-library' ) );
+				}
 				$chips[] = array(
 					'key'        => 'sub_' . $sub_key,
-					'label'      => is_array( $badge_info ) ? $badge_info['badge_text'] : sprintf( '%s（%s）', $meta['label'], __( '加入中', 'node-library' ) ),
+					'label'      => $chip_label,
 					'brand'      => $meta['brand'],
 					'icon'       => $is_giveaway ? 'sell' : 'apps',
 					'sub_kind'   => is_array( $badge_info ) ? $badge_info['kind'] : 'catalog',

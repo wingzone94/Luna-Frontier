@@ -167,6 +167,7 @@ class Node_Library_Subscriptions_Test extends WP_UnitTestCase {
 			'_node_library_subscriptions',
 			array(
 				'gamepass'        => true,
+				'psplus'          => true,
 				'psplus_freeplay' => true,
 				'epic_free'       => true,
 			)
@@ -174,6 +175,7 @@ class Node_Library_Subscriptions_Test extends WP_UnitTestCase {
 
 		$now = strtotime( '2026-11-15 12:00:00 UTC' );
 		Node_Library_Subscriptions::observe( $item_id, 'gamepass', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
+		Node_Library_Subscriptions::observe( $item_id, 'psplus', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
 		Node_Library_Subscriptions::observe(
 			$item_id,
 			'psplus_freeplay',
@@ -193,13 +195,25 @@ class Node_Library_Subscriptions_Test extends WP_UnitTestCase {
 		$this->assertSame( 'catalog', $badges['gamepass']['kind'] );
 		$this->assertSame( 'Xbox / PC Game Pass（加入中）', $badges['gamepass']['badge_text'] );
 
+		$this->assertSame( 'catalog', $badges['psplus']['kind'] );
+		$this->assertSame( 'PS Plus ゲームカタログ対象', $badges['psplus']['badge_text'] );
+
 		$this->assertSame( 'giveaway', $badges['psplus_freeplay']['kind'] );
 		$this->assertSame( 'active', $badges['psplus_freeplay']['status'] );
-		$this->assertSame( 'PlayStation Plus フリープレイ（配布中：2026/11/03〜2026/12/01）', $badges['psplus_freeplay']['badge_text'] );
+		$this->assertSame( '12/01', $badges['psplus_freeplay']['end_mmdd'] );
+		$this->assertSame( 'PS Plus フリープレイ対象（12/01まで）', $badges['psplus_freeplay']['badge_text'] );
 
 		$this->assertSame( 'giveaway', $badges['epic_free']['kind'] );
 		$this->assertSame( 'ended', $badges['epic_free']['status'] );
 		$this->assertSame( 'Epic Games Store 無料配布（配布終了：2026/10/10〜2026/10/17）', $badges['epic_free']['badge_text'] );
+
+		$chips = Node_Library_Subscriptions::expand_display_chips( $badges );
+		$chip_texts = array_column( $chips, 'text' );
+		$this->assertSame( 1, count( array_keys( $chip_texts, 'PS Plus', true ) ) );
+		$this->assertContains( 'ゲームカタログ対象', $chip_texts );
+		$this->assertContains( 'フリープレイ対象（12/01まで）', $chip_texts );
+		$this->assertContains( 'Xbox / PC Game Pass（加入中）', $chip_texts );
+		$this->assertContains( 'Epic Games Store 無料配布（配布終了：2026/10/10〜2026/10/17）', $chip_texts );
 
 		ob_start();
 		Node_Library_Subscriptions::render_single_history( $item_id );

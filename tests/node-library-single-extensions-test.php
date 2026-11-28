@@ -817,17 +817,28 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 			'_node_library_store_ids',
 			array(
 				'epic' => 'sub-display-game',
+				'ps'   => 'JP0000-PPSA00001_00-EXAMPLE000000001',
 			)
 		);
 		update_post_meta(
 			$item_id,
 			'_node_library_subscriptions',
 			array(
-				'gamepass'  => true,
-				'epic_free' => true,
+				'gamepass'        => true,
+				'psplus'          => true,
+				'psplus_freeplay' => true,
+				'epic_free'       => true,
 			)
 		);
 		Node_Library_Subscriptions::observe( $item_id, 'gamepass', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
+		Node_Library_Subscriptions::observe( $item_id, 'psplus', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
+		Node_Library_Subscriptions::observe(
+			$item_id,
+			'psplus_freeplay',
+			true,
+			strtotime( '2026-11-01 00:00:00 UTC' ),
+			'2099-12-01 14:59:59'
+		);
 		Node_Library_Subscriptions::observe(
 			$item_id,
 			'epic_free',
@@ -841,11 +852,13 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		Node_Library_Single_Extensions::render_features_section( $item_id );
 		$features_html = (string) ob_get_clean();
 		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $features_html );
+		$this->assertStringContainsString( 'PlayStation Plus（ゲームカタログ対象）', $features_html );
+		$this->assertStringContainsString( 'PlayStation Plus フリープレイ対象（12/01まで）', $features_html );
 		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $features_html );
 		$this->assertStringContainsString( 'node-library-feature-chip--catalog', $features_html );
 		$this->assertStringContainsString( 'node-library-feature-chip--giveaway', $features_html );
 
-		// Store card / offers block assigns epic_free to Epic card and renders gamepass badge.
+		// Store card / offers block assigns PS Plus chips to PlayStation card, epic_free to Epic card, and gamepass badge.
 		$badge_items = Node_Library_Subscriptions::get_display_badges( $item_id );
 		$game_info   = array(
 			'title'                    => 'Sub Display Game',
@@ -856,12 +869,16 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		ob_start();
 		include NODE_LIBRARY_DIR . 'templates/card-library.php';
 		$card_html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'node-library-store-card__sub-badge--psplus', $card_html );
+		$this->assertStringContainsString( '>PS Plus<', $card_html );
+		$this->assertStringContainsString( '>ゲームカタログ対象<', $card_html );
+		$this->assertStringContainsString( '>フリープレイ対象（12/01まで）<', $card_html );
 		$this->assertStringContainsString( 'node-library-store-card__sub-badge--giveaway', $card_html );
 		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $card_html );
 		$this->assertStringContainsString( 'node-library-pricing__badge--catalog', $card_html );
 		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $card_html );
 
-		// Archive shelf card renders both catalog and giveaway chips.
+		// Archive shelf card renders PS Plus unified white-text chips + catalog/giveaway chips.
 		$query = new WP_Query(
 			array(
 				'post_type' => 'node_library',
@@ -876,8 +893,12 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		wp_reset_postdata();
 
 		$this->assertStringContainsString( 'library-card-subscriptions', $shelf_html );
+		$this->assertStringContainsString( 'library-chip--psplus', $shelf_html );
 		$this->assertStringContainsString( 'library-chip--catalog', $shelf_html );
 		$this->assertStringContainsString( 'library-chip--giveaway', $shelf_html );
+		$this->assertSame( 1, substr_count( $shelf_html, '>PS Plus<' ) );
+		$this->assertStringContainsString( '>ゲームカタログ対象<', $shelf_html );
+		$this->assertStringContainsString( '>フリープレイ対象（12/01まで）<', $shelf_html );
 		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $shelf_html );
 		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $shelf_html );
 	}

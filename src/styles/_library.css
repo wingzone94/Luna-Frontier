@@ -671,6 +671,23 @@
 
 .node-library-pricing__badge--subscription {
 	background: #3d5082;
+	color: #ffffff;
+}
+
+.node-library-pricing__badge--subscription[data-brand="microsoft"] {
+	background: #107c10;
+}
+
+.node-library-pricing__badge--subscription[data-brand="playstation"] {
+	background: #0070d1;
+}
+
+.node-library-pricing__badge--subscription[data-brand="nintendo"] {
+	background: #e60012;
+}
+
+.node-library-pricing__badge--psplus {
+	background: #0070d1;
 }
 
 .node-library-pricing__badge--giveaway {
@@ -1327,6 +1344,22 @@
 	font-size: 0.75rem;
 	font-weight: 700;
 	line-height: 1.3;
+}
+
+.node-library-store-card__sub-badge[data-brand="microsoft"] {
+	background: #107c10;
+}
+
+.node-library-store-card__sub-badge[data-brand="playstation"] {
+	background: #0070d1;
+}
+
+.node-library-store-card__sub-badge[data-brand="nintendo"] {
+	background: #e60012;
+}
+
+.node-library-store-card__sub-badge--psplus {
+	background: #0070d1;
 }
 
 .node-library-store-card__sub-badge--giveaway {

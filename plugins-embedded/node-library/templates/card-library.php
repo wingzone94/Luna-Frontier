@@ -665,21 +665,39 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
             }
 
             $unassigned_subs = array_diff_key( $subscription_badges, $assigned_sub_keys );
+            $unassigned_chips = [];
+            if ( $unassigned_subs ) {
+                $unassigned_meta = array_intersect_key( $subscription_badge_items, $unassigned_subs );
+                if ( $unassigned_meta && is_callable( [ 'Node_Library_Subscriptions', 'expand_display_chips' ] ) ) {
+                    $unassigned_chips = Node_Library_Subscriptions::expand_display_chips( $unassigned_meta );
+                }
+                foreach ( $unassigned_subs as $sub_key => $label ) {
+                    if ( isset( $unassigned_meta[ $sub_key ] ) ) {
+                        continue;
+                    }
+                    $unassigned_chips[] = [
+                        'brand'  => 'neutral',
+                        'kind'   => 'catalog',
+                        'status' => 'active',
+                        'text'   => $label,
+                    ];
+                }
+            }
             ?>
-            <?php if ( $unassigned_subs ) : ?>
+            <?php if ( $unassigned_chips ) : ?>
                 <ul class="node-library-pricing__badges" aria-label="<?php esc_attr_e( '対象サブスクリプション', 'node-library' ); ?>">
-                    <?php foreach ( $unassigned_subs as $sub_key => $label ) : ?>
+                    <?php foreach ( $unassigned_chips as $chip ) : ?>
                         <?php
-                        $badge_meta    = $subscription_badge_items[ $sub_key ] ?? null;
-                        $badge_classes = [ 'node-library-pricing__badge', 'node-library-pricing__badge--subscription' ];
-                        if ( is_array( $badge_meta ) ) {
-                            $badge_classes[] = 'node-library-pricing__badge--' . ( $badge_meta['kind'] ?? 'catalog' );
-                            if ( 'ended' === ( $badge_meta['status'] ?? '' ) ) {
-                                $badge_classes[] = 'node-library-pricing__badge--ended';
-                            }
+                        $badge_classes = [
+                            'node-library-pricing__badge',
+                            'node-library-pricing__badge--subscription',
+                            'node-library-pricing__badge--' . ( $chip['kind'] ?? 'catalog' ),
+                        ];
+                        if ( 'ended' === ( $chip['status'] ?? '' ) ) {
+                            $badge_classes[] = 'node-library-pricing__badge--ended';
                         }
                         ?>
-                        <li class="<?php echo esc_attr( implode( ' ', $badge_classes ) ); ?>"><?php echo esc_html( $label ); ?></li>
+                        <li class="<?php echo esc_attr( implode( ' ', $badge_classes ) ); ?>" data-brand="<?php echo esc_attr( (string) ( $chip['brand'] ?? 'neutral' ) ); ?>"><?php echo esc_html( (string) ( $chip['text'] ?? '' ) ); ?></li>
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
@@ -724,18 +742,35 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                                         <span class="node-library-store-card__info">
                                             <span class="node-library-store-card__head">
                                                 <strong class="node-library-store-card__name"><?php echo esc_html( $card['platform'] ); ?></strong>
-                                                <?php foreach ( $card['subscriptions'] as $sub_key => $sub_label ) : ?>
+                                                <?php
+                                                $card_sub_chips = [];
+                                                $card_sub_meta  = array_intersect_key( $subscription_badge_items, $card['subscriptions'] );
+                                                if ( $card_sub_meta && is_callable( [ 'Node_Library_Subscriptions', 'expand_display_chips' ] ) ) {
+                                                    $card_sub_chips = Node_Library_Subscriptions::expand_display_chips( $card_sub_meta );
+                                                }
+                                                foreach ( $card['subscriptions'] as $sub_key => $sub_label ) {
+                                                    if ( isset( $card_sub_meta[ $sub_key ] ) ) {
+                                                        continue;
+                                                    }
+                                                    $card_sub_chips[] = [
+                                                        'brand'  => 'neutral',
+                                                        'kind'   => 'catalog',
+                                                        'status' => 'active',
+                                                        'text'   => $sub_label,
+                                                    ];
+                                                }
+                                                ?>
+                                                <?php foreach ( $card_sub_chips as $chip ) : ?>
                                                     <?php
-                                                    $sub_meta    = $subscription_badge_items[ $sub_key ] ?? null;
-                                                    $sub_classes = [ 'node-library-store-card__sub-badge' ];
-                                                    if ( is_array( $sub_meta ) ) {
-                                                        $sub_classes[] = 'node-library-store-card__sub-badge--' . ( $sub_meta['kind'] ?? 'catalog' );
-                                                        if ( 'ended' === ( $sub_meta['status'] ?? '' ) ) {
-                                                            $sub_classes[] = 'node-library-store-card__sub-badge--ended';
-                                                        }
+                                                    $sub_classes = [
+                                                        'node-library-store-card__sub-badge',
+                                                        'node-library-store-card__sub-badge--' . ( $chip['kind'] ?? 'catalog' ),
+                                                    ];
+                                                    if ( 'ended' === ( $chip['status'] ?? '' ) ) {
+                                                        $sub_classes[] = 'node-library-store-card__sub-badge--ended';
                                                     }
                                                     ?>
-                                                    <span class="<?php echo esc_attr( implode( ' ', $sub_classes ) ); ?>"><?php echo esc_html( $sub_label ); ?></span>
+                                                    <span class="<?php echo esc_attr( implode( ' ', $sub_classes ) ); ?>" data-brand="<?php echo esc_attr( (string) ( $chip['brand'] ?? 'neutral' ) ); ?>"><?php echo esc_html( (string) ( $chip['text'] ?? '' ) ); ?></span>
                                                 <?php endforeach; ?>
                                             </span>
                                             <?php if ( '' !== $card['hardware_note'] ) : ?>

@@ -138,7 +138,7 @@ final class Node_Library_Subscriptions {
 	 * Build display badges/chips for all active subscription flags of an item,
 	 * distinguishing ongoing catalogue memberships from giveaway distribution periods.
 	 *
-	 * @return array<string, array{service:string,label:string,kind:string,status:string,status_label:string,period_text:string,badge_text:string}>
+	 * @return array<string, array{service:string,label:string,brand:string,kind:string,status:string,status_label:string,period_text:string,end_mmdd:string,badge_text:string}>
 	 */
 	public static function get_display_badges( int $item_id, ?int $now = null ): array {
 		if ( $item_id <= 0 || ! class_exists( 'Node_Library_Structured_Meta' ) ) {
@@ -149,6 +149,14 @@ final class Node_Library_Subscriptions {
 		if ( ! $flags ) {
 			return array();
 		}
+
+		$brand_map = array(
+			'gamepass'        => 'microsoft',
+			'psplus'          => 'playstation',
+			'psplus_freeplay' => 'playstation',
+			'epic_free'       => 'epic',
+			'nso'             => 'nintendo',
+		);
 
 		$now          = $now ?? time();
 		$history_rows = self::get_item_history( $item_id );
@@ -174,11 +182,13 @@ final class Node_Library_Subscriptions {
 			}
 			$row         = $latest_open[ $service ] ?? ( $latest_any[ $service ] ?? null );
 			$is_giveaway = self::is_giveaway_service( $service );
+			$brand       = $brand_map[ $service ] ?? 'neutral';
+			$end_mmdd    = '';
 			if ( $is_giveaway ) {
 				$start       = is_array( $row ) ? self::format_jst_date( (string) ( $row['joined_at'] ?? '' ) ) : '';
-				$end         = is_array( $row ) && is_string( $row['leaving_at'] ?? null ) && '' !== $row['leaving_at']
-					? self::format_jst_date( $row['leaving_at'] )
-					: '';
+				$end_raw     = is_array( $row ) && is_string( $row['leaving_at'] ?? null ) ? $row['leaving_at'] : '';
+				$end         = '' !== $end_raw ? self::format_jst_date( $end_raw ) : '';
+				$end_mmdd    = '' !== $end_raw ? self::format_jst_mmdd( $end_raw ) : '';
 				if ( '' !== $start && '' !== $end ) {
 					$period_text = $start . '〜' . $end;
 				} elseif ( '' !== $start ) {
@@ -191,30 +201,124 @@ final class Node_Library_Subscriptions {
 				$ended        = is_array( $row ) && self::is_period_ended( $row, $now );
 				$status       = $ended ? 'ended' : 'active';
 				$status_label = $ended ? __( '配布終了', 'node-library' ) : __( '配布中', 'node-library' );
-				$badge_text   = '' !== $period_text
-					? sprintf( '%s（%s：%s）', $label, $status_label, $period_text )
-					: sprintf( '%s（%s）', $label, $status_label );
-				$kind         = 'giveaway';
+				if ( 'psplus_freeplay' === $service ) {
+					if ( '' !== $end_mmdd ) {
+						$badge_text = $ended
+							? sprintf( 'PS Plus フリープレイ対象（%sまで・配布終了）', $end_mmdd )
+							: sprintf( 'PS Plus フリープレイ対象（%sまで）', $end_mmdd );
+					} else {
+						$badge_text = $ended
+							? 'PS Plus フリープレイ対象（配布終了）'
+							: 'PS Plus フリープレイ対象（配布中）';
+					}
+				} else {
+					$badge_text = '' !== $period_text
+						? sprintf( '%s（%s：%s）', $label, $status_label, $period_text )
+						: sprintf( '%s（%s）', $label, $status_label );
+				}
+				$kind = 'giveaway';
 			} else {
 				$kind         = 'catalog';
 				$status       = 'active';
-				$status_label = __( '加入中', 'node-library' );
+				$status_label = 'psplus' === $service ? __( 'ゲームカタログ対象', 'node-library' ) : __( '加入中', 'node-library' );
 				$period_text  = '';
-				$badge_text   = sprintf( '%s（%s）', $label, $status_label );
+				$badge_text   = 'psplus' === $service
+					? 'PS Plus ゲームカタログ対象'
+					: sprintf( '%s（%s）', $label, $status_label );
 			}
 
 			$badges[ $service ] = array(
 				'service'      => $service,
 				'label'        => $label,
+				'brand'        => $brand,
 				'kind'         => $kind,
 				'status'       => $status,
 				'status_label' => $status_label,
 				'period_text'  => $period_text,
+				'end_mmdd'     => $end_mmdd,
 				'badge_text'   => $badge_text,
 			);
 		}
 
 		return $badges;
+	}
+
+	/**
+	 * Expand subscription badge items into display chips.
+	 * PS Plus services emit a unified "PS Plus" brand chip plus target chip(s)
+	 * ("ゲームカタログ対象" / "フリープレイ対象（MM/DDまで）").
+	 *
+	 * @param array<string, array<string, mixed>> $badges Result from get_display_badges().
+	 * @return array<int, array{key:string,service:string,brand:string,kind:string,status:string,text:string}>
+	 */
+	public static function expand_display_chips( array $badges ): array {
+		$chips          = array();
+		$emitted_psplus = false;
+
+		foreach ( $badges as $service => $badge ) {
+			if ( ! is_array( $badge ) ) {
+				continue;
+			}
+			$svc    = (string) ( $badge['service'] ?? $service );
+			$brand  = (string) ( $badge['brand'] ?? 'neutral' );
+			$kind   = (string) ( $badge['kind'] ?? 'catalog' );
+			$status = (string) ( $badge['status'] ?? 'active' );
+
+			if ( 'psplus' === $svc || 'psplus_freeplay' === $svc ) {
+				if ( ! $emitted_psplus ) {
+					$chips[] = array(
+						'key'     => 'psplus_brand',
+						'service' => 'psplus',
+						'brand'   => 'playstation',
+						'kind'    => 'psplus',
+						'status'  => 'active',
+						'text'    => 'PS Plus',
+					);
+					$emitted_psplus = true;
+				}
+				if ( 'psplus' === $svc ) {
+					$chips[] = array(
+						'key'     => 'psplus',
+						'service' => 'psplus',
+						'brand'   => 'playstation',
+						'kind'    => 'catalog',
+						'status'  => $status,
+						'text'    => __( 'ゲームカタログ対象', 'node-library' ),
+					);
+				} else {
+					$end_mmdd = (string) ( $badge['end_mmdd'] ?? '' );
+					if ( '' !== $end_mmdd ) {
+						$fp_text = 'ended' === $status
+							? sprintf( __( 'フリープレイ対象（%sまで・配布終了）', 'node-library' ), $end_mmdd )
+							: sprintf( __( 'フリープレイ対象（%sまで）', 'node-library' ), $end_mmdd );
+					} else {
+						$fp_text = 'ended' === $status
+							? __( 'フリープレイ対象（配布終了）', 'node-library' )
+							: __( 'フリープレイ対象（配布中）', 'node-library' );
+					}
+					$chips[] = array(
+						'key'     => 'psplus_freeplay',
+						'service' => 'psplus_freeplay',
+						'brand'   => 'playstation',
+						'kind'    => 'giveaway',
+						'status'  => $status,
+						'text'    => $fp_text,
+					);
+				}
+				continue;
+			}
+
+			$chips[] = array(
+				'key'     => $svc,
+				'service' => $svc,
+				'brand'   => $brand,
+				'kind'    => $kind,
+				'status'  => $status,
+				'text'    => (string) ( $badge['badge_text'] ?? $badge['label'] ?? $svc ),
+			);
+		}
+
+		return $chips;
 	}
 
 	/**
@@ -706,6 +810,18 @@ final class Node_Library_Subscriptions {
 		$value = trim( $value );
 		$ts    = strtotime( $value . ( preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/D', $value ) ? ' UTC' : '' ) );
 		return false !== $ts ? gmdate( 'Y-m-d H:i:s', $ts ) : null;
+	}
+
+	private static function format_jst_mmdd( string $utc_datetime ): string {
+		$utc_datetime = trim( $utc_datetime );
+		if ( '' === $utc_datetime ) {
+			return '';
+		}
+		$ts = strtotime( $utc_datetime . ' UTC' );
+		if ( false === $ts ) {
+			return '';
+		}
+		return wp_date( 'm/d', $ts, new DateTimeZone( 'Asia/Tokyo' ) );
 	}
 
 	private static function format_jst_date( string $utc_datetime ): string {

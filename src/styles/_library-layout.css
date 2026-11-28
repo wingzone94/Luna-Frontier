@@ -78,8 +78,12 @@
 .library-card-stores { margin-top: auto; }
 .library-chips { gap: var(--lf-space-3xs); }
 .library-chip { border: 1px solid var(--lf-rule); border-radius: var(--lf-shape-full); padding: .28rem .65rem; font-size: .75rem; line-height: 1.35; font-weight: 750; }
-.library-chip--store, .library-chip--sale, .library-chip--subscription { border: 0; background: var(--store-color, var(--library-navy)); color: var(--m3-pagination-on-current); }
+.library-chip--store, .library-chip--sale, .library-chip--subscription { border: 0; background: var(--store-color, var(--library-navy)); color: #ffffff; }
 .library-chip--catalog { --store-color: #3d5082; }
+.library-chip--subscription[data-brand="microsoft"] { --store-color: #107c10; }
+.library-chip--subscription[data-brand="playstation"] { --store-color: #0070d1; }
+.library-chip--subscription[data-brand="nintendo"] { --store-color: #e60012; }
+.library-chip--psplus { --store-color: #0070d1; }
 .library-chip--giveaway { --store-color: #0f6d5e; }
 .library-chip--ended { --store-color: #5a6270; }
 .library-chip[data-store="steam"] { --store-color: #2a475e; }
