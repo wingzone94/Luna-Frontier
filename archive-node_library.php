@@ -83,6 +83,9 @@ $archive_descriptions = array(
 			if ( is_callable( array( 'Node_Library_Prices', 'prime_current_cache' ) ) ) {
 				Node_Library_Prices::prime_current_cache( wp_list_pluck( $wp_query->posts, 'ID' ) );
 			}
+			if ( is_callable( array( 'Node_Library_Subscriptions', 'prime_history_cache' ) ) ) {
+				Node_Library_Subscriptions::prime_history_cache( wp_list_pluck( $wp_query->posts, 'ID' ) );
+			}
 			?>
 			<div class="node-library-archive__grid">
 				<?php while ( have_posts() ) : ?>

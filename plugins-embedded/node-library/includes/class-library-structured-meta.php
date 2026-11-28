@@ -36,13 +36,24 @@ final class Node_Library_Structured_Meta {
 	/** @return array<string, string> Supported subscription service identifiers. */
 	public static function subscriptions(): array {
 		return array(
-			'gamepass'     => 'Xbox / PC Game Pass',
-			'psplus'       => 'PlayStation Plus',
-			'nso'          => 'Nintendo Switch Online',
-			'ea_play'      => 'EA Play',
-			'ubisoft_plus' => 'Ubisoft+',
-			'apple_arcade' => 'Apple Arcade',
+			'gamepass'        => 'Xbox / PC Game Pass',
+			'psplus'          => 'PlayStation Plus',
+			'psplus_freeplay' => 'PlayStation Plus フリープレイ',
+			'epic_free'       => 'Epic Games Store 無料配布',
+			'nso'             => 'Nintendo Switch Online',
+			'ea_play'         => 'EA Play',
+			'ubisoft_plus'    => 'Ubisoft+',
+			'apple_arcade'    => 'Apple Arcade',
 		);
+	}
+
+	/**
+	 * Subscription service keys that represent time-limited distribution periods rather than ongoing catalogues.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function giveaway_subscriptions(): array {
+		return array( 'psplus_freeplay', 'epic_free' );
 	}
 
 	/** @return array<string, array<string, string>> Fields shared by registration and forms. */

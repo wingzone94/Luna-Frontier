@@ -580,6 +580,14 @@
 	background: #424a57;
 }
 
+.node-library-feature-chip--giveaway {
+	background: #0f6d5e;
+}
+
+.node-library-feature-chip--ended {
+	background: #5a6270;
+}
+
 .node-library-specs {
 	width: 100%;
 	border-collapse: collapse;
@@ -662,7 +670,15 @@
 }
 
 .node-library-pricing__badge--subscription {
-	background: var(--md-sys-color-secondary, #495d92);
+	background: #3d5082;
+}
+
+.node-library-pricing__badge--giveaway {
+	background: #0f6d5e;
+}
+
+.node-library-pricing__badge--ended {
+	background: #5a6270;
 }
 
 .node-library-pricing__card + .node-library-pricing__card {
@@ -921,13 +937,57 @@
 	background: var(--md-sys-color-surface);
 }
 
+.node-library-subscriptions__item--giveaway {
+	border-left: 3px solid #0f6d5e;
+}
+
+.node-library-subscriptions__item--giveaway.node-library-subscriptions__item--ended {
+	border-left-color: #5a6270;
+}
+
+.node-library-subscriptions__service-group {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.node-library-subscriptions__kind {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #0f6d5e;
+	color: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.node-library-subscriptions__item--ended .node-library-subscriptions__kind {
+	background: #5a6270;
+}
+
 .node-library-subscriptions__service {
 	font-weight: 700;
+}
+
+.node-library-subscriptions__meta {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
 }
 
 .node-library-subscriptions__period {
 	color: var(--md-sys-color-on-surface-variant);
 	font-size: 0.875rem;
+}
+
+.node-library-subscriptions__note {
+	color: var(--md-sys-color-on-surface-variant);
+	font-size: 0.75rem;
+	font-weight: 600;
 }
 
 .node-library-single__article-list {
@@ -1262,11 +1322,19 @@
 	align-items: center;
 	padding: 2px 9px;
 	border-radius: 999px;
-	background: var(--md-sys-color-secondary, #495d92);
+	background: #3d5082;
 	color: #ffffff;
 	font-size: 0.75rem;
 	font-weight: 700;
 	line-height: 1.3;
+}
+
+.node-library-store-card__sub-badge--giveaway {
+	background: #0f6d5e;
+}
+
+.node-library-store-card__sub-badge--ended {
+	background: #5a6270;
 }
 
 .node-library-store-card__hardware {

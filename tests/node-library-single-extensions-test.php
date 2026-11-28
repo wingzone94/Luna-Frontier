@@ -810,6 +810,78 @@ class Node_Library_Single_Extensions_Test extends WP_UnitTestCase {
 		delete_option( 'node_library_sale_animation_pattern' );
 	}
 
+	public function test_archive_shelf_card_and_single_badges_distinguish_catalog_and_giveaway(): void {
+		$item_id = $this->create_library_item( 'Sub Display Game' );
+		update_post_meta(
+			$item_id,
+			'_node_library_store_ids',
+			array(
+				'epic' => 'sub-display-game',
+			)
+		);
+		update_post_meta(
+			$item_id,
+			'_node_library_subscriptions',
+			array(
+				'gamepass'  => true,
+				'epic_free' => true,
+			)
+		);
+		Node_Library_Subscriptions::observe( $item_id, 'gamepass', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
+		Node_Library_Subscriptions::observe(
+			$item_id,
+			'epic_free',
+			true,
+			strtotime( '2026-11-01 00:00:00 UTC' ),
+			'2099-11-30 14:59:59'
+		);
+
+		// Feature chips on single page include catalog and giveaway badges with distinct modifier classes.
+		ob_start();
+		Node_Library_Single_Extensions::render_features_section( $item_id );
+		$features_html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $features_html );
+		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $features_html );
+		$this->assertStringContainsString( 'node-library-feature-chip--catalog', $features_html );
+		$this->assertStringContainsString( 'node-library-feature-chip--giveaway', $features_html );
+
+		// Store card / offers block assigns epic_free to Epic card and renders gamepass badge.
+		$badge_items = Node_Library_Subscriptions::get_display_badges( $item_id );
+		$game_info   = array(
+			'title'                    => 'Sub Display Game',
+			'links'                    => Node_Library_Single_Extensions::store_offers( $item_id, array() ),
+			'subscription_badge_items' => $badge_items,
+			'subscription_badges'      => array_map( static fn( array $b ): string => $b['badge_text'], $badge_items ),
+		);
+		ob_start();
+		include NODE_LIBRARY_DIR . 'templates/card-library.php';
+		$card_html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'node-library-store-card__sub-badge--giveaway', $card_html );
+		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $card_html );
+		$this->assertStringContainsString( 'node-library-pricing__badge--catalog', $card_html );
+		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $card_html );
+
+		// Archive shelf card renders both catalog and giveaway chips.
+		$query = new WP_Query(
+			array(
+				'post_type' => 'node_library',
+				'post__in'  => array( $item_id ),
+			)
+		);
+		$this->assertTrue( $query->have_posts() );
+		$query->the_post();
+		ob_start();
+		get_template_part( 'template-parts/library/shelf-card' );
+		$shelf_html = (string) ob_get_clean();
+		wp_reset_postdata();
+
+		$this->assertStringContainsString( 'library-card-subscriptions', $shelf_html );
+		$this->assertStringContainsString( 'library-chip--catalog', $shelf_html );
+		$this->assertStringContainsString( 'library-chip--giveaway', $shelf_html );
+		$this->assertStringContainsString( 'Xbox / PC Game Pass（加入中）', $shelf_html );
+		$this->assertStringContainsString( 'Epic Games Store 無料配布（配布中：2026/11/01〜2099/11/30）', $shelf_html );
+	}
+
 	private function create_library_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(

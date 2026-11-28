@@ -975,7 +975,20 @@ final class Node_Library_Single_Extensions {
 					<h3><?php echo esc_html( $labels[ $brand ] ?? $brand ); ?></h3>
 					<ul class="node-library-features__list">
 						<?php foreach ( $features as $chip ) : ?>
-							<li class="node-library-feature-chip node-library-feature-chip--<?php echo esc_attr( $chip['brand'] ); ?>">
+							<?php
+							$chip_classes = array(
+								'node-library-feature-chip',
+								'node-library-feature-chip--' . $chip['brand'],
+							);
+							if ( ! empty( $chip['sub_kind'] ) ) {
+								$chip_classes[] = 'node-library-feature-chip--subscription';
+								$chip_classes[] = 'node-library-feature-chip--' . $chip['sub_kind'];
+							}
+							if ( 'ended' === ( $chip['sub_status'] ?? '' ) ) {
+								$chip_classes[] = 'node-library-feature-chip--ended';
+							}
+							?>
+							<li class="<?php echo esc_attr( implode( ' ', $chip_classes ) ); ?>">
 								<span class="material-symbols-outlined" data-icon="<?php echo esc_attr( $chip['icon'] ); ?>" aria-hidden="true"></span>
 								<span><?php echo esc_html( $chip['label'] ); ?></span>
 							</li>
@@ -1040,20 +1053,29 @@ final class Node_Library_Single_Extensions {
 		}
 
 		$sub_map = array(
-			'gamepass'     => array( 'label' => 'Xbox / PC Game Pass', 'brand' => 'microsoft' ),
-			'psplus'       => array( 'label' => 'PlayStation Plus', 'brand' => 'playstation' ),
-			'nso'          => array( 'label' => 'Nintendo Switch Online', 'brand' => 'nintendo' ),
-			'ea_play'      => array( 'label' => 'EA Play', 'brand' => 'neutral' ),
-			'ubisoft_plus' => array( 'label' => 'Ubisoft+', 'brand' => 'neutral' ),
-			'apple_arcade' => array( 'label' => 'Apple Arcade', 'brand' => 'neutral' ),
+			'gamepass'        => array( 'label' => 'Xbox / PC Game Pass', 'brand' => 'microsoft' ),
+			'psplus'          => array( 'label' => 'PlayStation Plus', 'brand' => 'playstation' ),
+			'psplus_freeplay' => array( 'label' => 'PlayStation Plus フリープレイ', 'brand' => 'playstation' ),
+			'epic_free'       => array( 'label' => 'Epic Games Store 無料配布', 'brand' => 'epic' ),
+			'nso'             => array( 'label' => 'Nintendo Switch Online', 'brand' => 'nintendo' ),
+			'ea_play'         => array( 'label' => 'EA Play', 'brand' => 'neutral' ),
+			'ubisoft_plus'    => array( 'label' => 'Ubisoft+', 'brand' => 'neutral' ),
+			'apple_arcade'    => array( 'label' => 'Apple Arcade', 'brand' => 'neutral' ),
 		);
+		$display_badges = class_exists( 'Node_Library_Subscriptions' )
+			? Node_Library_Subscriptions::get_display_badges( $post_id )
+			: array();
 		foreach ( $sub_map as $sub_key => $meta ) {
 			if ( ! empty( $subscriptions[ $sub_key ] ) ) {
+				$badge_info = $display_badges[ $sub_key ] ?? null;
+				$is_giveaway = is_array( $badge_info ) && 'giveaway' === ( $badge_info['kind'] ?? '' );
 				$chips[] = array(
-					'key'   => 'sub_' . $sub_key,
-					'label' => $meta['label'],
-					'brand' => $meta['brand'],
-					'icon'  => 'apps',
+					'key'        => 'sub_' . $sub_key,
+					'label'      => is_array( $badge_info ) ? $badge_info['badge_text'] : sprintf( '%s（%s）', $meta['label'], __( '加入中', 'node-library' ) ),
+					'brand'      => $meta['brand'],
+					'icon'       => $is_giveaway ? 'sell' : 'apps',
+					'sub_kind'   => is_array( $badge_info ) ? $badge_info['kind'] : 'catalog',
+					'sub_status' => is_array( $badge_info ) ? $badge_info['status'] : 'active',
 				);
 			}
 		}

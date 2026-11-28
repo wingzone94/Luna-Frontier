@@ -160,6 +160,79 @@ class Node_Library_Subscriptions_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '2026/04/01 〜 2026/05/10（終了）', $left_html );
 	}
 
+	public function test_display_badges_and_history_distinguish_giveaway_from_catalog_and_show_epic_note(): void {
+		$item_id = $this->create_item( 'Giveaway + Catalog Game' );
+		update_post_meta(
+			$item_id,
+			'_node_library_subscriptions',
+			array(
+				'gamepass'        => true,
+				'psplus_freeplay' => true,
+				'epic_free'       => true,
+			)
+		);
+
+		$now = strtotime( '2026-11-15 12:00:00 UTC' );
+		Node_Library_Subscriptions::observe( $item_id, 'gamepass', true, strtotime( '2026-10-01 00:00:00 UTC' ) );
+		Node_Library_Subscriptions::observe(
+			$item_id,
+			'psplus_freeplay',
+			true,
+			strtotime( '2026-11-03 00:00:00 UTC' ),
+			'2026-12-01 14:59:59'
+		);
+		Node_Library_Subscriptions::observe(
+			$item_id,
+			'epic_free',
+			true,
+			strtotime( '2026-10-10 00:00:00 UTC' ),
+			'2026-10-17 14:59:59'
+		);
+
+		$badges = Node_Library_Subscriptions::get_display_badges( $item_id, $now );
+		$this->assertSame( 'catalog', $badges['gamepass']['kind'] );
+		$this->assertSame( 'Xbox / PC Game Pass（加入中）', $badges['gamepass']['badge_text'] );
+
+		$this->assertSame( 'giveaway', $badges['psplus_freeplay']['kind'] );
+		$this->assertSame( 'active', $badges['psplus_freeplay']['status'] );
+		$this->assertSame( 'PlayStation Plus フリープレイ（配布中：2026/11/03〜2026/12/01）', $badges['psplus_freeplay']['badge_text'] );
+
+		$this->assertSame( 'giveaway', $badges['epic_free']['kind'] );
+		$this->assertSame( 'ended', $badges['epic_free']['status'] );
+		$this->assertSame( 'Epic Games Store 無料配布（配布終了：2026/10/10〜2026/10/17）', $badges['epic_free']['badge_text'] );
+
+		ob_start();
+		Node_Library_Subscriptions::render_single_history( $item_id );
+		$history_html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'サブスク在籍・配布期間履歴', $history_html );
+		$this->assertStringContainsString( 'node-library-subscriptions__kind', $history_html );
+		$this->assertStringContainsString( '配布期間', $history_html );
+		$this->assertStringContainsString( 'PlayStation Plus フリープレイ', $history_html );
+		$this->assertStringContainsString( 'Epic Games Store 無料配布', $history_html );
+		$this->assertStringContainsString( '入手後は恒久所持', $history_html );
+		$this->assertStringContainsString( 'node-library-subscriptions__item--giveaway', $history_html );
+		$this->assertStringContainsString( 'node-library-subscriptions__item--catalog', $history_html );
+
+		// Admin recent changes list resolves display names for new giveaway keys.
+		$changes = Node_Library_Subscriptions::get_recent_changes( 20 );
+		$labels  = array();
+		foreach ( $changes as $entry ) {
+			if ( $item_id === $entry['item_id'] ) {
+				$labels[ $entry['service'] ] = $entry['service_label'];
+			}
+		}
+		$this->assertSame( 'PlayStation Plus フリープレイ', $labels['psplus_freeplay'] ?? '' );
+		$this->assertSame( 'Epic Games Store 無料配布', $labels['epic_free'] ?? '' );
+
+		ob_start();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		Node_Library_Subscriptions::render_admin_page();
+		$admin_html = (string) ob_get_clean();
+		wp_set_current_user( 0 );
+		$this->assertStringContainsString( 'PlayStation Plus フリープレイ', $admin_html );
+		$this->assertStringContainsString( 'Epic Games Store 無料配布', $admin_html );
+	}
+
 	private function create_item( string $title ): int {
 		$post_id = self::factory()->post->create(
 			array(
