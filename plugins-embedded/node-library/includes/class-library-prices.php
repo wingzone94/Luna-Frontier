@@ -74,7 +74,67 @@ final class Node_Library_Prices {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
 	}
 
+	/** @var array<int, array<string, array<string, array<string, mixed>|null>>> */
+	private static array $current_cache = array();
+
+	/**
+	 * 一覧ページ等で対象 item_id 群の最新価格行を単一クエリでプリフェッチし N+1 を解消する（H-14③）。
+	 *
+	 * @param array<int, int> $item_ids 対象の node_library 投稿 ID 配列。
+	 */
+	public static function prime_current_cache( array $item_ids ): void {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $item_ids ), static fn( int $id ): bool => $id > 0 ) ) );
+		if ( ! $ids || '1' !== get_option( 'node_library_price_schema' ) ) {
+			return;
+		}
+		$missing = array_values( array_filter( $ids, static fn( int $id ): bool => ! array_key_exists( $id, self::$current_cache ) ) );
+		if ( ! $missing ) {
+			return;
+		}
+		update_meta_cache( 'post', $missing );
+		foreach ( $missing as $mid ) {
+			self::$current_cache[ $mid ] = array();
+		}
+		global $wpdb;
+		$table        = self::table();
+		$placeholders = implode( ',', array_fill( 0, count( $missing ), '%d' ) );
+		$rows         = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT h.item_id, h.store, h.external_id, h.price, h.list_price, h.currency, h.sale_end, h.recorded_at
+				FROM {$table} h
+				WHERE h.item_id IN ({$placeholders})
+				AND NOT EXISTS (
+					SELECT 1 FROM {$table} h2
+					WHERE h2.item_id = h.item_id
+					AND h2.store = h.store
+					AND h2.external_id = h.external_id
+					AND (
+						h2.recorded_at > h.recorded_at
+						OR (h2.recorded_at = h.recorded_at AND h2.id > h.id)
+					)
+				)",
+				$missing
+			),
+			ARRAY_A
+		);
+		foreach ( (array) $rows as $row ) {
+			$item_id = (int) ( $row['item_id'] ?? 0 );
+			$store   = (string) ( $row['store'] ?? '' );
+			$ext_id  = (string) ( $row['external_id'] ?? '' );
+			if ( $item_id > 0 && '' !== $store && '' !== $ext_id ) {
+				self::$current_cache[ $item_id ][ $store ][ $ext_id ] = array(
+					'price'       => $row['price'],
+					'list_price'  => $row['list_price'],
+					'currency'    => $row['currency'],
+					'sale_end'    => $row['sale_end'],
+					'recorded_at' => $row['recorded_at'],
+				);
+			}
+		}
+	}
+
 	public static function delete_item( int $id, WP_Post $post ): void {
+		unset( self::$current_cache[ $id ] );
 		if ( 'node_library' === $post->post_type && '1' === get_option( 'node_library_price_schema' ) ) {
 			global $wpdb;
 			$wpdb->delete( self::table(), array( 'item_id' => $id ), array( '%d' ) );
@@ -88,7 +148,13 @@ final class Node_Library_Prices {
 		if ( '1' !== get_option( 'node_library_price_schema' ) ) {
 			return null;
 		}
-		return is_string( $external_id ) && '' !== $external_id ? self::latest( $id, $store, $external_id ) : null;
+		if ( ! is_string( $external_id ) || '' === $external_id ) {
+			return null;
+		}
+		if ( array_key_exists( $id, self::$current_cache ) ) {
+			return self::$current_cache[ $id ][ $store ][ $external_id ] ?? null;
+		}
+		return self::latest( $id, $store, $external_id );
 	}
 
 	private static function latest( int $id, string $store, string $external_id ): ?array {
@@ -172,6 +238,7 @@ final class Node_Library_Prices {
 			return new WP_Error( 'price_write_failed', '価格履歴の保存に失敗しました。' );
 		}
 
+		unset( self::$current_cache[ $id ] );
 		node_library_delete_detail_cache( $id );
 		return true;
 	}
