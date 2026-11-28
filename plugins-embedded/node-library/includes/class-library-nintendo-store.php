@@ -78,8 +78,10 @@ final class Node_Library_Nintendo_Store {
 	 * Parse downloadable JPY price and optional JST sale end date (YYYY-MM-DD HH:MM:SS).
 	 */
 	private static function price( array $item ): ?array {
-		$list = $item['dprice'] ?? null;
-		if ( ! is_numeric( $list ) || (float) $list < 0 || 'onsale' !== ( $item['ssitu'] ?? '' ) ) {
+		$list   = $item['dprice'] ?? null;
+		$status = strtolower( trim( (string) ( $item['ssitu'] ?? '' ) ) );
+		$allowed_statuses = array( 'onsale', 'preorder', 'pre_order', 'pre-order', 'reservation' );
+		if ( ! is_numeric( $list ) || (float) $list < 0 || ! in_array( $status, $allowed_statuses, true ) ) {
 			return null;
 		}
 		$on_sale_flag = '1' === (string) ( $item['sale_flg'] ?? '0' );

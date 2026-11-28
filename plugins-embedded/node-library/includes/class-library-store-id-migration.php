@@ -31,7 +31,7 @@ final class Node_Library_Store_ID_Migration {
 			return $host === $domain || str_ends_with( $host, '.' . $domain );
 		};
 		if ( $is_host( 'microsoft.com' ) || $is_host( 'xbox.com' ) ) {
-			if ( preg_match( '~/(?:games/store|store/(?:p|apps|games)|detail|p)/~i', $path ) && preg_match( '~/(?:[^/]+/)*([A-Z0-9]{12})/?$~iD', $path, $match ) ) {
+			if ( preg_match( '~/(?:games/store|store/(?:p|apps|games)|detail|p)/~i', $path ) && preg_match( '~/(?:[^/]+/)*([A-Z0-9]{12})(?:/[0-9]{4})?/?$~iD', $path, $match ) ) {
 				return array( 'store' => 'microsoft', 'id' => strtoupper( $match[1] ) );
 			}
 			$id = $query['productid'] ?? $query['ProductId'] ?? '';
