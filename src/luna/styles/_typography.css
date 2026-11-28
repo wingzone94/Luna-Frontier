@@ -197,6 +197,9 @@ body.lf-theme :is(
 	.lf-home-story__excerpt,
 	.lf-hero-slide__title,
 	.lf-hero-thumb__label,
+	.lf-toc__link,
+	.m3-elevated-nav-card__title,
+	.m3-game-card__body :is(h4, p),
 	.m3-blogcard__title,
 	.m3-breadcrumbs__item > :is(a, span)
 ):lang(ja) {
@@ -204,6 +207,10 @@ body.lf-theme :is(
 	word-break: normal;
 	word-break: auto-phrase;
 	overflow-wrap: anywhere;
+}
+
+body.lf-theme :is(.lf-heading-toc .lf-toc__link, .m3-elevated-nav-card__title):lang(ja) {
+	text-wrap: balance;
 }
 
 /* H2: 大区切り。埋め込みの既存寸法を保ち、本文見出しだけを強調する。 */
