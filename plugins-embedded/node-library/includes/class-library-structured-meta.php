@@ -278,10 +278,29 @@ final class Node_Library_Structured_Meta {
 				}
 			} elseif ( 'subscriptions' === $field ) {
 				echo '<input type="hidden" name="node_library_structured[subscriptions][_present]" value="1">';
+				$periods           = class_exists( 'Node_Library_Subscriptions' ) ? Node_Library_Subscriptions::get_open_periods( (int) $post->ID ) : array();
+				$giveaway_services = self::giveaway_subscriptions();
 				foreach ( self::subscriptions() as $service => $label ) {
-					$id = 'node-library-structured-subscriptions-' . $service;
-					echo '<p><label for="' . esc_attr( $id ) . '"><input id="' . esc_attr( $id ) . '" name="node_library_structured[subscriptions][' . esc_attr( $service ) . ']" type="checkbox" value="1"' . checked( ! empty( $value[ $service ] ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
+					$id          = 'node-library-structured-subscriptions-' . $service;
+					$is_giveaway = in_array( $service, $giveaway_services, true );
+					$period      = $periods[ $service ] ?? array( 'joined_date' => '', 'leaving_date' => '' );
+					$joined_val  = (string) ( $period['joined_date'] ?? '' );
+					$leaving_val = (string) ( $period['leaving_date'] ?? '' );
+					$joined_id   = 'node-library-subscription-period-' . $service . '-joined';
+					$leaving_id  = 'node-library-subscription-period-' . $service . '-leaving';
+					echo '<div class="node-library-sub-row" style="margin:0 0 10px;">';
+					echo '<p style="margin:0 0 4px;"><label for="' . esc_attr( $id ) . '"><input id="' . esc_attr( $id ) . '" name="node_library_structured[subscriptions][' . esc_attr( $service ) . ']" type="checkbox" value="1"' . checked( ! empty( $value[ $service ] ), true, false ) . '> ' . esc_html( $label ) . '</label></p>';
+					echo '<div style="margin:0 0 0 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">';
+					if ( $is_giveaway ) {
+						echo '<label for="' . esc_attr( $joined_id ) . '">' . esc_html__( '配布開始日', 'node-library' ) . ' <input id="' . esc_attr( $joined_id ) . '" name="node_library_subscription_periods[' . esc_attr( $service ) . '][joined_date]" type="date" value="' . esc_attr( $joined_val ) . '"></label>';
+						echo '<label for="' . esc_attr( $leaving_id ) . '">' . esc_html__( '配布終了日', 'node-library' ) . ' <input id="' . esc_attr( $leaving_id ) . '" name="node_library_subscription_periods[' . esc_attr( $service ) . '][leaving_date]" type="date" value="' . esc_attr( $leaving_val ) . '"></label>';
+					} else {
+						echo '<label for="' . esc_attr( $leaving_id ) . '">' . esc_html__( '終了予定日（任意）', 'node-library' ) . ' <input id="' . esc_attr( $leaving_id ) . '" name="node_library_subscription_periods[' . esc_attr( $service ) . '][leaving_date]" type="date" value="' . esc_attr( $leaving_val ) . '"></label>';
+					}
+					echo '<input type="hidden" name="node_library_subscription_periods[' . esc_attr( $service ) . '][prev_leaving_date]" value="' . esc_attr( $leaving_val ) . '">';
+					echo '</div></div>';
 				}
+				echo '<p class="description">' . esc_html__( '配布系（PS Plus フリープレイ／Epic 無料配布）は配布開始日・終了日（JST）を指定できます。終了日を過ぎた記録も履歴に残ります。', 'node-library' ) . '</p>';
 			} elseif ( 'genres' === $field ) {
 				echo '<label class="screen-reader-text" for="node-library-structured-genres">' . esc_html( $definition['label'] ) . '</label><textarea id="node-library-structured-genres" name="node_library_structured[genres]" rows="3" class="large-text">' . esc_textarea( implode( "\n", $value ) ) . '</textarea>';
 			} else {

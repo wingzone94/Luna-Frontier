@@ -241,10 +241,34 @@ final class Node_Library_Single_Extensions {
 	}
 
 	/**
+	 * Determine whether a library item is available solely via Nintendo Switch Online
+	 * (no registered store IDs and no other store links/price sources).
+	 */
+	public static function is_nso_only( int $post_id ): bool {
+		if ( $post_id <= 0 || ! class_exists( 'Node_Library_Structured_Meta' ) ) {
+			return false;
+		}
+		$subs = Node_Library_Structured_Meta::sanitize( 'subscriptions', get_post_meta( $post_id, '_node_library_subscriptions', true ) );
+		if ( empty( $subs['nso'] ) || 1 !== count( $subs ) ) {
+			return false;
+		}
+		$store_ids = Node_Library_Structured_Meta::sanitize( 'store_ids', get_post_meta( $post_id, '_node_library_store_ids', true ) );
+		if ( ! empty( $store_ids ) ) {
+			return false;
+		}
+		$links = get_post_meta( $post_id, '_node_library_links', true );
+		$links = is_array( $links ) ? $links : array();
+		if ( ! empty( self::store_offers( $post_id, $links ) ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * Render price history summary, badges, and recent price changes after the spec table.
 	 */
 	public static function render_price_section( int $post_id, bool $price_already_placed = false ): void {
-		if ( $price_already_placed ) {
+		if ( $price_already_placed || self::is_nso_only( $post_id ) ) {
 			return;
 		}
 		$store_ids = get_post_meta( $post_id, '_node_library_store_ids', true );
@@ -544,6 +568,9 @@ final class Node_Library_Single_Extensions {
 	 */
 	public static function filter_jsonld_offers( $offers, int $post_id ) {
 		if ( is_array( $offers ) && $offers ) {
+			return $offers;
+		}
+		if ( self::is_nso_only( $post_id ) ) {
 			return $offers;
 		}
 		if ( ! class_exists( 'Node_Library_Store' ) || ! class_exists( 'Node_Library_Prices' ) ) {

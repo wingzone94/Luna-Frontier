@@ -664,7 +664,11 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                 ];
             }
 
-            $unassigned_subs = array_diff_key( $subscription_badges, $assigned_sub_keys );
+            $show_nso_in_app_card = ! $offer_cards && ! empty( $subscription_badges['nso'] ) && 1 === count( $subscription_badges );
+            $unassigned_subs      = array_diff_key( $subscription_badges, $assigned_sub_keys );
+            if ( $show_nso_in_app_card ) {
+                unset( $unassigned_subs['nso'] );
+            }
             $unassigned_chips = [];
             if ( $unassigned_subs ) {
                 $unassigned_meta = array_intersect_key( $subscription_badge_items, $unassigned_subs );
@@ -830,6 +834,26 @@ $render_store_link  = static function ( $link ) use ( $detail_offers, $button_te
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
+                </ul>
+            <?php elseif ( $show_nso_in_app_card ) : ?>
+                <ul class="node-library-offers">
+                    <li class="node-library-store-card node-library-store-card--nintendo node-library-store-card--nso-only">
+                        <div class="node-library-store-card__row">
+                            <div class="node-library-store-card__link node-library-store-card__link--static">
+                                <span class="node-library-store-card__identity">
+                                    <span class="node-library-store-card__chip node-library-store-card__chip--nintendo" aria-hidden="true">
+                                        <span class="node-library-store-card__chip-text">N</span>
+                                    </span>
+                                    <span class="node-library-store-card__info">
+                                        <span class="node-library-store-card__head">
+                                            <strong class="node-library-store-card__name">Nintendo Switch Online</strong>
+                                        </span>
+                                        <span class="node-library-store-card__hardware"><?php esc_html_e( 'Nintendo Switch Online 加入者向けアプリ内プレイ', 'node-library' ); ?></span>
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             <?php else : ?>
                 <p><?php esc_html_e( 'ストアリンクは未登録です。', 'node-library' ); ?></p>
